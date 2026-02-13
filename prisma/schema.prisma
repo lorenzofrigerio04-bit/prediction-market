@@ -1,0 +1,399 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER MODEL
+// ============================================
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  password      String? // null se login con OAuth
+  image         String? // avatar URL
+  emailVerified DateTime?
+  
+  // Crediti e Wallet
+  credits       Int      @default(1000) // crediti iniziali
+  totalEarned   Int      @default(0) // totale guadagnato nella storia
+  totalSpent    Int      @default(0) // totale speso
+  
+  // Statistiche
+  streak        Int      @default(0) // giorni consecutivi
+  lastDailyBonus DateTime? // ultima volta che ha preso il daily bonus
+  totalPredictions Int   @default(0)
+  correctPredictions Int  @default(0)
+  accuracy      Float    @default(0) // percentuale accuratezza
+  
+  // Ruolo (String per SQLite compatibilità)
+  role          String   @default("USER") // USER o ADMIN
+  
+  // Onboarding: tutorial completato (non mostrare di nuovo)
+  onboardingCompleted Boolean @default(false)
+  
+  // Relazioni
+  predictions   Prediction[]
+  comments      Comment[]
+  commentReactions CommentReaction[]
+  transactions  Transaction[]
+  badges        UserBadge[]
+  missions      UserMission[]
+  notifications Notification[]
+  createdEvents Event[] @relation("EventCreator")
+  
+  // NextAuth relazioni
+  accounts      Account[]
+  sessions      Session[]
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@map("users")
+}
+
+// ============================================
+// NEXTAUTH MODELS
+// ============================================
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================
+// EVENT MODEL
+// ============================================
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  category    String   // es. "Sport", "Politica", "Tecnologia", etc.
+  
+  // Date importanti
+  createdAt   DateTime @default(now())
+  closesAt    DateTime // quando chiude la previsione
+  resolvedAt  DateTime? // quando è stato risolto
+  
+  // Risoluzione
+  resolved    Boolean  @default(false)
+  outcome     String? // "YES" o "NO"
+  
+  // Statistiche aggregate
+  yesPredictions Int   @default(0) // numero previsioni SÌ
+  noPredictions  Int   @default(0) // numero previsioni NO
+  totalCredits   Int   @default(0) // totale crediti investiti
+  yesCredits     Int   @default(0) // crediti su SÌ
+  noCredits      Int   @default(0) // crediti su NO
+  
+  // Probabilità calcolata (yesCredits / totalCredits * 100)
+  probability    Float  @default(50.0) // percentuale previsione SÌ
+  
+  // Creatore (admin)
+  createdById   String
+  createdBy     User   @relation("EventCreator", fields: [createdById], references: [id])
+  
+  // Relazioni
+  predictions   Prediction[]
+  comments      Comment[]
+  
+  @@index([category])
+  @@index([closesAt])
+  @@index([resolved])
+  @@map("events")
+}
+
+// ============================================
+// PREDICTION MODEL
+// ============================================
+model Prediction {
+  id          String   @id @default(cuid())
+  
+  // Relazioni
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  // Previsione
+  outcome     String // "YES" o "NO"
+  credits     Int // quanti crediti ha investito
+  
+  // Risultato (null se evento non ancora risolto)
+  resolved    Boolean  @default(false)
+  won         Boolean? // true se ha vinto, false se ha perso
+  payout      Int? // crediti guadagnati (null se non ancora risolto)
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+  
+  @@unique([userId, eventId]) // un utente può fare una sola previsione per evento
+  @@index([userId])
+  @@index([eventId])
+  @@index([resolved])
+  @@map("predictions")
+}
+
+// ============================================
+// COMMENT MODEL
+// ============================================
+model Comment {
+  id          String   @id @default(cuid())
+  
+  // Relazioni
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  // Threading (commenti annidati)
+  parentId    String? // null se è un commento principale
+  parent      Comment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies     Comment[] @relation("CommentReplies")
+  
+  // Contenuto
+  content     String
+  
+  // Reazioni
+  reactions   CommentReaction[]
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([eventId])
+  @@index([userId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+// ============================================
+// COMMENT REACTION MODEL
+// ============================================
+model CommentReaction {
+  id        String   @id @default(cuid())
+  
+  // Relazioni
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  
+  // Tipo reazione (String per SQLite)
+  type      String // "THUMBS_UP", "FIRE", "HEART"
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, commentId, type]) // un utente può avere una sola reazione di ogni tipo per commento
+  @@index([commentId])
+  @@map("comment_reactions")
+}
+
+// ============================================
+// TRANSACTION MODEL (Wallet)
+// ============================================
+model Transaction {
+  id          String   @id @default(cuid())
+  
+  // Relazione
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Tipo transazione (String per SQLite)
+  type        String // PREDICTION_BET, PREDICTION_WIN, etc.
+  
+  // Importo (positivo per guadagni, negativo per spese)
+  amount      Int
+  
+  // Descrizione
+  description String?
+  
+  // Riferimento opzionale (es. predictionId per vincite)
+  referenceId String? // può essere predictionId, missionId, etc.
+  referenceType String? // "prediction", "daily_bonus", "mission", etc.
+  
+  // Balance dopo questa transazione
+  balanceAfter Int
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+// ============================================
+// BADGE MODEL
+// ============================================
+model Badge {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  icon        String? // emoji o URL icona
+  rarity      String   @default("COMMON") // COMMON, RARE, EPIC, LEGENDARY
+  
+  // Criteri per sbloccare (opzionale, per logica futura) - String per SQLite
+  criteria    String? // JSON come stringa: es. '{"predictions": 10, "streak": 7}'
+  
+  createdAt   DateTime @default(now())
+  
+  // Relazioni
+  users       UserBadge[]
+  
+  @@map("badges")
+}
+
+// ============================================
+// USER BADGE MODEL (Junction Table)
+// ============================================
+model UserBadge {
+  id        String   @id @default(cuid())
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  
+  unlockedAt DateTime @default(now())
+  
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@map("user_badges")
+}
+
+// ============================================
+// MISSION MODEL
+// ============================================
+model Mission {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  type        String // MAKE_PREDICTIONS, WIN_PREDICTIONS, etc.
+  
+  // Obiettivo
+  target      Int // es. "fai 3 previsioni" -> target = 3
+  
+  // Ricompensa
+  reward      Int // crediti guadagnati
+  
+  // Durata (String per SQLite)
+  period      String   @default("DAILY") // DAILY, WEEKLY, MONTHLY, PERMANENT
+  startDate   DateTime?
+  endDate     DateTime?
+  
+  // Attiva
+  active      Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  
+  // Relazioni
+  userProgress UserMission[]
+  
+  @@map("missions")
+}
+
+// ============================================
+// USER MISSION MODEL (Progress Tracking)
+// ============================================
+model UserMission {
+  id          String   @id @default(cuid())
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  missionId   String
+  mission     Mission  @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  
+  // Progresso
+  progress    Int      @default(0)
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  
+  // Periodo (per missioni giornaliere/settimanali)
+  periodStart DateTime @default(now())
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([userId, missionId, periodStart]) // un utente può avere una missione per periodo
+  @@index([userId])
+  @@index([missionId])
+  @@index([completed])
+  @@map("user_missions")
+}
+
+// ============================================
+// NOTIFICATION MODEL
+// ============================================
+model Notification {
+  id        String   @id @default(cuid())
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Tipo notifica (String per SQLite)
+  type      String // EVENT_RESOLVED, PREDICTION_WON, etc.
+  
+  // Contenuto
+  title     String
+  message   String
+  
+  // Riferimento (es. eventId, predictionId)
+  referenceId String?
+  referenceType String?
+  
+  // Stato
+  read      Boolean  @default(false)
+  readAt    DateTime?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("notifications")
+}
