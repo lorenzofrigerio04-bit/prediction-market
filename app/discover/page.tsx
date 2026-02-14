@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useDeferredValue } from "react";
 import Header from "@/components/Header";
-import MarketCard from "@/components/discover/MarketCard";
+import EventCard from "@/components/EventCard";
 import MarketCardSkeleton from "@/components/discover/MarketCardSkeleton";
+import type { EventCardEvent } from "@/components/EventCard";
 import {
   PageHeader,
   EmptyState,
@@ -238,7 +239,7 @@ export default function DiscoverPage() {
             action={{ label: "Riprova", onClick: () => fetchEvents() }}
           />
         ) : loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
             {Array.from({ length: SKELETON_COUNT }, (_, i) => (
               <MarketCardSkeleton key={i} index={i} />
             ))}
@@ -280,9 +281,25 @@ export default function DiscoverPage() {
             <p className="text-ds-body-sm text-fg-muted mb-4">
               {total} {total === 1 ? "evento" : "eventi"} trovati
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {events.map((event, index) => (
-                <MarketCard key={event.id} event={event} index={index} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+              {events.map((event) => (
+                <EventCard
+                  key={event.id}
+                  event={
+                    {
+                      id: event.id,
+                      title: event.title,
+                      description: event.description,
+                      category: event.category,
+                      closesAt: event.closesAt,
+                      probability: event.probability,
+                      totalCredits: event.totalCredits,
+                      yesCredits: event.yesCredits,
+                      noCredits: event.noCredits,
+                      _count: event._count,
+                    } satisfies EventCardEvent
+                  }
+                />
               ))}
             </div>
 

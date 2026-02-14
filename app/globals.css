@@ -440,9 +440,9 @@ textarea:focus-visible {
     0 0 20px -4px rgb(var(--prediction-no-glow) / 0.22);
 }
 
-/* Pill / box con bordo blu LED glass neon (solo dark): sfondo in tinta con la card, testo bianco */
+/* Pill / box con bordo blu LED neon: in dark = sfondo nero, contorno blu neon, testo bianco */
 .dark .pill-led-neon {
-  background: transparent;
+  background: rgb(0 0 0 / 0.5);
   border: 1px solid rgb(var(--primary) / 0.6);
   box-shadow: 0 0 14px -2px rgb(var(--primary-glow) / 0.4);
   color: rgb(255 255 255);

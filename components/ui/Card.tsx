@@ -17,11 +17,11 @@ export default function Card({
   as: Component = "div",
 }: CardProps) {
   const base =
-    "rounded-2xl md:rounded-2.5xl transition-all duration-ds-normal ease-ds-ease " +
+    "rounded-3xl transition-all duration-ds-normal ease-ds-ease " +
     (elevated
       ? "glass-elevated border-2 border-primary/20"
       : "glass border border-border dark:border-white/10 " +
-        "hover:border-primary/15 hover:shadow-card-hover");
+        "hover:border-primary/20 hover:shadow-glow-sm");
 
   return (
     <Component className={`${base} ${className}`}>

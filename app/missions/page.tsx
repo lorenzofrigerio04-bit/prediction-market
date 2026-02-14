@@ -12,7 +12,6 @@ import {
   Card,
   EmptyState,
   LoadingBlock,
-  Badge,
 } from "@/components/ui";
 import {
   IconTarget,
@@ -110,10 +109,10 @@ export default function MissionsPage() {
 
     return (
       <div
-        className={`rounded-2xl md:rounded-2.5xl border p-4 md:p-5 transition-all duration-200 ${
+        className={`rounded-3xl border p-4 md:p-6 transition-all duration-ds-normal ${
           m.completed
             ? "border-success/40 bg-success-bg/90 dark:bg-success-bg/50 dark:border-success/50"
-            : "glass border-border dark:border-white/10 hover:border-primary/20 hover:shadow-card-hover"
+            : "glass border-border dark:border-white/10 hover:border-primary/20 hover:shadow-glow-sm"
         }`}
       >
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
@@ -127,12 +126,12 @@ export default function MissionsPage() {
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-bold text-fg">{m.name}</h3>
-                <Badge variant="default">{PERIOD_LABELS[m.period] ?? m.period}</Badge>
+                <span className="pill-led-neon inline-flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold bg-surface border border-border text-fg">
+                  {PERIOD_LABELS[m.period] ?? m.period}
+                </span>
                 <span
-                  className={`text-xs font-semibold uppercase tracking-wide ${
-                    m.completed
-                      ? "text-success"
-                      : "text-fg-muted"
+                  className={`text-ds-caption font-semibold uppercase tracking-label ${
+                    m.completed ? "text-success" : "text-fg-muted"
                   }`}
                 >
                   {statusLabel}
