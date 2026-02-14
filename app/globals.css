@@ -439,3 +439,19 @@ textarea:focus-visible {
     0 0 20px -4px rgb(var(--prediction-si-glow) / 0.22),
     0 0 20px -4px rgb(var(--prediction-no-glow) / 0.22);
 }
+
+/* Pill / box con bordo blu LED glass neon (solo dark): sfondo in tinta con la card, testo bianco */
+.dark .pill-led-neon {
+  background: transparent;
+  border: 1px solid rgb(var(--primary) / 0.6);
+  box-shadow: 0 0 14px -2px rgb(var(--primary-glow) / 0.4);
+  color: rgb(255 255 255);
+}
+.dark .pill-led-neon span,
+.dark .pill-led-neon .text-fg,
+.dark .pill-led-neon .text-fg-muted {
+  color: rgb(255 255 255);
+}
+.dark .pill-led-neon .text-primary {
+  color: rgb(var(--primary));
+}

@@ -68,9 +68,9 @@ export default function EventCard({ event }: EventCardProps) {
       className="block focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-3xl outline-none"
     >
       <article className="glass rounded-3xl border border-border dark:border-white/10 transition-all duration-ds-normal ease-ds-ease p-5 md:p-6 h-full flex flex-col group hover:border-primary/20 hover:shadow-glow-sm active:scale-[0.995]">
-        {/* HEADER: badge categoria + scadenza */}
+        {/* HEADER: badge categoria + scadenza — dark: sfondo in tinta con card, bordo blu LED neon, testo bianco */}
         <div className="flex items-center justify-between gap-2 mb-4">
-          <span className="inline-flex items-center gap-1.5 shrink-0 min-w-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-semibold bg-surface border border-border dark:border-white/10 text-fg">
+          <span className="pill-led-neon inline-flex items-center gap-1.5 shrink-0 min-w-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-semibold bg-surface border border-border text-fg">
             <span className="text-primary shrink-0 [&>svg]:w-4 [&>svg]:h-4">
               {getCategoryIcon(event.category)}
             </span>
@@ -79,10 +79,10 @@ export default function EventCard({ event }: EventCardProps) {
           <span
             className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold font-numeric ${
               isClosed
-                ? "bg-surface text-fg-muted border border-border dark:border-white/10"
+                ? "pill-led-neon bg-surface text-fg-muted border border-border"
                 : isUrgent
-                  ? "bg-warning-bg/90 text-warning border border-warning/30 dark:bg-warning-bg/50 dark:text-warning dark:border-warning/40"
-                  : "bg-surface text-fg border border-border dark:border-white/10"
+                  ? "bg-warning-bg/90 text-warning border border-warning/30 dark:bg-warning-bg/50 dark:text-warning dark:border-warning/40 dark:shadow-[0_0_14px_-2px_rgba(253,224,71,0.4)]"
+                  : "pill-led-neon bg-surface text-fg border border-border"
             }`}
           >
             <IconClock className="w-4 h-4" aria-hidden />
@@ -163,10 +163,10 @@ export default function EventCard({ event }: EventCardProps) {
           </p>
         </div>
 
-        {/* CREDITI TOTALI IN GIOCO — formato esteso */}
-        <div className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-surface border border-border dark:border-white/10 mb-4">
+        {/* CREDITI TOTALI IN GIOCO — dark: sfondo in tinta con card, bordo blu LED neon, testo bianco */}
+        <div className="pill-led-neon flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-surface border border-border mb-4">
           <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
-          <span className="text-lg md:text-xl font-bold text-fg font-numeric tabular-nums">
+          <span className="text-lg md:text-xl font-bold text-fg font-numeric tabular-nums dark:text-white">
             {event.totalCredits.toLocaleString("it-IT")} CREDITI IN GIOCO
           </span>
         </div>
