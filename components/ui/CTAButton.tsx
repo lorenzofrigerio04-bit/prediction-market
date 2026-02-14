@@ -27,13 +27,13 @@ interface ButtonAsLink extends BaseProps {
 type CTAButtonProps = ButtonAsButton | ButtonAsLink;
 
 const baseClasses =
-  "inline-flex items-center justify-center min-h-[48px] px-6 py-3 rounded-2xl font-semibold text-ds-body-sm transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:ring-primary ds-tap-target ds-btn-hover disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none";
+  "inline-flex items-center justify-center min-h-[48px] px-6 py-3 rounded-2xl font-semibold text-ds-body-sm transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:ring-primary ds-tap-target ds-btn-hover active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:active:scale-100";
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    "bg-primary text-white hover:bg-primary-hover shadow-glow-sm focus-visible:ring-primary",
+    "bg-primary text-white hover:bg-primary-hover shadow-glow-sm focus-visible:ring-primary disabled:bg-primary/60 disabled:shadow-none",
   secondary:
-    "glass border border-border dark:border-white/10 text-fg hover:border-primary/20 hover:bg-surface/50 focus-visible:ring-primary",
+    "glass border border-border dark:border-white/10 text-text-primary hover:border-primary/20 hover:bg-surface/50 focus-visible:ring-primary disabled:text-text-muted disabled:border-border disabled:hover:bg-transparent",
 };
 
 export default function CTAButton({

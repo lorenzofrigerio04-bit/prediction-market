@@ -20,12 +20,12 @@ const FALLBACK_NEWS: NewsItem[] = [
 ];
 
 const CATEGORY_STYLES: Record<string, string> = {
-  Sport: "bg-emerald-500/20 text-emerald-400 border-emerald-500/40",
-  Politica: "bg-sky-500/20 text-sky-400 border-sky-500/40",
-  Tecnologia: "bg-violet-500/20 text-violet-400 border-violet-500/40",
-  Economia: "bg-amber-500/20 text-amber-400 border-amber-500/40",
-  Cultura: "bg-pink-500/20 text-pink-400 border-pink-500/40",
-  Altro: "bg-white/10 text-fg-muted border-white/20",
+  Sport: "bg-success-bg/90 text-success border-success/40 dark:bg-success-bg/50 dark:border-success/40",
+  Politica: "bg-primary/15 text-primary border-primary/30 dark:bg-primary/20 dark:border-primary/40",
+  Tecnologia: "bg-accent-secondary/20 text-accent-secondary border-accent-secondary/40 dark:border-accent-secondary/40",
+  Economia: "bg-warning-bg/90 text-warning border-warning/40 dark:bg-warning-bg/50 dark:border-warning/40",
+  Cultura: "bg-danger-bg/80 text-danger border-danger/40 dark:bg-danger-bg/50 dark:border-danger/40",
+  Altro: "bg-surface/80 text-text-muted border-border dark:border-white/20",
 };
 
 function NewsBox({ item }: { item: NewsItem }) {
@@ -33,7 +33,7 @@ function NewsBox({ item }: { item: NewsItem }) {
   const content = (
     <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl border bg-white/5 dark:bg-white/5 backdrop-blur-sm hover:bg-white/10 dark:hover:bg-white/10 transition-colors min-w-[280px] md:min-w-[320px] shrink-0">
       {item.live && (
-        <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse shrink-0" aria-hidden />
+        <span className="flex h-2 w-2 rounded-full bg-danger animate-pulse shrink-0" aria-hidden />
       )}
       <span className={`shrink-0 px-2 py-0.5 rounded-lg text-xs font-bold border ${style}`}>
         {item.category}

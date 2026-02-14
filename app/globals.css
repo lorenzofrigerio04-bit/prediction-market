@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
 
 /* —— Design system: spacing scale (mobile-first, 4px base) —— */
 :root {
@@ -18,67 +18,114 @@
   --space-12: 3rem;     /* 48px */
   --space-16: 4rem;     /* 64px */
   --space-20: 5rem;     /* 80px */
-  /* Typography scale */
+  /* Typography: headline → subtitle → body → label → micro */
   --text-display: clamp(2rem, 5vw, 3.5rem);
   --text-h1: clamp(1.5rem, 4vw, 2rem);
-  --text-h2: clamp(1.125rem, 3vw, 1.5rem);
+  --text-h2: clamp(1.25rem, 3vw, 1.5rem);
+  --text-h3: clamp(1.0625rem, 2.5vw, 1.25rem);
   --text-body: 1rem;
   --text-body-sm: 0.875rem;
+  --text-label: 0.8125rem;
   --text-micro: 0.75rem;
   --text-caption: 0.6875rem;
   --leading-tight: 1.15;
   --leading-snug: 1.35;
   --leading-normal: 1.5;
+  /* Letter-spacing: titoli più aperti, body neutro */
+  --tracking-headline: 0.02em;
+  --tracking-title: 0.01em;
+  --tracking-label: 0.04em;
+  --tracking-micro: 0.03em;
   /* Motion */
   --duration-fast: 150ms;
   --duration-normal: 200ms;
   --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-/* Light mode (default) */
+/* —— Semantic palette: light theme (WCAG-friendly contrast) —— */
 :root {
-  --bg: 248 250 252;
-  --fg: 15 23 42;
-  --fg-muted: 100 116 139;
-  --fg-subtle: 148 163 184;
+  --background-primary: 248 250 252;
+  --background-secondary: 241 245 249;
+  --bg: var(--background-primary);
   --surface: 255 255 255;
-  --surface-o: 0.85;
+  --surface-o: 0.92;
   --surface-elevated: 255 255 255;
-  --surface-elevated-o: 0.95;
-  --primary: 37 99 235;
+  --surface-elevated-o: 0.98;
+  --text-primary: 15 23 42;
+  --text-secondary: 51 65 85;
+  --text-muted: 71 85 105;
+  --fg: var(--text-primary);
+  --fg-muted: var(--text-secondary);
+  --fg-subtle: var(--text-muted);
+  --accent-primary: 37 99 235;
+  --accent-secondary: 99 102 241;
+  --primary: var(--accent-primary);
   --primary-hover: 59 130 246;
   --primary-muted: 219 234 254;
   --primary-glow: 37 99 235;
   --border: 226 232 240;
   --border-o: 1;
+  --divider: 226 232 240;
+  --divider-o: 0.9;
   --border-focus: 37 99 235;
+  --success: 22 163 74;
+  --success-bg: 220 252 231;
+  --success-bg-o: 0.9;
+  --warning: 161 98 7;
+  --warning-bg: 254 243 199;
+  --warning-bg-o: 0.95;
+  --danger: 185 28 28;
+  --danger-bg: 254 226 226;
+  --danger-bg-o: 0.95;
   --safe-area-inset-top: env(safe-area-inset-top, 0px);
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
 }
 
-/* Dark mode */
+/* —— Semantic palette: dark theme —— */
 .dark {
-  --bg: 10 10 18;
-  --fg: 241 245 249;
-  --fg-muted: 148 163 184;
-  --fg-subtle: 100 116 139;
+  --background-primary: 10 10 18;
+  --background-secondary: 18 18 28;
+  --bg: var(--background-primary);
   --surface: 255 255 255;
-  --surface-o: 0.06;
+  --surface-o: 0.07;
   --surface-elevated: 255 255 255;
-  --surface-elevated-o: 0.10;
-  --primary: 59 130 246;
-  --primary-hover: 96 165 250;
+  --surface-elevated-o: 0.12;
+  --text-primary: 248 250 252;
+  --text-secondary: 203 213 225;
+  --text-muted: 148 163 184;
+  --fg: var(--text-primary);
+  --fg-muted: var(--text-secondary);
+  --fg-subtle: var(--text-muted);
+  --accent-primary: 96 165 250;
+  --accent-secondary: 129 140 248;
+  --primary: var(--accent-primary);
+  --primary-hover: 147 197 253;
   --primary-muted: 30 58 95;
-  --primary-glow: 59 130 246;
+  --primary-glow: 96 165 250;
   --border: 255 255 255;
-  --border-o: 0.08;
-  --border-focus: 59 130 246;
+  --border-o: 0.1;
+  --divider: 255 255 255;
+  --divider-o: 0.08;
+  --border-focus: 96 165 250;
+  --success: 74 222 128;
+  --success-bg: 22 101 52;
+  --success-bg-o: 0.45;
+  --warning: 253 224 71;
+  --warning-bg: 120 53 15;
+  --warning-bg-o: 0.4;
+  --danger: 248 113 113;
+  --danger-bg: 127 29 29;
+  --danger-bg-o: 0.45;
 }
 
 .border-default {
   border-color: rgb(var(--border) / var(--border-o, 1));
+}
+
+.bg-divider {
+  background-color: rgb(var(--divider) / var(--divider-o, 0.5));
 }
 
 html {
@@ -88,7 +135,7 @@ html {
 body {
   color: rgb(var(--fg));
   background: rgb(var(--bg));
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-family: 'Outfit', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   padding-bottom: calc(72px + var(--safe-area-inset-bottom));
@@ -150,6 +197,11 @@ textarea:focus-visible {
 .ds-btn-hover:active {
   transform: translateY(0);
   transition-duration: 0ms;
+}
+
+/* —— Numeri: tabular-nums per crediti, percentuali, ranking —— */
+.font-numeric {
+  font-variant-numeric: tabular-nums;
 }
 
 @layer utilities {

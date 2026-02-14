@@ -178,12 +178,12 @@ export default function EventDetailPage({
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      Sport: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-      Politica: "bg-sky-500/20 text-sky-400 border-sky-500/30",
-      Tecnologia: "bg-violet-500/20 text-violet-400 border-violet-500/30",
-      Economia: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-      Cultura: "bg-pink-500/20 text-pink-400 border-pink-500/30",
-      Altro: "bg-surface/50 text-fg-muted border-border dark:border-white/10",
+      Sport: "bg-success-bg/90 text-success border border-success/30 dark:bg-success-bg/50 dark:border-success/40",
+      Politica: "bg-primary/15 text-primary border border-primary/25 dark:bg-primary/20 dark:border-primary/30",
+      Tecnologia: "bg-accent-secondary/20 text-accent-secondary border border-accent-secondary/30 dark:border-accent-secondary/40",
+      Economia: "bg-warning-bg/90 text-warning border border-warning/30 dark:bg-warning-bg/50 dark:border-warning/40",
+      Cultura: "bg-danger-bg/80 text-danger border border-danger/25 dark:bg-danger-bg/50 dark:border-danger/40",
+      Altro: "bg-surface/80 text-text-secondary border border-border dark:border-white/10",
     };
     return colors[category] || colors.Altro;
   };
@@ -252,7 +252,7 @@ export default function EventDetailPage({
       <main className="mx-auto px-4 py-5 md:py-8 max-w-2xl pb-8">
         <Link
           href="/"
-          className="inline-flex items-center min-h-[44px] text-fg-muted hover:text-fg mb-4 rounded-2xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+          className="inline-flex items-center min-h-[44px] text-text-muted hover:text-fg mb-4 rounded-2xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
         >
           <svg className="w-5 h-5 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -266,7 +266,7 @@ export default function EventDetailPage({
               {event.category}
             </span>
             {event.resolved && (
-              <span className={`px-3 py-1.5 rounded-xl text-sm font-semibold border ${event.outcome === "YES" ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-red-500/20 text-red-400 border-red-500/30"}`}>
+              <span className={`px-3 py-1.5 rounded-xl text-sm font-semibold border ${event.outcome === "YES" ? "bg-success-bg/90 text-success border-success/30 dark:bg-success-bg/50 dark:border-success/40" : "bg-danger-bg/90 text-danger border-danger/30 dark:bg-danger-bg/50 dark:border-danger/40"}`}>
                 Risolto: {event.outcome === "YES" ? "SÌ" : "NO"}
               </span>
             )}
@@ -284,7 +284,7 @@ export default function EventDetailPage({
                 className={`min-h-[44px] px-4 py-2 rounded-2xl text-sm font-semibold transition-colors border focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
                   isFollowing
                     ? "bg-primary/20 text-primary border-primary/40 hover:bg-primary/30"
-                    : "glass text-fg-muted border-border dark:border-white/10 hover:text-fg hover:bg-surface/50"
+                    : "glass text-text-secondary border-border dark:border-white/10 hover:text-fg hover:bg-surface/50"
                 }`}
               >
                 {followLoading ? "..." : isFollowing ? "Non seguire più" : "Segui evento"}
@@ -293,7 +293,7 @@ export default function EventDetailPage({
             <button
               type="button"
               onClick={handleShare}
-              className="min-h-[44px] px-4 py-2 rounded-2xl text-sm font-semibold glass text-fg-muted border border-border dark:border-white/10 hover:text-fg hover:bg-surface/50 transition-colors inline-flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+              className="min-h-[44px] px-4 py-2 rounded-2xl text-sm font-semibold glass text-text-secondary border border-border dark:border-white/10 hover:text-fg hover:bg-surface/50 transition-colors inline-flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
               aria-label="Condividi"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -304,14 +304,14 @@ export default function EventDetailPage({
           </div>
 
           {event.description && (
-            <p className="text-fg-muted text-base md:text-lg mb-6">{event.description}</p>
+            <p className="text-text-secondary text-base md:text-lg mb-6">{event.description}</p>
           )}
 
           {(event.resolutionNotes || event.resolutionSourceUrl) && (
             <div className="p-4 rounded-2xl mb-6 bg-surface/50 border border-border dark:border-white/10">
               <h3 className="text-sm font-semibold text-fg mb-2">Criteri di risoluzione</h3>
               {event.resolutionNotes && (
-                <p className="text-sm text-fg-muted whitespace-pre-wrap mb-2">{event.resolutionNotes}</p>
+                <p className="text-sm text-text-muted whitespace-pre-wrap mb-2">{event.resolutionNotes}</p>
               )}
               {event.resolutionSourceUrl && (
                 <p className="text-sm">
@@ -332,35 +332,35 @@ export default function EventDetailPage({
           <div className="grid grid-cols-2 md:flex md:flex-wrap gap-4 py-4 border-y border-border dark:border-white/10 mb-6">
             <div className="text-center md:text-left">
               <div className="text-xl md:text-2xl font-bold text-primary">{event.probability.toFixed(1)}%</div>
-              <div className="text-xs text-fg-muted">prevede SÌ</div>
+              <div className="text-xs text-text-muted">prevede SÌ</div>
             </div>
             <div className="text-center md:text-left">
               <div className="text-xl md:text-2xl font-bold text-fg">{event._count.predictions}</div>
-              <div className="text-xs text-fg-muted">previsioni</div>
+              <div className="text-xs text-text-muted">previsioni</div>
             </div>
             <div className="text-center md:text-left">
               <div className="text-xl md:text-2xl font-bold text-primary">{event.totalCredits.toLocaleString()}</div>
-              <div className="text-xs text-fg-muted">crediti</div>
+              <div className="text-xs text-text-muted">crediti</div>
             </div>
             <div className="text-center md:text-left col-span-2 md:col-span-1">
-              <div className="text-sm font-medium text-fg-muted">
+              <div className="text-sm font-medium text-text-muted">
                 {event.resolved ? "Risolto" : new Date(event.closesAt) <= new Date() ? "Chiuso" : `Chiude tra ${getTimeRemaining()}`}
               </div>
             </div>
           </div>
 
           <div className="mb-6">
-            <div className="flex justify-between text-xs md:text-sm font-medium text-fg-muted mb-2">
+            <div className="flex justify-between text-xs md:text-sm font-medium text-text-muted mb-2">
               <span>SÌ {event.yesCredits.toLocaleString()} ({event.yesPredictions})</span>
               <span>NO {event.noCredits.toLocaleString()} ({event.noPredictions})</span>
             </div>
-            <div className="w-full h-3 md:h-4 bg-surface/50 rounded-full overflow-hidden flex border border-border dark:border-white/10">
+            <div className="w-full h-3 md:h-4 bg-surface/80 rounded-full overflow-hidden flex border border-border dark:border-white/10">
               <div
-                className="bg-emerald-500 h-full transition-all"
+                className="bg-success h-full transition-all"
                 style={{ width: `${event.totalCredits > 0 ? (event.yesCredits / event.totalCredits) * 100 : 50}%` }}
               />
               <div
-                className="bg-red-500 h-full transition-all"
+                className="bg-danger h-full transition-all"
                 style={{ width: `${event.totalCredits > 0 ? (event.noCredits / event.totalCredits) * 100 : 50}%` }}
               />
             </div>
@@ -369,15 +369,15 @@ export default function EventDetailPage({
           {userPrediction && (
             <div className={`p-4 rounded-2xl mb-6 border ${
               userPrediction.resolved
-                ? userPrediction.won ? "bg-emerald-500/10 border-emerald-500/30" : "bg-red-500/10 border-red-500/30"
+                ? userPrediction.won ? "bg-success-bg/80 border-success/30 dark:bg-success-bg/50 dark:border-success/40" : "bg-danger-bg/80 border-danger/30 dark:bg-danger-bg/50 dark:border-danger/40"
                 : "glass border-primary/30"
             }`}>
               <h3 className="font-semibold text-fg mb-1">La tua previsione</h3>
-              <p className="text-sm text-fg-muted">
+              <p className="text-sm text-text-secondary">
                 {userPrediction.outcome === "YES" ? "SÌ" : "NO"} — <span className="font-semibold text-primary">{userPrediction.credits.toLocaleString()}</span> crediti
               </p>
               {userPrediction.resolved && (
-                <p className={`text-sm font-semibold mt-1 ${userPrediction.won ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                <p className={`text-sm font-semibold mt-1 ${userPrediction.won ? "text-success" : "text-danger"}`}>
                   {userPrediction.won ? `✓ Vittoria: +${userPrediction.payout?.toLocaleString()} crediti` : "✗ Persa"}
                 </p>
               )}
@@ -390,7 +390,7 @@ export default function EventDetailPage({
                 Previsioni chiuse. Risultato: {event.outcome === "YES" ? "SÌ" : "NO"}.
               </p>
               {event.resolutionSourceUrl && (
-                <p className="text-sm text-fg-muted mt-1">
+                <p className="text-sm text-text-muted mt-1">
                   Fonte:{" "}
                   <a
                     href={event.resolutionSourceUrl}
@@ -406,7 +406,7 @@ export default function EventDetailPage({
           )}
 
           {!event.resolved && new Date(event.closesAt) <= new Date() && (
-            <div className="p-4 rounded-2xl mb-6 border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 text-sm font-medium">
+            <div className="p-4 rounded-2xl mb-6 border border-warning/30 bg-warning-bg/90 text-warning dark:bg-warning-bg/50 dark:text-warning text-sm font-medium">
               Previsioni chiuse. Risultato: in attesa.
             </div>
           )}
@@ -422,12 +422,12 @@ export default function EventDetailPage({
           )}
 
           {!session && !event.resolved && new Date(event.closesAt) > new Date() && (
-            <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-sm text-amber-700 dark:text-amber-400">
+            <div className="p-4 bg-warning-bg/90 border border-warning/30 rounded-2xl text-sm text-warning dark:bg-warning-bg/50 dark:text-warning">
               <Link href="/auth/login" className="font-semibold underline">Accedi</Link> per scommettere
             </div>
           )}
 
-          <div className="text-sm text-fg-muted mt-6 space-y-1">
+          <div className="text-sm text-text-muted mt-6 space-y-1">
             <p>Creato da {event.createdBy.name || "Utente"} · {new Date(event.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}</p>
             <p>Chiusura: {new Date(event.closesAt).toLocaleDateString("it-IT", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</p>
           </div>

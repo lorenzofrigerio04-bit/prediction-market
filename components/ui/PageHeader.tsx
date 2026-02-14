@@ -13,11 +13,11 @@ export default function PageHeader({ title, description, action }: PageHeaderPro
     <header className="mb-6 md:mb-8">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
         <div className="min-w-0">
-          <h1 className="text-ds-h1 font-bold text-fg tracking-tight">
+          <h1 className="text-ds-h1 font-bold text-fg tracking-headline">
             {title}
           </h1>
           {description && (
-            <p className="mt-1 text-ds-body-sm text-fg-muted">
+            <p className="mt-1 text-ds-body-sm text-fg-muted tracking-title">
               {description}
             </p>
           )}

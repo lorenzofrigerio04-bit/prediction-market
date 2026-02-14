@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
@@ -14,6 +14,16 @@ import {
   LoadingBlock,
   Badge,
 } from "@/components/ui";
+import {
+  IconTarget,
+  IconTrophy,
+  IconGift,
+  IconEye,
+  IconClipboard,
+  IconCalendar,
+  IconCalendarDays,
+  IconCheck,
+} from "@/components/ui/Icons";
 
 const DAILY_BONUS_BASE = 50;
 
@@ -45,11 +55,11 @@ const PERIOD_LABELS: Record<string, string> = {
   WEEKLY: "Settimanale",
 };
 
-const TYPE_ICONS: Record<string, string> = {
-  MAKE_PREDICTIONS: "🎯",
-  WIN_PREDICTIONS: "🏆",
-  DAILY_LOGIN: "🎁",
-  FOLLOW_EVENTS: "👁",
+const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  MAKE_PREDICTIONS: IconTarget,
+  WIN_PREDICTIONS: IconTrophy,
+  DAILY_LOGIN: IconGift,
+  FOLLOW_EVENTS: IconEye,
 };
 
 export default function MissionsPage() {
@@ -95,24 +105,24 @@ export default function MissionsPage() {
 
   const MissionCard = ({ m }: { m: Mission }) => {
     const pct = m.target > 0 ? Math.min(100, (m.progress / m.target) * 100) : 0;
-    const icon = TYPE_ICONS[m.type] ?? "📋";
+    const MissionTypeIcon = TYPE_ICONS[m.type] ?? IconClipboard;
     const statusLabel = m.completed ? "Completata" : "In corso";
 
     return (
       <div
-        className={`rounded-2xl border p-4 md:p-5 transition-all duration-200 ${
+        className={`rounded-2xl md:rounded-2.5xl border p-4 md:p-5 transition-all duration-200 ${
           m.completed
-            ? "border-emerald-500/50 bg-emerald-500/10 dark:bg-emerald-500/15"
-            : "glass border-border dark:border-white/10 hover:border-primary/20"
+            ? "border-success/40 bg-success-bg/90 dark:bg-success-bg/50 dark:border-success/50"
+            : "glass border-border dark:border-white/10 hover:border-primary/20 hover:shadow-card-hover"
         }`}
       >
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <div className="flex gap-3 min-w-0">
             <span
-              className={`text-2xl md:text-3xl shrink-0 ${m.completed ? "opacity-80" : ""}`}
+              className={`shrink-0 text-fg-muted ${m.completed ? "opacity-80" : ""}`}
               aria-hidden
             >
-              {icon}
+              <MissionTypeIcon className="w-8 h-8 md:w-9 md:h-9" />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
@@ -121,7 +131,7 @@ export default function MissionsPage() {
                 <span
                   className={`text-xs font-semibold uppercase tracking-wide ${
                     m.completed
-                      ? "text-emerald-600 dark:text-emerald-400"
+                      ? "text-success"
                       : "text-fg-muted"
                   }`}
                 >
@@ -143,16 +153,17 @@ export default function MissionsPage() {
                 </div>
               )}
               {m.completed && (
-                <p className="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <span aria-hidden>✓</span> Completata — +{formatAmount(m.reward)} crediti
+                <p className="mt-2 text-ds-micro font-semibold text-success flex items-center gap-1.5 font-numeric">
+                  <IconCheck className="w-4 h-4 shrink-0" />
+                  Completata — +{formatAmount(m.reward)} crediti
                 </p>
               )}
             </div>
           </div>
-          <div className="text-left sm:text-right shrink-0 flex sm:block items-center justify-between sm:block">
+            <div className="text-left sm:text-right shrink-0 flex sm:block items-center justify-between sm:block">
             <div>
-              <p className="text-lg font-bold text-primary">+{formatAmount(m.reward)}</p>
-              <p className="text-xs text-fg-muted">crediti</p>
+              <p className="text-lg font-bold text-primary font-numeric">+{formatAmount(m.reward)}</p>
+              <p className="text-ds-caption text-fg-muted tracking-label">crediti</p>
             </div>
           </div>
         </div>
@@ -234,8 +245,9 @@ export default function MissionsPage() {
         ) : (
           <>
             <section className="mb-8">
-              <h2 className="text-base font-bold text-fg mb-1 flex items-center gap-2">
-                <span>📅</span> Missioni giornaliere
+              <h2 className="text-ds-h3 font-bold text-fg mb-1 flex items-center gap-2 tracking-title">
+                <IconCalendar className="w-5 h-5 text-primary" />
+                Missioni giornaliere
               </h2>
               <p className="text-ds-body-sm text-fg-muted mb-3">
                 Si resettano a mezzanotte. Reward più piccoli, da completare ogni giorno.
@@ -252,8 +264,9 @@ export default function MissionsPage() {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-base font-bold text-fg mb-1 flex items-center gap-2">
-                <span>📆</span> Missioni settimanali
+              <h2 className="text-ds-h3 font-bold text-fg mb-1 flex items-center gap-2 tracking-title">
+                <IconCalendarDays className="w-5 h-5 text-primary" />
+                Missioni settimanali
               </h2>
               <p className="text-ds-body-sm text-fg-muted mb-3">
                 Si resettano il lunedì. Reward più alti, obiettivi da portare a termine in sette giorni.

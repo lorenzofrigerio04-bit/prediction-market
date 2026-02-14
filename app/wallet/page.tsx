@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -15,6 +15,18 @@ import {
   EmptyState,
   LoadingBlock,
 } from "@/components/ui";
+import {
+  IconWallet,
+  IconGift,
+  IconSparkles,
+  IconCurrency,
+  IconTrendUp,
+  IconTrendDown,
+  IconTarget,
+  IconShop,
+  IconCog,
+  IconChat,
+} from "@/components/ui/Icons";
 
 interface WalletStats {
   credits: number;
@@ -63,16 +75,16 @@ const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   SPIN_REWARD: "Spin of the Day",
 };
 
-const TRANSACTION_TYPE_ICONS: Record<string, string> = {
-  PREDICTION_BET: "💰",
-  PREDICTION_WIN: "🎉",
-  PREDICTION_LOSS: "❌",
-  DAILY_BONUS: "🎁",
-  MISSION_REWARD: "⭐",
-  SHOP_PURCHASE: "🛒",
-  ADMIN_ADJUSTMENT: "⚙️",
-  REFERRAL_BONUS: "👥",
-  SPIN_REWARD: "🎡",
+const TRANSACTION_TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  PREDICTION_BET: IconCurrency,
+  PREDICTION_WIN: IconTrendUp,
+  PREDICTION_LOSS: IconTrendDown,
+  DAILY_BONUS: IconGift,
+  MISSION_REWARD: IconTarget,
+  SHOP_PURCHASE: IconShop,
+  ADMIN_ADJUSTMENT: IconCog,
+  REFERRAL_BONUS: IconChat,
+  SPIN_REWARD: IconSparkles,
 };
 
 export default function WalletPage() {
@@ -205,12 +217,12 @@ export default function WalletPage() {
         <PageHeader title="Il Mio Wallet" description="Saldo, bonus e storico crediti" />
 
         {error && (
-          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-ds-body-sm text-red-600 dark:text-red-400">
+          <div className="mb-6 rounded-2xl border border-danger/30 bg-danger-bg/90 p-4 text-ds-body-sm text-danger dark:bg-danger-bg/50">
             {error}
           </div>
         )}
         {successMessage && (
-          <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-ds-body-sm text-emerald-700 dark:text-emerald-400">
+          <div className="mb-6 rounded-2xl border border-success/30 bg-success-bg/90 p-4 text-ds-body-sm text-success dark:bg-success-bg/50">
             {successMessage}
           </div>
         )}
@@ -226,6 +238,7 @@ export default function WalletPage() {
             value={formatAmount(stats.credits)}
             variant="primary"
             elevated
+            icon={<IconWallet className="w-5 h-5 md:w-6 md:h-6" />}
           />
         </SectionContainer>
 
@@ -236,7 +249,7 @@ export default function WalletPage() {
             Crediti utilizzabili subito per fare previsioni o acquisti nello shop. Nessun blocco.
           </p>
           <div className="rounded-2xl border border-border bg-surface/50 p-4 dark:border-white/10">
-            <p className="text-2xl font-bold tabular-nums text-fg md:text-3xl">{formatAmount(stats.credits)}</p>
+            <p className="text-2xl font-bold font-numeric text-fg md:text-3xl">{formatAmount(stats.credits)}</p>
             <p className="mt-1 text-ds-micro text-fg-muted">crediti disponibili</p>
           </div>
           <p className="mt-4 text-ds-micro italic text-fg-muted">
@@ -308,7 +321,10 @@ export default function WalletPage() {
                     Riscatto...
                   </span>
                 ) : stats.canClaimDailyBonus ? (
-                  "🎁 Ritira bonus"
+                  <span className="flex items-center gap-2">
+                    <IconGift className="w-4 h-4" />
+                    Ritira bonus
+                  </span>
                 ) : (
                   "Prossimo domani"
                 )}
@@ -341,7 +357,14 @@ export default function WalletPage() {
                 variant="primary"
                 className={!stats.canSpinToday ? "!border-border !bg-surface/50 !text-fg-muted dark:!border-white/10" : ""}
               >
-                {stats.canSpinToday ? "🎡 Gira la ruota" : "Vedi la ruota"}
+                {stats.canSpinToday ? (
+                  <span className="flex items-center gap-2">
+                    <IconSparkles className="w-4 h-4" />
+                    Gira la ruota
+                  </span>
+                ) : (
+                  "Vedi la ruota"
+                )}
               </CTAButton>
             </div>
           </Card>
@@ -375,14 +398,14 @@ export default function WalletPage() {
                   {transactions.map((tx) => {
                     const isPositive = tx.amount > 0;
                     const typeLabel = TRANSACTION_TYPE_LABELS[tx.type] ?? tx.type;
-                    const typeIcon = TRANSACTION_TYPE_ICONS[tx.type] ?? "💰";
+                    const TypeIcon = TRANSACTION_TYPE_ICONS[tx.type] ?? IconCurrency;
                     return (
                       <li
                         key={tx.id}
                         className="flex items-center justify-between gap-3 rounded-2xl border border-border p-4 transition-colors hover:bg-surface/30 dark:border-white/10"
                       >
                         <div className="flex min-w-0 items-center gap-3">
-                          <span className="shrink-0 text-xl">{typeIcon}</span>
+                          <span className="shrink-0 text-fg-muted"><TypeIcon className="w-5 h-5" /></span>
                           <div className="min-w-0">
                             <p className="font-medium text-fg truncate">{typeLabel}</p>
                             <p className="text-xs text-fg-muted">{formatDate(tx.createdAt)}</p>
@@ -395,15 +418,13 @@ export default function WalletPage() {
                         </div>
                         <div className="shrink-0 text-right">
                           <p
-                            className={
-                              isPositive
-                                ? "font-semibold text-emerald-500 dark:text-emerald-400"
-                                : "font-semibold text-red-500 dark:text-red-400"
-                            }
+                            className={`font-semibold font-numeric ${
+                              isPositive ? "text-success" : "text-danger"
+                            }`}
                           >
                             {isPositive ? "+" : ""}{formatAmount(tx.amount)}
                           </p>
-                          <p className="text-xs text-fg-muted">Saldo {formatAmount(tx.balanceAfter)}</p>
+                          <p className="text-ds-micro text-fg-muted font-numeric">Saldo {formatAmount(tx.balanceAfter)}</p>
                         </div>
                       </li>
                     );

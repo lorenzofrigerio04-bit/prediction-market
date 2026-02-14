@@ -126,7 +126,7 @@ export default function ShopPage() {
           <p className="text-fg-muted text-sm md:text-base">Acquista con i tuoi crediti virtuali</p>
         </div>
 
-        <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-sm">
+        <div className="mb-6 p-4 rounded-2xl bg-warning-bg/90 border border-warning/30 text-warning dark:bg-warning-bg/50 dark:text-warning text-sm">
           Tutti gli acquisti usano crediti virtuali. I crediti non hanno valore reale e non sono prelevabili o convertibili.
         </div>
 
@@ -136,7 +136,7 @@ export default function ShopPage() {
           </div>
         )}
         {successMessage && (
-          <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-700 dark:text-emerald-400 text-sm">
+          <div className="mb-6 p-4 bg-success-bg/90 border border-success/30 rounded-2xl text-success dark:bg-success-bg/50 dark:text-success text-sm">
             {successMessage}
           </div>
         )}

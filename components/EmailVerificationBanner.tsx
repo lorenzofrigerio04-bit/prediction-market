@@ -26,7 +26,7 @@ export default function EmailVerificationBanner() {
 
   return (
     <div
-      className="bg-amber-500/15 border-b border-amber-500/30 text-amber-800 dark:text-amber-200 dark:border-amber-500/20"
+      className="bg-warning-bg/90 border-b border-warning/30 text-warning dark:bg-warning-bg/50 dark:text-warning dark:border-warning/40"
       role="alert"
     >
       <div className="mx-auto px-4 py-2.5 max-w-7xl flex flex-wrap items-center justify-center gap-2 text-sm">
@@ -37,7 +37,7 @@ export default function EmailVerificationBanner() {
         >
           Controlla la casella
         </a>
-        <span className="text-fg-muted">·</span>
+        <span className="text-text-muted">·</span>
         <button
           type="button"
           onClick={handleResend}

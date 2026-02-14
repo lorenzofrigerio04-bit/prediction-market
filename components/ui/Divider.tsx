@@ -7,7 +7,7 @@ interface DividerProps {
 export default function Divider({ className = "" }: DividerProps) {
   return (
     <hr
-      className={`border-0 h-px bg-border dark:bg-white/10 my-0 ${className}`}
+      className={`border-0 h-px bg-divider my-0 ${className}`}
       aria-hidden
     />
   );

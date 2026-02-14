@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
+import { IconClock } from "@/components/ui/Icons";
 
 export interface EventCardEvent {
   id: string;
@@ -42,35 +43,33 @@ export default function EventCard({ event }: EventCardProps) {
     >
       <article className="glass rounded-3xl border border-border dark:border-white/10 transition-all duration-ds-normal ease-ds-ease p-5 md:p-6 h-full flex flex-col group hover:border-primary/20 hover:shadow-glow-sm">
         <div className="flex items-center justify-between gap-2 mb-4">
-          <Badge variant="default" className="!bg-surface/50 !text-fg-muted !border-border dark:!border-white/10">
+          <Badge variant="default" className="!bg-surface/80 !text-text-secondary !border-border dark:!border-white/10">
             {event.category}
           </Badge>
           <Badge variant={timeVariant}>
-            <span className="inline-flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <span className="inline-flex items-center gap-1.5 font-numeric">
+              <IconClock className="w-3.5 h-3.5" />
               {getTimeRemaining()}
             </span>
           </Badge>
         </div>
 
-        <h3 className="text-lg md:text-xl font-bold text-fg mb-2 line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+        <h3 className="text-ds-h3 font-bold text-fg mb-2 line-clamp-2 leading-snug tracking-title group-hover:text-primary transition-colors">
           {event.title}
         </h3>
 
         {event.description && (
-          <p className="text-sm text-fg-muted mb-4 line-clamp-2 leading-relaxed flex-grow">
+          <p className="text-sm text-text-secondary mb-4 line-clamp-2 leading-relaxed flex-grow">
             {event.description}
           </p>
         )}
 
         <div className="mb-4 glass-elevated rounded-2xl p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-fg-muted uppercase tracking-wider">
+            <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
               Previsione
             </span>
-            <span className="text-2xl md:text-3xl font-extrabold text-primary">
+            <span className="text-2xl md:text-3xl font-extrabold text-primary font-numeric">
               {event.probability.toFixed(0)}%
             </span>
           </div>
@@ -80,7 +79,7 @@ export default function EventCard({ event }: EventCardProps) {
               style={{ width: `${Math.max(0, Math.min(100, event.probability))}%` }}
             />
           </div>
-          <p className="text-xs text-fg-muted mt-1.5 font-medium">
+          <p className="text-xs text-text-muted mt-1.5 font-medium">
             <span className="text-primary font-bold">{event.probability.toFixed(0)}%</span> SÌ
           </p>
         </div>
@@ -88,26 +87,26 @@ export default function EventCard({ event }: EventCardProps) {
         <div className="pt-4 border-t border-border dark:border-white/10">
           <div className="grid grid-cols-3 gap-2">
             <div className="text-center glass rounded-xl py-2.5 px-2 border border-border dark:border-white/10">
-              <div className="text-lg md:text-xl font-bold text-fg">
+              <div className="text-lg md:text-xl font-bold text-fg font-numeric">
                 {event._count.predictions}
               </div>
-              <div className="text-[10px] md:text-xs text-fg-muted font-medium uppercase tracking-wide">
+              <div className="text-ds-caption text-text-muted font-semibold uppercase tracking-label">
                 Previsioni
               </div>
             </div>
             <div className="text-center glass rounded-xl py-2.5 px-2 border border-border dark:border-white/10">
-              <div className="text-lg md:text-xl font-bold text-fg">
+              <div className="text-lg md:text-xl font-bold text-fg font-numeric">
                 {event._count.comments}
               </div>
-              <div className="text-[10px] md:text-xs text-fg-muted font-medium uppercase tracking-wide">
+              <div className="text-ds-caption text-text-muted font-semibold uppercase tracking-label">
                 Commenti
               </div>
             </div>
             <div className="text-center glass-elevated rounded-xl py-2.5 px-2">
-              <div className="text-base md:text-lg font-bold text-primary">
+              <div className="text-base md:text-lg font-bold text-primary font-numeric">
                 {event.totalCredits > 0 ? (event.totalCredits / 1000).toFixed(1) + "k" : "0"}
               </div>
-              <div className="text-[10px] md:text-xs text-primary font-medium uppercase tracking-wide">
+              <div className="text-ds-caption text-primary font-semibold uppercase tracking-label">
                 Crediti
               </div>
             </div>

@@ -9,3 +9,4 @@ export { default as EmptyState } from "./EmptyState";
 export { default as FilterChips } from "./FilterChips";
 export { default as LoadingBlock } from "./LoadingBlock";
 export type { FilterChipOption } from "./FilterChips";
+export * from "./Icons";

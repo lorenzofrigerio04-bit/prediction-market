@@ -4,6 +4,16 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import {
+  IconBell,
+  IconShop,
+  IconChat,
+  IconCog,
+  IconShield,
+  IconLogout,
+  IconLock,
+  IconClose,
+} from "@/components/ui/Icons";
 
 const DRAWER_LINK =
   "flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl text-fg hover:bg-surface/50 transition-colors text-left font-medium min-h-[48px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none border border-transparent";
@@ -11,13 +21,13 @@ const DRAWER_LINK =
 function DrawerLink({
   href,
   children,
-  icon,
+  icon: Icon,
   onClick,
   active = false,
 }: {
   href: string;
   children: React.ReactNode;
-  icon: React.ReactNode;
+  icon: React.ComponentType<{ className?: string }>;
   onClick?: () => void;
   active?: boolean;
 }) {
@@ -27,7 +37,7 @@ function DrawerLink({
       onClick={onClick}
       className={`${DRAWER_LINK} ${active ? "bg-primary/10 text-primary" : "text-fg"}`}
     >
-      {icon}
+      <Icon className="w-5 h-5" />
       {children}
     </Link>
   );
@@ -99,61 +109,34 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
         style={{ paddingTop: "var(--safe-area-inset-top)" }}
       >
         <div className="flex items-center justify-between px-4 py-4 border-b border-border dark:border-white/10">
-          <span className="text-ds-body font-semibold text-fg">Menu</span>
+          <span className="text-ds-body font-semibold text-fg tracking-title">Menu</span>
           <button
             type="button"
             onClick={onClose}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl text-fg-muted hover:bg-surface/50 hover:text-fg transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl text-fg-muted hover:bg-surface/50 hover:text-fg transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg active:scale-[0.98]"
             aria-label="Chiudi menu"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <IconClose className="w-6 h-6" />
           </button>
         </div>
 
         <nav className="flex-1 overflow-y-auto p-4 flex flex-col gap-1" aria-label="Menu utility">
           {isAuthenticated && (
             <>
-              <DrawerLink
-                href="/notifications"
-                icon={<span className="text-lg" aria-hidden>🔔</span>}
-                active={isActive("/notifications")}
-                onClick={onClose}
-              >
+              <DrawerLink href="/notifications" icon={IconBell} active={isActive("/notifications")} onClick={onClose}>
                 Notifiche
               </DrawerLink>
-              <DrawerLink
-                href="/shop"
-                icon={<span className="text-lg" aria-hidden>🛒</span>}
-                active={isActive("/shop")}
-                onClick={onClose}
-              >
+              <DrawerLink href="/shop" icon={IconShop} active={isActive("/shop")} onClick={onClose}>
                 Shop
               </DrawerLink>
-              <DrawerLink
-                href="/support"
-                icon={<span className="text-lg" aria-hidden>💬</span>}
-                active={isActive("/support")}
-                onClick={onClose}
-              >
+              <DrawerLink href="/support" icon={IconChat} active={isActive("/support")} onClick={onClose}>
                 Supporto
               </DrawerLink>
-              <DrawerLink
-                href="/settings"
-                icon={<span className="text-lg" aria-hidden>⚙️</span>}
-                active={isActive("/settings")}
-                onClick={onClose}
-              >
+              <DrawerLink href="/settings" icon={IconCog} active={isActive("/settings")} onClick={onClose}>
                 Impostazioni
               </DrawerLink>
               {isAdmin && (
-                <DrawerLink
-                  href="/admin"
-                  icon={<span className="text-lg" aria-hidden>🛡️</span>}
-                  active={isActive("/admin")}
-                  onClick={onClose}
-                >
+                <DrawerLink href="/admin" icon={IconShield} active={isActive("/admin")} onClick={onClose}>
                   Admin
                 </DrawerLink>
               )}
@@ -163,7 +146,7 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
                   onClick={handleLogout}
                   className={`${DRAWER_LINK} text-fg-muted w-full`}
                 >
-                  <span className="text-lg" aria-hidden>🚪</span>
+                  <IconLogout className="w-5 h-5" />
                   Esci
                 </button>
               </div>
@@ -171,7 +154,7 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
           )}
           {!isAuthenticated && (
             <>
-              <DrawerLink href="/support" icon={<span className="text-lg" aria-hidden>💬</span>} active={isActive("/support")} onClick={onClose}>
+              <DrawerLink href="/support" icon={IconChat} active={isActive("/support")} onClick={onClose}>
                 Supporto
               </DrawerLink>
               <div className="mt-4 pt-4 border-t border-border dark:border-white/10">
@@ -180,7 +163,7 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
                   onClick={onClose}
                   className={`${DRAWER_LINK} text-primary font-semibold`}
                 >
-                  <span className="text-lg" aria-hidden>🔐</span>
+                  <IconLock className="w-5 h-5" />
                   Accedi
                 </Link>
               </div>

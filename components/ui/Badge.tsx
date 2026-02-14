@@ -10,15 +10,15 @@ interface BadgeProps {
 
 const variantStyles: Record<BadgeVariant, string> = {
   trending:
-    "bg-primary/20 text-primary dark:bg-primary/25 dark:text-primary border border-primary/30",
+    "bg-primary/15 text-primary border border-primary/25 dark:bg-primary/20 dark:border-primary/30",
   scadenza:
-    "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30",
+    "bg-warning-bg/90 text-warning border border-warning/30 dark:bg-warning-bg/50 dark:text-warning dark:border-warning/40",
   nuovo:
-    "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30",
+    "bg-success-bg/90 text-success border border-success/30 dark:bg-success-bg/50 dark:text-success dark:border-success/40",
   hot:
-    "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30",
+    "bg-danger-bg/90 text-danger border border-danger/30 dark:bg-danger-bg/50 dark:text-danger dark:border-danger/40",
   default:
-    "bg-surface/50 text-fg-muted border border-border dark:border-white/10",
+    "bg-surface/80 text-text-secondary border border-border dark:border-white/10 dark:bg-surface/80",
 };
 
 export default function Badge({

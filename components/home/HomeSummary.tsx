@@ -56,7 +56,7 @@ export default function HomeSummary({
           className="flex items-center gap-3 rounded-xl hover:bg-surface/50 transition-colors p-1 -m-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none"
         >
           <div
-            className="flex items-center justify-center w-11 h-11 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 shrink-0"
+            className="flex items-center justify-center w-11 h-11 rounded-xl bg-warning-bg/90 text-warning dark:bg-warning-bg/50 dark:text-warning shrink-0"
             aria-hidden
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -74,7 +74,7 @@ export default function HomeSummary({
                 #{weeklyRank}
               </p>
             ) : (
-              <p className="text-ds-body-sm text-fg-muted">Partecipa per entrare</p>
+              <p className="text-ds-body-sm text-text-muted">Partecipa per entrare</p>
             )}
           </div>
         </Link>

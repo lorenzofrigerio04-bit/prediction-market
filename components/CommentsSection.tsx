@@ -347,13 +347,13 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
           </div>
         </form>
       ) : (
-        <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-sm text-amber-700 dark:text-amber-400">
+        <div className="mb-6 p-4 bg-warning-bg/90 border border-warning/30 rounded-2xl text-sm text-warning dark:bg-warning-bg/50 dark:text-warning">
           <Link href="/auth/login" className="font-semibold underline">Accedi</Link> per commentare
         </div>
       )}
 
       {comments.length === 0 ? (
-        <div className="text-center py-8 text-fg-muted text-sm">
+        <div className="text-center py-8 text-text-muted text-sm">
           Nessun commento. Inizia tu la discussione.
         </div>
       ) : (

@@ -105,10 +105,10 @@ function validateUsernameClient(value: string): string | null {
 }
 
 const RARITY_COLORS: Record<string, string> = {
-  COMMON: "bg-gray-100 border-gray-300 dark:bg-gray-800/50 dark:border-gray-600",
-  RARE: "bg-blue-100 border-blue-300 dark:bg-blue-900/30 dark:border-blue-500",
-  EPIC: "bg-purple-100 border-purple-300 dark:bg-purple-900/30 dark:border-purple-500",
-  LEGENDARY: "bg-yellow-100 border-yellow-400 dark:bg-amber-900/30 dark:border-amber-500",
+  COMMON: "bg-surface/80 border-border dark:border-white/10",
+  RARE: "bg-primary-muted/80 border-primary/30 dark:bg-primary-muted/50 dark:border-primary/40",
+  EPIC: "bg-accent-secondary/20 border-accent-secondary/30 dark:bg-accent-secondary/30 dark:border-accent-secondary/40",
+  LEGENDARY: "bg-warning-bg/90 border-warning/30 dark:bg-warning-bg/50 dark:border-warning/40",
 };
 
 export default function ProfilePage() {
@@ -527,9 +527,9 @@ export default function ProfilePage() {
                       key={prediction.id}
                       className={`p-4 rounded-2xl border transition-colors ${
                         isWon
-                          ? "bg-emerald-500/10 border-emerald-500/30"
+                          ? "bg-success-bg/80 border-success/30 dark:bg-success-bg/50 dark:border-success/40"
                           : isLost
-                            ? "bg-red-500/10 border-red-500/30"
+                            ? "bg-danger-bg/80 border-danger/30 dark:bg-danger-bg/50 dark:border-danger/40"
                             : "glass border-border dark:border-white/10 hover:border-primary/20"
                       }`}
                     >
@@ -547,7 +547,7 @@ export default function ProfilePage() {
                             {prediction.resolved && prediction.payout !== null && (
                               <span
                                 className={
-                                  isWon ? " text-emerald-500 dark:text-emerald-400 font-semibold" : " text-red-500 dark:text-red-400 font-semibold"
+                                  isWon ? " text-success font-semibold" : " text-danger font-semibold"
                                 }
                               >
                                 {" "}
@@ -561,7 +561,7 @@ export default function ProfilePage() {
                         {prediction.resolved && (
                           <span
                             className={`shrink-0 px-3 py-1 rounded-xl text-xs font-bold ${
-                              isWon ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400" : "bg-red-500/20 text-red-600 dark:text-red-400"
+                              isWon ? "bg-success-bg/90 text-success dark:bg-success-bg/50" : "bg-danger-bg/90 text-danger dark:bg-danger-bg/50"
                             }`}
                           >
                             {isWon ? "VINTA" : "PERSA"}
