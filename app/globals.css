@@ -77,6 +77,15 @@
   --danger: 185 28 28;
   --danger-bg: 254 226 226;
   --danger-bg-o: 0.95;
+  /* Prediction block SI/NO: gradienti soft (light) — verde/teal e coral */
+  --prediction-si-from: 20 148 132;
+  --prediction-si-to: 13 148 136;
+  --prediction-si-text: 15 118 110;
+  --prediction-si-glow: 20 184 166;
+  --prediction-no-from: 239 68 68;
+  --prediction-no-to: 244 63 94;
+  --prediction-no-text: 185 28 28;
+  --prediction-no-glow: 248 113 113;
   --safe-area-inset-top: env(safe-area-inset-top, 0px);
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
@@ -118,6 +127,15 @@
   --danger: 248 113 113;
   --danger-bg: 127 29 29;
   --danger-bg-o: 0.45;
+  /* Prediction block SI/NO: gradienti soft (dark) — teal e coral con glow */
+  --prediction-si-from: 45 212 191;
+  --prediction-si-to: 20 184 166;
+  --prediction-si-text: 94 234 212;
+  --prediction-si-glow: 20 184 166;
+  --prediction-no-from: 251 146 60;
+  --prediction-no-to: 248 113 113;
+  --prediction-no-text: 254 202 202;
+  --prediction-no-glow: 248 113 113;
 }
 
 .border-default {
@@ -309,4 +327,115 @@ textarea:focus-visible {
 }
 .animate-bar-pulse {
   animation: bar-pulse 2.5s ease-in-out infinite;
+}
+
+/* —— Prediction block: aree SI/NO con gradienti soft (no neon) —— */
+.prediction-block-si {
+  background: linear-gradient(
+    90deg,
+    rgb(var(--prediction-si-from) / 0.35) 0%,
+    rgb(var(--prediction-si-to) / 0.22) 100%
+  );
+  border-color: rgb(var(--prediction-si-from) / 0.4);
+  box-shadow: 0 0 20px -4px rgb(var(--prediction-si-glow) / 0.15);
+}
+.dark .prediction-block-si {
+  background: linear-gradient(
+    90deg,
+    rgb(var(--prediction-si-from) / 0.25) 0%,
+    rgb(var(--prediction-si-to) / 0.15) 100%
+  );
+  border-color: rgb(var(--prediction-si-from) / 0.35);
+  box-shadow: 0 0 24px -6px rgb(var(--prediction-si-glow) / 0.2);
+}
+
+.prediction-block-no {
+  background: linear-gradient(
+    90deg,
+    rgb(var(--prediction-no-from) / 0.22) 0%,
+    rgb(var(--prediction-no-to) / 0.35) 100%
+  );
+  border-color: rgb(var(--prediction-no-from) / 0.4);
+  box-shadow: 0 0 20px -4px rgb(var(--prediction-no-glow) / 0.15);
+}
+.dark .prediction-block-no {
+  background: linear-gradient(
+    90deg,
+    rgb(var(--prediction-no-from) / 0.15) 0%,
+    rgb(var(--prediction-no-to) / 0.25) 100%
+  );
+  border-color: rgb(var(--prediction-no-to) / 0.35);
+  box-shadow: 0 0 24px -6px rgb(var(--prediction-no-glow) / 0.2);
+}
+
+/* Testo numeri integrati al colore dell'opzione */
+.prediction-num-si {
+  color: rgb(var(--prediction-si-text));
+}
+.dark .prediction-num-si {
+  color: rgb(var(--prediction-si-text));
+}
+.prediction-num-no {
+  color: rgb(var(--prediction-no-text));
+}
+.dark .prediction-num-no {
+  color: rgb(var(--prediction-no-text));
+}
+
+/* —— Barra tipo LED / progress bar: glow morbido, bordi soft, riempimento fluido —— */
+.prediction-bar-led {
+  background: rgb(var(--surface) / 0.5);
+  border: 1px solid rgb(var(--border) / 0.8);
+  border-radius: 9999px;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.06),
+    0 0 12px -2px rgb(var(--prediction-si-glow) / 0.12),
+    0 0 12px -2px rgb(var(--prediction-no-glow) / 0.12);
+  transition: box-shadow 0.3s ease, border-color 0.2s ease;
+}
+.dark .prediction-bar-led {
+  background: rgb(var(--surface) / 0.15);
+  border-color: rgb(255 255 255 / 0.08);
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.2),
+    0 0 16px -4px rgb(var(--prediction-si-glow) / 0.18),
+    0 0 16px -4px rgb(var(--prediction-no-glow) / 0.18);
+}
+
+.prediction-bar-fill-si {
+  background: linear-gradient(
+    90deg,
+    rgb(var(--prediction-si-from)) 0%,
+    rgb(var(--prediction-si-to)) 100%
+  );
+  border-radius: 9999px 0 0 9999px;
+  box-shadow: 0 0 12px -2px rgb(var(--prediction-si-glow) / 0.35);
+  transition: width 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+}
+.prediction-bar-fill-no {
+  background: linear-gradient(
+    90deg,
+    rgb(var(--prediction-no-from)) 0%,
+    rgb(var(--prediction-no-to)) 100%
+  );
+  border-radius: 0 9999px 9999px 0;
+  box-shadow: 0 0 12px -2px rgb(var(--prediction-no-glow) / 0.35);
+  transition: width 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+/* Leggera animazione "attiva" al cambio percentuali / hover */
+.prediction-bar-led:focus-within,
+.group:hover .prediction-bar-led {
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.06),
+    0 0 14px -2px rgb(var(--prediction-si-glow) / 0.18),
+    0 0 14px -2px rgb(var(--prediction-no-glow) / 0.18);
+}
+.dark .prediction-bar-led:focus-within,
+.dark .group:hover .prediction-bar-led {
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.2),
+    0 0 20px -4px rgb(var(--prediction-si-glow) / 0.22),
+    0 0 20px -4px rgb(var(--prediction-no-glow) / 0.22);
 }

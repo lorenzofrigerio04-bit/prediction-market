@@ -1,8 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
-import Badge from "@/components/ui/Badge";
-import { IconClock } from "@/components/ui/Icons";
+import { getCategoryIcon } from "@/lib/category-icons";
+import { IconClock, IconChat, IconCurrency, IconTrendUp } from "@/components/ui/Icons";
 
 export interface EventCardEvent {
   id: string;
@@ -12,6 +13,8 @@ export interface EventCardEvent {
   closesAt: string | Date;
   probability: number;
   totalCredits: number;
+  yesCredits?: number;
+  noCredits?: number;
   _count: {
     predictions: number;
     comments: number;
@@ -22,94 +25,177 @@ interface EventCardProps {
   event: EventCardEvent;
 }
 
+function useEventDerived(event: EventCardEvent) {
+  return useMemo(() => {
+    const total = event.totalCredits || 0;
+    const yes =
+      typeof event.yesCredits === "number"
+        ? event.yesCredits
+        : total > 0
+          ? Math.round((event.probability / 100) * total)
+          : 0;
+    const no = total - yes;
+    const yesPct = total > 0 ? Math.round((yes / total) * 100) : Math.round(event.probability);
+    const noPct = 100 - yesPct;
+    const yesMultiplier = yes > 0 ? Math.max(1, total / yes) : 1;
+    const noMultiplier = no > 0 ? Math.max(1, total / no) : 1;
+    return { yesPct, noPct, yesMultiplier, noMultiplier };
+  }, [event.totalCredits, event.yesCredits, event.noCredits, event.probability]);
+}
+
+function getTimeRemaining(closesAt: string | Date): string {
+  const timeUntilClose = new Date(closesAt).getTime() - Date.now();
+  if (timeUntilClose <= 0) return "Chiuso";
+  const hours = Math.floor(timeUntilClose / (1000 * 60 * 60));
+  const days = Math.floor(hours / 24);
+  if (days > 0) return `${days}g ${hours % 24}h`;
+  if (hours > 0) return `${hours} ore rimaste`;
+  const minutes = Math.floor(timeUntilClose / (1000 * 60));
+  return minutes > 0 ? `${minutes} min` : "Presto";
+}
+
 export default function EventCard({ event }: EventCardProps) {
+  const { yesPct, noPct, yesMultiplier, noMultiplier } = useEventDerived(event);
+  const timeLabel = getTimeRemaining(event.closesAt);
   const timeUntilClose = new Date(event.closesAt).getTime() - Date.now();
-  const hoursUntilClose = Math.floor(timeUntilClose / (1000 * 60 * 60));
-  const daysUntilClose = Math.floor(hoursUntilClose / 24);
-
-  const getTimeRemaining = () => {
-    if (timeUntilClose <= 0) return "Chiuso";
-    if (daysUntilClose > 0) return `${daysUntilClose}d`;
-    if (hoursUntilClose > 0) return `${hoursUntilClose}h`;
-    return "Presto";
-  };
-
-  const timeVariant = timeUntilClose <= 0 ? "default" : hoursUntilClose < 24 ? "scadenza" : "default";
+  const isUrgent = timeUntilClose > 0 && timeUntilClose < 24 * 60 * 60 * 1000;
+  const isClosed = timeUntilClose <= 0;
+  const higherMultiplierIsYes = yesMultiplier >= noMultiplier;
 
   return (
     <Link
       href={`/events/${event.id}`}
       className="block focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-3xl outline-none"
     >
-      <article className="glass rounded-3xl border border-border dark:border-white/10 transition-all duration-ds-normal ease-ds-ease p-5 md:p-6 h-full flex flex-col group hover:border-primary/20 hover:shadow-glow-sm">
+      <article className="glass rounded-3xl border border-border dark:border-white/10 transition-all duration-ds-normal ease-ds-ease p-5 md:p-6 h-full flex flex-col group hover:border-primary/20 hover:shadow-glow-sm active:scale-[0.995]">
+        {/* HEADER: badge categoria + scadenza */}
         <div className="flex items-center justify-between gap-2 mb-4">
-          <Badge variant="default" className="!bg-surface/80 !text-text-secondary !border-border dark:!border-white/10">
-            {event.category}
-          </Badge>
-          <Badge variant={timeVariant}>
-            <span className="inline-flex items-center gap-1.5 font-numeric">
-              <IconClock className="w-3.5 h-3.5" />
-              {getTimeRemaining()}
+          <span className="inline-flex items-center gap-1.5 shrink-0 min-w-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-semibold bg-surface border border-border dark:border-white/10 text-fg">
+            <span className="text-primary shrink-0 [&>svg]:w-4 [&>svg]:h-4">
+              {getCategoryIcon(event.category)}
             </span>
-          </Badge>
+            <span className="truncate">{event.category}</span>
+          </span>
+          <span
+            className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold font-numeric ${
+              isClosed
+                ? "bg-surface text-fg-muted border border-border dark:border-white/10"
+                : isUrgent
+                  ? "bg-warning-bg/90 text-warning border border-warning/30 dark:bg-warning-bg/50 dark:text-warning dark:border-warning/40"
+                  : "bg-surface text-fg border border-border dark:border-white/10"
+            }`}
+          >
+            <IconClock className="w-4 h-4" aria-hidden />
+            {timeLabel}
+          </span>
         </div>
 
-        <h3 className="text-ds-h3 font-bold text-fg mb-2 line-clamp-2 leading-snug tracking-title group-hover:text-primary transition-colors">
+        <h3 className="text-ds-h2 font-bold text-fg mb-1 line-clamp-2 leading-snug tracking-title group-hover:text-primary transition-colors">
           {event.title}
         </h3>
 
         {event.description && (
-          <p className="text-sm text-text-secondary mb-4 line-clamp-2 leading-relaxed flex-grow">
+          <p className="text-ds-body-sm text-fg-muted mb-4 line-clamp-2 leading-relaxed">
             {event.description}
           </p>
         )}
 
-        <div className="mb-4 glass-elevated rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
-              Previsione
-            </span>
-            <span className="text-2xl md:text-3xl font-extrabold text-primary font-numeric">
-              {event.probability.toFixed(0)}%
-            </span>
+        {/* BLOCCO PREVISIONE — SI / NO: gradienti soft, numeri integrati, barra LED */}
+        <div className="mb-4">
+          <div className="grid grid-cols-2 gap-0 mb-3">
+            {/* SINISTRA — SÌ: gradiente teal/verde, glow morbido */}
+            <div className="prediction-block-si rounded-2xl rounded-tr-none rounded-br-none border border-r-0 p-3 md:p-4">
+              <div className="prediction-num-si text-2xl md:text-3xl font-extrabold font-numeric tabular-nums">
+                {yesPct}%
+              </div>
+              <div className="prediction-num-si text-ds-label font-bold uppercase tracking-label mt-0.5 opacity-90">
+                SÌ
+              </div>
+              <div className="mt-2 text-ds-caption text-fg-muted font-medium">
+                Moltiplicatore
+              </div>
+              <div
+                className={`prediction-num-si text-xl md:text-2xl font-extrabold font-numeric tabular-nums mt-0.5 ${
+                  higherMultiplierIsYes ? "opacity-100" : "opacity-80"
+                }`}
+              >
+                ×{yesMultiplier.toFixed(2)}
+              </div>
+            </div>
+            {/* DESTRA — NO: gradiente coral/rosso, glow morbido */}
+            <div className="prediction-block-no rounded-2xl rounded-tl-none rounded-bl-none border border-l-0 p-3 md:p-4">
+              <div className="prediction-num-no text-2xl md:text-3xl font-extrabold font-numeric tabular-nums">
+                {noPct}%
+              </div>
+              <div className="prediction-num-no text-ds-label font-bold uppercase tracking-label mt-0.5 opacity-90">
+                NO
+              </div>
+              <div className="mt-2 text-ds-caption text-fg-muted font-medium">
+                Moltiplicatore
+              </div>
+              <div
+                className={`prediction-num-no text-xl md:text-2xl font-extrabold font-numeric tabular-nums mt-0.5 ${
+                  !higherMultiplierIsYes ? "opacity-100" : "opacity-80"
+                }`}
+              >
+                ×{noMultiplier.toFixed(2)}
+              </div>
+            </div>
           </div>
-          <div className="w-full h-2.5 bg-surface/50 rounded-full overflow-hidden border border-border dark:border-white/10">
+
+          {/* Barra centrale tipo LED: glow, bordi morbidi, riempimento fluido */}
+          <div
+            className="prediction-bar-led h-3 w-full flex animate-bar-pulse"
+            role="presentation"
+            aria-hidden
+          >
             <div
-              className="h-full bg-gradient-to-r from-primary to-primary-hover rounded-full transition-all duration-500 shadow-glow-sm"
-              style={{ width: `${Math.max(0, Math.min(100, event.probability))}%` }}
+              className="prediction-bar-fill-si h-full shrink-0 transition-[width] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)]"
+              style={{ width: `${yesPct}%` }}
+            />
+            <div
+              className="prediction-bar-fill-no h-full shrink-0 transition-[width] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)]"
+              style={{ width: `${noPct}%` }}
             />
           </div>
-          <p className="text-xs text-text-muted mt-1.5 font-medium">
-            <span className="text-primary font-bold">{event.probability.toFixed(0)}%</span> SÌ
+          <p className="text-ds-caption text-fg-subtle mt-1.5 text-center">
+            Moltiplicatore dinamico
           </p>
         </div>
 
-        <div className="pt-4 border-t border-border dark:border-white/10">
-          <div className="grid grid-cols-3 gap-2">
-            <div className="text-center glass rounded-xl py-2.5 px-2 border border-border dark:border-white/10">
-              <div className="text-lg md:text-xl font-bold text-fg font-numeric">
-                {event._count.predictions}
-              </div>
-              <div className="text-ds-caption text-text-muted font-semibold uppercase tracking-label">
-                Previsioni
-              </div>
-            </div>
-            <div className="text-center glass rounded-xl py-2.5 px-2 border border-border dark:border-white/10">
-              <div className="text-lg md:text-xl font-bold text-fg font-numeric">
-                {event._count.comments}
-              </div>
-              <div className="text-ds-caption text-text-muted font-semibold uppercase tracking-label">
-                Commenti
-              </div>
-            </div>
-            <div className="text-center glass-elevated rounded-xl py-2.5 px-2">
-              <div className="text-base md:text-lg font-bold text-primary font-numeric">
-                {event.totalCredits > 0 ? (event.totalCredits / 1000).toFixed(1) + "k" : "0"}
-              </div>
-              <div className="text-ds-caption text-primary font-semibold uppercase tracking-label">
-                Crediti
-              </div>
-            </div>
+        {/* CREDITI TOTALI IN GIOCO — formato esteso */}
+        <div className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-surface border border-border dark:border-white/10 mb-4">
+          <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
+          <span className="text-lg md:text-xl font-bold text-fg font-numeric tabular-nums">
+            {event.totalCredits.toLocaleString("it-IT")} CREDITI IN GIOCO
+          </span>
+        </div>
+
+        {/* FOOTER: tre pill */}
+        <div className="grid grid-cols-3 gap-2 mt-auto pt-3 border-t border-border dark:border-white/10">
+          <div className="flex flex-col items-center justify-center rounded-xl py-2.5 px-2 glass border border-border dark:border-white/10 text-center">
+            <span className="text-base md:text-lg font-bold text-fg font-numeric tabular-nums">
+              {event._count.predictions}
+            </span>
+            <span className="text-ds-caption text-fg-muted font-semibold uppercase tracking-label">
+              Previsioni
+            </span>
+          </div>
+          <div className="flex flex-col items-center justify-center rounded-xl py-2.5 px-2 glass border border-border dark:border-white/10 text-center">
+            <IconChat className="w-4 h-4 text-fg-muted mx-auto mb-0.5" aria-hidden />
+            <span className="text-base md:text-lg font-bold text-fg font-numeric tabular-nums">
+              {event._count.comments}
+            </span>
+            <span className="text-ds-caption text-fg-muted font-semibold uppercase tracking-label">
+              Commenti
+            </span>
+          </div>
+          <div className="flex flex-col items-center justify-center rounded-xl py-2.5 px-2 glass border border-border dark:border-white/10 text-center">
+            <IconTrendUp className="w-4 h-4 text-primary shrink-0 mx-auto mb-0.5" aria-hidden />
+            <span className="text-base md:text-lg font-bold text-fg font-numeric tabular-nums">—</span>
+            <span className="text-ds-caption text-fg-muted font-semibold uppercase tracking-label">
+              Trend
+            </span>
           </div>
         </div>
       </article>
