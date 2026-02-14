@@ -70,8 +70,8 @@ export default function SignupPage() {
       if (result?.error) {
         setError("Registrazione completata, ma errore durante il login");
       } else {
-        // Redirect a pieno caricamento così il cookie di sessione viene inviato e l'header mostra lo stato loggato
-        window.location.href = "/";
+        await new Promise((r) => setTimeout(r, 300));
+        window.location.href = "/auth/success?callbackUrl=/";
       }
     } catch (err: any) {
       console.error("Errore:", err);
@@ -85,7 +85,7 @@ export default function SignupPage() {
     setError("");
     setIsLoading(true);
     try {
-      await signIn("google", { callbackUrl: "/" });
+      await signIn("google", { callbackUrl: "/auth/success?callbackUrl=/" });
     } catch (err) {
       setError("Errore durante la registrazione con Google");
       setIsLoading(false);
@@ -93,19 +93,19 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-bg flex flex-col">
       <Header />
       <div className="flex-1 flex items-center justify-center px-4 py-8">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
-        <h1 className="text-3xl font-bold text-center text-gray-900 mb-2">
+        <div className="max-w-md w-full glass rounded-3xl border border-border dark:border-white/10 p-8">
+        <h1 className="text-3xl font-bold text-center text-fg mb-2">
           Registrati
         </h1>
-        <p className="text-center text-gray-600 mb-8">
+        <p className="text-center text-fg-muted mb-8">
           Crea il tuo account per iniziare
         </p>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-600 dark:text-red-400 text-sm">
             {error}
           </div>
         )}
@@ -114,7 +114,7 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="name"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-fg-muted mb-1"
             >
               Nome (opzionale)
             </label>
@@ -123,7 +123,7 @@ export default function SignupPage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full min-h-[48px] px-4 py-3 border border-border dark:border-white/10 rounded-2xl bg-surface/50 text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary"
               placeholder="Il tuo nome"
             />
           </div>
@@ -131,7 +131,7 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-fg-muted mb-1"
             >
               Email
             </label>
@@ -141,7 +141,7 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full min-h-[48px] px-4 py-3 border border-border dark:border-white/10 rounded-2xl bg-surface/50 text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary"
               placeholder="tua@email.com"
             />
           </div>
@@ -149,7 +149,7 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-fg-muted mb-1"
             >
               Password
             </label>
@@ -160,10 +160,10 @@ export default function SignupPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full min-h-[48px] px-4 py-3 border border-border dark:border-white/10 rounded-2xl bg-surface/50 text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary"
               placeholder="••••••••"
             />
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-fg-muted">
               Minimo 6 caratteri
             </p>
           </div>
@@ -171,7 +171,7 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-fg-muted mb-1"
             >
               Conferma Password
             </label>
@@ -182,7 +182,7 @@ export default function SignupPage() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full min-h-[48px] px-4 py-3 border border-border dark:border-white/10 rounded-2xl bg-surface/50 text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary"
               placeholder="••••••••"
             />
           </div>
@@ -190,7 +190,7 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full min-h-[48px] bg-primary text-white py-3 px-4 rounded-2xl font-semibold hover:bg-primary-hover focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg disabled:opacity-50 transition-colors"
           >
             {isLoading ? "Registrazione in corso..." : "Registrati"}
           </button>
@@ -199,17 +199,17 @@ export default function SignupPage() {
         <div className="mt-6">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <div className="w-full border-t border-border dark:border-white/10"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Oppure</span>
+              <span className="px-2 bg-transparent text-fg-muted">Oppure</span>
             </div>
           </div>
 
           <button
             onClick={handleGoogleSignIn}
             disabled={isLoading}
-            className="mt-4 w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="mt-4 w-full min-h-[48px] flex items-center justify-center gap-3 glass border border-border dark:border-white/10 text-fg py-3 px-4 rounded-2xl font-medium hover:border-primary/20 focus:ring-2 focus:ring-primary disabled:opacity-50 transition-colors"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -233,14 +233,25 @@ export default function SignupPage() {
           </button>
         </div>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
+        <p className="mt-6 text-center text-sm text-fg-muted">
           Hai già un account?{" "}
           <Link
             href="/auth/login"
-            className="text-blue-600 hover:text-blue-700 font-medium focus-visible:underline"
+            className="text-primary hover:text-primary-hover font-medium focus-visible:underline"
           >
             Accedi
           </Link>
+        </p>
+        <p className="mt-4 text-center text-xs text-fg-muted">
+          Registrandoti accetti i{" "}
+          <Link href="/legal/terms" className="text-primary hover:underline focus-visible:ring-2 focus-visible:ring-primary rounded">
+            Termini di servizio
+          </Link>
+          {" "}e la{" "}
+          <Link href="/legal/privacy" className="text-primary hover:underline focus-visible:ring-2 focus-visible:ring-primary rounded">
+            Privacy policy
+          </Link>
+          .
         </p>
         </div>
       </div>

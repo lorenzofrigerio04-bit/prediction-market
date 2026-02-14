@@ -48,6 +48,7 @@ model User {
   missions      UserMission[]
   notifications Notification[]
   createdEvents Event[] @relation("EventCreator")
+  eventFollows  EventFollower[]
   
   // NextAuth relazioni
   accounts      Account[]
@@ -121,6 +122,14 @@ model Event {
   // Risoluzione
   resolved    Boolean  @default(false)
   outcome     String? // "YES" o "NO"
+  resolutionSourceUrl String? // URL fonte della risoluzione
+  resolutionNotes     String? // note sulla risoluzione
+  resolutionDisputedAt DateTime? // quando è stata contestata
+  resolutionDisputedBy String? // userId che ha contestato
+  
+  // Stagione/torneo (opzionale)
+  seasonId    String?
+  season      Season?  @relation(fields: [seasonId], references: [id])
   
   // Statistiche aggregate
   yesPredictions Int   @default(0) // numero previsioni SÌ
@@ -139,11 +148,77 @@ model Event {
   // Relazioni
   predictions   Prediction[]
   comments      Comment[]
+  followers     EventFollower[]
   
   @@index([category])
   @@index([closesAt])
   @@index([resolved])
+  @@index([seasonId])
   @@map("events")
+}
+
+// ============================================
+// EVENT FOLLOWER MODEL (Segui evento)
+// ============================================
+model EventFollower {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, eventId])
+  @@index([userId])
+  @@index([eventId])
+  @@map("event_followers")
+}
+
+// ============================================
+// SEASON MODEL (Stagioni/tornei)
+// ============================================
+model Season {
+  id        String   @id @default(cuid())
+  name      String
+  startAt   DateTime
+  endAt     DateTime
+  createdAt DateTime @default(now())
+  
+  events    Event[]
+  @@map("seasons")
+}
+
+// ============================================
+// AUDIT LOG MODEL (Azioni admin)
+// ============================================
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String? // null se azione di sistema
+  action     String
+  entityType String
+  entityId   String?
+  payload    Json? // dati aggiuntivi
+  createdAt  DateTime @default(now())
+  
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================
+// SHOP ITEM MODEL (Negozio crediti)
+// ============================================
+model ShopItem {
+  id            String   @id @default(cuid())
+  name          String
+  type          String   // CREDIT_BUNDLE | COSMETIC | TICKET
+  priceCredits  Int
+  description   String?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  
+  @@map("shop_items")
 }
 
 // ============================================
@@ -197,6 +272,9 @@ model Comment {
   
   // Contenuto
   content     String
+  
+  // Moderazione
+  hidden      Boolean   @default(false)
   
   // Reazioni
   reactions   CommentReaction[]
@@ -317,6 +395,9 @@ model Mission {
   
   // Obiettivo
   target      Int // es. "fai 3 previsioni" -> target = 3
+  
+  // Categoria opzionale: missione conta solo previsioni in questa categoria (es. "Tecnologia")
+  category    String?
   
   // Ricompensa
   reward      Int // crediti guadagnati

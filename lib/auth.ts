@@ -16,31 +16,40 @@ const credentialsProvider = CredentialsProvider({
       throw new Error("Email e password sono obbligatori");
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: credentials.email },
-    });
+    try {
+      const user = await prisma.user.findUnique({
+        where: { email: credentials.email },
+      });
 
-    if (!user || !user.password) {
-      throw new Error("Credenziali non valide");
+      if (!user || !user.password) {
+        throw new Error("Credenziali non valide");
+      }
+
+      const isPasswordValid = await bcrypt.compare(
+        credentials.password,
+        user.password
+      );
+
+      if (!isPasswordValid) {
+        throw new Error("Credenziali non valide");
+      }
+
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        image: user.image,
+        role: user.role,
+        onboardingCompleted: user.onboardingCompleted,
+      };
+    } catch (err: unknown) {
+      // Errore di connessione DB / Prisma: non esporre dettagli, ma logga per debug
+      if (err && typeof err === "object" && "code" in err) {
+        console.error("[auth] Errore DB in authorize:", err);
+        throw new Error("Errore di connessione al server. Riprova tra poco.");
+      }
+      throw err;
     }
-
-    const isPasswordValid = await bcrypt.compare(
-      credentials.password,
-      user.password
-    );
-
-    if (!isPasswordValid) {
-      throw new Error("Credenziali non valide");
-    }
-
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      image: user.image,
-      role: user.role,
-      onboardingCompleted: user.onboardingCompleted,
-    };
   },
 });
 
@@ -59,6 +68,8 @@ const providers: NextAuthOptions["providers"] = [
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers,
+  // In produzione (Vercel) assicurati che NEXTAUTH_URL sia l'URL reale (es. https://tuo-app.vercel.app)
+  // e che NEXTAUTH_SECRET sia impostato (es. openssl rand -base64 32).
   pages: {
     signIn: "/auth/login",
     signOut: "/auth/login",
@@ -68,6 +79,7 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 giorni
   },
+  // Post-deploy: in produzione cookie __Secure-*, httpOnly, sameSite: lax, secure (vedi DEPLOY_AND_BETA.md Fase 6)
   cookies: {
     sessionToken: {
       name: process.env.NODE_ENV === "production"
@@ -89,23 +101,28 @@ export const authOptions: NextAuthOptions = {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: user.id },
-            select: { role: true, onboardingCompleted: true },
+            select: { role: true, onboardingCompleted: true, emailVerified: true },
           });
           token.role = dbUser?.role ?? (user as { role?: string }).role ?? "USER";
           token.onboardingCompleted = dbUser?.onboardingCompleted ?? (user as { onboardingCompleted?: boolean }).onboardingCompleted ?? false;
+          token.emailVerified = dbUser?.emailVerified ? dbUser.emailVerified.getTime() : null;
         } catch {
           token.role = (user as { role?: string }).role ?? "USER";
           token.onboardingCompleted = (user as { onboardingCompleted?: boolean }).onboardingCompleted ?? false;
+          token.emailVerified = (user as { emailVerified?: Date | null }).emailVerified
+            ? (user as { emailVerified: Date }).emailVerified.getTime()
+            : null;
         }
       } else if (token.id) {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.id as string },
-            select: { role: true, onboardingCompleted: true },
+            select: { role: true, onboardingCompleted: true, emailVerified: true },
           });
           if (dbUser) {
             token.role = dbUser.role;
             token.onboardingCompleted = dbUser.onboardingCompleted;
+            token.emailVerified = dbUser.emailVerified ? dbUser.emailVerified.getTime() : null;
           }
         } catch {
           // Mantieni i valori già nel token
@@ -118,13 +135,24 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.role = (token.role as string) || "USER";
         session.user.onboardingCompleted = token.onboardingCompleted ?? false;
+        session.user.emailVerified = token.emailVerified ? new Date(token.emailVerified) : null;
       }
       return session;
     },
   },
   events: {
-    async signIn() {
-      // Cookie di sessione impostato da NextAuth dopo questo evento
+    async signIn({ user, account }) {
+      // Google verifica già l'email: segna come verificata in DB
+      if (account?.provider === "google" && user?.id) {
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { emailVerified: new Date() },
+          });
+        } catch (e) {
+          console.error("[auth] Impossibile aggiornare emailVerified per Google user:", e);
+        }
+      }
     },
   },
   secret: process.env.NEXTAUTH_SECRET,

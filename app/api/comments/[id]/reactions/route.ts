@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { track } from "@/lib/analytics";
 
 // POST - Add or toggle a reaction
 export async function POST(
@@ -74,6 +75,12 @@ export async function POST(
           type,
         },
       });
+
+      track(
+        "REACTION_ADDED",
+        { userId: session.user.id, commentId, reactionType: type, eventId: comment.eventId },
+        { request }
+      );
 
       return NextResponse.json({
         success: true,

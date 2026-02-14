@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { track } from "@/lib/analytics";
 
 export const MISSION_TYPES = {
   MAKE_PREDICTIONS: "MAKE_PREDICTIONS",
@@ -131,13 +132,15 @@ export async function ensureUserMissionsForPeriod(
 
 /**
  * Incrementa il progresso per le missioni del tipo indicato e del periodo corrente.
+ * Se missionCategory è fornito, per le missioni con category impostata conta solo se mission.category === missionCategory.
  * Se il progresso raggiunge il target, completa la missione e accredita la ricompensa.
  */
 export async function updateMissionProgress(
   prisma: PrismaClient,
   userId: string,
   missionType: string,
-  amount: number = 1
+  amount: number = 1,
+  missionCategory?: string | null
 ): Promise<{ completed: Array<{ name: string; reward: number }> }> {
   if (amount < 1) return { completed: [] };
 
@@ -148,7 +151,15 @@ export async function updateMissionProgress(
   const weeklyEnd = getEndOfWeek(now);
 
   const missions = await prisma.mission.findMany({
-    where: { active: true, type: missionType, period: { in: ["DAILY", "WEEKLY"] } },
+    where: {
+      active: true,
+      type: missionType,
+      period: { in: ["DAILY", "WEEKLY"] },
+      // Missioni senza category contano sempre; con category solo se corrisponde
+      ...(missionCategory !== undefined && missionCategory !== null
+        ? { OR: [{ category: null }, { category: missionCategory }] }
+        : {}),
+    },
   });
 
   const completed: Array<{ name: string; reward: number }> = [];
@@ -177,6 +188,9 @@ export async function updateMissionProgress(
       });
     }
     if (um.completed) continue;
+
+    // Per missioni con category, incrementa solo se la categoria corrisponde
+    if (mission.category != null && mission.category !== missionCategory) continue;
 
     const newProgress = Math.min(um.progress + amount, mission.target);
     const justCompleted = newProgress >= mission.target;
@@ -208,6 +222,22 @@ export async function updateMissionProgress(
           referenceType: "mission",
           balanceAfter: updatedUser.credits,
         },
+      });
+      await prisma.notification.create({
+        data: {
+          userId,
+          type: "MISSION_COMPLETED",
+          title: "Missione completata",
+          message: `Missione completata: +${mission.reward} crediti.`,
+          referenceId: um.id,
+          referenceType: "mission",
+        },
+      });
+      track("MISSION_COMPLETED", {
+        userId,
+        missionId: mission.id,
+        period: mission.period,
+        amount: mission.reward,
       });
       completed.push({ name: mission.name, reward: mission.reward });
     } else {

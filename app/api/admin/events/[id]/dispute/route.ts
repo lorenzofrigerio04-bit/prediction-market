@@ -1,0 +1,151 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/admin";
+import { createAuditLog } from "@/lib/audit";
+
+const DISPUTE_WINDOW_MS = 2 * 60 * 60 * 1000; // 2 ore
+
+function isInDisputeWindow(resolvedAt: Date | null): boolean {
+  if (!resolvedAt) return false;
+  return Date.now() - resolvedAt.getTime() <= DISPUTE_WINDOW_MS;
+}
+
+/**
+ * POST /api/admin/events/[id]/dispute
+ * Body: { action: "APPROVE" | "REJECT" | "CORRECT", newOutcome?: "YES" | "NO" }
+ * Approva = conferma risoluzione (clear dispute flag).
+ * Rifiuta = segna come disputato.
+ * Correggi = annulla risoluzione e riporta evento a "da risolvere" (revert payouts).
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const admin = await requireAdmin();
+    const eventId = params.id;
+    const body = await request.json();
+    const { action, newOutcome } = body;
+
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      include: { predictions: { where: { resolved: true } } },
+    });
+
+    if (!event) {
+      return NextResponse.json({ error: "Evento non trovato" }, { status: 404 });
+    }
+    if (!event.resolved || !event.resolvedAt) {
+      return NextResponse.json(
+        { error: "L'evento non è risolto" },
+        { status: 400 }
+      );
+    }
+    if (!isInDisputeWindow(event.resolvedAt)) {
+      return NextResponse.json(
+        { error: "Finestra dispute scaduta (2h dalla risoluzione)" },
+        { status: 400 }
+      );
+    }
+
+    if (action === "APPROVE") {
+      await prisma.event.update({
+        where: { id: eventId },
+        data: {
+          resolutionDisputedAt: null,
+          resolutionDisputedBy: null,
+        },
+      });
+      await createAuditLog(prisma, {
+        userId: admin.id,
+        action: "DISPUTE_APPROVE",
+        entityType: "event",
+        entityId: eventId,
+        payload: { title: event.title, outcome: event.outcome },
+      });
+      return NextResponse.json({ success: true, message: "Risoluzione approvata" });
+    }
+
+    if (action === "REJECT") {
+      await prisma.event.update({
+        where: { id: eventId },
+        data: {
+          resolutionDisputedAt: new Date(),
+          resolutionDisputedBy: admin.id,
+        },
+      });
+      await createAuditLog(prisma, {
+        userId: admin.id,
+        action: "DISPUTE_REJECT",
+        entityType: "event",
+        entityId: eventId,
+        payload: { title: event.title, outcome: event.outcome },
+      });
+      return NextResponse.json({ success: true, message: "Risoluzione contestata" });
+    }
+
+    if (action === "CORRECT" && (newOutcome === "YES" || newOutcome === "NO")) {
+      // Revert: ripristina crediti e previsioni, poi imposta evento non risolto
+      const winningOutcome = event.outcome!;
+      for (const p of event.predictions) {
+        if (p.won && p.payout != null) {
+          await prisma.user.update({
+            where: { id: p.userId },
+            data: {
+              credits: { decrement: p.payout },
+              totalEarned: { decrement: p.payout },
+            },
+          });
+          await prisma.transaction.deleteMany({
+            where: {
+              userId: p.userId,
+              referenceId: p.id,
+              referenceType: "prediction",
+              type: "PREDICTION_WIN",
+            },
+          });
+        }
+        await prisma.prediction.update({
+          where: { id: p.id },
+          data: {
+            resolved: false,
+            won: null,
+            payout: null,
+            resolvedAt: null,
+          },
+        });
+      }
+      await prisma.event.update({
+        where: { id: eventId },
+        data: {
+          resolved: false,
+          outcome: null,
+          resolvedAt: null,
+          resolutionDisputedAt: null,
+          resolutionDisputedBy: null,
+        },
+      });
+      await createAuditLog(prisma, {
+        userId: admin.id,
+        action: "DISPUTE_CORRECT",
+        entityType: "event",
+        entityId: eventId,
+        payload: { title: event.title, previousOutcome: event.outcome, newOutcome },
+      });
+      return NextResponse.json({
+        success: true,
+        message: "Risoluzione annullata. Puoi risolvere nuovamente con il nuovo outcome.",
+      });
+    }
+
+    return NextResponse.json(
+      { error: "Azione non valida. Usa APPROVE, REJECT o CORRECT (con newOutcome per CORRECT)." },
+      { status: 400 }
+    );
+  } catch (error: any) {
+    if (error.message === "Non autenticato" || error.message?.includes("Accesso negato")) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+    return NextResponse.json({ error: error.message || "Errore" }, { status: 500 });
+  }
+}

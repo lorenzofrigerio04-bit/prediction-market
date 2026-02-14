@@ -1,12 +1,29 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+
+const AUTH_LOGIN_LIMIT = 10; // richieste login per IP per minuto
 
 /**
- * Route protette: richiedono login. Redirect a /auth/login se non autenticati.
- * Gli header di sicurezza (X-Frame-Options, ecc.) sono in next.config.js per tutte le risposte.
+ * Rate limit su login (POST a callback credentials).
+ * withAuth protegge le route nel matcher e gestisce redirect a signIn.
  */
 export default withAuth(
-  function middleware() {
+  function middleware(req) {
+    const pathname = req.nextUrl.pathname;
+    if (
+      pathname === "/api/auth/callback/credentials" &&
+      req.method === "POST"
+    ) {
+      const ip = getClientIp(req as Parameters<typeof getClientIp>[0]);
+      const result = rateLimit(`login:${ip}`, AUTH_LOGIN_LIMIT);
+      if (result) {
+        return NextResponse.json(
+          { error: "Troppe richieste di accesso. Riprova tra un minuto." },
+          { status: 429 }
+        );
+      }
+    }
     return NextResponse.next();
   },
   {
@@ -16,6 +33,7 @@ export default withAuth(
 
 export const config = {
   matcher: [
+    "/api/auth/callback/credentials",
     "/admin/:path*",
     "/profile",
     "/profile/:path*",

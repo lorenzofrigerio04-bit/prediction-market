@@ -30,6 +30,14 @@ Piattaforma italiana di previsioni sociali con crediti virtuali.
 
 4. Apri [http://localhost:3000](http://localhost:3000) nel browser.
 
+## Deploy su Vercel – Passi da fare tu
+
+Per **Google Login**, **verifica email** (Resend) e **variabili d’ambiente su Vercel**, segui la guida:
+
+- **[docs/PASSI_DA_FARE.md](docs/PASSI_DA_FARE.md)** – cosa fare su Vercel, Google Cloud e Resend; cosa scrivere in chat quando hai finito o quando cambi dominio/database.
+
+Riferimento variabili: `.env.example`.
+
 ## Script Disponibili
 
 - `npm run dev` - Avvia il server di sviluppo

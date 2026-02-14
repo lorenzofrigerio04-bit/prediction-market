@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
+import { createAuditLog } from "@/lib/audit";
 import { updateMissionProgress } from "@/lib/missions";
 import { checkAndAwardBadges } from "@/lib/badges";
 
@@ -13,8 +14,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireAdmin();
-
+    const admin = await requireAdmin();
     const eventId = params.id;
     const body = await request.json();
     const { outcome } = body;
@@ -54,10 +54,11 @@ export async function POST(
     // Risolvi l'evento e calcola i payout
     const resolvedAt = new Date();
 
-    // Calcola il totale dei crediti per ogni outcome
+    // Pool totale = tutti i crediti investiti sull'evento
     const yesTotal = event.yesCredits;
     const noTotal = event.noCredits;
     const totalCredits = event.totalCredits;
+    const winningSideTotal = outcome === "YES" ? yesTotal : noTotal;
 
     // Aggiorna l'evento
     await prisma.event.update({
@@ -77,27 +78,16 @@ export async function POST(
       },
     });
 
-    // Calcola i payout per ogni previsione
+    // Payout proporzionale: (stake_personale / stake_totale_vincente) * pool_totale
     for (const prediction of predictions) {
       const won = prediction.outcome === outcome;
       let payout = 0;
 
-      if (won) {
-        // Se ha vinto, calcola il payout basato sulla probabilità inversa
-        if (outcome === "YES" && yesTotal > 0) {
-          // Payout = (crediti investiti / crediti totali su YES) * crediti totali su NO + crediti investiti
-          payout = Math.floor(
-            (prediction.credits / yesTotal) * noTotal + prediction.credits
-          );
-        } else if (outcome === "NO" && noTotal > 0) {
-          // Payout = (crediti investiti / crediti totali su NO) * crediti totali su YES + crediti investiti
-          payout = Math.floor(
-            (prediction.credits / noTotal) * yesTotal + prediction.credits
-          );
-        } else {
-          // Se non ci sono previsioni sull'altro outcome, restituisci solo i crediti investiti
-          payout = prediction.credits;
-        }
+      if (won && winningSideTotal > 0 && totalCredits > 0) {
+        payout = Math.floor(
+          (prediction.credits / winningSideTotal) * totalCredits
+        );
+        if (payout < prediction.credits) payout = prediction.credits; // minimo: restituzione stake
       }
 
       // Aggiorna la previsione
@@ -209,8 +199,8 @@ export async function POST(
       );
     }
 
-    // Crea notifiche per tutti gli utenti che hanno fatto previsioni
-    const notificationPromises = predictions.map((prediction) =>
+    // Notifiche per chi ha fatto previsioni
+    const predictorNotifications = predictions.map((prediction) =>
       prisma.notification.create({
         data: {
           userId: prediction.userId,
@@ -223,7 +213,36 @@ export async function POST(
       })
     );
 
-    await Promise.all(notificationPromises);
+    // Notifiche per i follower che non hanno fatto previsione (evitare duplicati)
+    const predictorIds = new Set(predictions.map((p) => p.userId));
+    const followers = await prisma.eventFollower.findMany({
+      where: { eventId },
+      select: { userId: true },
+    });
+    const followerNotifications = followers
+      .filter((f) => !predictorIds.has(f.userId))
+      .map((f) =>
+        prisma.notification.create({
+          data: {
+            userId: f.userId,
+            type: "EVENT_RESOLVED",
+            title: "Evento risolto",
+            message: `L'evento "${event.title}" è stato risolto: ${outcome === "YES" ? "SÌ" : "NO"}.`,
+            referenceId: eventId,
+            referenceType: "event",
+          },
+        })
+      );
+
+    await Promise.all([...predictorNotifications, ...followerNotifications]);
+
+    await createAuditLog(prisma, {
+      userId: admin.id,
+      action: "EVENT_RESOLVE",
+      entityType: "event",
+      entityId: eventId,
+      payload: { outcome, title: event.title },
+    });
 
     return NextResponse.json({
       success: true,

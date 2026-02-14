@@ -4,6 +4,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { updateMissionProgress } from "@/lib/missions";
 import { checkAndAwardBadges } from "@/lib/badges";
+import { rateLimit } from "@/lib/rate-limit";
+import { track } from "@/lib/analytics";
+
+const PREDICTIONS_LIMIT = 15; // previsioni per user per minuto
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +17,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Devi essere autenticato per fare una previsione" },
         { status: 401 }
+      );
+    }
+
+    const limited = rateLimit(`predictions:${session.user.id}`, PREDICTIONS_LIMIT);
+    if (limited) {
+      return NextResponse.json(
+        { error: "Troppe previsioni in poco tempo. Riprova tra un minuto." },
+        { status: 429 }
       );
     }
 
@@ -174,11 +186,23 @@ export async function POST(request: NextRequest) {
 
     // Missioni e badge (fuori dalla transazione per non bloccare la risposta)
     const userId = session.user.id;
-    updateMissionProgress(prisma, userId, "MAKE_PREDICTIONS", 1).catch((e) =>
+    updateMissionProgress(prisma, userId, "MAKE_PREDICTIONS", 1, event.category).catch((e) =>
       console.error("Mission progress update error:", e)
     );
     checkAndAwardBadges(prisma, userId).catch((e) =>
       console.error("Badge check error:", e)
+    );
+
+    track(
+      "PREDICTION_PLACED",
+      {
+        userId,
+        eventId: event.id,
+        amount: credits,
+        outcome,
+        category: event.category,
+      },
+      { request }
     );
 
     return NextResponse.json(

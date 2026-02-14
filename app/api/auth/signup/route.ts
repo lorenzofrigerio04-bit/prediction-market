@@ -1,8 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "crypto";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { track } from "@/lib/analytics";
+import { sendVerificationEmail } from "@/lib/email";
+
+const SIGNUP_LIMIT = 5; // richieste signup per IP per minuto
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const limited = rateLimit(`signup:${ip}`, SIGNUP_LIMIT);
+  if (limited) {
+    return NextResponse.json(
+      { error: "Troppe richieste di registrazione. Riprova tra un minuto." },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { email, password, name } = body;
@@ -29,7 +44,7 @@ export async function POST(request: NextRequest) {
     // Hash della password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Crea l'utente
+    // Crea l'utente (emailVerified = null finché non clicca il link)
     const user = await prisma.user.create({
       data: {
         email,
@@ -38,6 +53,18 @@ export async function POST(request: NextRequest) {
         credits: 1000, // crediti iniziali
       },
     });
+
+    track("USER_SIGNUP", { userId: user.id }, { request });
+
+    // Token per verifica email (scadenza 24h)
+    const verifyToken = randomBytes(32).toString("hex");
+    const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await prisma.verificationToken.create({
+      data: { identifier: email, token: verifyToken, expires: verifyExpires },
+    });
+    const baseUrl = process.env.NEXTAUTH_URL ?? request.nextUrl?.origin ?? "http://localhost:3000";
+    const verifyUrl = `${baseUrl}/auth/verify-email?token=${encodeURIComponent(verifyToken)}`;
+    await sendVerificationEmail(email, verifyUrl);
 
     return NextResponse.json(
       {

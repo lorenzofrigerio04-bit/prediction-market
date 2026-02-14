@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
+import { track } from "@/lib/analytics";
+
+const COMMENTS_LIMIT = 20; // commenti per user per minuto
 
 // GET - Fetch comments for an event
 export async function GET(request: NextRequest) {
@@ -16,11 +20,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch all top-level comments (no parent) with replies and reactions
+    // Fetch all top-level comments (no parent) with replies and reactions; escludi nascosti
     const comments = await prisma.comment.findMany({
       where: {
         eventId,
         parentId: null, // Only top-level comments
+        hidden: false,
       },
       include: {
         user: {
@@ -31,6 +36,7 @@ export async function GET(request: NextRequest) {
           },
         },
         replies: {
+          where: { hidden: false },
           include: {
             user: {
               select: {
@@ -98,6 +104,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Devi essere autenticato per commentare" },
         { status: 401 }
+      );
+    }
+
+    const limited = rateLimit(`comments:${session.user.id}`, COMMENTS_LIMIT);
+    if (limited) {
+      return NextResponse.json(
+        { error: "Troppi commenti in poco tempo. Riprova tra un minuto." },
+        { status: 429 }
       );
     }
 
@@ -184,6 +198,12 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    track(
+      "COMMENT_POSTED",
+      { userId: session.user.id, eventId },
+      { request }
+    );
 
     // Se è una risposta, crea una notifica per l'autore del commento padre
     if (parentId) {

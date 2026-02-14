@@ -7,43 +7,55 @@ export async function GET(request: NextRequest) {
     const filter = searchParams.get("filter") || "all";
     const search = searchParams.get("search") || "";
     const category = searchParams.get("category") || "";
+    const status = searchParams.get("status") || "open"; // open | closed | all
+    const sort = searchParams.get("sort") || ""; // popular | expiring | recent | discussed
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "12");
 
     const skip = (page - 1) * limit;
+    const now = new Date();
 
     // Costruisci i filtri
-    const where: any = {
-      resolved: false, // Mostra solo eventi non risolti di default
-    };
+    const where: any = {};
 
-    // Filtro per categoria
-    if (category) {
-      where.category = category;
-    }
-
-    // Filtro per ricerca
-    if (search) {
-      where.OR = [
-        { title: { contains: search } },
-        { description: { contains: search } },
-      ];
-    }
-
-    // Filtro per "in scadenza" (chiude nei prossimi 7 giorni)
+    // Filtro "in scadenza" vincola a eventi aperti che chiudono nei prossimi 7 giorni
     if (filter === "expiring") {
-      const sevenDaysFromNow = new Date();
+      const sevenDaysFromNow = new Date(now);
       sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-      where.closesAt = {
-        lte: sevenDaysFromNow,
-        gte: new Date(),
-      };
+      where.resolved = false;
+      where.closesAt = { gte: now, lte: sevenDaysFromNow };
+    } else {
+      // Stato: aperti, chiusi, tutti
+      if (status === "open") {
+        where.resolved = false;
+        where.closesAt = { gt: now };
+      } else if (status === "closed") {
+        where.OR = [{ resolved: true }, { closesAt: { lte: now } }];
+      }
     }
 
-    // Ordina per popolarità o data
+    if (category) where.category = category;
+
+    // Ricerca: AND con (title OR description)
+    if (search.trim()) {
+      const searchClause = {
+        OR: [
+          { title: { contains: search.trim(), mode: "insensitive" as const } },
+          { description: { contains: search.trim(), mode: "insensitive" as const } },
+        ],
+      };
+      where.AND = where.AND ? [...where.AND, searchClause] : [searchClause];
+    }
+
+    // Ordinamento: sort ha priorità su filter per compatibilità
+    const orderKey = sort || (filter === "popular" ? "popular" : filter === "expiring" ? "expiring" : "recent");
     let orderBy: any = {};
-    if (filter === "popular") {
+    if (orderKey === "popular") {
       orderBy = { totalCredits: "desc" };
+    } else if (orderKey === "expiring") {
+      orderBy = { closesAt: "asc" };
+    } else if (orderKey === "discussed") {
+      orderBy = { comments: { _count: "desc" } };
     } else {
       orderBy = { createdAt: "desc" };
     }

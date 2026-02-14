@@ -1,52 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Header from "@/components/Header";
 
 export default function CreateEventPage() {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     category: "",
     closesAt: "",
+    resolutionSourceUrl: "",
+    resolutionNotes: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (status === "loading") return;
-    if (!session) {
-      router.push("/auth/login");
-      return;
-    }
-    checkAdminStatus();
     fetchCategories();
-  }, [session, status, router]);
-
-  const checkAdminStatus = async () => {
-    try {
-      const response = await fetch("/api/admin/check");
-      if (response.ok) {
-        const data = await response.json();
-        setIsAdmin(data.isAdmin);
-        if (!data.isAdmin) {
-          router.push("/");
-        }
-      } else {
-        router.push("/");
-      }
-    } catch (error) {
-      console.error("Error checking admin status:", error);
-      router.push("/");
-    }
-  };
+  }, []);
 
   const fetchCategories = async () => {
     try {
@@ -101,6 +75,13 @@ export default function CreateEventPage() {
       }
     }
 
+    if (!formData.resolutionSourceUrl.trim()) {
+      newErrors.resolutionSourceUrl = "L'URL della fonte di risoluzione è obbligatorio";
+    }
+    if (!formData.resolutionNotes.trim()) {
+      newErrors.resolutionNotes = "Le note di risoluzione sono obbligatorie";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -139,24 +120,8 @@ export default function CreateEventPage() {
     }
   };
 
-  if (status === "loading" || !isAdmin) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <main className="container mx-auto px-4 py-8">
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600">Caricamento...</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <main className="container mx-auto px-4 py-8 max-w-3xl">
+    <div className="p-6 md:p-8 max-w-3xl">
         {/* Header */}
         <div className="mb-8">
           <Link
@@ -318,6 +283,57 @@ export default function CreateEventPage() {
             </p>
           </div>
 
+          {/* Resolution source URL */}
+          <div className="mb-6">
+            <label
+              htmlFor="resolutionSourceUrl"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              URL fonte di risoluzione *
+            </label>
+            <input
+              type="url"
+              id="resolutionSourceUrl"
+              name="resolutionSourceUrl"
+              value={formData.resolutionSourceUrl}
+              onChange={handleChange}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.resolutionSourceUrl ? "border-red-500" : "border-gray-300"
+              }`}
+              placeholder="https://..."
+            />
+            {errors.resolutionSourceUrl && (
+              <p className="mt-1 text-sm text-red-600">{errors.resolutionSourceUrl}</p>
+            )}
+            <p className="mt-2 text-sm text-gray-500">
+              Link alla fonte ufficiale che verrà usata per risolvere l&apos;evento.
+            </p>
+          </div>
+
+          {/* Resolution notes */}
+          <div className="mb-6">
+            <label
+              htmlFor="resolutionNotes"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Note di risoluzione *
+            </label>
+            <textarea
+              id="resolutionNotes"
+              name="resolutionNotes"
+              value={formData.resolutionNotes}
+              onChange={handleChange}
+              rows={3}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.resolutionNotes ? "border-red-500" : "border-gray-300"
+              }`}
+              placeholder="Criteri e note per determinare l'esito (SÌ/NO)..."
+            />
+            {errors.resolutionNotes && (
+              <p className="mt-1 text-sm text-red-600">{errors.resolutionNotes}</p>
+            )}
+          </div>
+
           {/* Submit Button */}
           <div className="flex gap-4">
             <button
@@ -335,7 +351,6 @@ export default function CreateEventPage() {
             </Link>
           </div>
         </form>
-      </main>
     </div>
   );
 }

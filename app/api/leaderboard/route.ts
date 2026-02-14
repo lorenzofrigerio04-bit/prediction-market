@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 type PeriodType = "weekly" | "monthly" | "all-time";
 
@@ -12,6 +14,7 @@ interface LeaderboardUser {
   accuracy: number;
   roi: number;
   streak: number;
+  score: number;
   totalPredictions: number;
   correctPredictions: number;
   totalEarned: number;
@@ -20,8 +23,10 @@ interface LeaderboardUser {
 
 export async function GET(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
     const { searchParams } = new URL(request.url);
     const period = (searchParams.get("period") || "all-time") as PeriodType;
+    const category = searchParams.get("category") || null;
 
     // Calculate date range based on period
     let startDate: Date | null = null;
@@ -68,14 +73,14 @@ export async function GET(request: Request) {
           totalSpent: user.totalSpent,
         };
 
-        // If period is not all-time, recalculate stats for that period
-        if (startDate) {
+        // If period is not all-time or category filter, recalculate stats with filters
+        const needFilter = startDate || category;
+        if (needFilter) {
           const periodPredictions = await prisma.prediction.findMany({
             where: {
               userId: user.id,
-              createdAt: {
-                gte: startDate,
-              },
+              ...(startDate && { createdAt: { gte: startDate } }),
+              ...(category && { event: { category } }),
             },
             select: {
               credits: true,
@@ -119,9 +124,10 @@ export async function GET(request: Request) {
           name: user.name,
           email: user.email,
           image: user.image,
-          accuracy: Math.round(periodAccuracy * 100) / 100, // Round to 2 decimal places
-          roi: Math.round(roi * 100) / 100, // Round to 2 decimal places
+          accuracy: Math.round(periodAccuracy * 100) / 100,
+          roi: Math.round(roi * 100) / 100,
           streak: user.streak,
+          score: 0, // filled below
           totalPredictions: periodStats.totalPredictions,
           correctPredictions: periodStats.correctPredictions,
           totalEarned: periodStats.totalEarned,
@@ -153,16 +159,25 @@ export async function GET(request: Request) {
       return b.roi - a.roi;
     });
 
-    // Add rank
+    // Add rank and round score
     const rankedData: LeaderboardUser[] = normalizedData.map((user, index) => ({
       ...user,
       rank: index + 1,
+      score: Math.round(user.score * 100) / 100,
     }));
+
+    const currentUserId = session?.user?.id;
+    const myEntry = currentUserId
+      ? rankedData.find((u) => u.id === currentUserId)
+      : null;
+    const myRank = myEntry ? myEntry.rank : undefined;
 
     return NextResponse.json({
       leaderboard: rankedData,
       period,
+      category,
       totalUsers: rankedData.length,
+      myRank,
     });
   } catch (error) {
     console.error("Error fetching leaderboard:", error);

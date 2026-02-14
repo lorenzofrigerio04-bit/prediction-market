@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Header from "@/components/Header";
 
 interface Event {
   id: string;
@@ -41,7 +39,6 @@ interface EventsResponse {
 type StatusFilter = "all" | "pending" | "resolved";
 
 export default function AdminDashboard() {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,40 +50,10 @@ export default function AdminDashboard() {
     total: 0,
     totalPages: 0,
   });
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    if (status === "loading") return;
-    if (!session) {
-      router.push("/auth/login");
-      return;
-    }
-    checkAdminStatus();
-  }, [session, status, router]);
-
-  useEffect(() => {
-    if (isAdmin) {
-      fetchEvents();
-    }
-  }, [statusFilter, page, isAdmin]);
-
-  const checkAdminStatus = async () => {
-    try {
-      const response = await fetch("/api/admin/check");
-      if (response.ok) {
-        const data = await response.json();
-        setIsAdmin(data.isAdmin);
-        if (!data.isAdmin) {
-          router.push("/");
-        }
-      } else {
-        router.push("/");
-      }
-    } catch (error) {
-      console.error("Error checking admin status:", error);
-      router.push("/");
-    }
-  };
+    fetchEvents();
+  }, [statusFilter, page]);
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -155,24 +122,8 @@ export default function AdminDashboard() {
     return colors[category] || colors.Altro;
   };
 
-  if (status === "loading" || !isAdmin) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <main className="container mx-auto px-4 py-8">
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600">Caricamento...</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <main className="container mx-auto px-4 py-8">
+    <div className="p-6 md:p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -274,6 +225,14 @@ export default function AdminDashboard() {
                             >
                               {event.title}
                             </Link>
+                            {!event.resolved && (
+                              <Link
+                                href={`/admin/events/${event.id}/edit`}
+                                className="ml-2 text-xs text-gray-500 hover:text-blue-600"
+                              >
+                                Modifica
+                              </Link>
+                            )}
                             {event.description && (
                               <p className="text-sm text-gray-500 mt-1 line-clamp-2">
                                 {event.description}
@@ -380,7 +339,6 @@ export default function AdminDashboard() {
             )}
           </>
         )}
-      </main>
     </div>
   );
 }

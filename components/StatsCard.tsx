@@ -6,14 +6,15 @@ interface StatsCardProps {
   icon?: string;
   color?: "blue" | "green" | "orange" | "purple" | "red";
   subtitle?: string;
+  elevated?: boolean;
 }
 
 const colorClasses = {
-  blue: "text-blue-600",
-  green: "text-green-600",
-  orange: "text-orange-600",
-  purple: "text-purple-600",
-  red: "text-red-600",
+  blue: "text-primary",
+  green: "text-emerald-500 dark:text-emerald-400",
+  orange: "text-amber-500 dark:text-amber-400",
+  purple: "text-violet-500 dark:text-violet-400",
+  red: "text-red-500 dark:text-red-400",
 };
 
 export default function StatsCard({
@@ -22,18 +23,20 @@ export default function StatsCard({
   icon,
   color = "blue",
   subtitle,
+  elevated = false,
 }: StatsCardProps) {
+  const base = elevated ? "glass-elevated" : "glass border border-border dark:border-white/10";
   return (
-    <div className="bg-white rounded-2xl shadow-card border border-slate-100 p-4 md:p-6">
+    <div className={`${base} rounded-2xl p-4 md:p-6`}>
       <div className="flex items-center justify-between mb-1">
-        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{title}</h3>
+        <h3 className="text-xs font-semibold text-fg-muted uppercase tracking-wider">{title}</h3>
         {icon && <span className="text-xl md:text-2xl">{icon}</span>}
       </div>
       <p className={`text-xl md:text-3xl font-bold ${colorClasses[color]}`}>
         {value}
       </p>
       {subtitle && (
-        <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
+        <p className="text-xs text-fg-muted mt-0.5">{subtitle}</p>
       )}
     </div>
   );

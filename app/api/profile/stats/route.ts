@@ -85,6 +85,21 @@ export async function GET() {
       },
     });
 
+    // Eventi seguiti
+    const [followedEventsCount, eventFollows] = await Promise.all([
+      prisma.eventFollower.count({ where: { userId } }),
+      prisma.eventFollower.findMany({
+        where: { userId },
+        include: {
+          event: {
+            select: { id: true, title: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      }),
+    ]);
+
     // Calculate ROI (Return on Investment)
     const totalInvested = user.totalSpent;
     const totalReturn = user.totalEarned;
@@ -120,6 +135,11 @@ export async function GET() {
         icon: ub.badge.icon,
         rarity: ub.badge.rarity,
         unlockedAt: ub.unlockedAt,
+      })),
+      followedEventsCount,
+      followedEvents: eventFollows.map((ef) => ({
+        id: ef.event.id,
+        title: ef.event.title,
       })),
     });
   } catch (error) {

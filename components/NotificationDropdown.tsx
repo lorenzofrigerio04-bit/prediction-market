@@ -26,6 +26,10 @@ const getNotificationIcon = (type: string) => {
   switch (type) {
     case "EVENT_RESOLVED":
       return "✅";
+    case "MISSION_COMPLETED":
+      return "🎯";
+    case "STREAK_AT_RISK":
+      return "🔥";
     case "COMMENT_REPLY":
       return "💬";
     case "BADGE_AWARDED":
@@ -40,11 +44,13 @@ const getNotificationLink = (notification: Notification): string | null => {
     return `/events/${notification.referenceId}`;
   }
   if (notification.referenceType === "comment" && notification.referenceId) {
-    // Potremmo aggiungere un link diretto al commento in futuro
     return null;
   }
-  if (notification.referenceType === "badge") {
+  if (notification.referenceType === "badge" || notification.referenceType === "mission") {
     return "/profile";
+  }
+  if (notification.type === "STREAK_AT_RISK") {
+    return "/wallet";
   }
   return null;
 };
@@ -132,7 +138,7 @@ export default function NotificationDropdown({
   };
 
   return (
-    <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[600px] flex flex-col">
+    <div className="absolute right-0 mt-2 w-96 glass rounded-2xl border border-border dark:border-white/10 shadow-xl z-50 max-h-[600px] flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <h3 className="text-lg font-semibold text-gray-900">Notifiche</h3>

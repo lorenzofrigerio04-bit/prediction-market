@@ -38,22 +38,36 @@ export async function GET(
       );
     }
 
-    // Get user's prediction if logged in
+    // Get user's prediction and follow status if logged in
     let userPrediction = null;
+    let isFollowing = false;
     if (session?.user?.id) {
-      userPrediction = await prisma.prediction.findUnique({
-        where: {
-          userId_eventId: {
-            userId: session.user.id,
-            eventId: event.id,
+      const [pred, follow] = await Promise.all([
+        prisma.prediction.findUnique({
+          where: {
+            userId_eventId: {
+              userId: session.user.id,
+              eventId: event.id,
+            },
           },
-        },
-      });
+        }),
+        prisma.eventFollower.findUnique({
+          where: {
+            userId_eventId: {
+              userId: session.user.id,
+              eventId: event.id,
+            },
+          },
+        }),
+      ]);
+      userPrediction = pred;
+      isFollowing = !!follow;
     }
 
     return NextResponse.json({
       event,
       userPrediction,
+      isFollowing,
     });
   } catch (error) {
     console.error("Error fetching event:", error);

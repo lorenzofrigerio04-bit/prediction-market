@@ -55,6 +55,7 @@ In **Project → Settings → Environment Variables** imposta (per **Production*
 | `NEXTAUTH_SECRET` | Segreto per sessioni (genera una stringa lunga e casuale) | es. `openssl rand -base64 32` |
 | `GOOGLE_CLIENT_ID` | (Opzionale) Client ID Google OAuth | da Google Cloud Console |
 | `GOOGLE_CLIENT_SECRET` | (Opzionale) Client secret Google OAuth | da Google Cloud Console |
+| `CRON_SECRET` | (Consigliato) Segreto per il cron che risolve gli eventi chiusi; se impostato, Vercel lo invia come `Authorization: Bearer <CRON_SECRET>` | es. `openssl rand -base64 32` |
 
 **Importante:**  
 - Dopo il primo deploy, **aggiorna** `NEXTAUTH_URL` con l’URL reale (es. `https://prediction-market-xxx.vercel.app`).  
@@ -74,6 +75,26 @@ In **Project → Settings → Environment Variables** imposta (per **Production*
 - Apri l’URL e controlla che la home si carichi.  
 - Prova **Registrazione** e **Login** (email/password e, se configurato, Google).  
 - Controlla che eventi, previsioni e wallet funzionino (usa il DB che hai fatto il seed al passo 1.2).
+
+### 2.5 Fase 5: Cron per risolvere eventi chiusi (opzionale ma consigliato)
+
+Per processare **automaticamente** gli eventi la cui data di chiusura (`closesAt`) è passata:
+
+1. **Variabile d’ambiente**  
+   In **Settings → Environment Variables** aggiungi `CRON_SECRET` (es. genera con `openssl rand -base64 32`). In questo modo solo le richieste con header `Authorization: Bearer <CRON_SECRET>` possono attivare la risoluzione.
+
+2. **Configurazione nel progetto**  
+   Il file `vercel.json` contiene già la sezione **crons** che chiama una volta al giorno (mezzanotte UTC) l’URL:
+   - `https://<TUO_DOMINIO>/api/cron/resolve-events`  
+   con metodo **GET**. Quando `CRON_SECRET` è impostato, Vercel può inviarlo nell’header `Authorization: Bearer <CRON_SECRET>` (verifica nella documentazione Vercel per il tuo piano).
+
+3. **Vercel Dashboard (se disponibile per il piano)**  
+   Vai in **Settings → Cron Jobs**: dovresti vedere il job definito in `vercel.json`. Se puoi configurare header custom, imposta `Authorization: Bearer <valore_di_CRON_SECRET>` così solo il cron ufficiale e il tuo segreto possono attivare l’endpoint.
+
+4. **Risultato**  
+   Gli eventi chiusi vengono risolti in automatico (outcome da maggioranza di crediti, payout e statistiche aggiornati) senza esporre endpoint pericolosi. In produzione, se `CRON_SECRET` non è impostato, l’endpoint risponde 503.
+
+**Frequenza:** lo schedule in `vercel.json` è `0 0 * * *` (ogni giorno a mezzanotte UTC). Per eseguire ogni 6 ore puoi usare `0 */6 * * *`.
 
 ---
 
@@ -148,6 +169,133 @@ npx vercel
 ## Troubleshooting
 
 - **Build fallisce con errore Prisma**: verifica che in Vercel sia impostata `DATABASE_URL` e che il **Build Command** sia `prisma generate && next build`.  
-- **Login non funziona in produzione**: controlla `NEXTAUTH_URL` (deve essere l’URL pubblico senza trailing slash) e `NEXTAUTH_SECRET`.  
-- **Google OAuth “redirect_uri_mismatch”**: aggiungi in Google Cloud Console l’URI esatto: `https://TUO_DOMAIN.vercel.app/api/auth/callback/google`.  
+- **Login non funziona in produzione**: vedi sotto **Risolvere i problemi di login (step by step)**.  
+- **Google OAuth “redirect_uri_mismatch”**: vedi sotto **Configurare il login con Google (step by step)**.  
 - **Errori DB in produzione**: verifica che su Neon la connection string sia corretta e che le tabelle esistano (`prisma db push` + `db:seed` eseguiti come in 1.2).
+
+---
+
+## Risolvere i problemi di login (step by step)
+
+Se in produzione (Vercel) il login con email/password non funziona (redirect che non avviene, “Credenziali non valide” pur con dati giusti, o pagina bianca):
+
+### Step 1: Variabili d’ambiente su Vercel
+
+1. Vai su **Vercel** → tuo progetto → **Settings** → **Environment Variables**.  
+2. Controlla che esistano e siano corretti:
+   - **`NEXTAUTH_URL`**: deve essere **esattamente** l’URL della tua app, **senza** slash finale.  
+     - Esempio: `https://prediction-market-xxx.vercel.app`  
+     - **Non** usare `http://` in produzione.  
+   - **`NEXTAUTH_SECRET`**: deve essere una stringa lunga e casuale.  
+     - Per generarla: `openssl rand -base64 32` nel terminale, poi incolla il valore.  
+3. Se hai modificato le variabili, fai un **Redeploy** (Deployments → ⋮ → Redeploy).
+
+### Step 2: Database e utenti
+
+1. Assicurati che il **database di produzione** (es. Neon) sia stato inizializzato:
+   ```bash
+   export DATABASE_URL="postgresql://..."   # connection string Neon
+   npx prisma db push
+   npm run db:seed
+   ```
+2. L’utente con cui fai login deve esistere in quel database (registrato dalla stessa app in produzione, o creato dal seed).  
+3. Controlla su **Neon** (Dashboard → Tables) che la tabella `users` esista e che la connection string in Vercel sia la stessa (incluso `?sslmode=require`).
+
+### Step 3: Diagnostica e log
+
+1. Apri **`https://TUO_DOMAIN.vercel.app/api/auth-status`** (stesso dominio dell’app): vedi se le variabili sono impostate e se l’URL corrisponde a `NEXTAUTH_URL`.  
+2. In Vercel vai in **Deployments** → ultimo deploy → **Functions** (o **Logs**).  
+3. Prova di nuovo il login e controlla se compaiono errori 500 o messaggi relativi a NextAuth/Prisma. Se vedi errori di connessione al database, torna allo Step 2.
+
+Se dopo questi passi il login funziona in locale ma non su Vercel, è quasi sempre **NEXTAUTH_URL** o **NEXTAUTH_SECRET** mancanti/errati, o **DATABASE_URL** che non punta al DB usato in produzione.
+
+---
+
+## Configurare il login con Google (step by step)
+
+Per abilitare “Accedi con Google” in produzione:
+
+### Step 1: Creare le credenziali Google
+
+1. Vai su [Google Cloud Console](https://console.cloud.google.com/apis/credentials).  
+2. Seleziona un progetto (o creane uno nuovo, es. “Prediction Market”).  
+3. In **Credenziali** → **Crea credenziali** → **ID client OAuth**.  
+4. Tipo di applicazione: **Applicazione Web**.  
+5. Nome: ad es. “Prediction Market Web”.  
+6. In **URI di reindirizzamento autorizzati** aggiungi **entrambi**:
+   - Per sviluppo: `http://localhost:3000/api/auth/callback/google`
+   - Per produzione: `https://TUO_DOMAIN.vercel.app/api/auth/callback/google`  
+     (sostituisci `TUO_DOMAIN.vercel.app` con l’URL reale, es. `prediction-market-xxx.vercel.app`).  
+7. Clicca **Crea**.  
+8. Copia **ID client** e **Segreto client**.
+
+### Step 2: Variabili su Vercel
+
+1. Vercel → progetto → **Settings** → **Environment Variables**.  
+2. Aggiungi (per **Production** e, se vuoi, **Preview**):
+   - **`GOOGLE_CLIENT_ID`**: incolla l’ID client.  
+   - **`GOOGLE_CLIENT_SECRET`**: incolla il segreto client.  
+3. Salva e fai un **Redeploy**.
+
+### Step 3: Verifica
+
+1. Apri l’app in produzione.  
+2. Vai alla pagina di login (o registrazione).  
+3. Clicca **Accedi con Google** (o **Registrati con Google**).  
+4. Dovresti essere reindirizzato a Google, poi di nuovo all’app dopo il consenso.
+
+**Se compare “redirect_uri_mismatch”**:  
+- Controlla che in Google Cloud Console l’URI di reindirizzamento sia **identico** a quello usato dall’app (nessuno spazio, stesso schema `https://`, stesso dominio e path `/api/auth/callback/google`).
+
+---
+
+## Fase 6: Post-deploy (sicurezza e buone pratiche)
+
+Dopo il primo deploy e durante i beta test, applica queste pratiche per sicurezza e manutenzione.
+
+### 6.1 HTTPS
+
+**Vercel fornisce HTTPS di default** per tutti i domini (`.vercel.app` e domini personalizzati). Non serve alcuna configurazione aggiuntiva: il traffico è già cifrato.
+
+### 6.2 Cookie e sessione
+
+In **`lib/auth.ts`** in produzione sono già configurati:
+
+- Nome cookie: `__Secure-next-auth.session-token` (prefisso `__Secure-` richiesto su HTTPS)
+- `httpOnly: true` (non accessibile da JavaScript, riduce rischio XSS)
+- `sameSite: "lax"` (protezione CSRF)
+- `secure: true` (solo su HTTPS)
+
+Nessuna modifica necessaria; la configurazione è adeguata per produzione.
+
+### 6.3 Account admin
+
+L'utente admin creato dal seed (**`admin@predictionmarket.it`**) va usato **solo per la gestione** della piattaforma (dashboard admin, moderazione, ecc.).
+
+- **Cambia subito la password** se hai usato una password temporanea durante il setup.
+- Non usare questo account per navigazione ordinaria o test come utente finale.
+- Per cambiare password: accedi come admin → (se hai una pagina profilo/impostazioni) oppure aggiorna l'hash nel DB con uno nuovo generato da `bcrypt` (es. script one-off o da Prisma Studio).
+
+### 6.4 Dominio personalizzato (opzionale)
+
+Se vuoi usare un dominio tuo (es. `app.tuodominio.com`):
+
+1. **Vercel** → progetto → **Settings** → **Domains**
+2. Aggiungi il dominio e segui le istruzioni DNS (record CNAME o A come indicato da Vercel)
+3. Dopo la verifica del dominio:
+   - In **Vercel → Settings → Environment Variables** aggiorna **`NEXTAUTH_URL`** con il nuovo URL (es. `https://app.tuodominio.com`, senza slash finale)
+   - Se usi **Google OAuth**: in [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → le tue credenziali OAuth → **URI di reindirizzamento autorizzati** → aggiungi `https://app.tuodominio.com/api/auth/callback/google`
+4. Riesegui un deploy (o attendi che Vercel rilevi il nuovo dominio) e verifica login e callback.
+
+### 6.5 Backup del database
+
+Su **Neon**:
+
+- **Dashboard Neon**: puoi usare **branch** (copie del database) e le funzionalità di backup dal pannello. Controlla la documentazione Neon per il tuo piano (backup automatici, point-in-time recovery, ecc.).
+- **Pianifica backup periodici** se i dati sono importanti: configura da dashboard o con script che eseguono dump (es. `pg_dump`) e li salvano in uno storage sicuro (S3, altro cloud). Per beta con pochi utenti spesso bastano i branch/snapshot Neon; per produzione con dati critici valuta backup automatici e retention.
+
+### 6.6 Monitoraggio durante i beta test
+
+- **Vercel Dashboard**: **Deployments** (stato build, errori), **Logs** (errori runtime, 500), **Analytics** (se abilitato) per traffico e performance. Controlla periodicamente durante il beta.
+- **Neon Dashboard**: **connessioni attive**, **utilizzo risorse**, query lente o errori. Utile per capire il carico e intervenire prima che diventi un collo di bottiglia.
+- In caso di errori di login o OAuth, usa la sezione **Risolvere i problemi di login** e **Configurare il login con Google** in questo documento; tieni sempre allineati `NEXTAUTH_URL`, redirect URI e variabili d'ambiente.

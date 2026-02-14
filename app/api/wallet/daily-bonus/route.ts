@@ -4,13 +4,15 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { updateMissionProgress } from "@/lib/missions";
 import { checkAndAwardBadges } from "@/lib/badges";
+import { track } from "@/lib/analytics";
 
-// Bonus giornaliero base
-const DAILY_BONUS_BASE = 100;
-// Bonus moltiplicatore per streak
-const STREAK_MULTIPLIER = 10; // +10 crediti per ogni giorno di streak
+// Bonus giornaliero base (es. 50)
+const DAILY_BONUS_BASE = 50;
+// Moltiplicatore streak: 1 + 0.1 per giorno, max 2x
+const STREAK_MULTIPLIER_PER_DAY = 0.1;
+const STREAK_CAP_FOR_MULTIPLIER = 10; // 10 giorni = 2x
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -60,11 +62,7 @@ export async function POST() {
       );
     }
 
-    // Calcola il bonus (base + moltiplicatore streak)
-    const bonusAmount =
-      DAILY_BONUS_BASE + user.streak * STREAK_MULTIPLIER;
-
-    // Calcola il nuovo streak
+    // Calcola il nuovo streak (prima, per applicare il moltiplicatore al bonus)
     let newStreak = 1; // Se non ha mai preso il bonus, inizia da 1
     if (lastBonusDate) {
       const yesterday = new Date(now);
@@ -90,6 +88,13 @@ export async function POST() {
         newStreak = 1;
       }
     }
+
+    // Moltiplicatore: 1 + 0.1 per giorno, max 2x
+    const multiplier = Math.min(
+      2,
+      1 + Math.min(newStreak, STREAK_CAP_FOR_MULTIPLIER) * STREAK_MULTIPLIER_PER_DAY
+    );
+    const bonusAmount = Math.round(DAILY_BONUS_BASE * multiplier);
 
     // Aggiorna l'utente e crea la transazione in una transazione atomica
     const updatedUser = await prisma.$transaction(async (tx) => {
@@ -118,7 +123,7 @@ export async function POST() {
           userId,
           type: "DAILY_BONUS",
           amount: bonusAmount,
-          description: `Bonus giornaliero (Streak: ${newStreak} giorni)`,
+          description: `Bonus giornaliero (Serie: ${newStreak} giorni, x${multiplier.toFixed(1)})`,
           referenceType: "daily_bonus",
           balanceAfter: updated.credits,
         },
@@ -133,6 +138,12 @@ export async function POST() {
     );
     checkAndAwardBadges(prisma, userId).catch((e) =>
       console.error("Badge check error:", e)
+    );
+
+    track(
+      "DAILY_BONUS_CLAIMED",
+      { userId, amount: bonusAmount, period: "daily", streak: newStreak },
+      { request }
     );
 
     return NextResponse.json({

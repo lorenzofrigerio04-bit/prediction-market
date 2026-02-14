@@ -1,27 +1,42 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import { DEFAULT_BADGES } from '../lib/badges';
 
 const prisma = new PrismaClient();
 
+// Credenziali admin (cambia in produzione! vedi DEPLOY_AND_BETA.md Fase 6)
+const ADMIN_EMAIL = 'admin@predictionmarket.it';
+const ADMIN_PASSWORD = 'Admin2025!';
+
 async function main() {
   console.log('🌱 Inizio seed database...');
 
-  // Crea o trova utente admin
+  // Crea o trova utente admin (con password per login email/password)
   let admin = await prisma.user.findUnique({
-    where: { email: 'admin@predictionmarket.it' },
+    where: { email: ADMIN_EMAIL },
   });
+
+  const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
 
   if (!admin) {
     console.log('👤 Creazione utente admin...');
     admin = await prisma.user.create({
       data: {
-        email: 'admin@predictionmarket.it',
+        email: ADMIN_EMAIL,
         name: 'Admin',
         role: 'ADMIN',
         credits: 10000,
+        password: hashedPassword,
       },
     });
     console.log('✅ Utente admin creato:', admin.email);
+  } else if (!admin.password) {
+    console.log('👤 Impostazione password per admin esistente...');
+    admin = await prisma.user.update({
+      where: { id: admin.id },
+      data: { password: hashedPassword },
+    });
+    console.log('✅ Password admin impostata:', admin.email);
   } else {
     console.log('✅ Utente admin già esistente:', admin.email);
   }
@@ -49,16 +64,32 @@ async function main() {
   if (existingMissions === 0) {
     console.log('📋 Creazione missioni...');
     const missions = [
-      { name: 'Previsioni giornaliere', description: 'Fai 3 previsioni oggi', type: 'MAKE_PREDICTIONS', target: 3, reward: 50, period: 'DAILY' },
-      { name: 'Previsioni settimanali', description: 'Fai 10 previsioni questa settimana', type: 'MAKE_PREDICTIONS', target: 10, reward: 150, period: 'WEEKLY' },
-      { name: 'Vincita giornaliera', description: 'Vinci 1 previsione oggi', type: 'WIN_PREDICTIONS', target: 1, reward: 30, period: 'DAILY' },
-      { name: 'Vincite settimanali', description: 'Vinci 5 previsioni questa settimana', type: 'WIN_PREDICTIONS', target: 5, reward: 200, period: 'WEEKLY' },
-      { name: 'Login giornaliero', description: 'Riscatta il bonus giornaliero', type: 'DAILY_LOGIN', target: 1, reward: 25, period: 'DAILY' },
+      { name: 'Previsioni giornaliere', description: 'Fai 3 previsioni oggi', type: 'MAKE_PREDICTIONS', target: 3, reward: 50, period: 'DAILY', category: null },
+      { name: '1 previsione su Tech', description: 'Fai 1 previsione su Tecnologia', type: 'MAKE_PREDICTIONS', target: 1, reward: 30, period: 'DAILY', category: 'Tecnologia' },
+      { name: 'Previsioni settimanali', description: 'Fai 10 previsioni questa settimana', type: 'MAKE_PREDICTIONS', target: 10, reward: 150, period: 'WEEKLY', category: null },
+      { name: 'Vincita giornaliera', description: 'Vinci 1 previsione oggi', type: 'WIN_PREDICTIONS', target: 1, reward: 30, period: 'DAILY', category: null },
+      { name: 'Vincite settimanali', description: 'Vinci 5 previsioni questa settimana', type: 'WIN_PREDICTIONS', target: 5, reward: 200, period: 'WEEKLY', category: null },
+      { name: 'Login giornaliero', description: 'Riscatta il bonus giornaliero', type: 'DAILY_LOGIN', target: 1, reward: 25, period: 'DAILY', category: null },
     ];
     for (const m of missions) {
       await prisma.mission.create({ data: m });
     }
     console.log(`✅ Create ${missions.length} missioni.`);
+  }
+
+  // Shop: crea prodotti se non esistono
+  const existingShopItems = await prisma.shopItem.count();
+  if (existingShopItems === 0) {
+    console.log('🛒 Creazione prodotti shop...');
+    const shopItems = [
+      { name: 'Avatar Gold', type: 'COSMETIC', priceCredits: 500, description: 'Avatar esclusivo dorato per il tuo profilo.' },
+      { name: 'Badge Previsionista', type: 'COSMETIC', priceCredits: 300, description: 'Badge speciale da mostrare nei commenti.' },
+      { name: 'Ticket evento premium', type: 'TICKET', priceCredits: 200, description: 'Accesso prioritario a un evento in evidenza.' },
+    ];
+    for (const s of shopItems) {
+      await prisma.shopItem.create({ data: s });
+    }
+    console.log(`✅ Creati ${shopItems.length} prodotti shop.`);
   }
 
   // Verifica se gli eventi esistono già
@@ -104,6 +135,11 @@ async function main() {
   }
 
   console.log('🎉 Seed completato con successo!');
+  console.log('');
+  console.log('🔐 Credenziali admin (login email/password):');
+  console.log('   Email:    ', ADMIN_EMAIL);
+  console.log('   Password: ', ADMIN_PASSWORD);
+  console.log('   (cambia la password in produzione: vedi DEPLOY_AND_BETA.md Fase 6)');
 }
 
 main()

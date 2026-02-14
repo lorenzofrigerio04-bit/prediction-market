@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
+import { createAuditLog } from "@/lib/audit";
 
 /**
  * GET /api/admin/events
@@ -82,12 +83,26 @@ export async function POST(request: NextRequest) {
     const admin = await requireAdmin();
 
     const body = await request.json();
-    const { title, description, category, closesAt } = body;
+    const { title, description, category, closesAt, resolutionSourceUrl, resolutionNotes } = body;
 
     // Validazione
     if (!title || !category || !closesAt) {
       return NextResponse.json(
         { error: "Titolo, categoria e data di chiusura sono obbligatori" },
+        { status: 400 }
+      );
+    }
+
+    if (!resolutionSourceUrl || typeof resolutionSourceUrl !== "string" || !resolutionSourceUrl.trim()) {
+      return NextResponse.json(
+        { error: "URL fonte di risoluzione è obbligatorio" },
+        { status: 400 }
+      );
+    }
+
+    if (!resolutionNotes || typeof resolutionNotes !== "string" || !resolutionNotes.trim()) {
+      return NextResponse.json(
+        { error: "Note di risoluzione sono obbligatorie" },
         { status: 400 }
       );
     }
@@ -114,6 +129,8 @@ export async function POST(request: NextRequest) {
         description: description || null,
         category,
         closesAt: closesAtDate,
+        resolutionSourceUrl: resolutionSourceUrl.trim(),
+        resolutionNotes: resolutionNotes.trim(),
         createdById: admin.id,
       },
       include: {
@@ -125,6 +142,14 @@ export async function POST(request: NextRequest) {
           },
         },
       },
+    });
+
+    await createAuditLog(prisma, {
+      userId: admin.id,
+      action: "EVENT_CREATE",
+      entityType: "event",
+      entityId: event.id,
+      payload: { title: event.title, category: event.category },
     });
 
     return NextResponse.json({ event }, { status: 201 });

@@ -68,7 +68,7 @@ export default function OnboardingTour({ onComplete }: OnboardingTourProps) {
 
       {/* Card - stopPropagation evita che il click chiuda per errore tramite il backdrop */}
       <div
-        className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden"
+        className="relative w-full max-w-md rounded-3xl glass border border-border dark:border-white/10 shadow-xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6 pb-4">

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import Header from "@/components/Header";
 
 export default function LoginPage() {
+  const { update: updateSession } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -36,10 +37,17 @@ export default function LoginPage() {
         setIsLoading(false);
         return;
       }
-      // Login riuscito: redirect a pieno caricamento così il browser invia il cookie di sessione
+      // Login riuscito: aggiorna la sessione sul client e reindirizza a una pagina
+      // che verifica la sessione lato server, così la home riceve sempre il cookie.
       setRedirecting(true);
-      await new Promise((r) => setTimeout(r, 400));
-      window.location.href = "/";
+      try {
+        await updateSession();
+      } catch {
+        // Ignora errori di refetch; il redirect server-side risolverà
+      }
+      // Breve attesa per assicurare che il browser abbia scritto il cookie
+      await new Promise((r) => setTimeout(r, 300));
+      window.location.href = "/auth/success?callbackUrl=/";
     } catch (err) {
       setError("Si è verificato un errore. Riprova.");
       setIsLoading(false);
@@ -49,25 +57,25 @@ export default function LoginPage() {
   const handleGoogleSignIn = () => {
     setError("");
     setRedirecting(true);
-    signIn("google", { callbackUrl: "/" });
+    signIn("google", { callbackUrl: "/auth/success?callbackUrl=/" });
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-bg flex flex-col">
       <Header />
       <div className="flex-1 flex items-center justify-center px-4 py-8">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-card border border-slate-100 p-6 md:p-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-1">
+        <div className="max-w-md w-full glass rounded-3xl border border-border dark:border-white/10 p-6 md:p-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-center text-fg mb-1">
           Accedi
         </h1>
-        <p className="text-center text-slate-600 mb-6 md:mb-8 text-sm">
+        <p className="text-center text-fg-muted mb-6 md:mb-8 text-sm">
           Accedi al tuo account
         </p>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-600 dark:text-red-400 text-sm">
             {error}
-            <p className="mt-2 text-xs text-red-600">
+            <p className="mt-2 text-xs">
               Se il problema persiste, apri{" "}
               <a href="/api/auth-status" target="_blank" rel="noopener noreferrer" className="underline font-medium">
                 /api/auth-status
@@ -78,27 +86,27 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-1">Email</label>
+            <label htmlFor="email" className="block text-sm font-semibold text-fg-muted mb-1">Email</label>
             <input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full min-h-[48px] px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
+              className="w-full min-h-[48px] px-4 py-3 border border-border dark:border-white/10 rounded-2xl bg-surface/50 text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary"
               placeholder="tua@email.com"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-1">Password</label>
+            <label htmlFor="password" className="block text-sm font-semibold text-fg-muted mb-1">Password</label>
             <input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full min-h-[48px] px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
+              className="w-full min-h-[48px] px-4 py-3 border border-border dark:border-white/10 rounded-2xl bg-surface/50 text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary"
               placeholder="••••••••"
             />
           </div>
@@ -106,7 +114,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading || redirecting}
-            className="w-full min-h-[48px] bg-accent-500 text-white py-3 px-4 rounded-xl font-semibold hover:bg-accent-600 focus:ring-2 focus:ring-accent-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
+            className="w-full min-h-[48px] bg-primary text-white py-3 px-4 rounded-2xl font-semibold hover:bg-primary-hover focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg disabled:opacity-50 transition-colors"
           >
             {redirecting ? "Reindirizzamento..." : isLoading ? "Accesso..." : "Accedi"}
           </button>
@@ -115,10 +123,10 @@ export default function LoginPage() {
         <div className="mt-6">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
+              <div className="w-full border-t border-border dark:border-white/10" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-slate-500">Oppure</span>
+              <span className="px-2 bg-transparent text-fg-muted">Oppure</span>
             </div>
           </div>
 
@@ -126,7 +134,7 @@ export default function LoginPage() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={isLoading || redirecting}
-            className="mt-4 w-full min-h-[48px] flex items-center justify-center gap-3 bg-white border border-slate-200 text-slate-700 py-3 px-4 rounded-xl font-medium hover:bg-slate-50 focus:ring-2 focus:ring-accent-500 disabled:opacity-50 transition-colors"
+            className="mt-4 w-full min-h-[48px] flex items-center justify-center gap-3 glass border border-border dark:border-white/10 text-fg py-3 px-4 rounded-2xl font-medium hover:border-primary/20 focus:ring-2 focus:ring-primary disabled:opacity-50 transition-colors"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -150,9 +158,9 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <p className="mt-6 text-center text-sm text-slate-600">
+        <p className="mt-6 text-center text-sm text-fg-muted">
           Non hai un account?{" "}
-          <Link href="/auth/signup" className="text-accent-600 hover:text-accent-700 font-semibold focus-visible:underline">
+          <Link href="/auth/signup" className="text-primary hover:text-primary-hover font-semibold focus-visible:underline">
             Registrati
           </Link>
         </p>

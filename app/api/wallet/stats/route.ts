@@ -46,11 +46,18 @@ export async function GET() {
       lastBonusDate.getMonth() !== now.getMonth() ||
       lastBonusDate.getDate() !== now.getDate();
 
-    // Calcola il prossimo bonus (base + streak * moltiplicatore)
-    const DAILY_BONUS_BASE = 100;
-    const STREAK_MULTIPLIER = 10;
-    const nextBonusAmount =
-      DAILY_BONUS_BASE + user.streak * STREAK_MULTIPLIER;
+    // Moltiplicatore bonus: 1 + 0.1 per giorno, max 2x (stesso giorno = streak già valido per domani)
+    const STREAK_MULTIPLIER_PER_DAY = 0.1;
+    const STREAK_CAP = 10;
+    const DAILY_BONUS_BASE = 50;
+    // Moltiplicatore al prossimo claim (se può claimare ora: streak+1, altrimenti per "domani" non applicabile qui)
+    const nextMultiplier = Math.min(
+      2,
+      1 + Math.min(user.streak + (canClaimDailyBonus ? 1 : 0), STREAK_CAP) * STREAK_MULTIPLIER_PER_DAY
+    );
+    const nextBonusAmount = Math.round(DAILY_BONUS_BASE * nextMultiplier);
+    // Moltiplicatore basato sulla serie attuale (per UI "Moltiplicatore bonus: x1.2")
+    const bonusMultiplier = Math.min(2, 1 + Math.min(user.streak, STREAK_CAP) * STREAK_MULTIPLIER_PER_DAY);
 
     return NextResponse.json({
       credits: user.credits,
@@ -60,6 +67,7 @@ export async function GET() {
       lastDailyBonus: user.lastDailyBonus,
       canClaimDailyBonus,
       nextBonusAmount,
+      bonusMultiplier: Math.round(bonusMultiplier * 100) / 100,
     });
   } catch (error) {
     console.error("Error fetching wallet stats:", error);

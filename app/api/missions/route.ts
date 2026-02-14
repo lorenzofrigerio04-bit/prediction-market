@@ -20,7 +20,19 @@ export async function GET() {
     }
 
     const userId = session.user.id;
-    const missions = await ensureUserMissionsForPeriod(prisma, userId);
+    const [missions, user] = await Promise.all([
+      ensureUserMissionsForPeriod(prisma, userId),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { streak: true },
+      }),
+    ]);
+
+    const STREAK_CAP = 10;
+    const bonusMultiplier =
+      Math.round(
+        Math.min(2, 1 + Math.min(user?.streak ?? 0, STREAK_CAP) * 0.1) * 100
+      ) / 100;
 
     const formatted = missions.map((um) => ({
       id: um.id,
@@ -41,6 +53,8 @@ export async function GET() {
       missions: formatted,
       daily: formatted.filter((m) => m.period === "DAILY"),
       weekly: formatted.filter((m) => m.period === "WEEKLY"),
+      streak: user?.streak ?? 0,
+      bonusMultiplier,
     });
   } catch (error) {
     console.error("Error fetching missions:", error);
