@@ -17,6 +17,7 @@ export async function GET(
       select: {
         id: true,
         name: true,
+        username: true,
         image: true,
         streak: true,
         totalPredictions: true,
@@ -35,6 +36,7 @@ export async function GET(
     return NextResponse.json({
       id: user.id,
       name: user.name,
+      username: user.username,
       image: user.image,
       streak: user.streak,
       totalPredictions: user.totalPredictions,

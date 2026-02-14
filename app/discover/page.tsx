@@ -1,10 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useDeferredValue } from "react";
 import Header from "@/components/Header";
-import EventCard from "@/components/EventCard";
+import MarketCard from "@/components/discover/MarketCard";
+import MarketCardSkeleton from "@/components/discover/MarketCardSkeleton";
+import {
+  PageHeader,
+  EmptyState,
+  FilterChips,
+} from "@/components/ui";
 
-interface Event {
+export interface DiscoverEvent {
   id: string;
   title: string;
   description: string | null;
@@ -12,7 +18,10 @@ interface Event {
   createdAt: string;
   closesAt: string;
   resolved: boolean;
+  outcome: string | null;
   probability: number;
+  yesCredits: number;
+  noCredits: number;
   totalCredits: number;
   createdBy: {
     id: string;
@@ -26,7 +35,7 @@ interface Event {
 }
 
 interface EventsResponse {
-  events: Event[];
+  events: DiscoverEvent[];
   pagination: {
     page: number;
     limit: number;
@@ -37,12 +46,12 @@ interface EventsResponse {
 
 type SortType = "popular" | "expiring" | "recent" | "discussed";
 type StatusType = "open" | "closed" | "all";
+type DeadlineType = "" | "24h" | "7d";
 
 const SORT_OPTIONS: { id: SortType; label: string }[] = [
   { id: "popular", label: "In tendenza" },
-  { id: "expiring", label: "In scadenza" },
   { id: "recent", label: "Più recenti" },
-  { id: "discussed", label: "Più discussi" },
+  { id: "expiring", label: "In scadenza" },
 ];
 
 const STATUS_OPTIONS: { id: StatusType; label: string }[] = [
@@ -51,14 +60,24 @@ const STATUS_OPTIONS: { id: StatusType; label: string }[] = [
   { id: "all", label: "Tutti" },
 ];
 
+const DEADLINE_OPTIONS: { id: DeadlineType; label: string }[] = [
+  { id: "", label: "Tutti" },
+  { id: "24h", label: "Prossime 24h" },
+  { id: "7d", label: "Prossimi 7 giorni" },
+];
+
+const SKELETON_COUNT = 6;
+
 export default function DiscoverPage() {
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<DiscoverEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState("");
+  const deferredSearch = useDeferredValue(searchInput.trim());
   const [search, setSearch] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [status, setStatus] = useState<StatusType>("open");
+  const [deadline, setDeadline] = useState<DeadlineType>("");
   const [sort, setSort] = useState<SortType>("popular");
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<EventsResponse["pagination"] | null>(null);
@@ -87,6 +106,7 @@ export default function DiscoverPage() {
         limit: "12",
         ...(search && { search }),
         ...(selectedCategory && { category: selectedCategory }),
+        ...(status === "open" && deadline && { deadline }),
       });
       const res = await fetch(`/api/events?${params}`);
       if (!res.ok) throw new Error("Failed to fetch events");
@@ -95,16 +115,21 @@ export default function DiscoverPage() {
       setPagination(data.pagination ?? null);
     } catch (err) {
       console.error("Discover fetch error:", err);
-      setError("Impossibile caricare gli eventi.");
+      setError("Impossibile caricare i mercati.");
       setEvents([]);
     } finally {
       setLoading(false);
     }
-  }, [status, sort, page, search, selectedCategory]);
+  }, [status, sort, page, search, selectedCategory, deadline]);
 
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
+
+  useEffect(() => {
+    setSearch(deferredSearch);
+    setPage(1);
+  }, [deferredSearch]);
 
   useEffect(() => {
     fetchEvents();
@@ -117,154 +142,147 @@ export default function DiscoverPage() {
   };
 
   const totalPages = pagination?.totalPages ?? 0;
+  const total = pagination?.total ?? 0;
+  const hasFilters = !!search || !!selectedCategory || status !== "open" || !!deadline;
+  const isEmptyCatalog = !loading && !error && events.length === 0;
 
   return (
     <div className="min-h-screen bg-bg">
       <Header />
-      <main className="mx-auto px-4 py-5 md:py-8 max-w-6xl">
-        <h1 className="text-2xl md:text-3xl font-bold text-fg mb-2 tracking-tight">
-          Scopri le previsioni
-        </h1>
-        <p className="text-fg-muted text-sm md:text-base mb-6">
-          Cerca, filtra e ordina gli eventi.
-        </p>
+      <main className="mx-auto px-4 sm:px-6 py-6 md:py-8 max-w-6xl">
+        <PageHeader
+          title="Catalogo mercati"
+          description="Cerca, filtra e ordina i mercati di previsione. Fai la tua previsione sulla domanda che preferisci."
+        />
 
+        {/* Search — mobile-first, sempre in evidenza */}
         <form onSubmit={handleSearch} className="mb-6" role="search">
-          <div className="flex flex-col sm:flex-row gap-3 max-w-2xl">
+          <label htmlFor="discover-search" className="sr-only">
+            Cerca mercati
+          </label>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-fg-muted pointer-events-none" aria-hidden>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
             <input
+              id="discover-search"
               type="search"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Cerca eventi..."
-              className="flex-1 w-full min-h-[48px] px-4 py-3 rounded-2xl border border-border dark:border-white/10 bg-surface/50 backdrop-blur-xl text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary text-base"
-              aria-label="Cerca eventi"
+              placeholder="Cerca mercati per parola chiave..."
+              className="w-full min-h-[48px] pl-12 pr-4 py-3 rounded-2xl border border-border dark:border-white/10 bg-surface/50 backdrop-blur-xl text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary text-ds-body ds-tap-target"
+              aria-label="Cerca mercati"
+              autoComplete="off"
             />
             <button
               type="submit"
-              className="min-h-[48px] px-6 py-3 bg-primary text-white font-semibold rounded-2xl hover:bg-primary-hover transition-colors shadow-glow-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+              className="absolute right-2 top-1/2 -translate-y-1/2 min-h-[36px] px-4 rounded-xl bg-primary text-white text-ds-body-sm font-semibold hover:bg-primary-hover transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
             >
               Cerca
             </button>
           </div>
         </form>
 
+        {/* Filtri: Categoria, Stato, Scadenza */}
         <div className="mb-6 space-y-4">
-          <div>
-            <p className="text-xs font-semibold text-fg-muted uppercase tracking-wider mb-2">Stato</p>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin md:flex-wrap">
-              {STATUS_OPTIONS.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => {
-                    setStatus(opt.id);
-                    setPage(1);
-                  }}
-                  className={`shrink-0 min-h-[44px] px-4 py-2.5 rounded-2xl font-semibold transition-all focus-visible:ring-2 focus-visible:ring-primary ${
-                    status === opt.id
-                      ? "bg-primary text-white shadow-glow"
-                      : "glass text-fg-muted border border-border dark:border-white/10 hover:border-primary/20"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <p className="text-xs font-semibold text-fg-muted uppercase tracking-wider mb-2">Ordina per</p>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin md:flex-wrap">
-              {SORT_OPTIONS.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => {
-                    setSort(opt.id);
-                    setPage(1);
-                  }}
-                  className={`shrink-0 min-h-[44px] px-4 py-2.5 rounded-2xl font-semibold transition-all focus-visible:ring-2 focus-visible:ring-primary ${
-                    sort === opt.id
-                      ? "bg-primary text-white shadow-glow"
-                      : "glass text-fg-muted border border-border dark:border-white/10 hover:border-primary/20"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
+          <FilterChips
+            label="Stato"
+            options={STATUS_OPTIONS.map((o) => ({ id: o.id, label: o.label }))}
+            value={status}
+            onChange={(id) => {
+              setStatus(id as StatusType);
+              if (id !== "open") setDeadline("");
+              setPage(1);
+            }}
+          />
+          {status === "open" && (
+            <FilterChips
+              label="Scadenza"
+              options={DEADLINE_OPTIONS.map((o) => ({ id: o.id, label: o.label }))}
+              value={deadline}
+              onChange={(id) => {
+                setDeadline(id as DeadlineType);
+                setPage(1);
+              }}
+            />
+          )}
+          <FilterChips
+            label="Ordina per"
+            options={SORT_OPTIONS.map((o) => ({ id: o.id, label: o.label }))}
+            value={sort}
+            onChange={(id) => {
+              setSort(id as SortType);
+              setPage(1);
+            }}
+          />
           {categories.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-fg-muted uppercase tracking-wider mb-2">Categoria</p>
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin md:flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedCategory("");
-                    setPage(1);
-                  }}
-                  className={`shrink-0 min-h-[40px] px-4 py-2 rounded-2xl text-sm font-medium transition-all focus-visible:ring-2 focus-visible:ring-primary ${
-                    selectedCategory === ""
-                      ? "bg-primary text-white"
-                      : "glass text-fg-muted border border-border dark:border-white/10 hover:border-primary/20"
-                  }`}
-                >
-                  Tutte
-                </button>
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => {
-                      setSelectedCategory(cat);
-                      setPage(1);
-                    }}
-                    className={`shrink-0 min-h-[40px] px-4 py-2 rounded-2xl text-sm font-medium transition-all focus-visible:ring-2 focus-visible:ring-primary ${
-                      selectedCategory === cat
-                        ? "bg-primary text-white"
-                        : "glass text-fg-muted border border-border dark:border-white/10 hover:border-primary/20"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <FilterChips
+              label="Categoria"
+              options={[{ id: "", label: "Tutte" }, ...categories.map((c) => ({ id: c, label: c }))]}
+              value={selectedCategory}
+              onChange={(id) => {
+                setSelectedCategory(id);
+                setPage(1);
+              }}
+            />
           )}
         </div>
 
+        {/* Risultati */}
         {error ? (
-          <div className="text-center py-12 glass rounded-3xl border border-border dark:border-white/10 max-w-md mx-auto px-6">
-            <p className="text-fg-muted mb-4">{error}</p>
-            <button
-              type="button"
-              onClick={() => fetchEvents()}
-              className="min-h-[48px] px-6 py-3 bg-primary text-white font-semibold rounded-2xl hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
-            >
-              Riprova
-            </button>
-          </div>
+          <EmptyState
+            title="Errore di caricamento"
+            description={error}
+            action={{ label: "Riprova", onClick: () => fetchEvents() }}
+          />
         ) : loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-hidden />
-            <p className="mt-4 text-fg-muted font-medium">Caricamento...</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {Array.from({ length: SKELETON_COUNT }, (_, i) => (
+              <MarketCardSkeleton key={i} index={i} />
+            ))}
           </div>
-        ) : events.length === 0 ? (
-          <div className="text-center py-12 md:py-16 glass rounded-3xl border border-border dark:border-white/10 max-w-lg mx-auto px-6">
-            <p className="text-fg-muted text-base md:text-lg">
-              Nessun evento con questi filtri.
-            </p>
-            <p className="text-sm text-fg-subtle mt-2">
-              Prova a cambiare categoria, stato o ordinamento.
-            </p>
-          </div>
+        ) : isEmptyCatalog ? (
+          <EmptyState
+            title={hasFilters ? "Nessun mercato trovato" : "Ancora nessun mercato"}
+            description={
+              hasFilters ? (
+                <>
+                  <p>Nessun mercato con questi filtri.</p>
+                  <p className="text-ds-body-sm text-fg-subtle mt-2">
+                    Prova a cambiare categoria, stato o scadenza.
+                  </p>
+                </>
+              ) : (
+                <p>Torna a breve per scoprire i primi mercati di previsione.</p>
+              )
+            }
+            action={
+              hasFilters
+                ? {
+                    label: "Azzera filtri",
+                    onClick: () => {
+                      setSearch("");
+                      setSearchInput("");
+                      setSelectedCategory("");
+                      setStatus("open");
+                      setDeadline("");
+                      setSort("popular");
+                      setPage(1);
+                    },
+                  }
+                : undefined
+            }
+          />
         ) : (
           <>
+            <p className="text-ds-body-sm text-fg-muted mb-4">
+              {total} {total === 1 ? "mercato" : "mercati"} trovati
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {events.map((event) => (
-                <EventCard key={event.id} event={event} />
+              {events.map((event, index) => (
+                <MarketCard key={event.id} event={event} index={index} />
               ))}
             </div>
 
@@ -277,18 +295,18 @@ export default function DiscoverPage() {
                   type="button"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  className="min-h-[44px] px-4 py-2 rounded-2xl font-semibold glass border border-border dark:border-white/10 disabled:opacity-50 disabled:cursor-not-allowed hover:border-primary/20 focus-visible:ring-2 focus-visible:ring-primary"
+                  className="min-h-[44px] px-4 rounded-xl font-semibold text-ds-body-sm border border-border dark:border-white/10 bg-surface/50 text-fg hover:bg-surface disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
                   Precedente
                 </button>
-                <span className="min-h-[44px] px-4 flex items-center text-fg-muted text-sm font-medium">
+                <span className="min-h-[44px] px-4 flex items-center text-fg-muted text-ds-body-sm font-medium">
                   Pagina {page} di {totalPages}
                 </span>
                 <button
                   type="button"
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
-                  className="min-h-[44px] px-4 py-2 rounded-2xl font-semibold glass border border-border dark:border-white/10 disabled:opacity-50 disabled:cursor-not-allowed hover:border-primary/20 focus-visible:ring-2 focus-visible:ring-primary"
+                  className="min-h-[44px] px-4 rounded-xl font-semibold text-ds-body-sm border border-border dark:border-white/10 bg-surface/50 text-fg hover:bg-surface disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
                   Successiva
                 </button>

@@ -5,6 +5,14 @@ import { useSession } from "next-auth/react";
 import Header from "@/components/Header";
 import LeaderboardRow from "@/components/LeaderboardRow";
 import { trackView } from "@/lib/analytics-client";
+import {
+  PageHeader,
+  SectionContainer,
+  Card,
+  FilterChips,
+  EmptyState,
+  LoadingBlock,
+} from "@/components/ui";
 
 type PeriodType = "weekly" | "monthly" | "all-time";
 
@@ -96,60 +104,49 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen bg-bg">
       <Header />
-      <main className="mx-auto px-4 py-5 md:py-8 max-w-2xl">
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-fg mb-1">🏆 Classifica</h1>
-          <p className="text-fg-muted text-sm">{getPeriodDescription()}</p>
-        </div>
+      <main className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
+        <PageHeader
+          title="🏆 Classifica"
+          description={getPeriodDescription()}
+        />
 
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-600 dark:text-red-400 text-sm">
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-600 dark:text-red-400 text-ds-body-sm">
             {error}
           </div>
         )}
 
-        <div className="glass rounded-2xl border border-border dark:border-white/10 p-4 mb-6 space-y-4">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin md:flex-wrap md:overflow-visible">
-            {periodButtons.map((btn) => (
-              <button
-                key={btn.id}
-                onClick={() => setPeriod(btn.id)}
-                className={`shrink-0 min-h-[44px] px-4 py-2 rounded-2xl font-semibold transition-colors ${
-                  period === btn.id ? "bg-primary text-white" : "bg-surface/50 text-fg-muted hover:text-fg border border-border dark:border-white/10"
-                }`}
-              >
-                {btn.label}
-              </button>
-            ))}
-          </div>
-          {categories.length > 0 && (
-            <div>
-              <label className="text-xs font-semibold text-fg-muted uppercase tracking-wide block mb-2">Categoria</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full md:w-auto min-h-[44px] px-4 py-2 rounded-2xl bg-surface/50 border border-border dark:border-white/10 text-fg font-medium"
-              >
-                <option value="">Tutte</option>
-                {categories.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
+        <SectionContainer>
+          <Card className="p-4 mb-6 space-y-4">
+            <FilterChips
+              options={periodButtons.map((b) => ({ id: b.id, label: b.label }))}
+              value={period}
+              onChange={setPeriod}
+            />
+            {categories.length > 0 && (
+              <div>
+                <label className="text-ds-caption font-semibold text-fg-muted uppercase tracking-wide block mb-2">Categoria</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full md:w-auto min-h-[44px] px-4 py-2 rounded-2xl bg-surface/50 border border-border dark:border-white/10 text-fg font-medium ds-tap-target"
+                >
+                  <option value="">Tutte</option>
+                  {categories.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </Card>
+        </SectionContainer>
 
         {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
-            <p className="mt-4 text-fg-muted font-medium">Caricamento...</p>
-          </div>
+          <LoadingBlock message="Caricamento..." />
         ) : leaderboard.length === 0 ? (
-          <div className="glass rounded-2xl border border-border dark:border-white/10 p-8 md:p-12 text-center">
-            <p className="text-fg-muted font-medium">Nessun dato per questo periodo.</p>
-          </div>
+          <EmptyState description="Nessun dato per questo periodo." />
         ) : (
-          <div className="glass-elevated rounded-2xl p-4 md:p-6">
+          <Card elevated className="p-4 md:p-6">
             {myRank != null && session?.user && (
               <div className="mb-4 p-3 rounded-xl bg-surface/50 border border-border dark:border-white/10 text-sm text-fg-muted">
                 La tua posizione: <strong className="text-fg">#{myRank}</strong>
@@ -177,10 +174,10 @@ export default function LeaderboardPage() {
                 />
               ))}
             </div>
-            <div className="mt-6 pt-4 border-t border-border dark:border-white/10 text-center text-sm text-fg-muted">
+            <div className="mt-6 pt-4 border-t border-border dark:border-white/10 text-center text-ds-body-sm text-fg-muted">
               <p>Totale: <strong className="text-fg">{leaderboard.length}</strong> utenti</p>
             </div>
-          </div>
+          </Card>
         )}
       </main>
     </div>

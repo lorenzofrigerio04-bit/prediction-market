@@ -5,12 +5,11 @@ import { authOptions } from "@/lib/auth";
 import { updateMissionProgress } from "@/lib/missions";
 import { checkAndAwardBadges } from "@/lib/badges";
 import { track } from "@/lib/analytics";
-
-// Bonus giornaliero base (es. 50)
-const DAILY_BONUS_BASE = 50;
-// Moltiplicatore streak: 1 + 0.1 per giorno, max 2x
-const STREAK_MULTIPLIER_PER_DAY = 0.1;
-const STREAK_CAP_FOR_MULTIPLIER = 10; // 10 giorni = 2x
+import {
+  DAILY_BONUS_BASE,
+  getNextDailyBonusAmount,
+} from "@/lib/credits-config";
+import { applyCreditTransaction } from "@/lib/apply-credit-transaction";
 
 export async function POST(request: Request) {
   try {
@@ -89,47 +88,30 @@ export async function POST(request: Request) {
       }
     }
 
-    // Moltiplicatore: 1 + 0.1 per giorno, max 2x
-    const multiplier = Math.min(
-      2,
-      1 + Math.min(newStreak, STREAK_CAP_FOR_MULTIPLIER) * STREAK_MULTIPLIER_PER_DAY
-    );
-    const bonusAmount = Math.round(DAILY_BONUS_BASE * multiplier);
+    const bonusAmount = getNextDailyBonusAmount(user.streak, true);
+    const multiplier = (bonusAmount / DAILY_BONUS_BASE).toFixed(1);
 
-    // Aggiorna l'utente e crea la transazione in una transazione atomica
     const updatedUser = await prisma.$transaction(async (tx) => {
-      // Aggiorna crediti, streak e lastDailyBonus
-      const updated = await tx.user.update({
-        where: { id: userId },
-        data: {
-          credits: {
-            increment: bonusAmount,
-          },
-          streak: newStreak,
-          lastDailyBonus: now,
-          totalEarned: {
-            increment: bonusAmount,
-          },
-        },
-        select: {
-          credits: true,
-          streak: true,
-        },
-      });
-
-      // Crea la transazione
-      await tx.transaction.create({
-        data: {
-          userId,
-          type: "DAILY_BONUS",
-          amount: bonusAmount,
-          description: `Bonus giornaliero (Serie: ${newStreak} giorni, x${multiplier.toFixed(1)})`,
+      const newCredits = await applyCreditTransaction(
+        tx,
+        userId,
+        "DAILY_BONUS",
+        bonusAmount,
+        {
+          description: `Bonus giornaliero (Serie: ${newStreak} giorni, x${multiplier})`,
           referenceType: "daily_bonus",
-          balanceAfter: updated.credits,
-        },
+          applyBoost: true,
+        }
+      );
+      await tx.user.update({
+        where: { id: userId },
+        data: { streak: newStreak, lastDailyBonus: now },
       });
-
-      return updated;
+      const userAfter = await tx.user.findUnique({
+        where: { id: userId },
+        select: { credits: true, streak: true },
+      });
+      return userAfter!;
     });
 
     // Missione "Login giornaliero" e badge (streak può aver sbloccato badge)

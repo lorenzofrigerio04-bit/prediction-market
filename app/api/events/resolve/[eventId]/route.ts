@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { applyCreditTransaction } from "@/lib/apply-credit-transaction";
 
 /**
  * Risolve manualmente un singolo evento specificando l'outcome
@@ -91,37 +92,18 @@ export async function POST(
         },
       });
 
-      // Aggiorna crediti utente
-      const user = await prisma.user.findUnique({
-        where: { id: prediction.userId },
-        select: { credits: true },
-      });
-
-      await prisma.user.update({
-        where: { id: prediction.userId },
-        data: {
-          credits: { increment: payout },
-          totalEarned: { increment: payout },
-        },
-      });
-
-      // Recupera crediti aggiornati
-      const userAfterUpdate = await prisma.user.findUnique({
-        where: { id: prediction.userId },
-        select: { credits: true },
-      });
-
-      await prisma.transaction.create({
-        data: {
-          userId: prediction.userId,
-          type: "PREDICTION_WIN",
-          amount: payout,
+      await applyCreditTransaction(
+        prisma,
+        prediction.userId,
+        "PREDICTION_WIN",
+        payout,
+        {
           description: `Vincita previsione: ${event.title}`,
           referenceId: prediction.id,
           referenceType: "prediction",
-          balanceAfter: userAfterUpdate?.credits || 0,
-        },
-      });
+          applyBoost: true,
+        }
+      );
     }
 
     // Aggiorna previsioni perdenti
@@ -136,23 +118,18 @@ export async function POST(
         },
       });
 
-      // Recupera crediti attuali dell'utente
-      const userCurrent = await prisma.user.findUnique({
-        where: { id: prediction.userId },
-        select: { credits: true },
-      });
-
-      await prisma.transaction.create({
-        data: {
-          userId: prediction.userId,
-          type: "PREDICTION_LOSS",
-          amount: -prediction.credits,
+      await applyCreditTransaction(
+        prisma,
+        prediction.userId,
+        "PREDICTION_LOSS",
+        -prediction.credits,
+        {
           description: `Perdita previsione: ${event.title}`,
           referenceId: prediction.id,
           referenceType: "prediction",
-          balanceAfter: userCurrent?.credits || 0,
-        },
-      });
+          skipUserUpdate: true,
+        }
+      );
     }
 
     // Aggiorna statistiche accuracy per tutti gli utenti

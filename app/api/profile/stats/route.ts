@@ -22,6 +22,7 @@ export async function GET() {
       select: {
         id: true,
         name: true,
+        username: true,
         email: true,
         image: true,
         credits: true,
@@ -111,6 +112,7 @@ export async function GET() {
       user: {
         id: user.id,
         name: user.name,
+        username: user.username,
         email: user.email,
         image: user.image,
         createdAt: user.createdAt,

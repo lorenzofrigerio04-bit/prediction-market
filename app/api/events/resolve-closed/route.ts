@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
+import { applyCreditTransaction } from "@/lib/apply-credit-transaction";
 
 /**
  * Processa tutti gli eventi chiusi che non sono ancora stati risolti
@@ -114,37 +115,18 @@ export async function POST(request: NextRequest) {
             },
           });
 
-          // Aggiorna crediti utente
-          await prisma.user.update({
-            where: { id: prediction.userId },
-            data: {
-              credits: {
-                increment: payout, // aggiungi il payout
-              },
-              totalEarned: {
-                increment: payout,
-              },
-            },
-          });
-
-          // Recupera crediti aggiornati dopo l'incremento
-          const userAfterUpdate = await prisma.user.findUnique({
-            where: { id: prediction.userId },
-            select: { credits: true },
-          });
-
-          // Crea transazione per il guadagno
-          await prisma.transaction.create({
-            data: {
-              userId: prediction.userId,
-              type: "PREDICTION_WIN",
-              amount: payout,
+          await applyCreditTransaction(
+            prisma,
+            prediction.userId,
+            "PREDICTION_WIN",
+            payout,
+            {
               description: `Vincita previsione: ${event.title}`,
               referenceId: prediction.id,
               referenceType: "prediction",
-              balanceAfter: userAfterUpdate?.credits || 0,
-            },
-          });
+              applyBoost: true,
+            }
+          );
         }
 
         // Aggiorna previsioni perdenti
@@ -159,24 +141,18 @@ export async function POST(request: NextRequest) {
             },
           });
 
-          // Recupera crediti attuali dell'utente
-          const userCurrent = await prisma.user.findUnique({
-            where: { id: prediction.userId },
-            select: { credits: true },
-          });
-
-          // Crea transazione per la perdita
-          await prisma.transaction.create({
-            data: {
-              userId: prediction.userId,
-              type: "PREDICTION_LOSS",
-              amount: -prediction.credits,
+          await applyCreditTransaction(
+            prisma,
+            prediction.userId,
+            "PREDICTION_LOSS",
+            -prediction.credits,
+            {
               description: `Perdita previsione: ${event.title}`,
               referenceId: prediction.id,
               referenceType: "prediction",
-              balanceAfter: userCurrent?.credits || 0,
-            },
-          });
+              skipUserUpdate: true,
+            }
+          );
         }
 
         // Aggiorna statistiche utenti (accuracy, correctPredictions, etc.)

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { track } from "@/lib/analytics";
+import { updateMissionProgress } from "@/lib/missions";
 
 /**
  * GET /api/events/[id]/follow — returns { isFollowing }
@@ -95,6 +96,9 @@ export async function POST(
           eventId,
         },
       });
+      updateMissionProgress(prisma, session.user.id, "FOLLOW_EVENTS", 1).catch((e) =>
+        console.error("Mission progress update error:", e)
+      );
       track("EVENT_FOLLOWED", { userId: session.user.id, eventId }, { request });
       return NextResponse.json({
         success: true,

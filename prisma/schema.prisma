@@ -17,6 +17,7 @@ model User {
   id            String   @id @default(cuid())
   email         String   @unique
   name          String?
+  username      String?  @unique // nome pubblico modificabile (3-30 caratteri, alfanumerico + _)
   password      String? // null se login con OAuth
   image         String? // avatar URL
   emailVerified DateTime?
@@ -29,6 +30,10 @@ model User {
   // Statistiche
   streak        Int      @default(0) // giorni consecutivi
   lastDailyBonus DateTime? // ultima volta che ha preso il daily bonus
+  
+  // Boost moltiplicatore temporaneo (Spin of the Day)
+  boostMultiplier Float?   // es. 1.25
+  boostExpiresAt   DateTime? // fino a quando il boost è attivo
   totalPredictions Int   @default(0)
   correctPredictions Int  @default(0)
   accuracy      Float    @default(0) // percentuale accuratezza
@@ -44,6 +49,7 @@ model User {
   comments      Comment[]
   commentReactions CommentReaction[]
   transactions  Transaction[]
+  dailySpins   DailySpin[]
   badges        UserBadge[]
   missions      UserMission[]
   notifications Notification[]
@@ -309,6 +315,27 @@ model CommentReaction {
   @@unique([userId, commentId, type]) // un utente può avere una sola reazione di ogni tipo per commento
   @@index([commentId])
   @@map("comment_reactions")
+}
+
+// ============================================
+// DAILY SPIN MODEL (Spin of the Day)
+// ============================================
+model DailySpin {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Tipo reward: CREDITS | BOOST
+  rewardType  String
+  
+  // Payload JSON: { "amount": number } per CREDITS, { "multiplier": number, "durationMinutes": number } per BOOST
+  rewardPayload Json
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@map("daily_spins")
 }
 
 // ============================================

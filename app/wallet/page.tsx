@@ -3,8 +3,18 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Header from "@/components/Header";
 import StreakBadge from "@/components/StreakBadge";
+import {
+  PageHeader,
+  SectionContainer,
+  Card,
+  StatCard,
+  CTAButton,
+  EmptyState,
+  LoadingBlock,
+} from "@/components/ui";
 
 interface WalletStats {
   credits: number;
@@ -14,6 +24,11 @@ interface WalletStats {
   lastDailyBonus: string | null;
   canClaimDailyBonus: boolean;
   nextBonusAmount: number;
+  bonusMultiplier?: number;
+  canSpinToday?: boolean;
+  boostMultiplier?: number | null;
+  boostExpiresAt?: string | null;
+  hasActiveBoost?: boolean;
 }
 
 interface Transaction {
@@ -45,6 +60,7 @@ const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   SHOP_PURCHASE: "Acquisto shop",
   ADMIN_ADJUSTMENT: "Aggiustamento Admin",
   REFERRAL_BONUS: "Bonus Referral",
+  SPIN_REWARD: "Spin of the Day",
 };
 
 const TRANSACTION_TYPE_ICONS: Record<string, string> = {
@@ -56,6 +72,7 @@ const TRANSACTION_TYPE_ICONS: Record<string, string> = {
   SHOP_PURCHASE: "🛒",
   ADMIN_ADJUSTMENT: "⚙️",
   REFERRAL_BONUS: "👥",
+  SPIN_REWARD: "🎡",
 };
 
 export default function WalletPage() {
@@ -129,211 +146,280 @@ export default function WalletPage() {
     setSuccessMessage(null);
 
     try {
-      const response = await fetch("/api/wallet/daily-bonus", {
-        method: "POST",
-      });
-
+      const response = await fetch("/api/wallet/daily-bonus", { method: "POST" });
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Errore nel riscatto del bonus");
-      }
+      if (!response.ok) throw new Error(data.error || "Errore nel riscatto del bonus");
 
       setSuccessMessage(data.message);
-      // Ricarica i dati
       await fetchWalletData();
-    } catch (err: any) {
-      console.error("Error claiming daily bonus:", err);
-      setError(err.message || "Errore nel riscatto del bonus giornaliero");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Errore nel riscatto del bonus giornaliero");
     } finally {
       setClaimingBonus(false);
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("it-IT", {
+  const formatDate = (dateString: string) =>
+    new Intl.DateTimeFormat("it-IT", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    }).format(date);
-  };
+    }).format(new Date(dateString));
 
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat("it-IT").format(amount);
-  };
+  const formatAmount = (amount: number) => new Intl.NumberFormat("it-IT").format(amount);
 
   if (status === "loading" || loading) {
     return (
       <div className="min-h-screen bg-bg">
         <Header />
-        <main className="mx-auto px-4 py-8 max-w-2xl">
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
-            <p className="mt-4 text-fg-muted font-medium">Caricamento wallet...</p>
-          </div>
+        <main className="mx-auto max-w-2xl px-page-x py-page-y md:py-8">
+          <LoadingBlock message="Caricamento wallet..." />
         </main>
       </div>
     );
   }
 
-  if (!session) {
-    return null;
-  }
+  if (!session) return null;
 
   if (!stats && !loading && error) {
     return (
       <div className="min-h-screen bg-bg">
         <Header />
-        <main className="mx-auto px-4 py-8 max-w-2xl">
-          <h1 className="text-2xl md:text-3xl font-bold text-fg mb-6">Il Mio Wallet</h1>
-          <div className="p-6 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-600 dark:text-red-400">
-            <p className="mb-4">{error}</p>
-            <button type="button" onClick={() => fetchWalletData()} className="min-h-[48px] px-5 py-2.5 bg-red-600 text-white font-semibold rounded-2xl hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500 focus-visible:ring-offset-bg">
-              Riprova
-            </button>
-          </div>
+        <main className="mx-auto max-w-2xl px-page-x py-page-y md:py-8">
+          <PageHeader title="Il Mio Wallet" />
+          <EmptyState description={error} action={{ label: "Riprova", onClick: () => fetchWalletData() }} />
         </main>
       </div>
     );
   }
 
-  if (!stats) {
-    return null;
-  }
+  if (!stats) return null;
 
   return (
     <div className="min-h-screen bg-bg">
       <Header />
-      <main className="mx-auto px-4 py-5 md:py-8 max-w-2xl">
-        <div className="mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-fg mb-1">Il Mio Wallet</h1>
-          <p className="text-fg-muted text-sm md:text-base">Crediti e transazioni</p>
-        </div>
+      <main className="mx-auto max-w-2xl px-page-x py-page-y md:py-8">
+        <PageHeader title="Il Mio Wallet" description="Saldo, bonus e storico crediti" />
 
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-600 dark:text-red-400 text-sm">
+          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-ds-body-sm text-red-600 dark:text-red-400">
             {error}
           </div>
         )}
         {successMessage && (
-          <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-700 dark:text-emerald-400 text-sm">
+          <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-ds-body-sm text-emerald-700 dark:text-emerald-400">
             {successMessage}
           </div>
         )}
 
-        <div className="mb-6 p-5 md:p-6 rounded-2xl glass-elevated border-2 border-primary/20">
-          <p className="text-sm font-semibold text-fg-muted uppercase tracking-wider mb-1">Crediti disponibili</p>
-          <p className="text-3xl md:text-4xl font-bold text-primary">{formatAmount(stats.credits)}</p>
-        </div>
+        {/* 1. Crediti giocatore */}
+        <SectionContainer>
+          <h2 className="mb-2 text-ds-label uppercase tracking-wide text-fg-muted">Crediti giocatore</h2>
+          <p className="mb-4 text-ds-body-sm text-fg-muted">
+            Il tuo saldo totale. Ogni movimento ha una motivazione (previsioni, bonus, missioni, shop).
+          </p>
+          <StatCard
+            label="Saldo"
+            value={formatAmount(stats.credits)}
+            variant="primary"
+            elevated
+          />
+        </SectionContainer>
 
-        <p className="mb-6 text-sm text-fg-muted italic">
-          I crediti sono virtuali e non hanno valore monetario. Non sono convertibili né prelevabili.
+        {/* 2. Disponibili */}
+        <SectionContainer>
+          <h2 className="mb-2 text-ds-label uppercase tracking-wide text-fg-muted">Disponibili</h2>
+          <p className="mb-3 text-ds-body-sm text-fg-muted">
+            Crediti utilizzabili subito per fare previsioni o acquisti nello shop. Nessun blocco.
+          </p>
+          <div className="rounded-2xl border border-border bg-surface/50 p-4 dark:border-white/10">
+            <p className="text-2xl font-bold tabular-nums text-fg md:text-3xl">{formatAmount(stats.credits)}</p>
+            <p className="mt-1 text-ds-micro text-fg-muted">crediti disponibili</p>
+          </div>
+          <p className="mt-4 text-ds-micro italic text-fg-muted">
+            I crediti sono virtuali e non hanno valore monetario. Non sono convertibili né prelevabili.
+          </p>
+        </SectionContainer>
+
+        {/* Riepilogo motivato: da dove vengono i numeri */}
+        <div className="mb-6 grid grid-cols-2 gap-3 md:gap-4">
+          <StatCard
+            label="Totale guadagnato"
+            value={`+${formatAmount(stats.totalEarned)}`}
+            variant="success"
+          />
+          <StatCard
+            label="Totale speso"
+            value={`−${formatAmount(stats.totalSpent)}`}
+            variant="danger"
+          />
+        </div>
+        <p className="mb-8 text-ds-micro text-fg-muted">
+          Guadagni: bonus giornaliero, missioni, vincite previsioni. Spese: scommesse e acquisti shop.
         </p>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
-          <div className="glass rounded-2xl border border-border dark:border-white/10 p-4 md:p-6">
-            <p className="text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">Guadagnati</p>
-            <p className="text-2xl md:text-3xl font-bold text-emerald-500 dark:text-emerald-400">+{formatAmount(stats.totalEarned)}</p>
-          </div>
-          <div className="glass rounded-2xl border border-border dark:border-white/10 p-4 md:p-6">
-            <p className="text-xs font-semibold text-fg-muted uppercase tracking-wider mb-1">Spesi</p>
-            <p className="text-2xl md:text-3xl font-bold text-red-500 dark:text-red-400">−{formatAmount(stats.totalSpent)}</p>
-          </div>
-          <div className="glass rounded-2xl border border-border dark:border-white/10 p-4 md:p-6 col-span-2 lg:col-span-1 flex items-center">
-            <StreakBadge streak={stats.streak} size="lg" />
-          </div>
-        </div>
-
-        <div className="glass rounded-2xl border border-border dark:border-white/10 p-5 md:p-6 mb-6">
-          <h2 className="text-lg font-bold text-fg mb-3">Ritira bonus giornaliero</h2>
-          <p className="text-fg-muted text-sm mb-4">
-            {stats.canClaimDailyBonus
-              ? `Riscatta ${formatAmount(stats.nextBonusAmount)} crediti oggi.`
-              : "Prossimo bonus domani."}
+        {/* 3. Bonus attivi */}
+        <SectionContainer>
+          <h2 className="mb-2 text-ds-label uppercase tracking-wide text-fg-muted">Bonus attivi</h2>
+          <p className="mb-4 text-ds-body-sm text-fg-muted">
+            Bonus che puoi riscattare o su cui stai lavorando. Ogni importo è definito dalla configurazione del gioco.
           </p>
-          {stats.lastDailyBonus && <p className="text-xs text-fg-muted mb-3">Ultimo: {formatDate(stats.lastDailyBonus)}</p>}
-          {stats.streak > 0 && <p className="text-xs text-fg-muted mb-4">Streak +{stats.streak * 10} crediti extra</p>}
-          <button
-            type="button"
-            onClick={handleClaimDailyBonus}
-            disabled={!stats.canClaimDailyBonus || claimingBonus}
-            className={`w-full min-h-[48px] rounded-2xl font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:ring-amber-500 ${
-              stats.canClaimDailyBonus && !claimingBonus
-                ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 shadow-glow"
-                : "bg-surface/50 text-fg-muted cursor-not-allowed border border-border dark:border-white/10"
-            }`}
-          >
-            {claimingBonus ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                Riscatto...
-              </span>
-            ) : stats.canClaimDailyBonus ? (
-              <span className="flex items-center justify-center gap-2">🎁 Ritira bonus giornaliero</span>
-            ) : (
-              <span className="flex items-center justify-center gap-2">Prossimo bonus domani</span>
-            )}
-          </button>
-        </div>
 
-        <div className="glass rounded-2xl border border-border dark:border-white/10 p-5 md:p-6">
-          <h2 className="text-lg font-bold text-fg mb-4">Storico transazioni</h2>
-          {transactions.length === 0 ? (
-            <div className="text-center py-8 text-fg-muted text-sm">
-              <p>Nessuna transazione ancora.</p>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-2">
-                {transactions.map((transaction) => {
-                  const isPositive = transaction.amount > 0;
-                  const typeLabel = TRANSACTION_TYPE_LABELS[transaction.type] || transaction.type;
-                  const typeIcon = TRANSACTION_TYPE_ICONS[transaction.type] || "💰";
-                  return (
-                    <div
-                      key={transaction.id}
-                      className="flex items-center justify-between p-4 rounded-2xl border border-border dark:border-white/10 hover:bg-surface/30 transition-colors"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="text-xl shrink-0">{typeIcon}</span>
-                        <div className="min-w-0">
-                          <p className="font-medium text-fg truncate">{typeLabel}</p>
-                          <p className="text-xs text-fg-muted">{formatDate(transaction.createdAt)}</p>
-                          {transaction.description && (
-                            <p className="text-xs text-fg-muted truncate mt-0.5" title={transaction.description}>
-                              {transaction.description}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className={`font-semibold ${isPositive ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
-                          {isPositive ? "+" : ""}{formatAmount(transaction.amount)}
-                        </p>
-                        <p className="text-xs text-fg-muted">Saldo {formatAmount(transaction.balanceAfter)}</p>
-                      </div>
-                    </div>
-                  );
-                })}
+          <Card className="mb-4 p-5 md:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-ds-h3 font-bold text-fg">Bonus giornaliero</h3>
+                <p className="mt-1 text-ds-body-sm text-fg-muted">
+                  {stats.canClaimDailyBonus
+                    ? `Riscatta ${formatAmount(stats.nextBonusAmount)} crediti oggi.`
+                    : "Prossimo bonus domani."}
+                </p>
+                {stats.streak > 0 && (
+                  <p className="mt-2">
+                    <StreakBadge streak={stats.streak} size="sm" />
+                    {stats.bonusMultiplier != null && (
+                      <span className="ml-2 text-ds-body-sm text-fg-muted">
+                        Moltiplicatore: ×{stats.bonusMultiplier} (fino a ×2 con 10 giorni consecutivi)
+                      </span>
+                    )}
+                  </p>
+                )}
+                {stats.lastDailyBonus && (
+                  <p className="mt-1 text-ds-micro text-fg-muted">Ultimo riscatto: {formatDate(stats.lastDailyBonus)}</p>
+                )}
               </div>
-              {pagination?.hasMore && (
-                <div className="mt-4 flex justify-center">
-                  <button
-                    type="button"
-                    onClick={loadMoreTransactions}
-                    disabled={loadingMore}
-                    className="min-h-[44px] px-5 py-2.5 rounded-2xl border border-border dark:border-white/10 bg-surface/50 text-fg font-medium hover:bg-surface transition-colors disabled:opacity-60"
-                  >
-                    {loadingMore ? "Caricamento..." : "Carica altre"}
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+              <CTAButton
+                fullWidth={false}
+                disabled={!stats.canClaimDailyBonus || claimingBonus}
+                onClick={handleClaimDailyBonus}
+                variant="primary"
+                className={
+                  !stats.canClaimDailyBonus || claimingBonus
+                    ? "!border-border !bg-surface/50 !text-fg-muted dark:!border-white/10"
+                    : ""
+                }
+              >
+                {claimingBonus ? (
+                  <span className="flex items-center gap-2">
+                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" aria-hidden />
+                    Riscatto...
+                  </span>
+                ) : stats.canClaimDailyBonus ? (
+                  "🎁 Ritira bonus"
+                ) : (
+                  "Prossimo domani"
+                )}
+              </CTAButton>
+            </div>
+          </Card>
+
+          <Card className="mb-4 p-5 md:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-ds-h3 font-bold text-fg">Spin of the Day</h3>
+                <p className="mt-1 text-ds-body-sm text-fg-muted">
+                  {stats.canSpinToday
+                    ? "Un spin gratuito ogni giorno. Crediti o boost moltiplicatore!"
+                    : "Hai già usato lo spin di oggi. Torna domani."}
+                </p>
+                {stats.hasActiveBoost && stats.boostMultiplier != null && stats.boostExpiresAt && (
+                  <p className="mt-2 text-ds-body-sm font-medium text-primary">
+                    Boost attivo: ×{stats.boostMultiplier} fino alle{" "}
+                    {new Date(stats.boostExpiresAt).toLocaleTimeString("it-IT", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                )}
+              </div>
+              <CTAButton
+                href="/spin"
+                fullWidth={false}
+                variant="primary"
+                className={!stats.canSpinToday ? "!border-border !bg-surface/50 !text-fg-muted dark:!border-white/10" : ""}
+              >
+                {stats.canSpinToday ? "🎡 Gira la ruota" : "Vedi la ruota"}
+              </CTAButton>
+            </div>
+          </Card>
+
+          <Card className="border-dashed border-border bg-surface/30 p-5 dark:border-white/10 md:p-6">
+            <h3 className="text-ds-h3 font-bold text-fg">Missioni</h3>
+            <p className="mt-1 text-ds-body-sm text-fg-muted">
+              Completa missioni giornaliere e settimanali per crediti extra. Le ricompense sono definite per ogni missione.
+            </p>
+            <Link
+              href="/missions"
+              className="mt-4 inline-block text-ds-body-sm font-medium text-primary hover:underline"
+            >
+              Vai alle missioni →
+            </Link>
+          </Card>
+        </SectionContainer>
+
+        {/* 4. Storico transazioni */}
+        <SectionContainer>
+          <h2 className="mb-2 text-ds-label uppercase tracking-wide text-fg-muted">Storico transazioni</h2>
+          <p className="mb-4 text-ds-body-sm text-fg-muted">
+            Ogni movimento è registrato con tipo, importo e saldo dopo l’operazione.
+          </p>
+          <Card className="p-5 md:p-6">
+            {transactions.length === 0 ? (
+              <div className="py-8 text-center text-ds-body-sm text-fg-muted">Nessuna transazione ancora.</div>
+            ) : (
+              <>
+                <ul className="space-y-2">
+                  {transactions.map((tx) => {
+                    const isPositive = tx.amount > 0;
+                    const typeLabel = TRANSACTION_TYPE_LABELS[tx.type] ?? tx.type;
+                    const typeIcon = TRANSACTION_TYPE_ICONS[tx.type] ?? "💰";
+                    return (
+                      <li
+                        key={tx.id}
+                        className="flex items-center justify-between gap-3 rounded-2xl border border-border p-4 transition-colors hover:bg-surface/30 dark:border-white/10"
+                      >
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span className="shrink-0 text-xl">{typeIcon}</span>
+                          <div className="min-w-0">
+                            <p className="font-medium text-fg truncate">{typeLabel}</p>
+                            <p className="text-xs text-fg-muted">{formatDate(tx.createdAt)}</p>
+                            {tx.description && (
+                              <p className="mt-0.5 truncate text-xs text-fg-muted" title={tx.description}>
+                                {tx.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p
+                            className={
+                              isPositive
+                                ? "font-semibold text-emerald-500 dark:text-emerald-400"
+                                : "font-semibold text-red-500 dark:text-red-400"
+                            }
+                          >
+                            {isPositive ? "+" : ""}{formatAmount(tx.amount)}
+                          </p>
+                          <p className="text-xs text-fg-muted">Saldo {formatAmount(tx.balanceAfter)}</p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+                {pagination?.hasMore && (
+                  <div className="mt-4 flex justify-center">
+                    <CTAButton variant="secondary" onClick={loadMoreTransactions} disabled={loadingMore}>
+                      {loadingMore ? "Caricamento..." : "Carica altre"}
+                    </CTAButton>
+                  </div>
+                )}
+              </>
+            )}
+          </Card>
+        </SectionContainer>
       </main>
     </div>
   );

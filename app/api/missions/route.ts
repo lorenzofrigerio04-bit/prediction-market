@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ensureUserMissionsForPeriod } from "@/lib/missions";
 import { prisma } from "@/lib/prisma";
+import { getDailyBonusMultiplier } from "@/lib/credits-config";
 
 /**
  * GET /api/missions
@@ -28,11 +29,7 @@ export async function GET() {
       }),
     ]);
 
-    const STREAK_CAP = 10;
-    const bonusMultiplier =
-      Math.round(
-        Math.min(2, 1 + Math.min(user?.streak ?? 0, STREAK_CAP) * 0.1) * 100
-      ) / 100;
+    const bonusMultiplier = getDailyBonusMultiplier(user?.streak ?? 0);
 
     const formatted = missions.map((um) => ({
       id: um.id,

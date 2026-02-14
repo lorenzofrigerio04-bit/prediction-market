@@ -64,12 +64,15 @@ async function main() {
   if (existingMissions === 0) {
     console.log('📋 Creazione missioni...');
     const missions = [
+      { name: 'Prevedi 1 evento oggi', description: 'Fai almeno 1 previsione oggi', type: 'MAKE_PREDICTIONS', target: 1, reward: 30, period: 'DAILY', category: null },
       { name: 'Previsioni giornaliere', description: 'Fai 3 previsioni oggi', type: 'MAKE_PREDICTIONS', target: 3, reward: 50, period: 'DAILY', category: null },
       { name: '1 previsione su Tech', description: 'Fai 1 previsione su Tecnologia', type: 'MAKE_PREDICTIONS', target: 1, reward: 30, period: 'DAILY', category: 'Tecnologia' },
+      { name: 'Login giornaliero', description: 'Riscatta il bonus giornaliero nel Wallet', type: 'DAILY_LOGIN', target: 1, reward: 25, period: 'DAILY', category: null },
+      { name: 'Completa 5 previsioni settimanali', description: 'Fai 5 previsioni questa settimana', type: 'MAKE_PREDICTIONS', target: 5, reward: 100, period: 'WEEKLY', category: null },
       { name: 'Previsioni settimanali', description: 'Fai 10 previsioni questa settimana', type: 'MAKE_PREDICTIONS', target: 10, reward: 150, period: 'WEEKLY', category: null },
+      { name: 'Segui 3 categorie', description: 'Segui almeno 3 eventi (anche in categorie diverse)', type: 'FOLLOW_EVENTS', target: 3, reward: 40, period: 'WEEKLY', category: null },
       { name: 'Vincita giornaliera', description: 'Vinci 1 previsione oggi', type: 'WIN_PREDICTIONS', target: 1, reward: 30, period: 'DAILY', category: null },
       { name: 'Vincite settimanali', description: 'Vinci 5 previsioni questa settimana', type: 'WIN_PREDICTIONS', target: 5, reward: 200, period: 'WEEKLY', category: null },
-      { name: 'Login giornaliero', description: 'Riscatta il bonus giornaliero', type: 'DAILY_LOGIN', target: 1, reward: 25, period: 'DAILY', category: null },
     ];
     for (const m of missions) {
       await prisma.mission.create({ data: m });

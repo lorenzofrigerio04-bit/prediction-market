@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/admin";
 import { createAuditLog } from "@/lib/audit";
 import { updateMissionProgress } from "@/lib/missions";
 import { checkAndAwardBadges } from "@/lib/badges";
+import { applyCreditTransaction } from "@/lib/apply-credit-transaction";
 
 /**
  * POST /api/admin/events/[id]/resolve
@@ -101,60 +102,45 @@ export async function POST(
         },
       });
 
-      // Aggiorna il wallet dell'utente
       if (won && payout > 0) {
-        const user = await prisma.user.findUnique({
-          where: { id: prediction.userId },
-          select: { credits: true },
-        });
-
-        if (user) {
-          const newCredits = user.credits + payout;
-          const profit = payout - prediction.credits;
-
-          // Aggiorna crediti
-          await prisma.user.update({
-            where: { id: prediction.userId },
-            data: {
-              credits: newCredits,
-              totalEarned: { increment: payout },
-            },
-          });
-
-          // Crea transazione
-          await prisma.transaction.create({
-            data: {
-              userId: prediction.userId,
-              type: "PREDICTION_WIN",
-              amount: payout,
-              description: `Vincita previsione: ${event.title}`,
-              referenceId: prediction.id,
-              referenceType: "prediction",
-              balanceAfter: newCredits,
-            },
-          });
-
-          // Aggiorna statistiche
-          await prisma.user.update({
-            where: { id: prediction.userId },
-            data: {
-              correctPredictions: { increment: 1 },
-              totalPredictions: { increment: 1 },
-            },
-          });
-
-          // Missione "Vincita previsione"
-          updateMissionProgress(prisma, prediction.userId, "WIN_PREDICTIONS", 1).catch((e) =>
-            console.error("Mission progress update error:", e)
-          );
-        }
-      } else {
-        // Ha perso - aggiorna solo le statistiche
+        await applyCreditTransaction(
+          prisma,
+          prediction.userId,
+          "PREDICTION_WIN",
+          payout,
+          {
+            description: `Vincita previsione: ${event.title}`,
+            referenceId: prediction.id,
+            referenceType: "prediction",
+            applyBoost: true,
+          }
+        );
         await prisma.user.update({
           where: { id: prediction.userId },
           data: {
+            correctPredictions: { increment: 1 },
             totalPredictions: { increment: 1 },
           },
+        });
+        updateMissionProgress(prisma, prediction.userId, "WIN_PREDICTIONS", 1).catch((e) =>
+          console.error("Mission progress update error:", e)
+        );
+      } else {
+        await applyCreditTransaction(
+          prisma,
+          prediction.userId,
+          "PREDICTION_LOSS",
+          -prediction.credits,
+          {
+            description: `Perdita previsione: ${event.title}`,
+            referenceId: prediction.id,
+            referenceType: "prediction",
+            skipUserUpdate: true,
+          }
+        );
+        await prisma.user.update({
+          where: { id: prediction.userId },
+          data: { totalPredictions: { increment: 1 } },
         });
       }
     }

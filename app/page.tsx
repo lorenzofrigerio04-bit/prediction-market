@@ -7,9 +7,17 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import EventCard from "@/components/EventCard";
 import OnboardingTour from "@/components/OnboardingTour";
-import HeroMarquee from "@/components/landing/HeroMarquee";
-import BreakingNewsTicker, { type NewsItem } from "@/components/landing/BreakingNewsTicker";
+import LandingEventRow from "@/components/landing/LandingEventRow";
+import HomeSummary from "@/components/home/HomeSummary";
+import HomeTeaser from "@/components/home/HomeTeaser";
 import { resolveClosedEvents } from "@/lib/resolveClosedEvents";
+import {
+  PageHeader,
+  SectionContainer,
+  CTAButton,
+  EmptyState,
+  LoadingBlock,
+} from "@/components/ui";
 
 const ONBOARDING_STORAGE_KEY = "prediction-market-onboarding-completed";
 
@@ -44,11 +52,6 @@ interface EventsResponse {
   };
 }
 
-interface WalletStats {
-  canClaimDailyBonus: boolean;
-  nextBonusAmount?: number;
-}
-
 interface Mission {
   id: string;
   name: string;
@@ -67,32 +70,46 @@ interface LeaderboardUser {
   image: string | null;
 }
 
-type HomeSectionTab = "expiring" | "popular" | "foryou";
+interface CategoryWithEvents {
+  category: string;
+  events: Event[];
+}
 
 export default function Home() {
   const pathname = usePathname();
   const { data: session, status, update: updateSession } = useSession();
-  const [eventsExpiring, setEventsExpiring] = useState<Event[]>([]);
-  const [eventsPopular, setEventsPopular] = useState<Event[]>([]);
-  const [eventsForYou, setEventsForYou] = useState<Event[]>([]);
-  const [loadingExpiring, setLoadingExpiring] = useState(true);
-  const [loadingPopular, setLoadingPopular] = useState(true);
-  const [loadingForYou, setLoadingForYou] = useState(true);
-  const [sectionTab, setSectionTab] = useState<HomeSectionTab>("expiring");
-  const [eventsError, setEventsError] = useState<string | null>(null);
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
   const [sessionSynced, setSessionSynced] = useState(false);
   const sessionSyncDone = useRef(false);
 
-  // Daily bonus
-  const [walletStats, setWalletStats] = useState<WalletStats | null>(null);
-  const [dailyBonusLoading, setDailyBonusLoading] = useState(false);
-  // Missions
+  // Top summary
+  const [credits, setCredits] = useState<number | null>(null);
+  const [creditsLoading, setCreditsLoading] = useState(true);
+  const [weeklyRank, setWeeklyRank] = useState<number | undefined>(undefined);
+  const [rankLoading, setRankLoading] = useState(true);
+  const [streak, setStreak] = useState<number | null>(null);
+  const [streakLoading, setStreakLoading] = useState(true);
+
+  // Mercati in tendenza (feed centrale)
+  const [eventsTrending, setEventsTrending] = useState<Event[]>([]);
+  const [loadingTrending, setLoadingTrending] = useState(true);
+  const [eventsError, setEventsError] = useState<string | null>(null);
+
+  // In scadenza presto
+  const [eventsExpiring, setEventsExpiring] = useState<Event[]>([]);
+  const [loadingExpiring, setLoadingExpiring] = useState(true);
+
+  // Categorie con preview
+  const [categoriesWithEvents, setCategoriesWithEvents] = useState<CategoryWithEvents[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  // Teaser: missioni, wallet, classifica, spin
   const [missions, setMissions] = useState<Mission[]>([]);
   const [missionsLoading, setMissionsLoading] = useState(false);
-  // Leaderboard teaser
   const [leaderboardTop, setLeaderboardTop] = useState<LeaderboardUser[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [canSpinToday, setCanSpinToday] = useState<boolean | null>(null);
+  const [spinLoading, setSpinLoading] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated" || status === "loading") {
@@ -134,59 +151,103 @@ export default function Home() {
     })();
   }, [updateSession]);
 
-  const fetchSectionEvents = useCallback(
-    async (filter: "expiring" | "popular", setEvents: (e: Event[]) => void, setLoading: (l: boolean) => void) => {
-      setLoading(true);
-      setEventsError(null);
-      try {
-        const params = new URLSearchParams({
-          filter,
-          limit: "6",
-          status: "open",
-        });
-        const res = await fetch(`/api/events?${params}`);
-        if (!res.ok) throw new Error("Failed to fetch events");
-        const data: EventsResponse = await res.json();
-        setEvents(data.events ?? []);
-      } catch (err) {
-        console.error("Error fetching events:", err);
-        setEventsError("Impossibile caricare gli eventi.");
-        setEvents([]);
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
-
   useEffect(() => {
     resolveClosedEvents().catch(() => {});
   }, []);
 
+  // Top summary: crediti, classifica settimanale, streak
   useEffect(() => {
     if (status !== "authenticated") return;
-    fetchSectionEvents("expiring", setEventsExpiring, setLoadingExpiring);
-    fetchSectionEvents("popular", setEventsPopular, setLoadingPopular);
-    fetchSectionEvents("popular", setEventsForYou, setLoadingForYou); // "Per te" = tendenza per ora
-  }, [status, fetchSectionEvents]);
-
-  useEffect(() => {
-    if (status !== "authenticated") return;
-    fetch("/api/wallet/stats")
-      .then((r) => r.ok && r.json())
-      .then((data) => data && setWalletStats({ canClaimDailyBonus: data.canClaimDailyBonus, nextBonusAmount: data.nextBonusAmount }))
-      .catch(() => {});
+    setCreditsLoading(true);
+    fetch("/api/user/credits")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => data != null && typeof data.credits === "number" && setCredits(data.credits))
+      .catch(() => {})
+      .finally(() => setCreditsLoading(false));
   }, [status]);
 
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    setRankLoading(true);
+    fetch("/api/leaderboard?period=weekly")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => data?.myRank != null && setWeeklyRank(data.myRank))
+      .catch(() => {})
+      .finally(() => setRankLoading(false));
+  }, [status]);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    setStreakLoading(true);
+    fetch("/api/profile/stats")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => data?.stats?.streak != null && setStreak(data.stats.streak))
+      .catch(() => {})
+      .finally(() => setStreakLoading(false));
+  }, [status]);
+
+  // Mercati in tendenza (feed centrale)
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    setLoadingTrending(true);
+    setEventsError(null);
+    const params = new URLSearchParams({ sort: "popular", status: "open", limit: "12" });
+    fetch(`/api/events?${params}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setEventsTrending(data?.events ?? []))
+      .catch(() => {
+        setEventsError("Impossibile caricare gli eventi.");
+        setEventsTrending([]);
+      })
+      .finally(() => setLoadingTrending(false));
+  }, [status]);
+
+  // In scadenza presto
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    setLoadingExpiring(true);
+    const params = new URLSearchParams({ filter: "expiring", status: "open", limit: "6" });
+    fetch(`/api/events?${params}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setEventsExpiring(data?.events ?? []))
+      .catch(() => setEventsExpiring([]))
+      .finally(() => setLoadingExpiring(false));
+  }, [status]);
+
+  // Categorie con 1–2 eventi per categoria
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    setLoadingCategories(true);
+    fetch("/api/events/categories")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        const cats: string[] = data?.categories ?? [];
+        if (cats.length === 0) {
+          setCategoriesWithEvents([]);
+          setLoadingCategories(false);
+          return;
+        }
+        Promise.all(
+          cats.map((category: string) =>
+            fetch(`/api/events?category=${encodeURIComponent(category)}&status=open&limit=2`)
+              .then((res) => (res.ok ? res.json() : null))
+              .then((d) => ({ category, events: d?.events ?? [] }))
+          )
+        ).then(setCategoriesWithEvents).finally(() => setLoadingCategories(false));
+      })
+      .catch(() => {
+        setCategoriesWithEvents([]);
+        setLoadingCategories(false);
+      });
+  }, [status]);
+
+  // Teaser: missioni, leaderboard
   useEffect(() => {
     if (status !== "authenticated") return;
     setMissionsLoading(true);
     fetch("/api/missions")
       .then((r) => r.ok && r.json())
-      .then((data) => {
-        const daily = (data?.daily ?? []).slice(0, 3);
-        setMissions(daily);
-      })
+      .then((data) => setMissions((data?.daily ?? []).slice(0, 3)))
       .catch(() => setMissions([]))
       .finally(() => setMissionsLoading(false));
   }, [status]);
@@ -196,43 +257,28 @@ export default function Home() {
     setLeaderboardLoading(true);
     fetch("/api/leaderboard?period=all-time")
       .then((r) => r.ok && r.json())
-      .then((data) => (data?.leaderboard ?? []).slice(0, 3).map((u: LeaderboardUser & { rank: number }) => ({ rank: u.rank, id: u.id, name: u.name, image: u.image })))
+      .then((data) =>
+        (data?.leaderboard ?? []).slice(0, 3).map((u: LeaderboardUser & { rank: number }) => ({
+          rank: u.rank,
+          id: u.id,
+          name: u.name,
+          image: u.image,
+        }))
+      )
       .then(setLeaderboardTop)
       .catch(() => setLeaderboardTop([]))
       .finally(() => setLeaderboardLoading(false));
   }, [status]);
 
-  const claimDailyBonus = async () => {
-    setDailyBonusLoading(true);
-    try {
-      const res = await fetch("/api/wallet/daily-bonus", { method: "POST" });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        setWalletStats((prev) => (prev ? { ...prev, canClaimDailyBonus: false } : null));
-        await updateSession();
-      }
-    } finally {
-      setDailyBonusLoading(false);
-    }
-  };
-
-  const sectionTabs: { id: HomeSectionTab; label: string }[] = [
-    { id: "expiring", label: "In scadenza" },
-    { id: "popular", label: "In tendenza" },
-    { id: "foryou", label: "Per te" },
-  ];
-
-  const getSectionEvents = () => {
-    if (sectionTab === "expiring") return eventsExpiring;
-    if (sectionTab === "popular") return eventsPopular;
-    return eventsForYou;
-  };
-
-  const getSectionLoading = () => {
-    if (sectionTab === "expiring") return loadingExpiring;
-    if (sectionTab === "popular") return loadingPopular;
-    return loadingForYou;
-  };
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    setSpinLoading(true);
+    fetch("/api/spin/status")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => (data?.canSpin != null ? setCanSpinToday(data.canSpin) : setCanSpinToday(null)))
+      .catch(() => setCanSpinToday(null))
+      .finally(() => setSpinLoading(false));
+  }, [status]);
 
   // —— Landing per utenti non loggati (Fase 1)
   const showLanding = status === "unauthenticated";
@@ -242,7 +288,7 @@ export default function Home() {
     if (!showLanding) return;
     setLandingEventsLoading(true);
     try {
-      const res = await fetch("/api/events?filter=popular&limit=4&status=open");
+      const res = await fetch("/api/events?filter=popular&limit=5&status=open");
       if (res.ok) {
         const data: EventsResponse = await res.json();
         setLandingEvents(data.events ?? []);
@@ -260,89 +306,106 @@ export default function Home() {
   if (status === "loading") {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
-        <div className="inline-block h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-hidden />
+        <LoadingBlock message="" />
       </div>
     );
   }
 
   if (showLanding) {
-    const newsFromEvents: NewsItem[] | undefined = landingEvents.length > 0
-      ? landingEvents.slice(0, 6).map((e) => ({
-          id: e.id,
-          title: e.title,
-          category: e.category,
-          timeAgo: "Ora",
-          href: `/events/${e.id}`,
-          live: true,
-        }))
-      : undefined;
-
     return (
       <div className="min-h-screen bg-bg relative">
         <div className="landing-bg" aria-hidden />
         <Header />
-        <main className="relative mx-auto px-4 py-6 md:py-10 lg:py-14 max-w-6xl">
-          {/* Ticker orizzontale: ultime notizie / eventi */}
-          <section className="mb-8 md:mb-12">
-            <BreakingNewsTicker items={newsFromEvents} />
-          </section>
-
-          {/* Hero: titolo + CTA */}
-          <section className="text-center mb-8 md:mb-12">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-fg mb-4 md:mb-6 tracking-tight max-w-5xl mx-auto leading-[1.1]">
-              Dimostra di capire il mondo prima degli altri.
+        <main className="relative mx-auto px-page-x py-page-y md:py-10 lg:py-14 max-w-2xl">
+          {/* 1) HERO */}
+          <section className="text-center mb-10 md:mb-14">
+            <h1 className="text-ds-display font-bold text-fg mb-3 md:mb-4 max-w-xl mx-auto leading-tight">
+              Prevedi il futuro. Guadagna crediti. Scala la classifica.
             </h1>
-            <p className="text-fg-muted text-lg md:text-xl lg:text-2xl max-w-2xl mx-auto mb-8 md:mb-10 font-medium">
-              Prevedi eventi con crediti virtuali, senza rischi. Accumula punti e sali in classifica.
+            <p className="text-ds-body md:text-lg text-fg-muted max-w-xl mx-auto mb-6 md:mb-8 leading-snug">
+              Partecipa ai mercati sociali su eventi reali usando solo crediti virtuali. Più sei preciso, più sali in classifica.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link
-                href="/auth/signup"
-                className="w-full sm:w-auto min-h-[52px] px-10 py-4 bg-primary text-white font-semibold rounded-2xl hover:bg-primary-hover transition-all shadow-glow hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary focus-visible:ring-offset-bg"
-              >
-                Registrati
-              </Link>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-6">
+              <CTAButton href="/auth/signup" variant="primary" fullWidth className="sm:w-auto">
+                Inizia ora – 100 crediti gratis
+              </CTAButton>
               <Link
                 href="/auth/login"
-                className="w-full sm:w-auto min-h-[52px] px-10 py-4 glass border border-border dark:border-white/10 text-fg font-semibold rounded-2xl hover:border-primary/20 hover:bg-white/10 dark:hover:bg-white/10 transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary focus-visible:ring-offset-bg"
+                className="text-ds-body-sm font-medium text-fg-muted hover:text-fg transition-colors focus-visible:underline min-h-[48px] flex items-center justify-center"
               >
                 Accedi
               </Link>
             </div>
+            <div className="flex flex-wrap justify-center gap-2 md:gap-3">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold text-fg-muted bg-surface/60 border border-border dark:border-white/10">
+                Eventi in tempo reale
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold text-fg-muted bg-surface/60 border border-border dark:border-white/10">
+                Classifiche settimanali
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold text-fg-muted bg-surface/60 border border-border dark:border-white/10">
+                Nessun rischio reale (NO soldi veri)
+              </span>
+            </div>
           </section>
 
-          {/* Frase orizzontale tipo Stripe */}
+          {/* 2) EVENT FEED PREVIEW */}
           <section className="mb-10 md:mb-14">
-            <HeroMarquee />
-          </section>
-
-          {/* Crediti · Nessun prelievo · Trasparente */}
-          <section className="mb-10 md:mb-14 py-6 md:py-8 border-y border-white/10 dark:border-white/5">
-            <p className="text-center text-fg-muted text-sm md:text-base font-medium tracking-wide">
-              Crediti virtuali · Nessun prelievo · Risoluzione trasparente
-            </p>
-          </section>
-
-          {/* Eventi in tendenza */}
-          <section>
-            <h2 className="text-xl md:text-2xl font-bold text-fg mb-4 md:mb-6">Eventi in tendenza</h2>
+            <h2 className="text-ds-h2 font-bold text-fg mb-4">Eventi in corso</h2>
             {landingEventsLoading ? (
-              <div className="flex justify-center py-12">
-                <div className="inline-block h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-hidden />
-              </div>
+              <LoadingBlock message="Caricamento eventi..." />
             ) : landingEvents.length === 0 ? (
-              <div className="text-center py-12 md:py-16 glass rounded-3xl border border-border dark:border-white/10 max-w-lg mx-auto px-6">
-                <p className="text-fg-muted text-base md:text-lg">
-                  Presto nuovi eventi. Iscriviti per non perderli.
-                </p>
-              </div>
+              <EmptyState
+                title="Nessun evento attivo ora"
+                description="Intanto completa le missioni di onboarding e guadagna crediti."
+                action={{ label: "Inizia ora – 100 crediti gratis", href: "/auth/signup" }}
+              />
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+              <ul className="flex flex-col gap-4" aria-label="Anteprima eventi">
                 {landingEvents.map((event) => (
-                  <EventCard key={event.id} event={event} />
+                  <li key={event.id}>
+                    <LandingEventRow
+                      event={{
+                        id: event.id,
+                        title: event.title,
+                        category: event.category,
+                        closesAt: event.closesAt,
+                        probability: event.probability,
+                      }}
+                    />
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
+          </section>
+
+          {/* 3) PERCHÉ GIOCARE */}
+          <section className="mb-10 md:mb-14">
+            <h2 className="text-ds-h2 font-bold text-fg mb-4 text-center">Perché giocare</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="rounded-2xl border border-border dark:border-white/10 glass p-5 text-center">
+                <div className="text-2xl mb-2" aria-hidden>🏆</div>
+                <h3 className="text-ds-body font-bold text-fg mb-1">Classifiche settimanali</h3>
+                <p className="text-ds-body-sm text-fg-muted">Sali in classifica ogni settimana e confrontati con la community.</p>
+              </div>
+              <div className="rounded-2xl border border-border dark:border-white/10 glass p-5 text-center">
+                <div className="text-2xl mb-2" aria-hidden>🎯</div>
+                <h3 className="text-ds-body font-bold text-fg mb-1">Missioni & streak giornaliere</h3>
+                <p className="text-ds-body-sm text-fg-muted">Completa missioni e mantieni lo streak per guadagnare crediti extra.</p>
+              </div>
+              <div className="rounded-2xl border border-border dark:border-white/10 glass p-5 text-center">
+                <div className="text-2xl mb-2" aria-hidden>📋</div>
+                <h3 className="text-ds-body font-bold text-fg mb-1">Eventi reali con regole trasparenti</h3>
+                <p className="text-ds-body-sm text-fg-muted">Ogni evento ha criteri di risoluzione chiari e verificabili.</p>
+              </div>
+            </div>
+          </section>
+
+          {/* CTA sempre visibile in fondo */}
+          <section className="text-center pt-4 pb-8">
+            <CTAButton href="/auth/signup" variant="primary" fullWidth className="max-w-sm mx-auto">
+              Inizia ora – 100 crediti gratis
+            </CTAButton>
           </section>
         </main>
       </div>
@@ -350,8 +413,20 @@ export default function Home() {
   }
 
   const displayName = session?.user?.name || session?.user?.email || "utente";
-  const sectionEvents = getSectionEvents();
-  const sectionLoading = getSectionLoading();
+
+  const refetchTrending = () => {
+    setLoadingTrending(true);
+    setEventsError(null);
+    const params = new URLSearchParams({ sort: "popular", status: "open", limit: "12" });
+    fetch(`/api/events?${params}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setEventsTrending(data?.events ?? []))
+      .catch(() => {
+        setEventsError("Impossibile caricare gli eventi.");
+        setEventsTrending([]);
+      })
+      .finally(() => setLoadingTrending(false));
+  };
 
   return (
     <div className="min-h-screen bg-bg">
@@ -359,177 +434,125 @@ export default function Home() {
         <OnboardingTour onComplete={handleOnboardingComplete} />
       )}
       <Header />
-      <main className="mx-auto px-4 py-5 md:py-8 max-w-6xl">
-        <h1 className="text-2xl md:text-3xl font-bold text-fg mb-1 tracking-tight">
-          Bentornato, {displayName}.
-        </h1>
-        <p className="text-fg-muted text-sm md:text-base mb-6">
-          Ecco cosa succede oggi.
-        </p>
+      <main className="mx-auto px-page-x py-page-y md:py-8 max-w-6xl">
+        <PageHeader
+          title={`Bentornato, ${displayName}.`}
+          description="Ecco cosa succede oggi."
+        />
 
-        {/* Daily bonus widget */}
-        <section className="mb-6 md:mb-8">
-          <div className="glass rounded-2xl border border-border dark:border-white/10 p-4 md:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-bold text-fg mb-1">Crediti giornalieri</h2>
-              <p className="text-fg-muted text-sm">
-                {walletStats?.canClaimDailyBonus
-                  ? `Ritira fino a ${walletStats?.nextBonusAmount ?? 100}+ crediti.`
-                  : "Prossimo bonus domani."}
-              </p>
-            </div>
-            {walletStats?.canClaimDailyBonus ? (
-              <button
-                type="button"
-                disabled={dailyBonusLoading}
-                onClick={claimDailyBonus}
-                className="shrink-0 min-h-[48px] px-6 py-3 bg-primary text-white font-semibold rounded-2xl hover:bg-primary-hover transition-colors shadow-glow-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary disabled:opacity-60"
-              >
-                {dailyBonusLoading ? "Attendere..." : "Ritira i crediti giornalieri"}
-              </button>
-            ) : (
-              <span className="shrink-0 min-h-[48px] px-6 py-3 rounded-2xl bg-surface/50 text-fg-muted font-medium border border-border dark:border-white/10 flex items-center">
-                Prossimo bonus domani
-              </span>
-            )}
-          </div>
-        </section>
+        {/* 1) TOP SUMMARY */}
+        <HomeSummary
+          credits={credits}
+          weeklyRank={weeklyRank}
+          streak={streak}
+          creditsLoading={creditsLoading}
+          rankLoading={rankLoading}
+          streakLoading={streakLoading}
+        />
 
-        {/* Missions widget */}
-        <section className="mb-6 md:mb-8">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-fg">Missioni di oggi</h2>
-            <Link
-              href="/missions"
-              className="text-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
-            >
-              Completa per guadagnare crediti
-            </Link>
-          </div>
-          <div className="glass rounded-2xl border border-border dark:border-white/10 p-4">
-            {missionsLoading ? (
-              <div className="flex justify-center py-6">
-                <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-hidden />
-              </div>
-            ) : missions.length === 0 ? (
-              <p className="text-fg-muted text-sm py-2">Nessuna missione attiva oggi. Torna domani.</p>
-            ) : (
-              <ul className="space-y-3">
-                {missions.map((m) => (
-                  <li key={m.id} className="flex items-center justify-between gap-2 py-2 border-b border-border dark:border-white/10 last:border-0">
-                    <div>
-                      <p className="font-medium text-fg">{m.name}</p>
-                      {m.description && <p className="text-xs text-fg-muted">{m.description}</p>}
-                    </div>
-                    <span className="shrink-0 text-sm font-semibold text-primary">
-                      {m.completed ? "Completata" : `${m.progress}/${m.target}`} · +{m.reward} cr
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
-
-        {/* Event sections (tabs) */}
-        <section className="mb-6 md:mb-8">
-          <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin md:overflow-visible">
-              {sectionTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setSectionTab(tab.id)}
-                  className={`shrink-0 min-h-[44px] px-4 py-2.5 rounded-2xl font-semibold transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                    sectionTab === tab.id
-                      ? "bg-primary text-white shadow-glow"
-                      : "glass text-fg-muted border border-border dark:border-white/10 hover:border-primary/20"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+        {/* 2) SEZIONE PRINCIPALE — MERCATI IN TENDENZA */}
+        <SectionContainer
+          title="Mercati in tendenza"
+          action={
             <Link
               href="/discover"
-              className="shrink-0 text-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
+              className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
             >
               Esplora tutti
             </Link>
-          </div>
-
+          }
+        >
           {eventsError ? (
-            <div className="text-center py-12 glass rounded-3xl border border-border dark:border-white/10 max-w-md mx-auto px-6">
-              <p className="text-fg-muted mb-4">{eventsError}</p>
-              <button
-                type="button"
-                onClick={() => {
-                  fetchSectionEvents("expiring", setEventsExpiring, setLoadingExpiring);
-                  fetchSectionEvents("popular", setEventsPopular, setLoadingPopular);
-                  fetchSectionEvents("popular", setEventsForYou, setLoadingForYou);
-                }}
-                className="min-h-[48px] px-6 py-3 bg-primary text-white font-semibold rounded-2xl hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
-              >
-                Riprova
-              </button>
-            </div>
-          ) : sectionLoading ? (
-            <div className="text-center py-12">
-              <div className="inline-block h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-hidden />
-              <p className="mt-4 text-fg-muted font-medium">Caricamento eventi...</p>
-            </div>
-          ) : sectionEvents.length === 0 ? (
-            <div className="text-center py-12 md:py-16 glass rounded-3xl border border-border dark:border-white/10 max-w-lg mx-auto px-6">
-              <p className="text-fg-muted text-base md:text-lg mb-2">
-                Nessun evento al momento. Torna più tardi o esplora le categorie.
-              </p>
-              <Link
-                href="/discover"
-                className="inline-block mt-4 min-h-[48px] px-6 py-3 bg-primary text-white font-semibold rounded-2xl hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
-              >
-                Scopri le previsioni
-              </Link>
-            </div>
+            <EmptyState
+              description={eventsError}
+              action={{ label: "Riprova", onClick: refetchTrending }}
+            />
+          ) : loadingTrending ? (
+            <LoadingBlock message="Caricamento eventi..." />
+          ) : eventsTrending.length === 0 ? (
+            <EmptyState
+              title="Nessun evento in tendenza"
+              description={
+                <>
+                  <p className="mb-2">Non ci sono ancora eventi attivi. Completa le missioni per guadagnare crediti e torna quando apriranno nuovi mercati.</p>
+                </>
+              }
+              action={{ label: "Vai alle missioni", href: "/missions" }}
+            />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {sectionEvents.map((event) => (
+              {eventsTrending.map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}
             </div>
           )}
-        </section>
+        </SectionContainer>
 
-        {/* Leaderboard teaser */}
-        <section className="mb-8">
-          <div className="glass rounded-2xl border border-border dark:border-white/10 p-4 md:p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-fg">Classifica</h2>
+        {/* 3) IN SCADENZA PRESTO */}
+        {!loadingExpiring && eventsExpiring.length > 0 && (
+          <SectionContainer
+            title="In scadenza presto"
+            action={
               <Link
-                href="/leaderboard"
-                className="text-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
+                href="/discover"
+                className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
               >
-                Vedi classifica
+                Vedi tutti
               </Link>
+            }
+          >
+            <p className="text-ds-body-sm text-fg-muted mb-4">
+              Partecipa prima che chiudano — tempo limitato per fare previsioni.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              {eventsExpiring.slice(0, 6).map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
             </div>
-            {leaderboardLoading ? (
-              <div className="flex justify-center py-6">
-                <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" aria-hidden />
-              </div>
-            ) : leaderboardTop.length === 0 ? (
-              <p className="text-fg-muted text-sm py-2">Nessun dato. Fai previsioni per salire in classifica!</p>
-            ) : (
-              <ol className="space-y-2">
-                {leaderboardTop.map((u) => (
-                  <li key={u.id} className="flex items-center gap-3 py-2">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-primary/20 text-primary font-bold text-sm">
-                      {u.rank}
-                    </span>
-                    <span className="font-medium text-fg truncate">{u.name || "Utente"}</span>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </div>
-        </section>
+          </SectionContainer>
+        )}
+
+        {/* 4) CATEGORIE (MACRO AREE) */}
+        {!loadingCategories && categoriesWithEvents.length > 0 && (
+          <SectionContainer title="Categorie">
+            <div className="space-y-8">
+              {categoriesWithEvents.map(({ category, events }) => (
+                <div key={category}>
+                  <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+                    <h3 className="text-ds-body font-bold text-fg">{category}</h3>
+                    <Link
+                      href={`/discover?category=${encodeURIComponent(category)}`}
+                      className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
+                    >
+                      Scopri tutti
+                    </Link>
+                  </div>
+                  {events.length === 0 ? (
+                    <p className="text-ds-body-sm text-fg-muted py-2">Nessun evento aperto in questa categoria.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {events.map((event) => (
+                        <EventCard key={event.id} event={event} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </SectionContainer>
+        )}
+
+        {/* 5) TEASER — Missioni, Wallet, Classifica, Spin of the Day */}
+        <HomeTeaser
+          missions={missions}
+          missionsLoading={missionsLoading}
+          credits={credits}
+          creditsLoading={creditsLoading}
+          leaderboardTop={leaderboardTop}
+          leaderboardLoading={leaderboardLoading}
+          canSpinToday={canSpinToday}
+          spinLoading={spinLoading}
+        />
       </main>
     </div>
   );

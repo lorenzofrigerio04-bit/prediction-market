@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { track } from "@/lib/analytics";
+import { applyCreditTransaction } from "@/lib/apply-credit-transaction";
 
 export async function POST(request: Request) {
   try {
@@ -56,29 +57,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const updated = await prisma.$transaction(async (tx) => {
-      const updatedUser = await tx.user.update({
-        where: { id: userId },
-        data: {
-          credits: { decrement: item.priceCredits },
-          totalSpent: { increment: item.priceCredits },
-        },
-        select: { credits: true },
-      });
-
-      await tx.transaction.create({
-        data: {
-          userId,
-          type: "SHOP_PURCHASE",
-          amount: -item.priceCredits,
+    const newBalance = await prisma.$transaction(async (tx) => {
+      return applyCreditTransaction(
+        tx,
+        userId,
+        "SHOP_PURCHASE",
+        -item.priceCredits,
+        {
           description: `Acquisto: ${item.name}`,
           referenceId: item.id,
           referenceType: "shop_item",
-          balanceAfter: updatedUser.credits,
-        },
-      });
-
-      return updatedUser;
+        }
+      );
     });
 
     track("SHOP_PURCHASED", {
@@ -91,7 +81,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       message: `Hai acquistato "${item.name}".`,
-      newCredits: updated.credits,
+      newCredits: newBalance,
     });
   } catch (error) {
     console.error("Error purchasing shop item:", error);

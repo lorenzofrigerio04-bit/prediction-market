@@ -6,6 +6,7 @@ import { updateMissionProgress } from "@/lib/missions";
 import { checkAndAwardBadges } from "@/lib/badges";
 import { rateLimit } from "@/lib/rate-limit";
 import { track } from "@/lib/analytics";
+import { applyCreditTransaction } from "@/lib/apply-credit-transaction";
 
 const PREDICTIONS_LIMIT = 15; // previsioni per user per minuto
 
@@ -121,17 +122,10 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Aggiorna i crediti dell'utente
-      await tx.user.update({
-        where: { id: session.user.id },
-        data: {
-          credits: {
-            decrement: credits,
-          },
-          totalSpent: {
-            increment: credits,
-          },
-        },
+      await applyCreditTransaction(tx, session.user.id, "PREDICTION_BET", -credits, {
+        description: `Previsione ${outcome === "YES" ? "SÌ" : "NO"} su "${event.title}"`,
+        referenceId: prediction.id,
+        referenceType: "prediction",
       });
 
       // Aggiorna le statistiche dell'evento
@@ -161,24 +155,6 @@ export async function POST(request: NextRequest) {
       await tx.event.update({
         where: { id: event.id },
         data: { probability: newProbability },
-      });
-
-      // Crea transazione per il wallet
-      const updatedUser = await tx.user.findUnique({
-        where: { id: session.user.id },
-        select: { credits: true },
-      });
-
-      await tx.transaction.create({
-        data: {
-          userId: session.user.id,
-          type: "PREDICTION_BET",
-          amount: -credits,
-          description: `Previsione ${outcome === "YES" ? "SÌ" : "NO"} su "${event.title}"`,
-          referenceId: prediction.id,
-          referenceType: "prediction",
-          balanceAfter: updatedUser!.credits,
-        },
       });
 
       return prediction;

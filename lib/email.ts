@@ -58,3 +58,23 @@ export async function sendEmail(options: SendEmailOptions): Promise<{ ok: boolea
   }
 }
 
+/**
+ * Invia l'email di verifica account con link al token.
+ */
+export async function sendVerificationEmail(
+  to: string,
+  verifyUrl: string
+): Promise<{ ok: boolean; error?: string }> {
+  const subject = "Verifica il tuo account - Prediction Market";
+  const html = `
+    <p>Ciao,</p>
+    <p>Clicca sul link qui sotto per verificare il tuo indirizzo email:</p>
+    <p><a href="${verifyUrl}">${verifyUrl}</a></p>
+    <p>Il link scade tra 24 ore.</p>
+    <p>Se non hai richiesto questa verifica, ignora questa email.</p>
+    <p>— Prediction Market</p>
+  `;
+  const text = `Verifica il tuo account: ${verifyUrl}\n\nIl link scade tra 24 ore.`;
+  return sendEmail({ to, subject, html, text });
+}
+

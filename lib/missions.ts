@@ -1,10 +1,12 @@
 import type { PrismaClient } from "@prisma/client";
 import { track } from "@/lib/analytics";
+import { applyCreditTransaction } from "@/lib/apply-credit-transaction";
 
 export const MISSION_TYPES = {
   MAKE_PREDICTIONS: "MAKE_PREDICTIONS",
   WIN_PREDICTIONS: "WIN_PREDICTIONS",
   DAILY_LOGIN: "DAILY_LOGIN",
+  FOLLOW_EVENTS: "FOLLOW_EVENTS",
 } as const;
 
 /** Inizio della giornata in UTC (00:00:00.000Z) - evita problemi con SQLite e timezone */
@@ -204,24 +206,11 @@ export async function updateMissionProgress(
           completedAt: new Date(),
         },
       });
-      const updatedUser = await prisma.user.update({
-        where: { id: userId },
-        data: {
-          credits: { increment: mission.reward },
-          totalEarned: { increment: mission.reward },
-        },
-        select: { credits: true },
-      });
-      await prisma.transaction.create({
-        data: {
-          userId,
-          type: "MISSION_REWARD",
-          amount: mission.reward,
-          description: `Missione completata: ${mission.name}`,
-          referenceId: um.id,
-          referenceType: "mission",
-          balanceAfter: updatedUser.credits,
-        },
+      await applyCreditTransaction(prisma, userId, "MISSION_REWARD", mission.reward, {
+        description: `Missione completata: ${mission.name}`,
+        referenceId: um.id,
+        referenceType: "mission",
+        applyBoost: true,
       });
       await prisma.notification.create({
         data: {

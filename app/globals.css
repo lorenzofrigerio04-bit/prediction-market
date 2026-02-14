@@ -4,6 +4,37 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap');
 
+/* —— Design system: spacing scale (mobile-first, 4px base) —— */
+:root {
+  --space-0: 0;
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+  --space-20: 5rem;     /* 80px */
+  /* Typography scale */
+  --text-display: clamp(2rem, 5vw, 3.5rem);
+  --text-h1: clamp(1.5rem, 4vw, 2rem);
+  --text-h2: clamp(1.125rem, 3vw, 1.5rem);
+  --text-body: 1rem;
+  --text-body-sm: 0.875rem;
+  --text-micro: 0.75rem;
+  --text-caption: 0.6875rem;
+  --leading-tight: 1.15;
+  --leading-snug: 1.35;
+  --leading-normal: 1.5;
+  /* Motion */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+}
+
 /* Light mode (default) */
 :root {
   --bg: 248 250 252;
@@ -101,6 +132,26 @@ textarea:focus-visible {
   }
 }
 
+/* —— Design system: tap/hover feedback —— */
+.ds-tap-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+.ds-btn-hover {
+  transition: background-color var(--duration-normal) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out);
+}
+@media (hover: hover) {
+  .ds-btn-hover:hover {
+    transform: translateY(-1px);
+  }
+}
+.ds-btn-hover:active {
+  transform: translateY(0);
+  transition-duration: 0ms;
+}
+
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
@@ -182,4 +233,28 @@ textarea:focus-visible {
 }
 .animate-marquee-reverse {
   animation: marquee 40s linear infinite reverse;
+}
+
+/* Discover feed: staggered card entrance */
+@keyframes feed-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-feed-in {
+  animation: feed-card-in 0.4s var(--ease-out) forwards;
+}
+
+/* Subtle “live” pulse for open market bars */
+@keyframes bar-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.92; }
+}
+.animate-bar-pulse {
+  animation: bar-pulse 2.5s ease-in-out infinite;
 }

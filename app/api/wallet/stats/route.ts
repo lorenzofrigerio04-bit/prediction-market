@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import {
+  getNextDailyBonusAmount,
+  getDailyBonusMultiplier,
+} from "@/lib/credits-config";
 
 export async function GET() {
   try {
@@ -24,7 +28,15 @@ export async function GET() {
         totalSpent: true,
         streak: true,
         lastDailyBonus: true,
+        boostMultiplier: true,
+        boostExpiresAt: true,
       },
+    });
+
+    const lastSpin = await prisma.dailySpin.findFirst({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
     });
 
     if (!user) {
@@ -46,18 +58,20 @@ export async function GET() {
       lastBonusDate.getMonth() !== now.getMonth() ||
       lastBonusDate.getDate() !== now.getDate();
 
-    // Moltiplicatore bonus: 1 + 0.1 per giorno, max 2x (stesso giorno = streak già valido per domani)
-    const STREAK_MULTIPLIER_PER_DAY = 0.1;
-    const STREAK_CAP = 10;
-    const DAILY_BONUS_BASE = 50;
-    // Moltiplicatore al prossimo claim (se può claimare ora: streak+1, altrimenti per "domani" non applicabile qui)
-    const nextMultiplier = Math.min(
-      2,
-      1 + Math.min(user.streak + (canClaimDailyBonus ? 1 : 0), STREAK_CAP) * STREAK_MULTIPLIER_PER_DAY
+    const nextBonusAmount = getNextDailyBonusAmount(
+      user.streak,
+      canClaimDailyBonus
     );
-    const nextBonusAmount = Math.round(DAILY_BONUS_BASE * nextMultiplier);
-    // Moltiplicatore basato sulla serie attuale (per UI "Moltiplicatore bonus: x1.2")
-    const bonusMultiplier = Math.min(2, 1 + Math.min(user.streak, STREAK_CAP) * STREAK_MULTIPLIER_PER_DAY);
+    const bonusMultiplier = getDailyBonusMultiplier(user.streak);
+
+    const now = new Date();
+    const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+    const canSpinToday =
+      !lastSpin || new Date(lastSpin.createdAt) < todayStart;
+    const hasActiveBoost =
+      user.boostExpiresAt != null &&
+      now < user.boostExpiresAt &&
+      (user.boostMultiplier ?? 0) > 1;
 
     return NextResponse.json({
       credits: user.credits,
@@ -67,7 +81,11 @@ export async function GET() {
       lastDailyBonus: user.lastDailyBonus,
       canClaimDailyBonus,
       nextBonusAmount,
-      bonusMultiplier: Math.round(bonusMultiplier * 100) / 100,
+      bonusMultiplier,
+      canSpinToday,
+      boostMultiplier: user.boostMultiplier,
+      boostExpiresAt: user.boostExpiresAt,
+      hasActiveBoost,
     });
   } catch (error) {
     console.error("Error fetching wallet stats:", error);

@@ -50,6 +50,37 @@ module.exports = {
         content: 'min(100% - 2rem, 480px)',
         'content-wide': 'min(100% - 2rem, 640px)',
       },
+      /* Design system: typography scale */
+      fontSize: {
+        'ds-display': ['clamp(2rem, 5vw, 3.5rem)', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
+        'ds-h1': ['clamp(1.5rem, 4vw, 2rem)', { lineHeight: '1.2', letterSpacing: '-0.02em' }],
+        'ds-h2': ['clamp(1.125rem, 3vw, 1.5rem)', { lineHeight: '1.3' }],
+        'ds-body': ['1rem', { lineHeight: '1.5' }],
+        'ds-body-sm': ['0.875rem', { lineHeight: '1.45' }],
+        'ds-micro': ['0.75rem', { lineHeight: '1.4' }],
+        'ds-caption': ['0.6875rem', { lineHeight: '1.35' }],
+      },
+      /* Design system: spacing (align with CSS vars) */
+      spacing: {
+        'page-x': '1rem',
+        'page-y': '1.25rem',
+        'section': '1.5rem',
+        'section-lg': '2rem',
+      },
+      /* Design system: grid */
+      gridTemplateColumns: {
+        'content': '1fr',
+        'content-sm': 'repeat(auto-fill, minmax(280px, 1fr))',
+        'content-md': 'repeat(auto-fill, minmax(320px, 1fr))',
+      },
+      /* Design system: transitions */
+      transitionDuration: {
+        'ds-fast': '150ms',
+        'ds-normal': '200ms',
+      },
+      transitionTimingFunction: {
+        'ds-ease': 'cubic-bezier(0.33, 1, 0.68, 1)',
+      },
     },
   },
   plugins: [],

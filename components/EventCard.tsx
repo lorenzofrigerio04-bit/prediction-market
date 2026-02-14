@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Badge from "@/components/ui/Badge";
 
 export interface EventCardEvent {
   id: string;
@@ -32,36 +33,26 @@ export default function EventCard({ event }: EventCardProps) {
     return "Presto";
   };
 
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      Sport: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-      Politica: "bg-sky-500/20 text-sky-400 border-sky-500/30",
-      Tecnologia: "bg-violet-500/20 text-violet-400 border-violet-500/30",
-      Economia: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-      Cultura: "bg-pink-500/20 text-pink-400 border-pink-500/30",
-      Altro: "bg-surface/50 text-fg-muted border-border dark:border-white/10",
-    };
-    return colors[category] || colors.Altro;
-  };
+  const timeVariant = timeUntilClose <= 0 ? "default" : hoursUntilClose < 24 ? "scadenza" : "default";
 
   return (
     <Link
       href={`/events/${event.id}`}
       className="block focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-3xl outline-none"
     >
-      <article className="glass rounded-3xl border border-border dark:border-white/10 transition-all duration-300 p-5 md:p-6 h-full flex flex-col group hover:border-primary/20 hover:shadow-glow-sm">
+      <article className="glass rounded-3xl border border-border dark:border-white/10 transition-all duration-ds-normal ease-ds-ease p-5 md:p-6 h-full flex flex-col group hover:border-primary/20 hover:shadow-glow-sm">
         <div className="flex items-center justify-between gap-2 mb-4">
-          <span
-            className={`shrink-0 px-2.5 py-1 rounded-xl text-xs font-bold border ${getCategoryColor(event.category)}`}
-          >
+          <Badge variant="default" className="!bg-surface/50 !text-fg-muted !border-border dark:!border-white/10">
             {event.category}
-          </span>
-          <span className="flex items-center gap-1.5 text-xs text-fg-muted bg-surface/50 border border-border dark:border-white/10 px-2.5 py-1.5 rounded-xl font-medium shrink-0">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {getTimeRemaining()}
-          </span>
+          </Badge>
+          <Badge variant={timeVariant}>
+            <span className="inline-flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {getTimeRemaining()}
+            </span>
+          </Badge>
         </div>
 
         <h3 className="text-lg md:text-xl font-bold text-fg mb-2 line-clamp-2 leading-snug group-hover:text-primary transition-colors">
