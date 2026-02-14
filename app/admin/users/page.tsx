@@ -7,7 +7,6 @@ interface UserRow {
   email: string;
   name: string | null;
   role: string;
-  emailVerified: string | null;
   createdAt: string;
   credits: number;
 }
@@ -71,7 +70,7 @@ export default function AdminUsersPage() {
         Utenti
       </h1>
       <p className="text-gray-600 dark:text-gray-400 mb-6">
-        Elenco utenti registrati (email, nome, ruolo, verifica email, crediti).
+        Elenco utenti registrati (email, nome, ruolo, crediti).
       </p>
 
       <form onSubmit={handleSearch} className="mb-6 flex flex-wrap items-center gap-3">
@@ -123,9 +122,6 @@ export default function AdminUsersPage() {
                     Ruolo
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
-                    Email verificata
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
                     Crediti
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
@@ -136,7 +132,7 @@ export default function AdminUsersPage() {
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                 {users.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                       Nessun utente trovato.
                     </td>
                   </tr>
@@ -159,9 +155,6 @@ export default function AdminUsersPage() {
                         >
                           {u.role}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                        {u.emailVerified ? "Sì" : "No"}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                         {u.credits}

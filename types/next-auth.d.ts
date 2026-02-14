@@ -10,8 +10,6 @@ declare module "next-auth" {
       image?: string | null;
       role?: string;
       onboardingCompleted?: boolean;
-      /** Data verifica email (null se non verificata) */
-      emailVerified?: Date | null;
     };
   }
 
@@ -22,7 +20,6 @@ declare module "next-auth" {
     image?: string | null;
     role?: string;
     onboardingCompleted?: boolean;
-    emailVerified?: Date | null;
   }
 }
 
@@ -31,6 +28,5 @@ declare module "next-auth/jwt" {
     id: string;
     role?: string;
     onboardingCompleted?: boolean;
-    emailVerified?: number | null; // timestamp in ms
   }
 }

@@ -32,9 +32,9 @@ Piattaforma italiana di previsioni sociali con crediti virtuali.
 
 ## Deploy su Vercel – Passi da fare tu
 
-Per **Google Login**, **verifica email** (Resend) e **variabili d’ambiente su Vercel**, segui la guida:
+Per **Google Login** e **variabili d’ambiente su Vercel**, segui la guida:
 
-- **[docs/PASSI_DA_FARE.md](docs/PASSI_DA_FARE.md)** – cosa fare su Vercel, Google Cloud e Resend; cosa scrivere in chat quando hai finito o quando cambi dominio/database.
+- **[docs/PASSI_DA_FARE.md](docs/PASSI_DA_FARE.md)** – cosa fare su Vercel e Google Cloud; cosa scrivere in chat quando hai finito o quando cambi dominio/database.
 
 Riferimento variabili: `.env.example`.
 

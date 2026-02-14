@@ -1,6 +1,6 @@
-# Passi che devi fare tu (Vercel + Google + Email)
+# Passi che devi fare tu (Vercel + Google)
 
-Tutto il codice è già pronto. Questi sono **solo i passaggi che richiedono i tuoi account** (Google Cloud, Resend, Vercel). Quando hai finito, puoi mandare in chat cosa hai aggiornato (es. “Ho messo le variabili su Vercel”, “Ho aggiunto l’URI di reindirizzamento”) e, se cambi dominio o database in futuro, scrivimi e ti dico cosa aggiornare.
+Tutto il codice è già pronto. Questi sono **solo i passaggi che richiedono i tuoi account** (Google Cloud, Vercel). Quando hai finito, puoi mandare in chat cosa hai aggiornato (es. “Ho messo le variabili su Vercel”, “Ho aggiunto l’URI di reindirizzamento”) e, se cambi dominio o database in futuro, scrivimi e ti dico cosa aggiornare.
 
 ---
 
@@ -10,7 +10,6 @@ Tutto il codice è già pronto. Questi sono **solo i passaggi che richiedono i t
 |------|------|--------------|
 | Variabili d’ambiente | Vercel → Project → Settings → Environment Variables | Sì (quelle sotto) |
 | Google OAuth | Google Cloud Console | Solo se usi “Accedi con Google” |
-| Resend (email verifica) | resend.com + variabili su Vercel | Solo se vuoi le email di verifica |
 
 ---
 
@@ -31,9 +30,6 @@ Tutto il codice è già pronto. Questi sono **solo i passaggi che richiedono i t
 - Se usi **Google Login**, aggiungi anche (vedi sotto dove prenderle):
   - `GOOGLE_CLIENT_ID`
   - `GOOGLE_CLIENT_SECRET`
-- Se usi le **email di verifica** (Resend), aggiungi anche (vedi sotto):
-  - `RESEND_API_KEY`
-  - `EMAIL_FROM`
 
 **Importante:** su Vercel non incollare spazi o a capo in fondo al valore (es. niente “Invio” dopo l’URL), altrimenti NextAuth può dare errore.
 
@@ -58,29 +54,14 @@ Guida dettagliata passo-passo: **docs/GOOGLE_LOGIN_SETUP.md**.
 
 ---
 
-## 3. Resend – Email di verifica (solo se vuoi inviare le email)
-
-1. Vai su **https://resend.com** e crea un account.
-2. **API Keys** → **Create API Key** → copia la chiave (inizia con `re_`).
-3. In **Vercel** → **Settings** → **Environment Variables** aggiungi:
-   - `RESEND_API_KEY` = la chiave copiata
-   - `EMAIL_FROM` = `Prediction Market <onboarding@resend.dev>`  
-     (in produzione puoi usare un tuo dominio verificato su Resend, es. `noreply@tuodominio.com`)
-4. **Redeploy**.
-
-Guida: **docs/EMAIL_VERIFICATION.md**.
-
----
-
 ## Cosa mandarmi in chat
 
 Quando hai fatto i passi che ti servono, puoi scrivermi ad esempio:
 
 - “Ho messo su Vercel DATABASE_URL, NEXTAUTH_URL, NEXTAUTH_SECRET e fatto redeploy.”
 - “Ho configurato Google e aggiunto GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET su Vercel.”
-- “Ho aggiunto RESEND_API_KEY e EMAIL_FROM su Vercel.”
 
-**Non incollare in chat** le chiavi o le password (NEXTAUTH_SECRET, GOOGLE_CLIENT_SECRET, RESEND_API_KEY, DATABASE_URL). Bastano i nomi delle variabili che hai impostato.
+**Non incollare in chat** le chiavi o le password (NEXTAUTH_SECRET, GOOGLE_CLIENT_SECRET, DATABASE_URL). Bastano i nomi delle variabili che hai impostato.
 
 Se in futuro **cambi dominio** (es. dominio custom al posto di `prediction-market-livid.vercel.app`): scrivimi il nuovo URL e ti dico cosa aggiornare (NEXTAUTH_URL su Vercel + URI in Google se usi Google).  
 Se **cambi database**: scrivimi e ti dico solo dove aggiornare `DATABASE_URL` (sempre su Vercel e in locale).

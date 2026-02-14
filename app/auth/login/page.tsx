@@ -1,17 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 
+const ERROR_MESSAGES: Record<string, string> = {
+  OAuthAccountNotLinked:
+    "Questa email è già usata con un altro metodo di accesso. Accedi con email e password oppure usa sempre lo stesso metodo (solo Google o solo email).",
+  CredentialsSignin: "Credenziali non valide",
+  Default: "Si è verificato un errore durante l'accesso. Riprova.",
+};
+
 export default function LoginPage() {
+  const searchParams = useSearchParams();
   const { update: updateSession } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+
+  useEffect(() => {
+    const err = searchParams.get("error");
+    if (err) {
+      setError(ERROR_MESSAGES[err] || ERROR_MESSAGES.Default);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,8 +43,7 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        // Mostra il messaggio dal server (es. "Credenziali non valide") o un messaggio generico
-        setError(result.error === "CredentialsSignin" ? "Credenziali non valide" : (result.error || "Credenziali non valide"));
+        setError(ERROR_MESSAGES[result.error] || result.error || ERROR_MESSAGES.Default);
         setIsLoading(false);
         return;
       }

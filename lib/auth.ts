@@ -59,6 +59,8 @@ const providers: NextAuthOptions["providers"] = [
         GoogleProvider({
           clientId: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          // Collega l'account Google a un utente esistente con la stessa email (registrato con email/password)
+          allowDangerousEmailAccountLinking: true,
         }),
       ]
     : []),
@@ -101,28 +103,23 @@ export const authOptions: NextAuthOptions = {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: user.id },
-            select: { role: true, onboardingCompleted: true, emailVerified: true },
+            select: { role: true, onboardingCompleted: true },
           });
           token.role = dbUser?.role ?? (user as { role?: string }).role ?? "USER";
           token.onboardingCompleted = dbUser?.onboardingCompleted ?? (user as { onboardingCompleted?: boolean }).onboardingCompleted ?? false;
-          token.emailVerified = dbUser?.emailVerified ? dbUser.emailVerified.getTime() : null;
         } catch {
           token.role = (user as { role?: string }).role ?? "USER";
           token.onboardingCompleted = (user as { onboardingCompleted?: boolean }).onboardingCompleted ?? false;
-          token.emailVerified = (user as { emailVerified?: Date | null }).emailVerified
-            ? (user as { emailVerified: Date }).emailVerified.getTime()
-            : null;
         }
       } else if (token.id) {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.id as string },
-            select: { role: true, onboardingCompleted: true, emailVerified: true },
+            select: { role: true, onboardingCompleted: true },
           });
           if (dbUser) {
             token.role = dbUser.role;
             token.onboardingCompleted = dbUser.onboardingCompleted;
-            token.emailVerified = dbUser.emailVerified ? dbUser.emailVerified.getTime() : null;
           }
         } catch {
           // Mantieni i valori già nel token
@@ -135,24 +132,8 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.role = (token.role as string) || "USER";
         session.user.onboardingCompleted = token.onboardingCompleted ?? false;
-        session.user.emailVerified = token.emailVerified ? new Date(token.emailVerified) : null;
       }
       return session;
-    },
-  },
-  events: {
-    async signIn({ user, account }) {
-      // Google verifica già l'email: segna come verificata in DB
-      if (account?.provider === "google" && user?.id) {
-        try {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { emailVerified: new Date() },
-          });
-        } catch (e) {
-          console.error("[auth] Impossibile aggiornare emailVerified per Google user:", e);
-        }
-      }
     },
   },
   secret: process.env.NEXTAUTH_SECRET,

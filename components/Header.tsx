@@ -6,7 +6,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import NotificationBell from "./NotificationBell";
 import ThemeToggle from "./ThemeToggle";
-import EmailVerificationBanner from "./EmailVerificationBanner";
 
 const navLinkClass =
   "flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl text-fg-muted hover:bg-surface/50 hover:text-fg transition-colors text-left font-medium focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none border border-transparent dark:border-white/0";
@@ -119,7 +118,6 @@ export default function Header() {
 
   return (
     <>
-      <EmailVerificationBanner />
       <header
         className="sticky top-0 z-40 glass border-b border-border dark:border-white/10"
         style={{ paddingTop: "var(--safe-area-inset-top)" }}
