@@ -115,7 +115,7 @@ export default function DiscoverPage() {
       setPagination(data.pagination ?? null);
     } catch (err) {
       console.error("Discover fetch error:", err);
-      setError("Impossibile caricare i mercati.");
+      setError("Impossibile caricare gli eventi.");
       setEvents([]);
     } finally {
       setLoading(false);
@@ -151,14 +151,14 @@ export default function DiscoverPage() {
       <Header />
       <main className="mx-auto px-4 sm:px-6 py-6 md:py-8 max-w-6xl">
         <PageHeader
-          title="Catalogo mercati"
-          description="Cerca, filtra e ordina i mercati di previsione. Fai la tua previsione sulla domanda che preferisci."
+          title="Eventi"
+          description="Cerca, filtra e ordina gli eventi. Fai la tua previsione su quelli che preferisci."
         />
 
         {/* Search — mobile-first, sempre in evidenza */}
         <form onSubmit={handleSearch} className="mb-6" role="search">
           <label htmlFor="discover-search" className="sr-only">
-            Cerca mercati
+            Cerca eventi
           </label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-fg-muted pointer-events-none" aria-hidden>
@@ -171,9 +171,9 @@ export default function DiscoverPage() {
               type="search"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Cerca mercati per parola chiave..."
+              placeholder="Cerca eventi per parola chiave..."
               className="w-full min-h-[48px] pl-12 pr-4 py-3 rounded-2xl border border-border dark:border-white/10 bg-surface/50 backdrop-blur-xl text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary text-ds-body ds-tap-target"
-              aria-label="Cerca mercati"
+              aria-label="Cerca eventi"
               autoComplete="off"
             />
             <button
@@ -245,17 +245,17 @@ export default function DiscoverPage() {
           </div>
         ) : isEmptyCatalog ? (
           <EmptyState
-            title={hasFilters ? "Nessun mercato trovato" : "Ancora nessun mercato"}
+            title={hasFilters ? "Nessun evento trovato" : "Ancora nessun evento"}
             description={
               hasFilters ? (
                 <>
-                  <p>Nessun mercato con questi filtri.</p>
+                  <p>Nessun evento con questi filtri.</p>
                   <p className="text-ds-body-sm text-fg-subtle mt-2">
                     Prova a cambiare categoria, stato o scadenza.
                   </p>
                 </>
               ) : (
-                <p>Torna a breve per scoprire i primi mercati di previsione.</p>
+                <p>Torna a breve per scoprire i primi eventi di previsione.</p>
               )
             }
             action={
@@ -278,7 +278,7 @@ export default function DiscoverPage() {
         ) : (
           <>
             <p className="text-ds-body-sm text-fg-muted mb-4">
-              {total} {total === 1 ? "mercato" : "mercati"} trovati
+              {total} {total === 1 ? "evento" : "eventi"} trovati
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {events.map((event, index) => (

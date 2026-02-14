@@ -491,7 +491,7 @@ export default function ProfilePage() {
               </>
             )}
             <Link href="/discover" className="mt-3 inline-block text-primary font-semibold text-ds-body-sm hover:underline">
-              Scopri eventi →
+              Vedi tutti gli eventi →
             </Link>
           </Card>
         </SectionContainer>

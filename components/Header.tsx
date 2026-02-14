@@ -17,7 +17,7 @@ import {
 
 const BOTTOM_NAV_ITEMS = [
   { href: "/", label: "Home", Icon: IconChart },
-  { href: "/discover", label: "Scopri", Icon: IconSearch },
+  { href: "/discover", label: "Eventi", Icon: IconSearch },
   { href: "/missions", label: "Missioni", Icon: IconTarget },
   { href: "/leaderboard", label: "Classifica", Icon: IconTrophy },
   { href: "/profile", label: "Profilo", Icon: IconUser },

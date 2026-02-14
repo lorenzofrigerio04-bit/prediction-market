@@ -9,7 +9,6 @@ import EventCard from "@/components/EventCard";
 import OnboardingTour from "@/components/OnboardingTour";
 import LandingEventRow from "@/components/landing/LandingEventRow";
 import HomeSummary from "@/components/home/HomeSummary";
-import HomeTeaser from "@/components/home/HomeTeaser";
 import { resolveClosedEvents } from "@/lib/resolveClosedEvents";
 import {
   PageHeader,
@@ -63,18 +62,6 @@ interface Mission {
   completed: boolean;
 }
 
-interface LeaderboardUser {
-  rank: number;
-  id: string;
-  name: string | null;
-  image: string | null;
-}
-
-interface CategoryWithEvents {
-  category: string;
-  events: Event[];
-}
-
 export default function Home() {
   const pathname = usePathname();
   const { data: session, status, update: updateSession } = useSession();
@@ -90,24 +77,14 @@ export default function Home() {
   const [streak, setStreak] = useState<number | null>(null);
   const [streakLoading, setStreakLoading] = useState(true);
 
-  // Mercati in tendenza (feed centrale)
+  // Eventi in tendenza (anteprima 3–4)
   const [eventsTrending, setEventsTrending] = useState<Event[]>([]);
   const [loadingTrending, setLoadingTrending] = useState(true);
   const [eventsError, setEventsError] = useState<string | null>(null);
 
-  // In scadenza presto
-  const [eventsExpiring, setEventsExpiring] = useState<Event[]>([]);
-  const [loadingExpiring, setLoadingExpiring] = useState(true);
-
-  // Categorie con preview
-  const [categoriesWithEvents, setCategoriesWithEvents] = useState<CategoryWithEvents[]>([]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
-
-  // Teaser: missioni, wallet, classifica, spin
+  // Spin e Missioni
   const [missions, setMissions] = useState<Mission[]>([]);
   const [missionsLoading, setMissionsLoading] = useState(false);
-  const [leaderboardTop, setLeaderboardTop] = useState<LeaderboardUser[]>([]);
-  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [canSpinToday, setCanSpinToday] = useState<boolean | null>(null);
   const [spinLoading, setSpinLoading] = useState(false);
 
@@ -186,12 +163,12 @@ export default function Home() {
       .finally(() => setStreakLoading(false));
   }, [status]);
 
-  // Mercati in tendenza (feed centrale)
+  // Eventi in tendenza (anteprima illustrativa, max 4)
   useEffect(() => {
     if (status !== "authenticated") return;
     setLoadingTrending(true);
     setEventsError(null);
-    const params = new URLSearchParams({ sort: "popular", status: "open", limit: "12" });
+    const params = new URLSearchParams({ sort: "popular", status: "open", limit: "4" });
     fetch(`/api/events?${params}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => setEventsTrending(data?.events ?? []))
@@ -202,46 +179,7 @@ export default function Home() {
       .finally(() => setLoadingTrending(false));
   }, [status]);
 
-  // In scadenza presto
-  useEffect(() => {
-    if (status !== "authenticated") return;
-    setLoadingExpiring(true);
-    const params = new URLSearchParams({ filter: "expiring", status: "open", limit: "6" });
-    fetch(`/api/events?${params}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setEventsExpiring(data?.events ?? []))
-      .catch(() => setEventsExpiring([]))
-      .finally(() => setLoadingExpiring(false));
-  }, [status]);
-
-  // Categorie con 1–2 eventi per categoria
-  useEffect(() => {
-    if (status !== "authenticated") return;
-    setLoadingCategories(true);
-    fetch("/api/events/categories")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        const cats: string[] = data?.categories ?? [];
-        if (cats.length === 0) {
-          setCategoriesWithEvents([]);
-          setLoadingCategories(false);
-          return;
-        }
-        Promise.all(
-          cats.map((category: string) =>
-            fetch(`/api/events?category=${encodeURIComponent(category)}&status=open&limit=2`)
-              .then((res) => (res.ok ? res.json() : null))
-              .then((d) => ({ category, events: d?.events ?? [] }))
-          )
-        ).then(setCategoriesWithEvents).finally(() => setLoadingCategories(false));
-      })
-      .catch(() => {
-        setCategoriesWithEvents([]);
-        setLoadingCategories(false);
-      });
-  }, [status]);
-
-  // Teaser: missioni, leaderboard
+  // Missioni (anteprima per home)
   useEffect(() => {
     if (status !== "authenticated") return;
     setMissionsLoading(true);
@@ -250,24 +188,6 @@ export default function Home() {
       .then((data) => setMissions((data?.daily ?? []).slice(0, 3)))
       .catch(() => setMissions([]))
       .finally(() => setMissionsLoading(false));
-  }, [status]);
-
-  useEffect(() => {
-    if (status !== "authenticated") return;
-    setLeaderboardLoading(true);
-    fetch("/api/leaderboard?period=all-time")
-      .then((r) => r.ok && r.json())
-      .then((data) =>
-        (data?.leaderboard ?? []).slice(0, 3).map((u: LeaderboardUser & { rank: number }) => ({
-          rank: u.rank,
-          id: u.id,
-          name: u.name,
-          image: u.image,
-        }))
-      )
-      .then(setLeaderboardTop)
-      .catch(() => setLeaderboardTop([]))
-      .finally(() => setLeaderboardLoading(false));
   }, [status]);
 
   useEffect(() => {
@@ -417,7 +337,7 @@ export default function Home() {
   const refetchTrending = () => {
     setLoadingTrending(true);
     setEventsError(null);
-    const params = new URLSearchParams({ sort: "popular", status: "open", limit: "12" });
+    const params = new URLSearchParams({ sort: "popular", status: "open", limit: "4" });
     fetch(`/api/events?${params}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => setEventsTrending(data?.events ?? []))
@@ -440,7 +360,7 @@ export default function Home() {
           description="Ecco cosa succede oggi."
         />
 
-        {/* 1) TOP SUMMARY */}
+        {/* 1) Summary box */}
         <HomeSummary
           credits={credits}
           weeklyRank={weeklyRank}
@@ -450,15 +370,87 @@ export default function Home() {
           streakLoading={streakLoading}
         />
 
-        {/* 2) SEZIONE PRINCIPALE — MERCATI IN TENDENZA */}
+        {/* 2) Spin of the day */}
+        <section
+          className="mb-section md:mb-section-lg"
+          aria-label="Spin of the Day"
+        >
+          <Link
+            href="/spin"
+            className="block rounded-2xl border-2 border-primary/30 bg-primary/5 glass p-4 md:p-5 hover:border-primary/50 hover:shadow-glow-sm transition-all duration-ds-normal group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none"
+          >
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <h2 className="text-ds-body font-bold text-fg group-hover:text-primary transition-colors">
+                🎡 Spin of the Day
+              </h2>
+              <span className="text-ds-micro font-semibold text-primary">
+                Gira →
+              </span>
+            </div>
+            {spinLoading ? (
+              <p className="text-ds-body-sm text-fg-muted animate-pulse">Caricamento...</p>
+            ) : canSpinToday ? (
+              <p className="text-ds-body-sm text-fg">
+                Hai <strong className="text-primary">1 spin gratuito</strong> oggi. Crediti o boost!
+              </p>
+            ) : (
+              <p className="text-ds-body-sm text-fg-muted">
+                Spin di oggi usato. Torna domani.
+              </p>
+            )}
+          </Link>
+        </section>
+
+        {/* 3) Missioni */}
+        <section
+          className="mb-section md:mb-section-lg"
+          aria-label="Missioni"
+        >
+          <Link
+            href="/missions"
+            className="block rounded-2xl border border-border dark:border-white/10 glass p-4 md:p-5 hover:border-primary/20 hover:shadow-glow-sm transition-all duration-ds-normal group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none"
+          >
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <h2 className="text-ds-body font-bold text-fg group-hover:text-primary transition-colors">
+                Missioni
+              </h2>
+              <span className="text-ds-micro font-semibold text-primary">
+                Vedi tutte →
+              </span>
+            </div>
+            {missionsLoading ? (
+              <p className="text-ds-body-sm text-fg-muted animate-pulse">Caricamento...</p>
+            ) : missions.length === 0 ? (
+              <p className="text-ds-body-sm text-fg-muted">
+                Completa le missioni per guadagnare crediti.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {missions.slice(0, 3).map((m) => (
+                  <li
+                    key={m.id}
+                    className="flex items-center justify-between gap-2 text-ds-body-sm"
+                  >
+                    <span className="text-fg truncate">{m.name}</span>
+                    <span className="shrink-0 font-semibold text-primary">
+                      {m.completed ? "✓" : `${m.progress}/${m.target}`} · +{m.reward} cr
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Link>
+        </section>
+
+        {/* 4) Eventi in tendenza (anteprima illustrativa) */}
         <SectionContainer
-          title="Mercati in tendenza"
+          title="Eventi in tendenza"
           action={
             <Link
               href="/discover"
               className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
             >
-              Esplora tutti
+              Vedi tutti gli eventi
             </Link>
           }
         >
@@ -480,79 +472,13 @@ export default function Home() {
               action={{ label: "Vai alle missioni", href: "/missions" }}
             />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               {eventsTrending.map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}
             </div>
           )}
         </SectionContainer>
-
-        {/* 3) IN SCADENZA PRESTO */}
-        {!loadingExpiring && eventsExpiring.length > 0 && (
-          <SectionContainer
-            title="In scadenza presto"
-            action={
-              <Link
-                href="/discover"
-                className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
-              >
-                Vedi tutti
-              </Link>
-            }
-          >
-            <p className="text-ds-body-sm text-fg-muted mb-4">
-              Partecipa prima che chiudano — tempo limitato per fare previsioni.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {eventsExpiring.slice(0, 6).map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))}
-            </div>
-          </SectionContainer>
-        )}
-
-        {/* 4) CATEGORIE (MACRO AREE) */}
-        {!loadingCategories && categoriesWithEvents.length > 0 && (
-          <SectionContainer title="Categorie">
-            <div className="space-y-8">
-              {categoriesWithEvents.map(({ category, events }) => (
-                <div key={category}>
-                  <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-                    <h3 className="text-ds-body font-bold text-fg">{category}</h3>
-                    <Link
-                      href={`/discover?category=${encodeURIComponent(category)}`}
-                      className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
-                    >
-                      Scopri tutti
-                    </Link>
-                  </div>
-                  {events.length === 0 ? (
-                    <p className="text-ds-body-sm text-fg-muted py-2">Nessun evento aperto in questa categoria.</p>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {events.map((event) => (
-                        <EventCard key={event.id} event={event} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </SectionContainer>
-        )}
-
-        {/* 5) TEASER — Missioni, Wallet, Classifica, Spin of the Day */}
-        <HomeTeaser
-          missions={missions}
-          missionsLoading={missionsLoading}
-          credits={credits}
-          creditsLoading={creditsLoading}
-          leaderboardTop={leaderboardTop}
-          leaderboardLoading={leaderboardLoading}
-          canSpinToday={canSpinToday}
-          spinLoading={spinLoading}
-        />
       </main>
     </div>
   );
