@@ -266,7 +266,7 @@ export default function Home() {
   }
 
   if (showLanding) {
-    const newsFromEvents: NewsItem[] = landingEvents.length > 0
+    const newsFromEvents: NewsItem[] | undefined = landingEvents.length > 0
       ? landingEvents.slice(0, 6).map((e) => ({
           id: e.id,
           title: e.title,
