@@ -7,6 +7,8 @@ import {
   getDailyBonusMultiplier,
 } from "@/lib/credits-config";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);

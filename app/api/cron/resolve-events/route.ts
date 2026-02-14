@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Endpoint per cron job che processa automaticamente gli eventi chiusi.
  * Chiamato da Vercel Cron (vedi vercel.json) o da un cron esterno.

@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/notifications/unread-count
  * Ottiene il numero di notifiche non lette dell'utente

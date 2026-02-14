@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/admin/audit
  * Tabella AuditLog con filtri (userId, action, entityType, page, limit) e paginazione

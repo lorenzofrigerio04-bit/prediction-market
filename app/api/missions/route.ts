@@ -5,6 +5,8 @@ import { ensureUserMissionsForPeriod } from "@/lib/missions";
 import { prisma } from "@/lib/prisma";
 import { getDailyBonusMultiplier } from "@/lib/credits-config";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/missions
  * Restituisce le missioni attive (giornaliere e settimanali) con il progresso dell'utente.

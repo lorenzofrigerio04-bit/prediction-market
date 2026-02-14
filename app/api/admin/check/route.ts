@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/admin/check
  * Verifica se l'utente corrente è un admin
