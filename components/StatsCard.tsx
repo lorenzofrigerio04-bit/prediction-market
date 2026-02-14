@@ -24,16 +24,16 @@ export default function StatsCard({
   subtitle,
 }: StatsCardProps) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-medium text-gray-600">{title}</h3>
-        {icon && <span className="text-2xl">{icon}</span>}
+    <div className="bg-white rounded-2xl shadow-card border border-slate-100 p-4 md:p-6">
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{title}</h3>
+        {icon && <span className="text-xl md:text-2xl">{icon}</span>}
       </div>
-      <p className={`text-3xl font-bold ${colorClasses[color]}`}>
+      <p className={`text-xl md:text-3xl font-bold ${colorClasses[color]}`}>
         {value}
       </p>
       {subtitle && (
-        <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+        <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
       )}
     </div>
   );

@@ -1,15 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import NotificationBell from "./NotificationBell";
 
 const navLinkClass =
-  "text-gray-700 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 outline-none";
+  "flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors text-left font-medium focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 outline-none";
+
+function NavLink({
+  href,
+  children,
+  icon,
+  active = false,
+  className = "",
+}: {
+  href: string;
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+  active?: boolean;
+  className?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`${navLinkClass} ${active ? "bg-accent-50 text-accent-700 font-semibold" : ""} ${className}`}
+    >
+      {icon}
+      {children}
+    </Link>
+  );
+}
 
 export default function Header() {
   const { data: session, status } = useSession();
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -21,49 +47,58 @@ export default function Header() {
     }
   };
 
-  const NavContent = () => (
+  const isActive = (path: string) => pathname === path || (path !== "/" && pathname.startsWith(path));
+
+  const MainNavContent = () => (
     <>
-      <Link href="/leaderboard" className={navLinkClass}>
-        🏆 Classifica
-      </Link>
+      <NavLink href="/leaderboard" active={isActive("/leaderboard")}>
+        <span className="text-lg" aria-hidden>🏆</span>
+        Classifica
+      </NavLink>
       {status === "loading" ? (
-        <span className="text-gray-500 px-3 py-2 text-sm">Caricamento...</span>
+        <span className="px-4 py-3 text-slate-500 text-sm">Caricamento...</span>
       ) : session ? (
         <>
           {session.user?.role === "ADMIN" && (
-            <Link href="/admin" className={`${navLinkClass} font-medium`}>
-              ⚙️ Admin
-            </Link>
+            <NavLink href="/admin" active={isActive("/admin")}>
+              <span className="text-lg" aria-hidden>⚙️</span>
+              Admin
+            </NavLink>
           )}
-          <Link href="/wallet" className={navLinkClass}>
+          <NavLink href="/wallet" active={isActive("/wallet")}>
+            <span className="text-lg" aria-hidden>💰</span>
             Wallet
-          </Link>
-          <Link href="/missions" className={navLinkClass}>
-            🎯 Missioni
-          </Link>
+          </NavLink>
+          <NavLink href="/missions" active={isActive("/missions")}>
+            <span className="text-lg" aria-hidden>🎯</span>
+            Missioni
+          </NavLink>
           <NotificationBell />
-          <Link href="/profile" className={navLinkClass}>
+          <NavLink href="/profile" active={isActive("/profile")}>
+            <span className="text-lg" aria-hidden>👤</span>
             Profilo
-          </Link>
-          <span className="text-gray-600 px-3 py-2 text-sm truncate max-w-[140px] md:max-w-none" title={session.user?.name || session.user?.email || ""}>
+          </NavLink>
+          <span
+            className="px-4 py-3 text-slate-600 text-sm truncate max-w-[180px]"
+            title={session.user?.name || session.user?.email || ""}
+          >
             Ciao, {session.user?.name || session.user?.email}
           </span>
           <button
             type="button"
             onClick={handleLogout}
-            className={`${navLinkClass} text-left w-full md:w-auto`}
+            className={`${navLinkClass} text-slate-600 border-t border-slate-100 mt-2 pt-4`}
           >
+            <span className="text-lg" aria-hidden>🚪</span>
             Esci
           </button>
         </>
       ) : (
         <>
-          <Link href="/auth/login" className={navLinkClass}>
-            Accedi
-          </Link>
+          <NavLink href="/auth/login">Accedi</NavLink>
           <Link
             href="/auth/signup"
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-accent-500 text-white font-semibold hover:bg-accent-600 transition-colors focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2"
           >
             Registrati
           </Link>
@@ -73,51 +108,121 @@ export default function Header() {
   );
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-14 md:h-16">
+    <>
+      {/* Top bar - mobile & desktop */}
+      <header
+        className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/80"
+        style={{ paddingTop: "var(--safe-area-inset-top)" }}
+      >
+        <div className="mx-auto px-4 max-w-7xl">
+          <div className="flex items-center justify-between h-14 md:h-16">
+            <Link
+              href="/"
+              className="text-lg md:text-xl font-bold text-slate-900 tracking-tight focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 rounded-lg"
+            >
+              Prediction Market
+            </Link>
+
+            <nav className="hidden md:flex items-center gap-1" aria-label="Menu principale">
+              <MainNavContent />
+            </nav>
+
+            <button
+              type="button"
+              onClick={() => setMobileOpen((o) => !o)}
+              className="md:hidden p-2.5 rounded-xl text-slate-600 hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-accent-500 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-expanded={mobileOpen}
+              aria-label={mobileOpen ? "Chiudi menu" : "Apri menu"}
+            >
+              {mobileOpen ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
+
+          {mobileOpen && (
+            <nav
+              className="md:hidden py-4 border-t border-slate-100 flex flex-col gap-1 max-h-[70vh] overflow-y-auto scrollbar-thin"
+              aria-label="Menu principale"
+            >
+              <MainNavContent />
+            </nav>
+          )}
+        </div>
+      </header>
+
+      {/* Bottom nav - solo mobile */}
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-200/80"
+        style={{ paddingBottom: "var(--safe-area-inset-bottom)" }}
+        aria-label="Navigazione principale"
+      >
+        <div className="flex items-center justify-around h-16 px-2">
           <Link
             href="/"
-            className="text-xl font-bold text-gray-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-lg"
+            className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] rounded-xl transition-colors ${
+              pathname === "/" ? "text-accent-600 bg-accent-50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+            }`}
           >
-            Prediction Market
+            <span className="text-xl">📊</span>
+            <span className="text-xs font-medium">Home</span>
           </Link>
-
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1" aria-label="Menu principale">
-            <NavContent />
-          </nav>
-
-          {/* Mobile menu button */}
-          <button
-            type="button"
-            onClick={() => setMobileOpen((o) => !o)}
-            className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-blue-500"
-            aria-expanded={mobileOpen}
-            aria-label={mobileOpen ? "Chiudi menu" : "Apri menu"}
+          <Link
+            href="/leaderboard"
+            className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] rounded-xl transition-colors ${
+              isActive("/leaderboard") ? "text-accent-600 bg-accent-50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+            }`}
           >
-            {mobileOpen ? (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            )}
-          </button>
+            <span className="text-xl">🏆</span>
+            <span className="text-xs font-medium">Classifica</span>
+          </Link>
+          {session ? (
+            <>
+              <Link
+                href="/wallet"
+                className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] rounded-xl transition-colors ${
+                  isActive("/wallet") ? "text-accent-600 bg-accent-50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <span className="text-xl">💰</span>
+                <span className="text-xs font-medium">Wallet</span>
+              </Link>
+              <Link
+                href="/missions"
+                className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] rounded-xl transition-colors ${
+                  isActive("/missions") ? "text-accent-600 bg-accent-50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <span className="text-xl">🎯</span>
+                <span className="text-xs font-medium">Missioni</span>
+              </Link>
+              <Link
+                href="/profile"
+                className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] rounded-xl transition-colors ${
+                  isActive("/profile") ? "text-accent-600 bg-accent-50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                <span className="text-xl">👤</span>
+                <span className="text-xs font-medium">Profilo</span>
+              </Link>
+            </>
+          ) : (
+            <Link
+              href="/auth/login"
+              className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+            >
+              <span className="text-xl">🔐</span>
+              <span className="text-xs font-medium">Accedi</span>
+            </Link>
+          )}
         </div>
-
-        {/* Mobile nav */}
-        {mobileOpen && (
-          <nav
-            className="md:hidden py-4 border-t border-gray-100 flex flex-col gap-1"
-            aria-label="Menu principale"
-          >
-            <NavContent />
-          </nav>
-        )}
-      </div>
-    </header>
+      </nav>
+    </>
   );
 }

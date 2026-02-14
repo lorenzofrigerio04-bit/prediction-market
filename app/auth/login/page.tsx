@@ -26,7 +26,13 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Credenziali non valide");
+        // Mostra il messaggio dal server (es. "Credenziali non valide") o un messaggio generico
+        setError(result.error === "CredentialsSignin" ? "Credenziali non valide" : (result.error || "Credenziali non valide"));
+        setIsLoading(false);
+        return;
+      }
+      if (!result?.ok) {
+        setError("Accesso non riuscito. Riprova.");
         setIsLoading(false);
         return;
       }
@@ -47,56 +53,52 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       <Header />
       <div className="flex-1 flex items-center justify-center px-4 py-8">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
-        <h1 className="text-3xl font-bold text-center text-gray-900 mb-2">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-card border border-slate-100 p-6 md:p-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-1">
           Accedi
         </h1>
-        <p className="text-center text-gray-600 mb-8">
-          Accedi al tuo account per continuare
+        <p className="text-center text-slate-600 mb-6 md:mb-8 text-sm">
+          Accedi al tuo account
         </p>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
             {error}
+            <p className="mt-2 text-xs text-red-600">
+              Se il problema persiste, apri{" "}
+              <a href="/api/auth-status" target="_blank" rel="noopener noreferrer" className="underline font-medium">
+                /api/auth-status
+              </a>
+            </p>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Email
-            </label>
+            <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-1">Email</label>
             <input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full min-h-[48px] px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
               placeholder="tua@email.com"
             />
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Password
-            </label>
+            <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-1">Password</label>
             <input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full min-h-[48px] px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
               placeholder="••••••••"
             />
           </div>
@@ -104,19 +106,19 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading || redirecting}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full min-h-[48px] bg-accent-500 text-white py-3 px-4 rounded-xl font-semibold hover:bg-accent-600 focus:ring-2 focus:ring-accent-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
           >
-            {redirecting ? "Reindirizzamento..." : isLoading ? "Accesso in corso..." : "Accedi"}
+            {redirecting ? "Reindirizzamento..." : isLoading ? "Accesso..." : "Accedi"}
           </button>
         </form>
 
         <div className="mt-6">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <div className="w-full border-t border-slate-200" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Oppure</span>
+              <span className="px-2 bg-white text-slate-500">Oppure</span>
             </div>
           </div>
 
@@ -124,7 +126,7 @@ export default function LoginPage() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={isLoading || redirecting}
-            className="mt-4 w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="mt-4 w-full min-h-[48px] flex items-center justify-center gap-3 bg-white border border-slate-200 text-slate-700 py-3 px-4 rounded-xl font-medium hover:bg-slate-50 focus:ring-2 focus:ring-accent-500 disabled:opacity-50 transition-colors"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -148,12 +150,9 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
+        <p className="mt-6 text-center text-sm text-slate-600">
           Non hai un account?{" "}
-          <Link
-            href="/auth/signup"
-            className="text-blue-600 hover:text-blue-700 font-medium focus-visible:underline"
-          >
+          <Link href="/auth/signup" className="text-accent-600 hover:text-accent-700 font-semibold focus-visible:underline">
             Registrati
           </Link>
         </p>

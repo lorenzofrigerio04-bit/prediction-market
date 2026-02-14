@@ -174,12 +174,12 @@ export default function ProfilePage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-50">
         <Header />
-        <main className="container mx-auto px-4 py-8">
+        <main className="mx-auto px-4 py-8 max-w-2xl">
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600">Caricamento profilo...</p>
+            <div className="inline-block animate-spin rounded-full h-10 w-10 border-2 border-accent-500 border-t-transparent" />
+            <p className="mt-4 text-slate-600 font-medium">Caricamento profilo...</p>
           </div>
         </main>
       </div>
@@ -198,108 +198,60 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       <Header />
-      <main className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Error Message */}
+      <main className="mx-auto px-4 py-5 md:py-8 max-w-2xl">
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm">
             {error}
           </div>
         )}
 
-        {/* Profile Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          <div className="flex items-center gap-6">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold">
+        <div className="bg-white rounded-2xl shadow-card border border-slate-100 p-5 md:p-6 mb-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-accent-500 to-violet-500 flex items-center justify-center text-white text-2xl sm:text-3xl font-bold shrink-0">
               {profileData.user.image ? (
-                <img
-                  src={profileData.user.image}
-                  alt={profileData.user.name || "User"}
-                  className="w-full h-full rounded-full object-cover"
-                />
+                <img src={profileData.user.image} alt="" className="w-full h-full rounded-2xl object-cover" />
               ) : (
                 (profileData.user.name || profileData.user.email)[0].toUpperCase()
               )}
             </div>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 mb-1">
+            <div className="flex-1 text-center sm:text-left min-w-0">
+              <h1 className="text-xl md:text-2xl font-bold text-slate-900 truncate">
                 {profileData.user.name || "Utente"}
               </h1>
-              <p className="text-gray-600 mb-2">{profileData.user.email}</p>
-              <p className="text-sm text-gray-500">
-                Membro dal {formatDate(profileData.user.createdAt)}
-              </p>
+              <p className="text-slate-600 text-sm truncate">{profileData.user.email}</p>
+              <p className="text-xs text-slate-500 mt-1">Dal {formatDate(profileData.user.createdAt)}</p>
             </div>
-            <div className="flex items-center">
-              <StreakBadge streak={profileData.stats.streak} size="lg" />
-            </div>
+            <StreakBadge streak={profileData.stats.streak} size="lg" />
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <StatsCard
-            title="Accuratezza"
-            value={formatPercentage(profileData.stats.accuracy)}
-            icon="🎯"
-            color="blue"
-            subtitle={`${profileData.stats.correctPredictions} su ${profileData.stats.totalPredictions} previsioni`}
-          />
-          <StatsCard
-            title="Crediti Totali"
-            value={formatAmount(profileData.stats.credits)}
-            icon="💰"
-            color="green"
-            subtitle={`${formatAmount(profileData.stats.totalEarned)} guadagnati`}
-          />
-          <StatsCard
-            title="ROI"
-            value={`${profileData.stats.roi >= 0 ? "+" : ""}${formatPercentage(profileData.stats.roi)}`}
-            icon="📈"
-            color={profileData.stats.roi >= 0 ? "green" : "red"}
-            subtitle="Return on Investment"
-          />
-          <StatsCard
-            title="Previsioni Totali"
-            value={profileData.stats.totalPredictions}
-            icon="🔮"
-            color="purple"
-            subtitle={`${profileData.stats.activePredictions} attive`}
-          />
+        <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6">
+          <StatsCard title="Accuratezza" value={formatPercentage(profileData.stats.accuracy)} icon="🎯" color="blue" subtitle={`${profileData.stats.correctPredictions}/${profileData.stats.totalPredictions}`} />
+          <StatsCard title="Crediti" value={formatAmount(profileData.stats.credits)} icon="💰" color="green" subtitle={`+${formatAmount(profileData.stats.totalEarned)}`} />
+          <StatsCard title="ROI" value={`${profileData.stats.roi >= 0 ? "+" : ""}${formatPercentage(profileData.stats.roi)}`} icon="📈" color={profileData.stats.roi >= 0 ? "green" : "red"} subtitle="ROI" />
+          <StatsCard title="Previsioni" value={profileData.stats.totalPredictions} icon="🔮" color="purple" subtitle={`${profileData.stats.activePredictions} attive`} />
         </div>
 
-        {/* Badges Section - tutti i badge (sbloccati e bloccati) */}
         {allBadges.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Badge e Achievement</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-2xl shadow-card border border-slate-100 p-5 md:p-6 mb-6">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Badge</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {allBadges.map((badge) => (
                 <div
                   key={badge.id}
-                  className={`p-4 rounded-lg border-2 transition-opacity ${
-                    badge.unlocked
-                      ? RARITY_COLORS[badge.rarity] || RARITY_COLORS.COMMON
-                      : "bg-gray-100 border-gray-200 opacity-75"
+                  className={`p-4 rounded-2xl border-2 transition-opacity ${
+                    badge.unlocked ? RARITY_COLORS[badge.rarity] || RARITY_COLORS.COMMON : "bg-slate-100 border-slate-200 opacity-75"
                   }`}
                 >
-                  <div className="text-3xl mb-2 text-center">
-                    {badge.icon || "🏆"}
-                  </div>
-                  <h3 className="font-semibold text-gray-900 text-center mb-1">
-                    {badge.name}
-                  </h3>
-                  <p className="text-xs text-gray-600 text-center mb-2">
-                    {badge.description}
-                  </p>
+                  <div className="text-2xl mb-1 text-center">{badge.icon || "🏆"}</div>
+                  <h3 className="font-semibold text-slate-900 text-center text-sm mb-0.5">{badge.name}</h3>
+                  <p className="text-[10px] text-slate-600 text-center line-clamp-2">{badge.description}</p>
                   {badge.unlocked && badge.unlockedAt ? (
-                    <p className="text-xs text-gray-500 text-center">
-                      Sbloccato il {formatDate(badge.unlockedAt)}
-                    </p>
+                    <p className="text-[10px] text-slate-500 text-center mt-1">Sbloccato</p>
                   ) : (
-                    <p className="text-xs text-gray-400 text-center italic">
-                      Non ancora sbloccato
-                    </p>
+                    <p className="text-[10px] text-slate-400 text-center italic mt-1">Bloccato</p>
                   )}
                 </div>
               ))}
@@ -307,45 +259,31 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Predictions Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Le Mie Previsioni</h2>
-
-          {/* Filter Buttons */}
-          <div className="flex flex-wrap gap-2 mb-6">
+        <div className="bg-white rounded-2xl shadow-card border border-slate-100 p-5 md:p-6">
+          <h2 className="text-lg font-bold text-slate-900 mb-4">Le Mie Previsioni</h2>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin -mx-1 mb-4 md:flex-wrap md:overflow-visible">
             {filterButtons.map((btn) => (
               <button
                 key={btn.id}
                 type="button"
                 onClick={() => setFilter(btn.id)}
-                className={`px-4 py-2 rounded-xl font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 ${
-                  filter === btn.id
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                className={`shrink-0 min-h-[40px] px-4 py-2 rounded-xl font-medium transition-colors focus-visible:ring-2 focus-visible:ring-accent-500 ${
+                  filter === btn.id ? "bg-accent-500 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
-                {btn.label}
-                {btn.count !== undefined && (
-                  <span className="ml-2 text-sm opacity-75">({btn.count})</span>
-                )}
+                {btn.label} {btn.count !== undefined && `(${btn.count})`}
               </button>
             ))}
           </div>
 
-          {/* Predictions List */}
           {predictionsLoading ? (
             <div className="text-center py-8">
-              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              <p className="mt-2 text-gray-600 text-sm">Caricamento previsioni...</p>
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-accent-500 border-t-transparent" />
+              <p className="mt-2 text-slate-600 text-sm">Caricamento...</p>
             </div>
           ) : predictions.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p>Nessuna previsione trovata.</p>
-              <p className="text-sm mt-2">
-                {filter === "all"
-                  ? "Inizia a fare previsioni per vedere la tua storia qui!"
-                  : `Nessuna previsione ${filter === "active" ? "attiva" : filter === "won" ? "vinta" : "persa"}.`}
-              </p>
+            <div className="text-center py-8 text-slate-500 text-sm">
+              <p>{filter === "all" ? "Nessuna previsione ancora." : `Nessuna previsione ${filter === "active" ? "attiva" : filter === "won" ? "vinta" : "persa"}.`}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -353,76 +291,34 @@ export default function ProfilePage() {
                 const isWon = prediction.resolved && prediction.won === true;
                 const isLost = prediction.resolved && prediction.won === false;
                 const isActive = !prediction.resolved;
-
                 return (
                   <div
                     key={prediction.id}
-                    className={`p-4 border rounded-lg transition-colors ${
-                      isWon
-                        ? "bg-green-50 border-green-200"
-                        : isLost
-                        ? "bg-red-50 border-red-200"
-                        : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                    className={`p-4 rounded-2xl border-2 transition-colors ${
+                      isWon ? "bg-emerald-50 border-emerald-200" : isLost ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-100 hover:bg-slate-100"
                     }`}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-lg">
-                            {isWon ? "✅" : isLost ? "❌" : "⏳"}
-                          </span>
-                          <h3 className="font-semibold text-gray-900">
-                            {prediction.event.title}
-                          </h3>
-                          <span className="px-2 py-1 text-xs bg-gray-200 rounded-full text-gray-700">
-                            {prediction.event.category}
-                          </span>
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <span>{isWon ? "✅" : isLost ? "❌" : "⏳"}</span>
+                          <h3 className="font-semibold text-slate-900 line-clamp-2">{prediction.event.title}</h3>
+                          <span className="px-2 py-0.5 text-xs bg-slate-200 rounded-lg text-slate-700 shrink-0">{prediction.event.category}</span>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <span>
-                            Previsione:{" "}
-                            <span className="font-medium">
-                              {prediction.outcome === "YES" ? "SÌ" : "NO"}
-                            </span>
-                          </span>
-                          <span>
-                            Investiti:{" "}
-                            <span className="font-medium">
-                              {formatAmount(prediction.credits)} crediti
-                            </span>
-                          </span>
+                        <p className="text-sm text-slate-600">
+                          {prediction.outcome === "YES" ? "SÌ" : "NO"} · {formatAmount(prediction.credits)} crediti
                           {prediction.resolved && prediction.payout !== null && (
-                            <span
-                              className={`font-semibold ${
-                                isWon ? "text-green-600" : "text-red-600"
-                              }`}
-                            >
-                              {isWon ? "+" : ""}
-                              {formatAmount(prediction.payout)} crediti
+                            <span className={isWon ? " text-emerald-600 font-semibold" : " text-red-600 font-semibold"}>
+                              {" "}{isWon ? "+" : ""}{formatAmount(prediction.payout)}
                             </span>
                           )}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2">
-                          Creata il {formatDate(prediction.createdAt)}
-                          {prediction.resolvedAt &&
-                            ` • Risolta il ${formatDate(prediction.resolvedAt)}`}
                         </p>
-                        {isActive && (
-                          <p className="text-xs text-orange-600 mt-1">
-                            Chiusura previsioni: {formatDate(prediction.event.closesAt)}
-                          </p>
-                        )}
+                        <p className="text-xs text-slate-500 mt-1">{formatDate(prediction.createdAt)}</p>
                       </div>
                       {prediction.resolved && (
-                        <div
-                          className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                            isWon
-                              ? "bg-green-200 text-green-800"
-                              : "bg-red-200 text-red-800"
-                          }`}
-                        >
+                        <span className={`shrink-0 px-3 py-1 rounded-full text-xs font-bold ${isWon ? "bg-emerald-200 text-emerald-800" : "bg-red-200 text-red-800"}`}>
                           {isWon ? "VINTA" : "PERSA"}
-                        </div>
+                        </span>
                       )}
                     </div>
                   </div>

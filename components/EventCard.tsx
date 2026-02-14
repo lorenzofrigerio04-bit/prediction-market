@@ -26,26 +26,20 @@ export default function EventCard({ event }: EventCardProps) {
   const daysUntilClose = Math.floor(hoursUntilClose / 24);
 
   const getTimeRemaining = () => {
-    if (timeUntilClose <= 0) {
-      return "Chiuso";
-    }
-    if (daysUntilClose > 0) {
-      return `${daysUntilClose} ${daysUntilClose === 1 ? "giorno" : "giorni"}`;
-    } else if (hoursUntilClose > 0) {
-      return `${hoursUntilClose} ${hoursUntilClose === 1 ? "ora" : "ore"}`;
-    } else {
-      return "In scadenza";
-    }
+    if (timeUntilClose <= 0) return "Chiuso";
+    if (daysUntilClose > 0) return `${daysUntilClose}d`;
+    if (hoursUntilClose > 0) return `${hoursUntilClose}h`;
+    return "Presto";
   };
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      Sport: "bg-green-100 text-green-800 border-green-200",
-      Politica: "bg-blue-100 text-blue-800 border-blue-200",
-      Tecnologia: "bg-purple-100 text-purple-800 border-purple-200",
-      Economia: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      Sport: "bg-emerald-100 text-emerald-800 border-emerald-200",
+      Politica: "bg-sky-100 text-sky-800 border-sky-200",
+      Tecnologia: "bg-violet-100 text-violet-800 border-violet-200",
+      Economia: "bg-amber-100 text-amber-800 border-amber-200",
       Cultura: "bg-pink-100 text-pink-800 border-pink-200",
-      Altro: "bg-gray-100 text-gray-800 border-gray-200",
+      Altro: "bg-slate-100 text-slate-700 border-slate-200",
     };
     return colors[category] || colors.Altro;
   };
@@ -53,89 +47,86 @@ export default function EventCard({ event }: EventCardProps) {
   return (
     <Link
       href={`/events/${event.id}`}
-      className="block focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-2xl outline-none"
+      className="block focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 rounded-2xl outline-none"
     >
-      <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 cursor-pointer border border-gray-200 h-full flex flex-col group">
-        {/* Header con categoria e scadenza */}
-        <div className="flex items-center justify-between mb-5">
+      <article className="bg-white rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 p-5 md:p-6 border border-slate-100 h-full flex flex-col group">
+        {/* Top: categoria + scadenza */}
+        <div className="flex items-center justify-between gap-2 mb-4">
           <span
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${getCategoryColor(
-              event.category
-            )}`}
+            className={`shrink-0 px-2.5 py-1 rounded-lg text-xs font-bold border ${getCategoryColor(event.category)}`}
           >
             {event.category}
           </span>
-          <div className="flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg font-medium">
+          <span className="flex items-center gap-1.5 text-xs text-slate-500 bg-slate-50 px-2.5 py-1.5 rounded-lg font-medium shrink-0">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span>Chiude tra {getTimeRemaining()}</span>
-          </div>
+            {getTimeRemaining()}
+          </span>
         </div>
 
-        {/* Titolo */}
-        <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
+        {/* Titolo - leggibile su mobile */}
+        <h3 className="text-lg md:text-xl font-bold text-slate-900 mb-2 line-clamp-2 leading-snug group-hover:text-accent-600 transition-colors">
           {event.title}
         </h3>
 
-        {/* Descrizione */}
         {event.description && (
-          <p className="text-sm text-gray-600 mb-6 line-clamp-2 leading-relaxed flex-grow">
+          <p className="text-sm text-slate-600 mb-4 line-clamp-2 leading-relaxed flex-grow">
             {event.description}
           </p>
         )}
 
-        {/* Sezione probabilità - più visibile e user-friendly */}
-        <div className="mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-100">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-              Previsione della community
+        {/* Probabilità - blocco chiaro */}
+        <div className="mb-4 bg-gradient-to-br from-accent-50 to-sky-50 rounded-xl p-4 border border-accent-100/80">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+              Previsione
             </span>
-            <span className="text-3xl font-extrabold text-blue-600">
+            <span className="text-2xl md:text-3xl font-extrabold text-accent-600">
               {event.probability.toFixed(0)}%
             </span>
           </div>
-          <div className="w-full h-4 bg-white/60 rounded-full overflow-hidden shadow-inner mb-2">
+          <div className="w-full h-2.5 bg-white/70 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 transition-all duration-500 rounded-full shadow-sm"
+              className="h-full bg-gradient-to-r from-accent-400 to-accent-600 rounded-full transition-all duration-500"
               style={{ width: `${Math.max(0, Math.min(100, event.probability))}%` }}
             />
           </div>
-          <p className="text-xs text-gray-600 text-center font-medium">
-            <span className="text-blue-700 font-bold">{event.probability.toFixed(0)}%</span> prevede <strong className="text-gray-900">SÌ</strong>
+          <p className="text-xs text-slate-600 mt-1.5 font-medium">
+            <span className="text-accent-700 font-bold">{event.probability.toFixed(0)}%</span> SÌ
           </p>
         </div>
 
-        {/* Statistiche - layout più chiaro e separato */}
-        <div className="pt-5 border-t-2 border-gray-100">
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="text-center bg-gray-50 rounded-lg py-3 px-2">
-              <div className="text-2xl font-bold text-gray-900 mb-1">
+        {/* Stats - una riga compatta su mobile */}
+        <div className="pt-4 border-t border-slate-100">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="text-center bg-slate-50 rounded-xl py-2.5 px-2">
+              <div className="text-lg md:text-xl font-bold text-slate-900">
                 {event._count.predictions}
               </div>
-              <div className="text-xs text-gray-600 font-semibold">
+              <div className="text-[10px] md:text-xs text-slate-500 font-medium uppercase tracking-wide">
                 Previsioni
               </div>
             </div>
-            <div className="text-center bg-gray-50 rounded-lg py-3 px-2">
-              <div className="text-2xl font-bold text-gray-900 mb-1">
+            <div className="text-center bg-slate-50 rounded-xl py-2.5 px-2">
+              <div className="text-lg md:text-xl font-bold text-slate-900">
                 {event._count.comments}
               </div>
-              <div className="text-xs text-gray-600 font-semibold">
+              <div className="text-[10px] md:text-xs text-slate-500 font-medium uppercase tracking-wide">
                 Commenti
               </div>
             </div>
-            <div className="text-center bg-blue-50 rounded-lg py-3 px-2 border border-blue-100">
-              <div className="text-xl font-bold text-blue-700 mb-1">
+            <div className="text-center bg-accent-50 rounded-xl py-2.5 px-2 border border-accent-100">
+              <div className="text-base md:text-lg font-bold text-accent-700">
                 {event.totalCredits > 0 ? (event.totalCredits / 1000).toFixed(1) + "k" : "0"}
               </div>
-              <div className="text-xs text-blue-600 font-semibold">
+              <div className="text-[10px] md:text-xs text-accent-600 font-medium uppercase tracking-wide">
                 Crediti
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </article>
     </Link>
   );
 }

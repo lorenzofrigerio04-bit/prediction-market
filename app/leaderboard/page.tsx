@@ -73,36 +73,28 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       <Header />
-      <main className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            🏆 Classifica
-          </h1>
-          <p className="text-gray-600">{getPeriodDescription()}</p>
+      <main className="mx-auto px-4 py-5 md:py-8 max-w-2xl">
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">🏆 Classifica</h1>
+          <p className="text-slate-600 text-sm">{getPeriodDescription()}</p>
         </div>
 
-        {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm">
             {error}
           </div>
         )}
 
-        {/* Period Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-sm font-medium text-gray-700">Periodo:</span>
+        <div className="bg-white rounded-2xl shadow-card border border-slate-100 p-4 mb-6">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin md:flex-wrap md:overflow-visible">
             {periodButtons.map((btn) => (
               <button
                 key={btn.id}
                 onClick={() => setPeriod(btn.id)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  period === btn.id
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                className={`shrink-0 min-h-[44px] px-4 py-2 rounded-xl font-semibold transition-colors ${
+                  period === btn.id ? "bg-accent-500 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
                 {btn.label}
@@ -111,54 +103,31 @@ export default function LeaderboardPage() {
           </div>
         </div>
 
-        {/* Leaderboard */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600">Caricamento classifica...</p>
+            <div className="inline-block animate-spin rounded-full h-10 w-10 border-2 border-accent-500 border-t-transparent" />
+            <p className="mt-4 text-slate-600 font-medium">Caricamento...</p>
           </div>
         ) : leaderboard.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-            <p className="text-gray-600 text-lg mb-2">
-              Nessun utente nella classifica
-            </p>
-            <p className="text-gray-500 text-sm">
-              Inizia a fare previsioni per apparire in classifica!
-            </p>
+          <div className="bg-white rounded-2xl shadow-card border border-slate-100 p-8 md:p-12 text-center">
+            <p className="text-slate-600 mb-2">Nessun utente in classifica</p>
+            <p className="text-slate-500 text-sm">Fai previsioni per apparire qui!</p>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            {/* Desktop Header */}
-            <div className="hidden md:grid grid-cols-12 gap-4 mb-4 pb-3 border-b border-gray-200">
-              <div className="col-span-2 text-sm font-semibold text-gray-700">
-                Posizione
-              </div>
-              <div className="col-span-4 text-sm font-semibold text-gray-700">
-                Utente
-              </div>
-              <div className="col-span-2 text-sm font-semibold text-gray-700 text-center">
-                Accuratezza
-              </div>
-              <div className="col-span-2 text-sm font-semibold text-gray-700 text-center">
-                ROI
-              </div>
-              <div className="col-span-2 text-sm font-semibold text-gray-700 text-center">
-                Streak
-              </div>
+          <div className="bg-white rounded-2xl shadow-card border border-slate-100 p-4 md:p-6">
+            <div className="hidden md:grid grid-cols-12 gap-4 mb-4 pb-3 border-b border-slate-100">
+              <div className="col-span-2 text-xs font-semibold text-slate-500 uppercase">Pos.</div>
+              <div className="col-span-4 text-xs font-semibold text-slate-500 uppercase">Utente</div>
+              <div className="col-span-2 text-xs font-semibold text-slate-500 uppercase text-center">Accur.</div>
+              <div className="col-span-2 text-xs font-semibold text-slate-500 uppercase text-center">ROI</div>
+              <div className="col-span-2 text-xs font-semibold text-slate-500 uppercase text-center">Streak</div>
             </div>
-
-            {/* Leaderboard Rows */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               {leaderboard.map((user) => (
                 <LeaderboardRow
                   key={user.id}
                   rank={user.rank}
-                  user={{
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    image: user.image,
-                  }}
+                  user={{ id: user.id, name: user.name, email: user.email, image: user.image }}
                   accuracy={user.accuracy}
                   roi={user.roi}
                   streak={user.streak}
@@ -168,15 +137,8 @@ export default function LeaderboardPage() {
                 />
               ))}
             </div>
-
-            {/* Footer Info */}
-            <div className="mt-6 pt-4 border-t border-gray-200 text-center text-sm text-gray-500">
-              <p>
-                Totale utenti in classifica: <strong>{leaderboard.length}</strong>
-              </p>
-              <p className="mt-1 text-xs">
-                La classifica è calcolata in base a accuratezza, ROI e streak
-              </p>
+            <div className="mt-6 pt-4 border-t border-slate-100 text-center text-sm text-slate-500">
+              <p>Totale: <strong>{leaderboard.length}</strong> utenti</p>
             </div>
           </div>
         )}

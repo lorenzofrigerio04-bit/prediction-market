@@ -21,11 +21,14 @@ export default async function RootLayout({
   try {
     session = await getServerSession(authOptions);
   } catch (e) {
+    // In produzione un errore qui (es. NEXTAUTH_SECRET mancante, DB irraggiungibile)
+    // non deve far vedere pagina bianca: usiamo sessione null e lasciamo che
+    // global-error.tsx intercetti solo errori non catturati.
     console.error("getServerSession error:", e);
   }
   return (
     <html lang="it">
-      <body className="font-sans antialiased min-h-screen bg-gray-50">
+      <body className="font-sans antialiased min-h-screen bg-slate-50 text-slate-900">
         <SessionProvider session={session}>{children}</SessionProvider>
       </body>
     </html>

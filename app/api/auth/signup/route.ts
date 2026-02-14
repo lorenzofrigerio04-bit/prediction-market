@@ -53,17 +53,35 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error("Errore durante la registrazione:", error);
     
-    // Gestione errori più specifica
     if (error.code === "P2002") {
       return NextResponse.json(
         { error: "Un utente con questa email esiste già" },
         { status: 400 }
       );
     }
-    
-    if (error.message?.includes("connect") || error.message?.includes("database")) {
+
+    // Tabelle mancanti: eseguire prisma db push sul DB di produzione
+    if (error.code === "P2021" || error.message?.includes("does not exist")) {
       return NextResponse.json(
-        { error: "Errore di connessione al database. Verifica che il database sia configurato correttamente." },
+        {
+          error:
+            "Il database non ha ancora le tabelle. Esegui dal tuo computer: DATABASE_URL=\"la_tua_url_neon\" npx prisma db push && npm run db:seed",
+        },
+        { status: 500 }
+      );
+    }
+    
+    if (
+      error.message?.includes("connect") ||
+      error.message?.includes("database") ||
+      error.code === "P1001" ||
+      error.code === "P1017"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Errore di connessione al database. Verifica DATABASE_URL su Vercel, che Neon sia attivo e che usi l'URL con \"-pooler\" (connection pooler).",
+        },
         { status: 500 }
       );
     }

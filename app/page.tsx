@@ -58,8 +58,6 @@ export default function Home() {
   const [sessionSynced, setSessionSynced] = useState(false);
   const sessionSyncDone = useRef(false);
 
-  // Sincronizza la sessione con il server una sola volta quando si apre la homepage (autenticati).
-  // Evita loop: usiamo un ref così l'effect non dipende da updateSession che può cambiare a ogni render.
   useEffect(() => {
     if (status === "unauthenticated" || status === "loading") {
       setSessionSynced(true);
@@ -73,7 +71,6 @@ export default function Home() {
     }
   }, [status]);
 
-  // Tutorial solo: utente loggato, nuovo (onboarding non completato), solo in homepage, una sola volta (DB + sessionStorage)
   const alreadyCompletedThisSession =
     typeof window !== "undefined" &&
     sessionStorage.getItem(ONBOARDING_STORAGE_KEY) === "true";
@@ -82,7 +79,7 @@ export default function Home() {
     status === "authenticated" &&
     sessionSynced &&
     !!session?.user &&
-    session.user.onboardingCompleted === false &&
+    session.user?.onboardingCompleted === false &&
     !alreadyCompletedThisSession &&
     !onboardingDismissed;
 
@@ -144,13 +141,11 @@ export default function Home() {
     }
   }, []);
 
-  // Categorie e resolve eventi chiusi: una sola volta al mount.
   useEffect(() => {
     fetchCategories();
     resolveClosedEvents().catch(() => {});
   }, [fetchCategories]);
 
-  // Eventi: rifetch quando cambiano filtro, ricerca o categoria.
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
@@ -167,54 +162,54 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       {showOnboarding && (
         <OnboardingTour onComplete={handleOnboardingComplete} />
       )}
       <Header />
-      <main className="container mx-auto px-4 py-8">
-        {/* Hero Section */}
-        <div className="text-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3 tracking-tight">
+      <main className="mx-auto px-4 py-5 md:py-8 max-w-6xl">
+        {/* Hero - compatto su mobile */}
+        <div className="text-center mb-6 md:mb-10">
+          <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-2 tracking-tight">
             Prediction Market
           </h1>
-          <p className="text-gray-600 text-lg max-w-xl mx-auto">
+          <p className="text-slate-600 text-sm md:text-lg max-w-xl mx-auto">
             Scommetti sugli eventi, accumula crediti e sali in classifica.
           </p>
         </div>
 
-        {/* Search Bar */}
-        <form onSubmit={handleSearch} className="mb-8" role="search">
-          <div className="flex gap-2 max-w-2xl mx-auto">
+        {/* Search - full width, touch-friendly */}
+        <form onSubmit={handleSearch} className="mb-6 md:mb-8" role="search">
+          <div className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
             <input
               type="search"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Cerca eventi per titolo o categoria..."
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow placeholder:text-gray-400"
+              placeholder="Cerca eventi..."
+              className="flex-1 w-full min-h-[48px] px-4 py-3 rounded-2xl border border-slate-200 bg-white shadow-card focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-shadow placeholder:text-slate-400 text-base"
               aria-label="Cerca eventi"
             />
             <button
               type="submit"
-              className="px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+              className="min-h-[48px] px-6 py-3 bg-accent-500 text-white font-semibold rounded-2xl hover:bg-accent-600 active:bg-accent-700 transition-colors shadow-card focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-500"
             >
               Cerca
             </button>
           </div>
         </form>
 
-        {/* Filters */}
-        <div className="mb-8">
-          <div className="flex flex-wrap items-center gap-3 mb-4">
-            <span className="text-sm font-medium text-gray-600">Filtri:</span>
+        {/* Filtri - scroll orizzontale su mobile */}
+        <div className="mb-6 md:mb-8">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Filtri</p>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin -mx-1 px-1 md:flex-wrap md:overflow-visible">
             {filterButtons.map((btn) => (
               <button
                 key={btn.id}
                 onClick={() => setFilter(btn.id)}
-                className={`px-4 py-2 rounded-xl font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 ${
+                className={`shrink-0 min-h-[44px] px-4 py-2.5 rounded-xl font-semibold transition-all focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 ${
                   filter === btn.id
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm"
+                    ? "bg-accent-500 text-white shadow-glow"
+                    : "bg-white text-slate-700 border border-slate-200 shadow-card hover:border-slate-300"
                 }`}
               >
                 {btn.label}
@@ -222,63 +217,62 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Category Filter */}
           {categories.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-medium text-gray-600">
-                Categoria:
-              </span>
-              <button
-                onClick={() => setSelectedCategory("")}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 ${
-                  selectedCategory === ""
-                    ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
-                }`}
-              >
-                Tutte
-              </button>
-              {categories.map((cat) => (
+            <>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2">Categoria</p>
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin -mx-1 px-1 md:flex-wrap md:overflow-visible">
                 <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 ${
-                    selectedCategory === cat
-                      ? "bg-blue-600 text-white"
-                      : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                  onClick={() => setSelectedCategory("")}
+                  className={`shrink-0 min-h-[40px] px-4 py-2 rounded-full text-sm font-medium transition-all focus-visible:ring-2 focus-visible:ring-accent-500 ${
+                    selectedCategory === ""
+                      ? "bg-accent-500 text-white"
+                      : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
                   }`}
                 >
-                  {cat}
+                  Tutte
                 </button>
-              ))}
-            </div>
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`shrink-0 min-h-[40px] px-4 py-2 rounded-full text-sm font-medium transition-all focus-visible:ring-2 focus-visible:ring-accent-500 ${
+                      selectedCategory === cat
+                        ? "bg-accent-500 text-white"
+                        : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </>
           )}
         </div>
 
-        {/* Events List */}
+        {/* Eventi */}
         {eventsError ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-gray-200 shadow-sm max-w-md mx-auto">
-            <p className="text-gray-600 mb-6">{eventsError}</p>
+          <div className="text-center py-12 md:py-16 bg-white rounded-3xl border border-slate-200 shadow-card max-w-md mx-auto px-6">
+            <p className="text-slate-600 mb-6">{eventsError}</p>
             <button
               onClick={() => fetchEvents()}
-              className="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+              className="min-h-[48px] px-6 py-3 bg-accent-500 text-white font-semibold rounded-2xl hover:bg-accent-600 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-500"
             >
               Riprova
             </button>
           </div>
         ) : loading ? (
-          <div className="text-center py-16">
-            <div className="inline-block h-10 w-10 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" aria-hidden />
-            <p className="mt-4 text-gray-600 font-medium">Caricamento eventi...</p>
+          <div className="text-center py-12 md:py-16">
+            <div className="inline-block h-10 w-10 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" aria-hidden />
+            <p className="mt-4 text-slate-600 font-medium">Caricamento eventi...</p>
           </div>
         ) : events.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-gray-200 shadow-sm max-w-lg mx-auto">
-            <p className="text-gray-600 text-lg mb-2">
+          <div className="text-center py-12 md:py-16 bg-white rounded-3xl border border-slate-200 shadow-card max-w-lg mx-auto px-6">
+            <p className="text-slate-600 text-base md:text-lg mb-2">
               {search
                 ? "Nessun evento trovato per la tua ricerca."
                 : "Nessun evento disponibile al momento."}
             </p>
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-sm text-slate-500 mb-6">
               {search ? "Prova con altre parole chiave." : "Torna più tardi per nuovi eventi."}
             </p>
             {search && (
@@ -287,14 +281,14 @@ export default function Home() {
                   setSearchInput("");
                   setSearch("");
                 }}
-                className="text-blue-600 hover:text-blue-700 font-medium focus-visible:underline"
+                className="text-accent-600 hover:text-accent-700 font-semibold focus-visible:underline"
               >
-                Rimuovi filtro di ricerca
+                Rimuovi filtro
               </button>
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {events.map((event) => (
               <EventCard key={event.id} event={event} />
             ))}

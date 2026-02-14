@@ -1,17 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Endpoint per cron job che processa automaticamente gli eventi chiusi
- * Può essere chiamato da un cron esterno (es. Vercel Cron, GitHub Actions, etc.)
- * 
- * Per sicurezza, richiede un header Authorization
+ * Endpoint per cron job che processa automaticamente gli eventi chiusi.
+ * Chiamato da Vercel Cron (vedi vercel.json) o da un cron esterno.
+ * Richiede: GET + header Authorization: Bearer <CRON_SECRET>
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verifica autorizzazione (opzionale ma consigliato)
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
-    
+    const isProduction = process.env.VERCEL === "1";
+
+    // In produzione CRON_SECRET è obbligatorio: l'endpoint non deve essere aperto
+    if (isProduction && !cronSecret) {
+      return NextResponse.json(
+        { error: "CRON_SECRET non configurato" },
+        { status: 503 }
+      );
+    }
     if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json(
         { error: "Unauthorized" },

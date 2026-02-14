@@ -204,58 +204,35 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
     const isReplying = replyingTo === comment.id;
 
     return (
-      <div className={`${isReply ? "ml-8 mt-3" : ""}`}>
-        <div className="bg-gray-50 rounded-lg p-4">
-          {/* Comment Header */}
+      <div className={isReply ? "ml-4 md:ml-8 mt-3" : ""}>
+        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
           <div className="flex items-start gap-3 mb-2">
-            <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden flex-shrink-0">
+            <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
               {comment.user.image ? (
-                <img
-                  src={comment.user.image}
-                  alt={comment.user.name || "User"}
-                  className="w-full h-full object-cover"
-                />
+                <img src={comment.user.image} alt="" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-xs font-medium text-gray-600">
-                  {(comment.user.name || comment.user.id[0]).toUpperCase()}
-                </span>
+                <span className="text-xs font-semibold text-slate-600">{(comment.user.name || comment.user.id[0]).toUpperCase()}</span>
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-medium text-gray-900">
-                  {comment.user.name || "Utente"}
-                </span>
-                <span className="text-xs text-gray-500">
-                  {formatDate(comment.createdAt)}
-                </span>
+              <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                <span className="font-semibold text-slate-900">{comment.user.name || "Utente"}</span>
+                <span className="text-xs text-slate-500">{formatDate(comment.createdAt)}</span>
               </div>
-              <p className="text-gray-700 whitespace-pre-wrap break-words">
-                {comment.content}
-              </p>
+              <p className="text-slate-700 text-sm whitespace-pre-wrap break-words">{comment.content}</p>
             </div>
           </div>
 
-          {/* Reactions and Reply Button */}
-          <div className="flex items-center gap-4 mt-3">
-            {/* Reaction Buttons */}
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
             {Object.entries(REACTION_TYPES).map(([type, { emoji, label }]) => {
               const count = getReactionCount(comment, type);
-              const isActive =
-                userReaction?.type === type;
+              const isActive = userReaction?.type === type;
               return (
                 <button
                   key={type}
-                  onClick={() =>
-                    handleToggleReaction(
-                      comment.id,
-                      type as "THUMBS_UP" | "FIRE" | "HEART"
-                    )
-                  }
-                  className={`flex items-center gap-1 px-2 py-1 rounded-md text-sm transition-colors ${
-                    isActive
-                      ? "bg-blue-100 text-blue-700"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  onClick={() => handleToggleReaction(comment.id, type as "THUMBS_UP" | "FIRE" | "HEART")}
+                  className={`flex items-center gap-1 min-h-[36px] px-2.5 py-1.5 rounded-xl text-sm font-medium transition-colors ${
+                    isActive ? "bg-accent-100 text-accent-700" : "bg-slate-200/80 text-slate-600 hover:bg-slate-200"
                   }`}
                   title={label}
                 >
@@ -264,46 +241,40 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
                 </button>
               );
             })}
-
-            {/* Reply Button */}
             {session && !isReply && (
               <button
                 onClick={() => {
                   setReplyingTo(isReplying ? null : comment.id);
                   setReplyContent("");
                 }}
-                className="text-sm text-gray-600 hover:text-gray-900 px-2 py-1 rounded-md hover:bg-gray-100 transition-colors"
+                className="min-h-[36px] px-2.5 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-200 transition-colors"
               >
                 Rispondi
               </button>
             )}
           </div>
 
-          {/* Reply Input */}
           {isReplying && session && (
-            <div className="mt-3 ml-11">
+            <div className="mt-3 ml-0">
               <textarea
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
-                placeholder="Scrivi una risposta..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                placeholder="Risposta..."
+                className="w-full min-h-[80px] px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-accent-500 focus:border-accent-500 resize-none text-base"
                 rows={2}
                 maxLength={2000}
               />
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex gap-2 mt-2">
                 <button
                   onClick={() => handleSubmitReply(comment.id)}
                   disabled={!replyContent.trim() || submitting}
-                  className="px-4 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors"
+                  className="min-h-[44px] px-4 py-2 bg-accent-500 text-white rounded-xl font-semibold text-sm hover:bg-accent-600 disabled:opacity-50"
                 >
-                  {submitting ? "Invio..." : "Rispondi"}
+                  {submitting ? "..." : "Rispondi"}
                 </button>
                 <button
-                  onClick={() => {
-                    setReplyingTo(null);
-                    setReplyContent("");
-                  }}
-                  className="px-4 py-1.5 text-gray-600 hover:text-gray-900 text-sm transition-colors"
+                  onClick={() => { setReplyingTo(null); setReplyContent(""); }}
+                  className="min-h-[44px] px-4 py-2 text-slate-600 font-medium text-sm rounded-xl hover:bg-slate-100"
                 >
                   Annulla
                 </button>
@@ -311,7 +282,6 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
             </div>
           )}
 
-          {/* Replies */}
           {comment.replies && comment.replies.length > 0 && (
             <div className="mt-3">
               {comment.replies.map((reply) => (
@@ -326,81 +296,68 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Commenti</h2>
+      <div className="bg-white rounded-2xl shadow-card border border-slate-100 p-5 md:p-6">
+        <h2 className="text-lg font-bold text-slate-900 mb-4">Commenti</h2>
         <div className="text-center py-8">
-          <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-          <p className="mt-2 text-gray-500">Caricamento commenti...</p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-accent-500 border-t-transparent" />
+          <p className="mt-2 text-slate-500 text-sm">Caricamento...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-8">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">
+    <div className="bg-white rounded-2xl shadow-card border border-slate-100 p-5 md:p-6">
+      <h2 className="text-lg font-bold text-slate-900 mb-4">
         Commenti ({comments.length})
       </h2>
 
-      {/* New Comment Form */}
       {session ? (
-        <form onSubmit={handleSubmitComment} className="mb-8">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden flex-shrink-0">
+        <form onSubmit={handleSubmitComment} className="mb-6">
+          <div className="flex gap-3">
+            <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
               {session.user?.image ? (
-                <img
-                  src={session.user.image}
-                  alt={session.user.name || "User"}
-                  className="w-full h-full object-cover"
-                />
+                <img src={session.user.image} alt="" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-sm font-medium text-gray-600">
+                <span className="text-sm font-semibold text-slate-600">
                   {(session.user?.name || session.user?.email?.[0] || "U").toUpperCase()}
                 </span>
               )}
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Scrivi un commento..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="w-full min-h-[100px] px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-accent-500 focus:border-accent-500 resize-none text-base"
                 rows={3}
                 maxLength={2000}
               />
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-xs text-gray-500">
-                  {newComment.length}/2000 caratteri
-                </span>
+              <div className="flex items-center justify-between mt-2 gap-2">
+                <span className="text-xs text-slate-500">{newComment.length}/2000</span>
                 <button
                   type="submit"
                   disabled={!newComment.trim() || submitting}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="min-h-[44px] px-5 py-2 bg-accent-500 text-white rounded-xl font-semibold hover:bg-accent-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {submitting ? "Invio..." : "Commenta"}
+                  {submitting ? "..." : "Commenta"}
                 </button>
               </div>
             </div>
           </div>
         </form>
       ) : (
-        <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-sm text-yellow-800">
-            <Link href="/auth/login" className="font-medium underline">
-              Accedi
-            </Link>{" "}
-            per commentare
-          </p>
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-sm text-amber-800">
+          <Link href="/auth/login" className="font-semibold underline">Accedi</Link> per commentare
         </div>
       )}
 
-      {/* Comments List */}
       {comments.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500">Nessun commento ancora. Sii il primo a commentare!</p>
+        <div className="text-center py-8 text-slate-500 text-sm">
+          Nessun commento. Sii il primo!
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {comments.map((comment) => (
             <CommentItem key={comment.id} comment={comment} />
           ))}
