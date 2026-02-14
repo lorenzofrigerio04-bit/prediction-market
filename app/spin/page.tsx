@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import SpinWheel from "@/components/spin/SpinWheel";
-import { PageHeader, SectionContainer, CTAButton, LoadingBlock } from "@/components/ui";
+import { SectionContainer, CTAButton, LoadingBlock } from "@/components/ui";
 
 interface SpinStatus {
   canSpin: boolean;
@@ -65,7 +65,7 @@ export default function SpinPage() {
 
   if (status === "loading" || (status === "authenticated" && loading && !statusData)) {
     return (
-      <div className="min-h-screen bg-bg">
+      <div className="min-h-screen dark bg-bg">
         <Header />
         <main className="mx-auto max-w-lg px-page-x py-page-y md:py-8">
           <LoadingBlock message="Caricamento..." />
@@ -77,34 +77,22 @@ export default function SpinPage() {
   if (!session) return null;
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="min-h-screen dark bg-bg">
       <Header />
       <main className="mx-auto max-w-lg px-page-x py-page-y md:py-8">
-        <PageHeader
-          title="Spin of the Day"
-          description="Un spin gratuito ogni giorno. Vinci crediti o un boost moltiplicatore temporaneo!"
-        />
-
         {error && (
-          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-ds-body-sm text-red-600 dark:text-red-400">
+          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-ds-body-sm text-red-400">
             {error}
           </div>
         )}
 
         <SectionContainer>
           {statusData && (
-            <>
-              <div className="mb-6 text-center text-ds-body-sm text-fg-muted">
-                {statusData.canSpin
-                  ? "Clicca su «Gira la ruota» per usare il tuo spin gratuito di oggi."
-                  : "Hai già usato lo spin di oggi. Torna domani per un altro tentativo!"}
-              </div>
-              <SpinWheel
-                canSpin={statusData.canSpin}
-                onSpin={handleSpin}
-                onSuccess={handleSuccess}
-              />
-            </>
+            <SpinWheel
+              canSpin={statusData.canSpin}
+              onSpin={handleSpin}
+              onSuccess={handleSuccess}
+            />
           )}
         </SectionContainer>
 

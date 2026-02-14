@@ -1,14 +1,9 @@
 /**
- * Configurazione Spin of the Day: reward con probabilità ponderate.
- * Economia controllata: valori e pesi definiti qui.
+ * Configurazione Spin of the Day: solo moltiplicatori, 7 segmenti.
+ * Probabilità ponderate: bassi più frequenti, alti più rari.
  */
 
-export type SpinRewardKind = "CREDITS" | "BOOST";
-
-export interface SpinRewardCredits {
-  kind: "CREDITS";
-  amount: number;
-}
+export type SpinRewardKind = "BOOST";
 
 export interface SpinRewardBoost {
   kind: "BOOST";
@@ -16,29 +11,30 @@ export interface SpinRewardBoost {
   durationMinutes: number;
 }
 
-export type SpinReward = SpinRewardCredits | SpinRewardBoost;
+export type SpinReward = SpinRewardBoost;
 
 export interface WeightedReward {
-  weight: number; // peso relativo (più alto = più probabile)
+  weight: number;
   reward: SpinReward;
-  label: string; // per UI, es. "50 crediti", "Boost x1.25 (1h)"
+  label: string; // per UI: "x1.2", "x2.5", etc.
 }
 
-/** Reward possibili con probabilità ponderate. Somma pesi = 100 per lettura facile. */
+/** Moltiplicatori sulla ruota (ordine = segmenti 0..6). */
+export const WHEEL_MULTIPLIERS = [1.2, 1.5, 2, 2.5, 3, 4, 5] as const;
+
+/** Reward possibili: solo BOOST, durata 24h. Pesi: bassi più probabili. */
 export const SPIN_WEIGHTED_REWARDS: WeightedReward[] = [
-  { weight: 35, reward: { kind: "CREDITS", amount: 10 }, label: "10 crediti" },
-  { weight: 28, reward: { kind: "CREDITS", amount: 25 }, label: "25 crediti" },
-  { weight: 18, reward: { kind: "CREDITS", amount: 50 }, label: "50 crediti" },
-  { weight: 10, reward: { kind: "CREDITS", amount: 100 }, label: "100 crediti" },
-  { weight: 6, reward: { kind: "BOOST", multiplier: 1.25, durationMinutes: 60 }, label: "Boost x1.25 (1h)" },
-  { weight: 3, reward: { kind: "BOOST", multiplier: 1.5, durationMinutes: 30 }, label: "Boost x1.5 (30 min)" },
+  { weight: 28, reward: { kind: "BOOST", multiplier: 1.2, durationMinutes: 24 * 60 }, label: "x1.2" },
+  { weight: 24, reward: { kind: "BOOST", multiplier: 1.5, durationMinutes: 24 * 60 }, label: "x1.5" },
+  { weight: 20, reward: { kind: "BOOST", multiplier: 2, durationMinutes: 24 * 60 }, label: "x2" },
+  { weight: 14, reward: { kind: "BOOST", multiplier: 2.5, durationMinutes: 24 * 60 }, label: "x2.5" },
+  { weight: 8, reward: { kind: "BOOST", multiplier: 3, durationMinutes: 24 * 60 }, label: "x3" },
+  { weight: 4, reward: { kind: "BOOST", multiplier: 4, durationMinutes: 24 * 60 }, label: "x4" },
+  { weight: 2, reward: { kind: "BOOST", multiplier: 5, durationMinutes: 24 * 60 }, label: "x5" },
 ];
 
 const TOTAL_WEIGHT = SPIN_WEIGHTED_REWARDS.reduce((s, r) => s + r.weight, 0);
 
-/**
- * Estrae un reward casuale in base ai pesi.
- */
 export function pickSpinReward(): WeightedReward {
   let r = Math.random() * TOTAL_WEIGHT;
   for (const w of SPIN_WEIGHTED_REWARDS) {
@@ -48,18 +44,13 @@ export function pickSpinReward(): WeightedReward {
   return SPIN_WEIGHTED_REWARDS[SPIN_WEIGHTED_REWARDS.length - 1];
 }
 
-/**
- * Indice del reward nell'array (per far fermare la ruota sul segmento corretto).
- */
 export function getRewardIndex(reward: WeightedReward): number {
-  return SPIN_WEIGHTED_REWARDS.findIndex((r) => {
-    if (r.reward.kind !== reward.reward.kind) return false;
-    if (r.reward.kind === "CREDITS" && reward.reward.kind === "CREDITS")
-      return r.reward.amount === reward.reward.amount;
-    if (r.reward.kind === "BOOST" && reward.reward.kind === "BOOST")
-      return r.reward.multiplier === reward.reward.multiplier && r.reward.durationMinutes === reward.reward.durationMinutes;
-    return false;
-  });
+  return SPIN_WEIGHTED_REWARDS.findIndex(
+    (r) =>
+      r.reward.kind === "BOOST" &&
+      reward.reward.kind === "BOOST" &&
+      r.reward.multiplier === reward.reward.multiplier
+  );
 }
 
 export const SPIN_SEGMENT_COUNT = SPIN_WEIGHTED_REWARDS.length;

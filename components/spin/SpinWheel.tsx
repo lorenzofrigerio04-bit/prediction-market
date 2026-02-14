@@ -1,41 +1,54 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { SPIN_WEIGHTED_REWARDS, SPIN_SEGMENT_COUNT } from "@/lib/spin-config";
 
-const SEGMENT_ANGLE = 360 / SPIN_SEGMENT_COUNT;
+const SEGMENT_COUNT = SPIN_SEGMENT_COUNT;
+const WHEEL_MULTIPLIERS = SPIN_WEIGHTED_REWARDS.map((r) => r.reward.multiplier);
+const SEGMENT_ANGLE = 360 / SEGMENT_COUNT;
 const FULL_TURNS = 6;
-const SPIN_DURATION_MS = 5000;
+const SPIN_DURATION_MS = 5200;
 const EASING = "cubic-bezier(0.12, 0.8, 0.2, 1)";
+
+/** Colori LED per segmenti: bassi → blu/cyan, medi → viola/indaco, alti → arancio/rosso soft */
+const SEGMENT_GRADIENTS = [
+  { from: "#0ea5e9", to: "#06b6d4", glow: "#22d3ee" },   // x1.2 - cyan
+  { from: "#06b6d4", to: "#0ea5e9", glow: "#67e8f9" },   // x1.5 - cyan/blue
+  { from: "#3b82f6", to: "#6366f1", glow: "#818cf8" },   // x2 - blue/indigo
+  { from: "#6366f1", to: "#8b5cf6", glow: "#a78bfa" },   // x2.5 - indigo/violet
+  { from: "#8b5cf6", to: "#a855f7", glow: "#c084fc" },   // x3 - violet
+  { from: "#f97316", to: "#ea580c", glow: "#fb923c" },   // x4 - orange
+  { from: "#ef4444", to: "#f97316", glow: "#f87171" },   // x5 - red/orange
+];
+
+export interface SpinWheelResult {
+  rewardIndex: number;
+  reward: {
+    label: string;
+    kind: string;
+    multiplier?: number;
+    amount?: number;
+    durationMinutes?: number;
+  };
+}
 
 interface SpinWheelProps {
   canSpin: boolean;
-  onSpin: () => Promise<{
-    rewardIndex: number;
-    reward: {
-      label: string;
-      kind: string;
-      amount?: number;
-      multiplier?: number;
-      durationMinutes?: number;
-    };
-  }>;
-  onSuccess?: (result: { newCredits: number; reward: { label: string; kind: string } }) => void;
+  onSpin: () => Promise<SpinWheelResult>;
+  onSuccess?: (result: { newCredits?: number; reward: { label: string; kind: string; multiplier?: number } }) => void;
   disabled?: boolean;
 }
 
-const SEGMENT_COLORS = [
-  "rgb(var(--primary) / 0.25)",
-  "rgb(var(--primary) / 0.4)",
-  "rgb(var(--primary) / 0.25)",
-  "rgb(var(--primary) / 0.4)",
-  "rgb(var(--primary) / 0.25)",
-  "rgb(var(--primary) / 0.4)",
-];
-
-const conicGradient = SEGMENT_COLORS.slice(0, SPIN_SEGMENT_COUNT)
-  .map((c, i) => `${c} ${i * SEGMENT_ANGLE}deg ${(i + 1) * SEGMENT_ANGLE}deg`)
-  .join(", ");
+function getSegmentPath(cx: number, cy: number, r: number, startDeg: number, endDeg: number) {
+  const start = (startDeg * Math.PI) / 180;
+  const end = (endDeg * Math.PI) / 180;
+  const x1 = cx + r * Math.sin(start);
+  const y1 = cy - r * Math.cos(start);
+  const x2 = cx + r * Math.sin(end);
+  const y2 = cy - r * Math.cos(end);
+  const large = endDeg - startDeg > 180 ? 1 : 0;
+  return `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;
+}
 
 export default function SpinWheel({
   canSpin,
@@ -45,30 +58,42 @@ export default function SpinWheel({
 }: SpinWheelProps) {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
-  const [result, setResult] = useState<{
-    label: string;
-    kind: string;
-  } | null>(null);
+  const [result, setResult] = useState<{ multiplier: number; label: string } | null>(null);
+  const [resultPulse, setResultPulse] = useState(false);
 
   const handleSpin = useCallback(async () => {
     if (!canSpin || spinning || disabled) return;
 
     setSpinning(true);
     setResult(null);
+    setResultPulse(false);
 
     try {
       const res = await onSpin();
-      const rewardIndex = res.rewardIndex;
-      const reward = res.reward;
+      const rewardIndex = res.rewardIndex >= 0 && res.rewardIndex < SEGMENT_COUNT
+        ? res.rewardIndex
+        : Math.floor(Math.random() * SEGMENT_COUNT);
+      const multiplier = res.reward.multiplier ?? WHEEL_MULTIPLIERS[rewardIndex];
 
-      const finalAngle = 360 * FULL_TURNS + (360 - rewardIndex * SEGMENT_ANGLE);
+      // La ruota ha il pointer in alto: il segmento "vincente" deve finire in alto.
+      // Segmento i è tra angle i*SEGMENT_ANGLE e (i+1)*SEGMENT_ANGLE (in senso orario dalla destra).
+      // Per far apparire il segmento rewardIndex in alto (12h) servono:
+      // rotation finale = FULL_TURNS*360 + (360 - (rewardIndex * SEGMENT_ANGLE + SEGMENT_ANGLE/2))
+      const segmentCenter = rewardIndex * SEGMENT_ANGLE + SEGMENT_ANGLE / 2;
+      const finalAngle = FULL_TURNS * 360 + (360 - segmentCenter);
 
       setRotation((prev) => prev + finalAngle);
 
-      await new Promise((r) => setTimeout(r, SPIN_DURATION_MS + 300));
+      await new Promise((r) => setTimeout(r, SPIN_DURATION_MS + 400));
 
-      setResult({ label: reward.label, kind: reward.kind });
-      onSuccess?.({ newCredits: 0, reward: { label: reward.label, kind: reward.kind } });
+      setResult({ multiplier, label: res.reward.label });
+      setResultPulse(true);
+      onSuccess?.({
+        newCredits: 0,
+        reward: { label: res.reward.label, kind: res.reward.kind, multiplier },
+      });
+
+      setTimeout(() => setResultPulse(false), 1200);
     } catch (e) {
       console.error(e);
     } finally {
@@ -76,73 +101,124 @@ export default function SpinWheel({
     }
   }, [canSpin, spinning, disabled, onSpin, onSuccess]);
 
+  const size = 320;
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = size / 2 - 20;
+  const labelR = r * 0.62;
+
+  const segments = useMemo(() => {
+    return Array.from({ length: SEGMENT_COUNT }, (_, i) => {
+      const startDeg = i * SEGMENT_ANGLE;
+      const endDeg = (i + 1) * SEGMENT_ANGLE;
+      const midDeg = startDeg + SEGMENT_ANGLE / 2;
+      const rad = (midDeg * Math.PI) / 180;
+      const lx = cx + labelR * Math.sin(rad);
+      const ly = cy - labelR * Math.cos(rad);
+      return {
+        path: getSegmentPath(cx, cy, r, startDeg, endDeg),
+        gradient: SEGMENT_GRADIENTS[i],
+        label: `x${WHEEL_MULTIPLIERS[i]}`,
+        labelX: lx,
+        labelY: ly,
+        labelRotate: midDeg,
+      };
+    });
+  }, [cx, cy, r, labelR]);
+
   return (
-    <div className="flex flex-col items-center gap-8">
-      <div className="relative" style={{ width: 300, height: 300 }}>
-        {/* Pointer in alto */}
-        <div
-          className="absolute left-1/2 -top-1 z-10 -translate-x-1/2 rounded-full border-4 border-primary bg-primary px-3 py-1.5 shadow-glow-sm"
-          aria-hidden
-        >
-          <span className="text-sm font-bold text-white">▼</span>
+    <div className="spin-of-the-day">
+      <h2 className="spin-of-the-day__title">Spin of the Day</h2>
+      <p className="spin-of-the-day__subtitle">
+        Un giro al giorno. Bonus moltiplicatore garantito.
+      </p>
+
+      <div
+        className={`spin-of-the-day__wheel-wrap ${spinning ? "is-spinning" : ""} ${resultPulse ? "result-pulse" : ""}`}
+        style={{ width: size, height: size }}
+      >
+        {/* Pointer in alto: triangolo futuristico con glow */}
+        <div className="spin-of-the-day__pointer" aria-hidden>
+          <span className="spin-of-the-day__pointer-inner" />
         </div>
 
-        {/* Ruota con conic-gradient + bordo */}
         <div
-          className="absolute inset-0 rounded-full border-4 border-primary/40 shadow-card"
-          style={{ background: "rgb(var(--surface) / 0.9)" }}
+          className="spin-of-the-day__wheel"
+          style={{
+            width: size,
+            height: size,
+            transition: spinning ? `transform ${SPIN_DURATION_MS}ms ${EASING}` : "transform 0.6s ease",
+            transform: `rotate(${rotation}deg)`,
+          }}
         >
-          <div
-            className="absolute inset-2 rounded-full overflow-hidden"
-            style={{
-              background: `conic-gradient(${conicGradient})`,
-              transition: `transform ${SPIN_DURATION_MS}ms ${EASING}`,
-              transform: `rotate(${rotation}deg)`,
-            }}
-          >
-            {/* Etichette sui segmenti: posizionate al centro di ogni slice */}
-            {SPIN_WEIGHTED_REWARDS.map((r, i) => {
-              const angleDeg = i * SEGMENT_ANGLE + SEGMENT_ANGLE / 2;
-              const rad = (angleDeg * Math.PI) / 180;
-              const rPercent = 62;
-              const x = 50 + rPercent * Math.sin(rad);
-              const y = 50 - rPercent * Math.cos(rad);
-              return (
-                <div
-                  key={i}
-                  className="absolute flex items-center justify-center text-center"
-                  style={{
-                    left: `${x}%`,
-                    top: `${y}%`,
-                    transform: `translate(-50%, -50%) rotate(${angleDeg}deg)`,
-                    width: "28%",
-                    fontSize: "0.7rem",
-                    fontWeight: 700,
-                    color: "rgb(var(--fg))",
-                    textShadow: "0 0 8px rgb(var(--surface))",
-                  }}
-                >
-                  {r.label}
-                </div>
-              );
-            })}
-          </div>
+          <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="spin-of-the-day__svg">
+            <defs>
+              {segments.map((seg, i) => {
+                const midRad = (seg.labelRotate * Math.PI) / 180;
+                const x2 = cx + r * Math.sin(midRad);
+                const y2 = cy - r * Math.cos(midRad);
+                return (
+                  <linearGradient
+                    key={i}
+                    id={`segment-grad-${i}`}
+                    x1={cx}
+                    y1={cy}
+                    x2={x2}
+                    y2={y2}
+                    gradientUnits="userSpaceOnUse"
+                  >
+                    <stop offset="0%" stopColor={SEGMENT_GRADIENTS[i].from} stopOpacity="0.9" />
+                    <stop offset="100%" stopColor={SEGMENT_GRADIENTS[i].to} stopOpacity="0.75" />
+                  </linearGradient>
+                );
+              })}
+              {segments.map((_, i) => (
+                <filter key={`f-${i}`} id={`glow-${i}`} x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="1.5" result="blur" />
+                  <feFlood floodColor={SEGMENT_GRADIENTS[i].glow} floodOpacity="0.35" />
+                  <feComposite in2="blur" operator="in" />
+                  <feMerge>
+                    <feMergeNode />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              ))}
+            </defs>
+            <g className="spin-of-the-day__segments">
+              {segments.map((seg, i) => (
+                <g key={i}>
+                  <path
+                    d={seg.path}
+                    fill={`url(#segment-grad-${i})`}
+                    filter={`url(#glow-${i})`}
+                    className="spin-of-the-day__segment"
+                    stroke="rgba(255,255,255,0.12)"
+                    strokeWidth="0.5"
+                  />
+                  <text
+                    x={seg.labelX}
+                    y={seg.labelY}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    className="spin-of-the-day__segment-label"
+                    transform={`rotate(${seg.labelRotate}, ${seg.labelX}, ${seg.labelY})`}
+                  >
+                    {seg.label}
+                  </text>
+                </g>
+              ))}
+            </g>
+          </svg>
         </div>
 
-        {/* Centro ruota */}
-        <div
-          className="absolute left-1/2 top-1/2 z-10 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-primary bg-surface shadow-card"
-          aria-hidden
-        />
+        {/* Centro: core luminoso con pulse */}
+        <div className={`spin-of-the-day__core ${spinning ? "core-active" : ""}`} aria-hidden />
       </div>
 
       {result && (
-        <div
-          className="rounded-2xl border-2 border-primary bg-primary/10 px-6 py-4 text-center"
-          role="alert"
-        >
-          <p className="text-ds-body font-bold text-fg">Hai vinto!</p>
-          <p className="mt-1 text-ds-h3 font-bold text-primary">{result.label}</p>
+        <div className="spin-of-the-day__result" role="alert">
+          <p className="spin-of-the-day__result-title">Hai ottenuto {result.label}</p>
+          <p className="spin-of-the-day__result-sub">Moltiplicatore attivo per oggi</p>
         </div>
       )}
 
@@ -150,15 +226,15 @@ export default function SpinWheel({
         type="button"
         onClick={handleSpin}
         disabled={!canSpin || spinning || disabled}
-        className="min-h-[48px] rounded-xl bg-primary px-8 py-3 font-semibold text-white shadow-glow-sm transition-all duration-200 hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+        className="spin-of-the-day__cta"
       >
         {spinning ? (
-          <span className="flex items-center gap-2">
-            <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" aria-hidden />
+          <span className="spin-of-the-day__cta-inner">
+            <span className="spin-of-the-day__spinner" aria-hidden />
             Gira...
           </span>
         ) : canSpin ? (
-          "Gira la ruota"
+          "BLOCCA MOLTIPLICATORE"
         ) : (
           "Spin già usato oggi"
         )}

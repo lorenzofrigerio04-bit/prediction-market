@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { applyCreditTransaction } from "@/lib/apply-credit-transaction";
 import { pickSpinReward, getRewardIndex, type WeightedReward } from "@/lib/spin-config";
 
 function startOfDayUTC(d: Date): Date {
@@ -43,43 +42,17 @@ export async function POST() {
     const reward = weighted.reward;
 
     const result = await prisma.$transaction(async (tx) => {
-      const payload =
-        reward.kind === "CREDITS"
-          ? { amount: reward.amount }
-          : { multiplier: reward.multiplier, durationMinutes: reward.durationMinutes };
-
       await tx.dailySpin.create({
         data: {
           userId,
-          rewardType: reward.kind,
-          rewardPayload: payload,
+          rewardType: "BOOST",
+          rewardPayload: {
+            multiplier: reward.multiplier,
+            durationMinutes: reward.durationMinutes,
+          },
         },
       });
 
-      if (reward.kind === "CREDITS") {
-        const newBalance = await applyCreditTransaction(
-          tx,
-          userId,
-          "SPIN_REWARD",
-          reward.amount,
-          {
-            description: `Spin of the Day: ${weighted.label}`,
-            referenceType: "spin",
-          }
-        );
-        const user = await tx.user.findUnique({
-          where: { id: userId },
-          select: { credits: true, boostMultiplier: true, boostExpiresAt: true },
-        });
-        return {
-          reward: weighted,
-          newCredits: newBalance,
-          boostMultiplier: user?.boostMultiplier ?? null,
-          boostExpiresAt: user?.boostExpiresAt?.toISOString() ?? null,
-        };
-      }
-
-      // BOOST: imposta moltiplicatore e scadenza
       const expiresAt = new Date(now.getTime() + reward.durationMinutes * 60 * 1000);
       await tx.user.update({
         where: { id: userId },
@@ -103,14 +76,10 @@ export async function POST() {
     return NextResponse.json({
       success: true,
       reward: {
-        kind: result.reward.reward.kind,
+        kind: "BOOST",
         label: result.reward.label,
-        ...(result.reward.reward.kind === "CREDITS"
-          ? { amount: result.reward.reward.amount }
-          : {
-              multiplier: result.reward.reward.multiplier,
-              durationMinutes: result.reward.reward.durationMinutes,
-            }),
+        multiplier: result.reward.reward.multiplier,
+        durationMinutes: result.reward.reward.durationMinutes,
       },
       rewardIndex: getRewardIndex(result.reward),
       newCredits: result.newCredits,
