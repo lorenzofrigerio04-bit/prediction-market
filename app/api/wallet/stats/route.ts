@@ -47,16 +47,16 @@ export async function GET() {
     }
 
     // Controlla se può prendere il daily bonus oggi
-    const now = new Date();
+    const currentDate = new Date();
     const lastBonusDate = user.lastDailyBonus
       ? new Date(user.lastDailyBonus)
       : null;
 
     const canClaimDailyBonus =
       !lastBonusDate ||
-      lastBonusDate.getFullYear() !== now.getFullYear() ||
-      lastBonusDate.getMonth() !== now.getMonth() ||
-      lastBonusDate.getDate() !== now.getDate();
+      lastBonusDate.getFullYear() !== currentDate.getFullYear() ||
+      lastBonusDate.getMonth() !== currentDate.getMonth() ||
+      lastBonusDate.getDate() !== currentDate.getDate();
 
     const nextBonusAmount = getNextDailyBonusAmount(
       user.streak,
@@ -64,13 +64,12 @@ export async function GET() {
     );
     const bonusMultiplier = getDailyBonusMultiplier(user.streak);
 
-    const now = new Date();
-    const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+    const todayStart = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), currentDate.getUTCDate(), 0, 0, 0, 0));
     const canSpinToday =
       !lastSpin || new Date(lastSpin.createdAt) < todayStart;
     const hasActiveBoost =
       user.boostExpiresAt != null &&
-      now < user.boostExpiresAt &&
+      currentDate < user.boostExpiresAt &&
       (user.boostMultiplier ?? 0) > 1;
 
     return NextResponse.json({
