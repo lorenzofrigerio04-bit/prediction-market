@@ -38,7 +38,7 @@ export const DEFAULT_CONFIG: EventSourcesConfig = {
     "test.com",
     "localhost",
   ],
-  cacheTtlSeconds: 300, // 5 minuti
+  cacheTtlSeconds: 3600, // 1 ora: una chiamata API = fino a 100 notizie, poi si serve dalla cache
 };
 
 /** Legge config da env con fallback su default */

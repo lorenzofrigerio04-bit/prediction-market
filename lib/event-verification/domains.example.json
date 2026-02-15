@@ -1,0 +1,10 @@
+{
+  "whitelist": [],
+  "blacklist": [
+    "example.com",
+    "test.com",
+    "localhost",
+    "clickbait.com",
+    "gossip.it"
+  ]
+}

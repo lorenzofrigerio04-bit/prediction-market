@@ -2,14 +2,18 @@ import type { NewsCandidate } from "./types";
 import { getConfigFromEnv } from "./types";
 import { fetchNewsApiAiCandidates } from "./newsapi-ai";
 
-/** Cache in-memory (stateless per request; condivisa solo nello stesso processo) */
+/** Numero massimo di articoli per singola chiamata API (limite NewsAPI.ai) */
+const MAX_ARTICLES_PER_REQUEST = 100;
+
+/** Cache in-memory: una chiamata API riempie la cache, le richieste successive servono da qui (stesso processo). */
 let cache: { at: number; data: NewsCandidate[] } | null = null;
 
 /**
- * Recupera candidati da tutte le fonti configurate, normalizzati e filtrati.
- * Usa NewsAPI.ai (Event Registry): piano free 2000 ricerche, 100 articoli/ricerca, produzione consentita.
+ * Recupera candidati (notizie) normalizzati. Efficiente: 1 chiamata API = fino a 100 notizie,
+ * poi risposta dalla cache per tutta la finestra (default 1h). Ideale se chiamato da un solo
+ * punto (es. cron 1 volta al giorno) per non sprecare token.
  *
- * @param limit - Numero massimo di candidati da restituire (default 50)
+ * @param limit - Numero massimo di candidati da restituire (default 50, max 100)
  * @returns Array di candidati ordinati per publishedAt (più recenti prima)
  */
 export async function fetchTrendingCandidates(
@@ -17,25 +21,20 @@ export async function fetchTrendingCandidates(
 ): Promise<NewsCandidate[]> {
   const config = getConfigFromEnv();
   const cacheTtl = config.cacheTtlSeconds ?? 0;
+  const effectiveLimit = Math.min(Math.max(1, limit), MAX_ARTICLES_PER_REQUEST);
 
   if (cacheTtl > 0 && cache && Date.now() - cache.at < cacheTtl * 1000) {
-    return cache.data.slice(0, limit);
+    return cache.data.slice(0, effectiveLimit);
   }
 
-  const all: NewsCandidate[] = [];
-
-  // NewsAPI.ai (Event Registry) – chiave NEWS_API_KEY
+  // Una sola chiamata: chiediamo sempre il massimo (100) per riempire la cache
   const newsCandidates = await fetchNewsApiAiCandidates(
-    Math.min(Math.ceil(limit * 1.2), 100),
+    MAX_ARTICLES_PER_REQUEST,
     config
   );
-  all.push(...newsCandidates);
 
-  // Altre fonti (GNews, RSS, Reddit) si aggiungono qui in futuro con stesso formato
-
-  // Deduplica per URL, ordina per data (più recenti prima)
   const seen = new Set<string>();
-  const deduped = all
+  const deduped = newsCandidates
     .filter((c) => {
       const key = c.url.toLowerCase();
       if (seen.has(key)) return false;
@@ -44,13 +43,11 @@ export async function fetchTrendingCandidates(
     })
     .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 
-  const result = deduped.slice(0, limit);
-  const toCache = cacheTtl > 0 ? deduped.slice(0, 100) : [];
-  if (cacheTtl > 0 && toCache.length > 0) {
-    cache = { at: Date.now(), data: toCache };
+  if (cacheTtl > 0 && deduped.length > 0) {
+    cache = { at: Date.now(), data: deduped };
   }
 
-  return result;
+  return deduped.slice(0, effectiveLimit);
 }
 
 /** Esporta tipi e helper per uso esterno */

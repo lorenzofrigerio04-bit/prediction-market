@@ -13,7 +13,9 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "fetch-trending": "tsx scripts/fetch-trending.ts"
+    "fetch-trending": "tsx scripts/fetch-trending.ts",
+    "verify-candidates": "tsx scripts/verify-candidates-example.ts",
+    "generate-events": "tsx scripts/generate-events-example.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -24,8 +26,11 @@
     "bcryptjs": "^2.4.3",
     "next": "^14.2.21",
     "next-auth": "^4.24.7",
+    "@anthropic-ai/sdk": "^0.32.1",
+    "openai": "^4.73.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "dotenv": "^16.4.5",
