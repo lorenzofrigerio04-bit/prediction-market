@@ -3,6 +3,7 @@
  * Da candidati verificati ottiene eventi generati dall'LLM, con cap per categoria e priorità per score.
  */
 
+import https from "node:https";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 import type { VerifiedCandidate } from "../event-verification/types";
@@ -94,7 +95,15 @@ export async function generateEventsFromCandidates(
   const generated: GeneratedEvent[] = [];
 
   if (config.provider === "openai") {
-    const client = new OpenAI({ apiKey });
+    // Workaround SSL solo in sviluppo: UNABLE_TO_GET_ISSUER_CERT_LOCALLY (rete aziendale/VPN).
+    // In produzione (Vercel) non si usa mai, anche se GENERATION_INSECURE_SSL fosse impostata per errore.
+    const allowInsecureSSL =
+      process.env.NODE_ENV !== "production" &&
+      process.env.GENERATION_INSECURE_SSL === "1";
+    const httpAgent = allowInsecureSSL
+      ? new https.Agent({ rejectUnauthorized: false })
+      : undefined;
+    const client = new OpenAI({ apiKey, httpAgent });
     for (const candidate of toProcess) {
       try {
         const event = await generateEventWithOpenAI(client, candidate, {

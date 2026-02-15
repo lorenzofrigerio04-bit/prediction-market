@@ -1,0 +1,25 @@
+---
+description: Mai committare o fare push di file .env; contengono segreti (chiavi API, password).
+alwaysApply: true
+---
+
+# Mai committare o push di file .env
+
+## Regola obbligatoria
+
+- **Non aggiungere mai** a git (né con `git add .` né con `git add -f`) i file:
+  - `.env`
+  - `.env.local`
+  - `.env.*.local`
+  - qualsiasi file il cui nome inizi con `.env`
+
+- **Non fare mai commit** che includano questi file.
+
+- **Non fare mai push** di commit che li contengano.
+
+Questi file contengono segreti (OPENAI_API_KEY, DATABASE_URL, NEXTAUTH_SECRET, ecc.). Sono già in `.gitignore`; se l’utente chiede "aggiorna su GitHub", "push", "commit delle modifiche" o simile, **escludi esplicitamente** i file env dallo staging. Usa ad esempio:
+
+- `git add .` va bene perché `.gitignore` esclude già `.env` e `.env*.local`
+- **Non** usare mai `git add -f .env.local` o `git add .env`
+
+Se stai per eseguire `git add` con path che potrebbero includere file env, verifica che nessun file `.env*` sia incluso prima di fare commit e push.
