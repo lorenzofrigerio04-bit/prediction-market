@@ -57,6 +57,8 @@ export const CREDIT_TRANSACTION_TYPES = {
   REFERRAL_BONUS: "REFERRAL_BONUS",
   SIGNUP_CREDITS: "SIGNUP_CREDITS",
   SPIN_REWARD: "SPIN_REWARD",
+  /** Rimborso/ricarica crediti per utenti bot della simulazione */
+  SIMULATED_TOPUP: "SIMULATED_TOPUP",
 } as const;
 
 export type CreditTransactionType =

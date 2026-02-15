@@ -39,7 +39,7 @@ model User {
   accuracy      Float    @default(0) // percentuale accuratezza
   
   // Ruolo (String per SQLite compatibilità)
-  role          String   @default("USER") // USER o ADMIN
+  role          String   @default("USER") // USER, ADMIN o BOT (bot simulazione)
   
   // Onboarding: tutorial completato (non mostrare di nuovo)
   onboardingCompleted Boolean @default(false)

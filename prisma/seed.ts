@@ -63,6 +63,12 @@ async function main() {
     console.log('✅ Utente sistema già esistente:', systemUser.email, '| id:', systemUser.id);
   }
 
+  // Bot simulazione: crea o recupera N bot (email bot-{i}@simulation.internal, role BOT)
+  const { getOrCreateBotUsers } = await import('../lib/simulated-activity/bot-users');
+  const botCount = 20;
+  const bots = await getOrCreateBotUsers(prisma, botCount);
+  console.log(`✅ Bot simulazione: ${bots.length} disponibili (es. ${bots[0]?.email ?? 'bot-1@simulation.internal'})`);
+
   // Badge: crea se non esistono
   const existingBadges = await prisma.badge.count();
   if (existingBadges === 0) {

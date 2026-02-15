@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { IconChat } from "@/components/ui/Icons";
 
 interface User {
   id: string;
@@ -204,22 +205,22 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
     const isReplying = replyingTo === comment.id;
 
     return (
-      <div className={isReply ? "ml-4 md:ml-8 mt-3" : ""}>
-        <div className="glass rounded-2xl p-4 border border-border dark:border-white/10">
+      <div className={isReply ? "ml-4 md:ml-6 mt-3 pl-3 border-l-2 border-primary/20 dark:border-primary/30" : ""}>
+        <div className="glass rounded-2xl p-4 border border-border dark:border-white/10 transition-all duration-200 hover:border-primary/15 dark:hover:border-primary/20 hover:shadow-[0_0_20px_-6px_rgba(var(--primary-glow),0.12)]">
           <div className="flex items-start gap-3 mb-2">
-            <div className="w-9 h-9 rounded-full bg-surface/50 border border-border dark:border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+            <div className="w-9 h-9 rounded-full bg-surface/60 border border-border dark:border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-transparent dark:ring-white/5">
               {comment.user.image ? (
                 <img src={comment.user.image} alt="" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-xs font-semibold text-fg-muted">{(comment.user.name || comment.user.id[0]).toUpperCase()}</span>
+                <span className="text-ds-caption font-semibold text-fg-muted">{(comment.user.name || comment.user.id[0]).toUpperCase()}</span>
               )}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                <span className="font-semibold text-fg">{comment.user.name || "Utente"}</span>
-                <span className="text-xs text-fg-muted">{formatDate(comment.createdAt)}</span>
+                <span className="text-ds-body-sm font-semibold text-fg">{comment.user.name || "Utente"}</span>
+                <span className="text-ds-caption text-fg-muted">{formatDate(comment.createdAt)}</span>
               </div>
-              <p className="text-fg-muted text-sm whitespace-pre-wrap break-words">{comment.content}</p>
+              <p className="text-ds-body-sm text-fg-muted whitespace-pre-wrap break-words leading-relaxed">{comment.content}</p>
             </div>
           </div>
 
@@ -231,8 +232,8 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
                 <button
                   key={type}
                   onClick={() => handleToggleReaction(comment.id, type as "THUMBS_UP" | "FIRE" | "HEART")}
-                  className={`flex items-center gap-1 min-h-[36px] px-2.5 py-1.5 rounded-xl text-sm font-medium transition-colors ${
-                    isActive ? "bg-primary/20 text-primary" : "bg-surface/50 text-fg-muted hover:bg-surface/70 border border-border dark:border-white/10"
+                  className={`flex items-center gap-1 min-h-[36px] px-2.5 py-1.5 rounded-xl text-ds-body-sm font-medium transition-all duration-200 ${
+                    isActive ? "bg-primary/20 text-primary border border-primary/30 shadow-[0_0_12px_-4px_rgba(var(--primary-glow),0.3)]" : "bg-surface/50 text-fg-muted hover:bg-surface/70 border border-border dark:border-white/10 hover:text-fg"
                   }`}
                   title={label}
                 >
@@ -247,7 +248,7 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
                   setReplyingTo(isReplying ? null : comment.id);
                   setReplyContent("");
                 }}
-                className="min-h-[36px] px-2.5 py-1.5 text-sm font-medium text-fg-muted hover:text-fg rounded-xl hover:bg-surface/50 transition-colors"
+                className="min-h-[36px] px-2.5 py-1.5 text-ds-body-sm font-medium text-fg-muted hover:text-fg rounded-xl hover:bg-surface/50 transition-colors"
               >
                 Rispondi
               </button>
@@ -260,7 +261,7 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
                 placeholder="Risposta..."
-                className="w-full min-h-[80px] px-4 py-3 border border-border dark:border-white/10 rounded-2xl bg-surface/50 focus:ring-2 focus:ring-primary focus:border-primary resize-none text-base text-fg placeholder:text-fg-muted"
+                className="w-full min-h-[80px] px-4 py-3 border border-border dark:border-white/10 rounded-2xl bg-surface/50 focus:ring-2 focus:ring-primary focus:border-primary focus:shadow-[0_0_0_3px_rgba(var(--primary-glow),0.15)] resize-none text-ds-body text-fg placeholder:text-fg-muted transition-shadow duration-200"
                 rows={2}
                 maxLength={2000}
               />
@@ -268,13 +269,13 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
                 <button
                   onClick={() => handleSubmitReply(comment.id)}
                   disabled={!replyContent.trim() || submitting}
-                  className="min-h-[44px] px-4 py-2 bg-primary text-white rounded-2xl font-semibold text-sm hover:bg-primary-hover disabled:opacity-50"
+                  className="min-h-[44px] px-4 py-2 bg-primary text-white rounded-2xl font-semibold text-ds-body-sm hover:bg-primary-hover disabled:opacity-50 transition-colors shadow-glow-sm"
                 >
                   {submitting ? "..." : "Rispondi"}
                 </button>
                 <button
                   onClick={() => { setReplyingTo(null); setReplyContent(""); }}
-                  className="min-h-[44px] px-4 py-2 text-fg-muted font-medium text-sm rounded-2xl hover:bg-surface/50"
+                  className="min-h-[44px] px-4 py-2 text-fg-muted font-medium text-ds-body-sm rounded-2xl hover:bg-surface/50 transition-colors"
                 >
                   Annulla
                 </button>
@@ -296,30 +297,41 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
 
   if (loading) {
     return (
-      <div className="glass rounded-2xl border border-border dark:border-white/10 p-5 md:p-6">
-        <h2 className="text-lg font-bold text-fg mb-4">Commenti</h2>
-        <div className="text-center py-8">
+      <div className="glass rounded-3xl border border-border dark:border-white/10 p-5 md:p-6 shadow-[0_0_24px_-6px_rgba(var(--primary-glow),0.08)]">
+        <div className="flex items-center gap-2 mb-4">
+          <IconChat className="w-5 h-5 text-primary" aria-hidden />
+          <h2 className="text-ds-h2 font-bold text-fg">Commenti</h2>
+        </div>
+        <div className="text-center py-10">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
-          <p className="mt-2 text-fg-muted text-sm">Caricamento...</p>
+          <p className="mt-3 text-ds-body-sm text-fg-muted">Caricamento...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="glass rounded-2xl border border-border dark:border-white/10 p-5 md:p-6">
-      <h2 className="text-lg font-bold text-fg mb-4">
-        Commenti ({comments.length})
-      </h2>
+    <div className="glass rounded-3xl border border-border dark:border-white/10 p-5 md:p-6 transition-all duration-200 shadow-[0_0_24px_-6px_rgba(var(--primary-glow),0.08)] dark:shadow-[0_0_28px_-8px_rgba(var(--primary-glow),0.12)]">
+      <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10 border border-primary/20">
+            <IconChat className="w-5 h-5 text-primary" aria-hidden />
+          </div>
+          <h2 className="text-ds-h2 font-bold text-fg">Commenti</h2>
+        </div>
+        <span className="pill-led-neon inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold font-numeric bg-surface border border-border text-fg">
+          {comments.length}
+        </span>
+      </div>
 
       {session ? (
         <form onSubmit={handleSubmitComment} className="mb-6">
           <div className="flex gap-3">
-            <div className="w-10 h-10 rounded-full bg-surface/50 border border-border dark:border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+            <div className="w-10 h-10 rounded-full bg-surface/60 border border-border dark:border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-transparent dark:ring-white/5">
               {session.user?.image ? (
                 <img src={session.user.image} alt="" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-sm font-semibold text-fg-muted">
+                <span className="text-ds-caption font-semibold text-fg-muted">
                   {(session.user?.name || session.user?.email?.[0] || "U").toUpperCase()}
                 </span>
               )}
@@ -329,16 +341,16 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Scrivi un commento..."
-                className="w-full min-h-[100px] px-4 py-3 border border-border dark:border-white/10 rounded-2xl bg-surface/50 text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary resize-none text-base"
+                className="w-full min-h-[100px] px-4 py-3 border border-border dark:border-white/10 rounded-2xl bg-surface/50 text-ds-body text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary focus:shadow-[0_0_0_3px_rgba(var(--primary-glow),0.15)] resize-none transition-shadow duration-200"
                 rows={3}
                 maxLength={2000}
               />
               <div className="flex items-center justify-between mt-2 gap-2">
-                <span className="text-xs text-fg-muted">{newComment.length}/2000</span>
+                <span className="text-ds-caption text-fg-muted">{newComment.length}/2000</span>
                 <button
                   type="submit"
                   disabled={!newComment.trim() || submitting}
-                  className="min-h-[44px] px-5 py-2 bg-primary text-white rounded-2xl font-semibold hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="min-h-[44px] px-5 py-2 bg-primary text-white rounded-2xl font-semibold text-ds-body-sm hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-glow-sm"
                 >
                   {submitting ? "..." : "Commenta"}
                 </button>
@@ -347,14 +359,18 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
           </div>
         </form>
       ) : (
-        <div className="mb-6 p-4 bg-warning-bg/90 border border-warning/30 rounded-2xl text-sm text-warning dark:bg-warning-bg/50 dark:text-warning">
+        <div className="mb-6 p-4 bg-warning-bg/90 border border-warning/30 rounded-2xl text-ds-body-sm text-warning dark:bg-warning-bg/50 dark:text-warning">
           <Link href="/auth/login" className="font-semibold underline">Accedi</Link> per commentare
         </div>
       )}
 
       {comments.length === 0 ? (
-        <div className="text-center py-8 text-text-muted text-sm">
-          Nessun commento. Inizia tu la discussione.
+        <div className="text-center py-12 rounded-2xl border border-dashed border-border dark:border-white/10 bg-surface/30">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-surface/60 border border-border dark:border-white/10 mb-3">
+            <IconChat className="w-6 h-6 text-fg-muted" aria-hidden />
+          </div>
+          <p className="text-ds-body-sm text-fg-muted font-medium">Nessun commento.</p>
+          <p className="text-ds-caption text-fg-subtle mt-1">Inizia tu la discussione.</p>
         </div>
       ) : (
         <div className="space-y-3">
