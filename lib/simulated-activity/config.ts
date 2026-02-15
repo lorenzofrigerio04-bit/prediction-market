@@ -17,14 +17,14 @@ export const ENABLE_SIMULATED_ACTIVITY =
   process.env.ENABLE_SIMULATED_ACTIVITY === "true" ||
   process.env.ENABLE_SIMULATED_ACTIVITY === "1";
 
-/** Massimo numero di previsioni da piazzare per bot per singola esecuzione */
-export const MAX_PREDICTIONS_PER_RUN = 5;
+/** Massimo numero di previsioni per singola esecuzione (obiettivo: piattaforma viva, 100–200 utenti) */
+export const MAX_PREDICTIONS_PER_RUN = 55;
 
-/** Massimo numero di commenti da creare per bot per singola esecuzione */
-export const MAX_COMMENTS_PER_RUN = 3;
+/** Massimo numero di commenti per singola esecuzione */
+export const MAX_COMMENTS_PER_RUN = 40;
 
-/** Massimo numero di reazioni (like, fire, ecc.) per bot per singola esecuzione */
-export const MAX_REACTIONS_PER_RUN = 10;
+/** Massimo numero di reazioni (like, fire, ecc.) per singola esecuzione */
+export const MAX_REACTIONS_PER_RUN = 90;
 
-/** Massimo numero di follow a eventi per bot per singola esecuzione */
-export const MAX_FOLLOWS_PER_RUN = 4;
+/** Massimo numero di follow a eventi per singola esecuzione */
+export const MAX_FOLLOWS_PER_RUN = 45;

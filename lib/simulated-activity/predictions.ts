@@ -8,8 +8,9 @@ import type { PrismaClient } from "@prisma/client";
 import { applyCreditTransaction } from "@/lib/apply-credit-transaction";
 import { MAX_PREDICTIONS_PER_RUN } from "./config";
 
-const MIN_CREDITS_DEFAULT = 10;
-const MAX_CREDITS_DEFAULT = 150;
+/** Crediti per scommessa: range da “piccola” a “sostanziale” per sembrare utenti reali */
+const MIN_CREDITS_DEFAULT = 50;
+const MAX_CREDITS_DEFAULT = 650;
 
 export interface CreateSimulatedPredictionParams {
   userId: string;

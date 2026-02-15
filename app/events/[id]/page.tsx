@@ -250,10 +250,10 @@ export default function EventDetailPage({
           <span className="font-medium">Eventi</span>
         </Link>
 
-        <article className="glass rounded-3xl border border-border dark:border-white/10 transition-all duration-ds-normal p-5 md:p-6 mb-6">
-          {/* Header: categoria + scadenza — come EventCard */}
+        <article className="card-neon-glass transition-all duration-ds-normal p-5 md:p-6 mb-6">
+          {/* Header: categoria + scadenza (solo in alto) */}
           <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
-            <span className="pill-led-neon inline-flex items-center gap-1.5 shrink-0 min-w-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-semibold bg-surface border border-border text-fg">
+            <span className="inline-flex items-center gap-1.5 shrink-0 min-w-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-semibold bg-white/5 border border-white/10 text-fg backdrop-blur-sm">
               <span className="text-primary shrink-0 [&>svg]:w-4 [&>svg]:h-4">
                 {getCategoryIcon(event.category)}
               </span>
@@ -264,8 +264,8 @@ export default function EventDetailPage({
                 Risolto: {event.outcome === "YES" ? "SÌ" : "NO"}
               </span>
             ) : (
-              <span className="pill-led-neon shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold font-numeric text-fg border border-border">
-                <IconClock className="w-4 h-4" aria-hidden />
+              <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold font-numeric text-fg bg-black/40 border border-primary/50 text-white shadow-[0_0_14px_-2px_rgba(var(--primary-glow),0.4)]">
+                <IconClock className="w-4 h-4 text-primary" aria-hidden />
                 {new Date(event.closesAt) <= new Date() ? "Chiuso" : `Chiude tra ${getTimeRemaining()}`}
               </span>
             )}
@@ -307,9 +307,9 @@ export default function EventDetailPage({
             <p className="text-ds-body-sm text-fg-muted mb-6 leading-relaxed">{event.description}</p>
           )}
 
-          {/* Criteri di risoluzione — box annidato come riferimento immagine */}
+          {/* Criteri di risoluzione */}
           {(event.resolutionNotes || event.resolutionSourceUrl) && (
-            <div className="p-4 rounded-2xl mb-6 bg-surface/50 border border-border dark:border-white/10 backdrop-blur-sm">
+            <div className="box-neon-soft p-4 mb-6">
               <h3 className="text-ds-body-sm font-semibold text-fg mb-2">Criteri di risoluzione</h3>
               {event.resolutionNotes && (
                 <p className="text-ds-body-sm text-fg-muted whitespace-pre-wrap mb-2">{event.resolutionNotes}</p>
@@ -330,31 +330,22 @@ export default function EventDetailPage({
             </div>
           )}
 
-          {/* Statistiche — grid come footer EventCard */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
-            <div className="flex flex-col items-center justify-center rounded-xl py-3 px-2 glass border border-border dark:border-white/10 text-center">
-              <span className="text-xl md:text-2xl font-bold text-primary font-numeric tabular-nums">{event.probability.toFixed(1)}%</span>
+          {/* Statistiche: solo Prevede SÌ + Previsioni (niente crediti né scadenza qui) */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="stat-neon-mini flex flex-col items-center justify-center py-4 px-3 text-center">
+              <span className="text-xl md:text-2xl font-bold text-primary font-numeric tabular-nums drop-shadow-[0_0_12px_rgba(var(--primary-glow),0.5)]">{event.probability.toFixed(1)}%</span>
               <span className="text-ds-caption text-fg-muted font-semibold uppercase tracking-label mt-0.5">prevede SÌ</span>
             </div>
-            <div className="flex flex-col items-center justify-center rounded-xl py-3 px-2 glass border border-border dark:border-white/10 text-center">
+            <div className="stat-neon-mini flex flex-col items-center justify-center py-4 px-3 text-center">
               <span className="text-xl md:text-2xl font-bold text-fg font-numeric tabular-nums">{event._count.predictions}</span>
               <span className="text-ds-caption text-fg-muted font-semibold uppercase tracking-label mt-0.5">previsioni</span>
             </div>
-            <div className="flex flex-col items-center justify-center rounded-xl py-3 px-2 glass border border-border dark:border-white/10 text-center">
-              <span className="text-xl md:text-2xl font-bold text-fg font-numeric tabular-nums">{event.totalCredits.toLocaleString()}</span>
-              <span className="text-ds-caption text-fg-muted font-semibold uppercase tracking-label mt-0.5">crediti</span>
-            </div>
-            <div className="flex flex-col items-center justify-center rounded-xl py-3 px-2 glass border border-border dark:border-white/10 text-center col-span-2 md:col-span-1">
-              <span className="text-ds-body-sm font-medium text-fg-muted">
-                {event.resolved ? "Risolto" : new Date(event.closesAt) <= new Date() ? "Chiuso" : `Tra ${getTimeRemaining()}`}
-              </span>
-            </div>
           </div>
 
-          {/* Crediti in gioco — pill come EventCard */}
-          <div className="pill-led-neon flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-surface border border-border mb-6">
+          {/* Crediti in gioco — unico box nero con bordo blu neon */}
+          <div className="pill-credits-neon flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl mb-6">
             <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
-            <span className="text-lg md:text-xl font-bold text-fg font-numeric tabular-nums dark:text-white">
+            <span className="text-lg md:text-xl font-bold text-white font-numeric tabular-nums">
               {event.totalCredits.toLocaleString("it-IT")} CREDITI IN GIOCO
             </span>
           </div>
@@ -382,14 +373,16 @@ export default function EventDetailPage({
           </div>
 
           {userPrediction && (
-            <div className={`p-4 rounded-2xl mb-6 border ${
+            <div className={`box-neon-soft p-4 mb-6 ${
               userPrediction.resolved
-                ? userPrediction.won ? "bg-success-bg/80 border-success/30 dark:bg-success-bg/50 dark:border-success/40" : "bg-danger-bg/80 border-danger/30 dark:bg-danger-bg/50 dark:border-danger/40"
-                : "glass border-primary/30"
+                ? userPrediction.won ? "border-success/40 shadow-[0_0_20px_-6px_rgba(74,222,128,0.2)]" : "border-danger/40 shadow-[0_0_20px_-6px_rgba(248,113,113,0.2)]"
+                : "border-primary/30 shadow-[0_0_24px_-8px_rgba(var(--primary-glow),0.2)]"
             }`}>
               <h3 className="text-ds-body-sm font-semibold text-fg mb-1">La tua previsione</h3>
               <p className="text-ds-body-sm text-fg-muted">
-                {userPrediction.outcome === "YES" ? "SÌ" : "NO"} — <span className="font-semibold text-primary">{userPrediction.credits.toLocaleString()}</span> crediti
+                <span className="font-semibold text-primary">{userPrediction.outcome === "YES" ? "SÌ" : "NO"}</span>
+                {" — "}
+                <span className="font-semibold text-fg">{userPrediction.credits.toLocaleString()} crediti</span>
               </p>
               {userPrediction.resolved && (
                 <p className={`text-ds-body-sm font-semibold mt-1 ${userPrediction.won ? "text-success" : "text-danger"}`}>
@@ -400,7 +393,7 @@ export default function EventDetailPage({
           )}
 
           {event.resolved && (
-            <div className="p-4 rounded-2xl mb-6 border bg-surface/50 border-border dark:border-white/10 backdrop-blur-sm">
+            <div className="box-neon-soft p-4 mb-6">
               <p className="text-ds-body font-semibold text-fg">
                 Previsioni chiuse. Risultato: {event.outcome === "YES" ? "SÌ" : "NO"}.
               </p>
@@ -430,7 +423,7 @@ export default function EventDetailPage({
             <button
               type="button"
               onClick={() => setShowPredictionModal(true)}
-              className="w-full min-h-[52px] py-4 bg-primary text-white rounded-2xl font-semibold text-ds-body hover:bg-primary-hover transition-colors shadow-glow focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary focus-visible:ring-offset-bg"
+              className="w-full min-h-[52px] py-4 rounded-2xl font-semibold text-ds-body text-white bg-primary hover:bg-primary-hover transition-all duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary focus-visible:ring-offset-bg border border-white/20 shadow-[0_0_28px_-6px_rgba(var(--primary-glow),0.5)] hover:shadow-[0_0_36px_-4px_rgba(var(--primary-glow),0.6)] hover:border-white/30"
             >
               Fai una Previsione
             </button>
@@ -442,7 +435,7 @@ export default function EventDetailPage({
             </div>
           )}
 
-          <div className="text-ds-body-sm text-fg-muted mt-6 pt-4 border-t border-border dark:border-white/10 space-y-1">
+          <div className="text-ds-body-sm text-fg-muted mt-6 pt-4 border-t border-white/10 space-y-1">
             <p>Creato da {event.createdBy.name || "Utente"} · {new Date(event.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}</p>
             <p>Chiusura: {new Date(event.closesAt).toLocaleDateString("it-IT", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</p>
           </div>

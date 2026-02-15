@@ -173,13 +173,13 @@ export default function DiscoverPage() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Cerca eventi per parola chiave..."
-              className="w-full min-h-[48px] pl-12 pr-4 py-3 rounded-2xl border border-border dark:border-white/10 bg-surface/50 backdrop-blur-xl text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary text-ds-body ds-tap-target"
+              className="w-full min-h-[48px] pl-12 pr-4 py-3 rounded-2xl border border-white/10 bg-white/5 dark:bg-white/5 backdrop-blur-xl text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary input-neon-focus text-ds-body ds-tap-target"
               aria-label="Cerca eventi"
               autoComplete="off"
             />
             <button
               type="submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 min-h-[36px] px-4 rounded-xl bg-primary text-white text-ds-body-sm font-semibold hover:bg-primary-hover transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+              className="absolute right-2 top-1/2 -translate-y-1/2 min-h-[36px] px-4 rounded-xl bg-primary text-white text-ds-body-sm font-semibold hover:bg-primary-hover border border-white/20 shadow-[0_0_16px_-4px_rgba(var(--primary-glow),0.4)] hover:shadow-[0_0_20px_-4px_rgba(var(--primary-glow),0.5)] transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
             >
               Cerca
             </button>
@@ -312,7 +312,7 @@ export default function DiscoverPage() {
                   type="button"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  className="min-h-[44px] px-4 rounded-xl font-semibold text-ds-body-sm border border-border dark:border-white/10 bg-surface/50 text-fg hover:bg-surface disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  className="min-h-[44px] px-4 rounded-xl font-semibold text-ds-body-sm border border-white/10 bg-white/5 text-fg hover:bg-white/10 hover:border-primary/25 hover:shadow-[0_0_12px_-4px_rgba(var(--primary-glow),0.2)] disabled:opacity-50 disabled:pointer-events-none disabled:hover:shadow-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
                   Precedente
                 </button>
@@ -323,7 +323,7 @@ export default function DiscoverPage() {
                   type="button"
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
-                  className="min-h-[44px] px-4 rounded-xl font-semibold text-ds-body-sm border border-border dark:border-white/10 bg-surface/50 text-fg hover:bg-surface disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  className="min-h-[44px] px-4 rounded-xl font-semibold text-ds-body-sm border border-white/10 bg-white/5 text-fg hover:bg-white/10 hover:border-primary/25 hover:shadow-[0_0_12px_-4px_rgba(var(--primary-glow),0.2)] disabled:opacity-50 disabled:pointer-events-none disabled:hover:shadow-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
                   Successiva
                 </button>

@@ -46,7 +46,7 @@ export default function LandingEventRow({ event }: LandingEventRowProps) {
   return (
     <Link
       href={`/events/${event.id}`}
-      className="block rounded-2xl border border-border dark:border-white/10 glass p-4 transition-all duration-ds-normal ease-ds-ease hover:border-primary/20 hover:shadow-glow-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none"
+      className="block rounded-2xl box-neon-soft p-4 transition-all duration-ds-normal ease-ds-ease hover:shadow-[0_0_24px_-8px_rgba(var(--primary-glow),0.2)] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none"
     >
       <div className="flex items-start justify-between gap-3 mb-3">
         <span className="inline-flex items-center gap-2 text-ds-micro font-semibold text-fg-muted shrink-0">
@@ -73,7 +73,7 @@ export default function LandingEventRow({ event }: LandingEventRowProps) {
           style={{ width: `${yesPct}%` }}
         />
       </div>
-      <span className="inline-flex items-center justify-center min-h-[44px] w-full py-2.5 px-4 rounded-xl bg-primary/15 text-primary font-semibold text-ds-body-sm border border-primary/30 ds-tap-target">
+      <span className="inline-flex items-center justify-center min-h-[44px] w-full py-2.5 px-4 rounded-xl bg-primary/20 text-primary font-semibold text-ds-body-sm border border-primary/40 shadow-[0_0_14px_-4px_rgba(var(--primary-glow),0.3)] ds-tap-target">
         Fai la tua previsione
       </span>
     </Link>

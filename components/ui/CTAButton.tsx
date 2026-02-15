@@ -31,9 +31,9 @@ const baseClasses =
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    "bg-primary text-white hover:bg-primary-hover shadow-glow-sm focus-visible:ring-primary disabled:bg-primary/60 disabled:shadow-none",
+    "bg-primary text-white hover:bg-primary-hover border border-white/20 shadow-[0_0_24px_-6px_rgba(var(--primary-glow),0.45)] hover:shadow-[0_0_32px_-4px_rgba(var(--primary-glow),0.55)] focus-visible:ring-primary disabled:bg-primary/60 disabled:shadow-none disabled:border-white/10",
   secondary:
-    "glass border border-border dark:border-white/10 text-text-primary hover:border-primary/20 hover:bg-surface/50 focus-visible:ring-primary disabled:text-text-muted disabled:border-border disabled:hover:bg-transparent",
+    "glass border border-border dark:border-white/10 text-text-primary hover:border-primary/25 hover:bg-surface/50 hover:shadow-[0_0_16px_-6px_rgba(var(--primary-glow),0.15)] focus-visible:ring-primary disabled:text-text-muted disabled:border-border disabled:hover:bg-transparent disabled:hover:shadow-none",
 };
 
 export default function CTAButton({

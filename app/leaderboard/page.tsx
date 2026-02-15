@@ -117,7 +117,7 @@ export default function LeaderboardPage() {
         )}
 
         <SectionContainer>
-          <Card className="p-4 mb-6 space-y-4">
+          <Card neon className="p-4 mb-6 space-y-4">
             <FilterChips
               options={periodButtons.map((b) => ({ id: b.id, label: b.label }))}
               value={period}
@@ -129,7 +129,7 @@ export default function LeaderboardPage() {
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full md:w-auto min-h-[44px] px-4 py-2 rounded-2xl bg-surface/50 border border-border dark:border-white/10 text-fg font-medium ds-tap-target"
+                  className="w-full md:w-auto min-h-[44px] px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-fg font-medium ds-tap-target input-neon-focus"
                 >
                   <option value="">Tutte</option>
                   {categories.map((c) => (
@@ -146,10 +146,10 @@ export default function LeaderboardPage() {
         ) : leaderboard.length === 0 ? (
           <EmptyState description="Nessun dato per questo periodo." />
         ) : (
-          <Card elevated className="p-4 md:p-6">
+          <Card neon elevated className="p-4 md:p-6">
             {myRank != null && session?.user && (
-              <div className="mb-4 p-3 rounded-xl bg-surface/50 border border-border dark:border-white/10 text-sm text-fg-muted">
-                La tua posizione: <strong className="text-fg">#{myRank}</strong>
+              <div className="mb-4 p-3 rounded-xl pill-credits-neon text-sm text-white/90">
+                La tua posizione: <strong className="text-white">#{myRank}</strong>
               </div>
             )}
             <div className="hidden md:grid grid-cols-12 gap-4 mb-4 pb-3 border-b border-border dark:border-white/10">

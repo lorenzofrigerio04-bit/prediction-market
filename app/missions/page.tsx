@@ -111,8 +111,8 @@ export default function MissionsPage() {
       <div
         className={`rounded-3xl border p-4 md:p-6 transition-all duration-ds-normal ${
           m.completed
-            ? "border-success/40 bg-success-bg/90 dark:bg-success-bg/50 dark:border-success/50"
-            : "glass border-border dark:border-white/10 hover:border-primary/20 hover:shadow-glow-sm"
+            ? "box-neon-soft border-success/40 shadow-[0_0_20px_-6px_rgba(74,222,128,0.2)]"
+            : "box-neon-soft hover:shadow-[0_0_24px_-8px_rgba(var(--primary-glow),0.2)]"
         }`}
       >
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
@@ -126,7 +126,7 @@ export default function MissionsPage() {
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-bold text-fg">{m.name}</h3>
-                <span className="pill-led-neon inline-flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold bg-surface border border-border text-fg">
+                <span className="inline-flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold bg-white/5 dark:bg-black/40 border border-white/10 dark:border-primary/40 text-fg">
                   {PERIOD_LABELS[m.period] ?? m.period}
                 </span>
                 <span
@@ -194,7 +194,7 @@ export default function MissionsPage() {
 
         {/* Card: Moltiplicatore bonus + esempio */}
         <SectionContainer>
-          <Card className="p-5 overflow-hidden">
+          <Card neon className="p-5 overflow-hidden">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <h2 className="text-ds-label uppercase tracking-wide text-fg-muted font-semibold mb-1">
@@ -283,7 +283,7 @@ export default function MissionsPage() {
           </>
         )}
 
-        <Card className="p-5">
+        <Card neon className="p-5">
           <h2 className="text-ds-h2 font-bold text-fg mb-2">Come funziona</h2>
           <ul className="text-fg-muted space-y-2 text-ds-body-sm">
             <li>· <strong className="text-fg">Previsioni:</strong> scommetti sugli eventi per far avanzare le missioni.</li>

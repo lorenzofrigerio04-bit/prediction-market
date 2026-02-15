@@ -46,16 +46,16 @@ export default function LeaderboardRow({
   };
 
   const getRankColor = () => {
-    if (rank === 1) return "bg-amber-500/15 border-amber-500/40 dark:border-amber-400/30";
-    if (rank === 2) return "bg-surface/50 border-border dark:border-white/10";
-    if (rank === 3) return "bg-orange-500/15 border-orange-500/40 dark:border-orange-400/30";
-    return "glass border-border dark:border-white/10";
+    if (rank === 1) return "bg-amber-500/15 border-amber-500/40 dark:border-amber-400/30 shadow-[0_0_16px_-4px_rgba(251,191,36,0.25)]";
+    if (rank === 2) return "stat-neon-mini";
+    if (rank === 3) return "bg-orange-500/15 border-orange-500/40 dark:border-orange-400/30 shadow-[0_0_16px_-4px_rgba(249,115,22,0.2)]";
+    return "stat-neon-mini";
   };
 
   return (
     <div
       className={`p-4 rounded-2xl border transition-all ${getRankColor()} ${
-        isCurrentUser ? "ring-2 ring-primary" : ""
+        isCurrentUser ? "ring-2 ring-primary shadow-[0_0_20px_-6px_rgba(var(--primary-glow),0.3)]" : ""
       }`}
     >
       <div className="flex items-center gap-3 md:gap-4">

@@ -162,21 +162,21 @@ export default function AdminDashboard() {
         </div>
 
         {/* Simulazione bot */}
-        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-          <h2 className="text-lg font-semibold text-amber-900 mb-2">Simulazione bot</h2>
-          <p className="text-sm text-amber-800 mb-3">
+        <div className="mb-6 p-4 bg-white rounded-lg shadow border border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Simulazione bot</h2>
+          <p className="text-sm text-gray-600 mb-3">
             Esegui subito una run di attività simulata (previsioni, commenti, reazioni, follow dai bot).
-            Richiede <code className="bg-amber-100 px-1 rounded">ENABLE_SIMULATED_ACTIVITY=true</code> in produzione.
+            Richiede <code className="bg-gray-100 px-1 rounded text-xs">ENABLE_SIMULATED_ACTIVITY=true</code> in produzione.
           </p>
           <button
             onClick={runSimulatedActivity}
             disabled={simulateLoading}
-            className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 disabled:opacity-50 font-medium"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
           >
             {simulateLoading ? "Esecuzione..." : "Esegui attività simulata ora"}
           </button>
           {simulateResult && (
-            <pre className="mt-3 p-3 bg-white rounded text-xs overflow-auto max-h-40">
+            <pre className="mt-3 p-3 bg-gray-50 rounded border border-gray-200 text-xs overflow-auto max-h-40">
               {JSON.stringify(simulateResult, null, 2)}
             </pre>
           )}

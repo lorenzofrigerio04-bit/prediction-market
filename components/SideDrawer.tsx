@@ -105,7 +105,7 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
         ref={panelRef}
         role="dialog"
         aria-label="Menu utility"
-        className="fixed top-0 right-0 h-full w-[min(320px,85vw)] bg-bg border-l border-border dark:border-white/10 shadow-xl flex flex-col"
+        className="fixed top-0 right-0 h-full w-[min(320px,85vw)] bg-bg border-l border-border dark:border-white/10 dark:shadow-[0_0_40px_-12px_rgba(var(--primary-glow),0.15)] shadow-xl flex flex-col"
         style={{ paddingTop: "var(--safe-area-inset-top)" }}
       >
         <div className="flex items-center justify-between px-4 py-4 border-b border-border dark:border-white/10">

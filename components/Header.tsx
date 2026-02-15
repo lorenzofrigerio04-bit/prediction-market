@@ -39,7 +39,7 @@ export default function Header() {
   return (
     <>
       <header
-        className="sticky top-0 z-40 glass border-b border-border dark:border-white/10"
+        className="sticky top-0 z-40 glass border-b border-border dark:border-white/10 dark:shadow-[0_1px_0_0_rgb(var(--primary)/0.15)]"
         style={{ paddingTop: "var(--safe-area-inset-top)" }}
       >
         <div className="mx-auto px-4 max-w-7xl">
@@ -59,8 +59,8 @@ export default function Header() {
                   href={href === "/profile" ? profileHref : href}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-medium transition-colors min-h-[44px] ${
                     isActive(href === "/profile" ? profileHref : href)
-                      ? "bg-primary/10 text-primary"
-                      : "text-fg-muted hover:bg-surface/50 hover:text-fg"
+                      ? "bg-primary/15 text-primary border border-primary/30 shadow-[0_0_14px_-4px_rgba(var(--primary-glow),0.3)]"
+                      : "text-fg-muted hover:bg-surface/50 hover:text-fg border border-transparent"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -87,7 +87,7 @@ export default function Header() {
 
       {/* Bottom nav: solo mobile, 5 voci, accessibili col pollice */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 glass border-t border-border dark:border-white/10"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 glass border-t border-border dark:border-white/10 dark:shadow-[0_-1px_0_0_rgb(var(--primary)/0.12)]"
         style={{ paddingBottom: "var(--safe-area-inset-bottom)" }}
         aria-label="Navigazione principale"
       >
@@ -100,7 +100,7 @@ export default function Header() {
                 key={href}
                 href={linkHref}
                 className={`${bottomLinkClass} ${
-                  active ? "text-primary bg-primary/10" : "text-fg-muted hover:text-fg hover:bg-surface/50"
+                  active ? "text-primary bg-primary/15 border border-primary/25 shadow-[0_0_12px_-4px_rgba(var(--primary-glow),0.25)]" : "text-fg-muted hover:text-fg hover:bg-surface/50 border border-transparent"
                 }`}
               >
                 <Icon className="w-6 h-6" />

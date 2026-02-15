@@ -10,7 +10,8 @@ import { runSimulatedComments } from "./comments";
 import { runSimulatedReactions } from "./reactions";
 import { runSimulatedFollows } from "./followers";
 
-const BOT_COUNT = 20;
+/** Numero di bot attivi: obiettivo sensazione 100–200 utenti (azioni distribuite su più run) */
+const BOT_COUNT = 80;
 
 export interface RunSimulatedActivityResult {
   ok: boolean;

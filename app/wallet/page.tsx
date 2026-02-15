@@ -238,6 +238,7 @@ export default function WalletPage() {
             value={formatAmount(stats.credits)}
             variant="primary"
             elevated
+            neon
             icon={<IconWallet className="w-5 h-5 md:w-6 md:h-6" />}
           />
         </SectionContainer>
@@ -248,9 +249,9 @@ export default function WalletPage() {
           <p className="mb-3 text-ds-body-sm text-fg-muted">
             Crediti utilizzabili subito per fare previsioni o acquisti nello shop. Nessun blocco.
           </p>
-          <div className="rounded-2xl border border-border bg-surface/50 p-4 dark:border-white/10">
-            <p className="text-2xl font-bold font-numeric text-fg md:text-3xl">{formatAmount(stats.credits)}</p>
-            <p className="mt-1 text-ds-micro text-fg-muted">crediti disponibili</p>
+          <div className="pill-credits-neon rounded-2xl p-4">
+            <p className="text-2xl font-bold font-numeric text-white md:text-3xl">{formatAmount(stats.credits)}</p>
+            <p className="mt-1 text-ds-micro text-white/80">crediti disponibili</p>
           </div>
           <p className="mt-4 text-ds-micro italic text-fg-muted">
             I crediti sono virtuali e non hanno valore monetario. Non sono convertibili né prelevabili.
@@ -263,11 +264,13 @@ export default function WalletPage() {
             label="Totale guadagnato"
             value={`+${formatAmount(stats.totalEarned)}`}
             variant="success"
+            neon
           />
           <StatCard
             label="Totale speso"
             value={`−${formatAmount(stats.totalSpent)}`}
             variant="danger"
+            neon
           />
         </div>
         <p className="mb-8 text-ds-micro text-fg-muted">
@@ -281,7 +284,7 @@ export default function WalletPage() {
             Bonus che puoi riscattare o su cui stai lavorando. Ogni importo è definito dalla configurazione del gioco.
           </p>
 
-          <Card className="mb-4 p-5 md:p-6">
+          <Card neon className="mb-4 p-5 md:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-ds-h3 font-bold text-fg">Bonus giornaliero</h3>
@@ -332,7 +335,7 @@ export default function WalletPage() {
             </div>
           </Card>
 
-          <Card className="mb-4 p-5 md:p-6">
+          <Card neon className="mb-4 p-5 md:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-ds-h3 font-bold text-fg">Spin of the Day</h3>
@@ -369,7 +372,7 @@ export default function WalletPage() {
             </div>
           </Card>
 
-          <Card className="border-dashed border-border bg-surface/30 p-5 dark:border-white/10 md:p-6">
+          <Card neon className="border-dashed border-white/15 p-5 md:p-6">
             <h3 className="text-ds-h3 font-bold text-fg">Missioni</h3>
             <p className="mt-1 text-ds-body-sm text-fg-muted">
               Completa missioni giornaliere e settimanali per crediti extra. Le ricompense sono definite per ogni missione.
@@ -389,7 +392,7 @@ export default function WalletPage() {
           <p className="mb-4 text-ds-body-sm text-fg-muted">
             Ogni movimento è registrato con tipo, importo e saldo dopo l’operazione.
           </p>
-          <Card className="p-5 md:p-6">
+          <Card neon className="p-5 md:p-6">
             {transactions.length === 0 ? (
               <div className="py-8 text-center text-ds-body-sm text-fg-muted">Nessuna transazione ancora.</div>
             ) : (
@@ -402,7 +405,7 @@ export default function WalletPage() {
                     return (
                       <li
                         key={tx.id}
-                        className="flex items-center justify-between gap-3 rounded-2xl border border-border p-4 transition-colors hover:bg-surface/30 dark:border-white/10"
+                        className="flex items-center justify-between gap-3 rounded-2xl box-neon-soft p-4 transition-colors hover:shadow-[0_0_20px_-6px_rgba(var(--primary-glow),0.12)]"
                       >
                         <div className="flex min-w-0 items-center gap-3">
                           <span className="shrink-0 text-fg-muted"><TypeIcon className="w-5 h-5" /></span>

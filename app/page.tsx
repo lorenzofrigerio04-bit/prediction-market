@@ -252,13 +252,13 @@ export default function Home() {
               </Link>
             </div>
             <div className="flex flex-wrap justify-center gap-2 md:gap-3">
-              <span className="pill-led-neon inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold bg-surface border border-border text-fg">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold bg-white/5 dark:bg-black/40 border border-white/10 dark:border-primary/40 text-fg shadow-[0_0_12px_-4px_rgba(var(--primary-glow),0.2)]">
                 Eventi in tempo reale
               </span>
-              <span className="pill-led-neon inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold bg-surface border border-border text-fg">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold bg-white/5 dark:bg-black/40 border border-white/10 dark:border-primary/40 text-fg shadow-[0_0_12px_-4px_rgba(var(--primary-glow),0.2)]">
                 Classifiche settimanali
               </span>
-              <span className="pill-led-neon inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold bg-surface border border-border text-fg">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold bg-white/5 dark:bg-black/40 border border-white/10 dark:border-primary/40 text-fg shadow-[0_0_12px_-4px_rgba(var(--primary-glow),0.2)]">
                 Nessun rischio reale (NO soldi veri)
               </span>
             </div>
@@ -298,17 +298,17 @@ export default function Home() {
           <section className="mb-10 md:mb-14">
             <h2 className="text-ds-h2 font-bold text-fg mb-4 text-center">Perché giocare</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="rounded-2xl border border-border dark:border-white/10 glass p-5 text-center">
+              <div className="box-neon-soft p-5 text-center">
                 <div className="text-2xl mb-2" aria-hidden>🏆</div>
                 <h3 className="text-ds-body font-bold text-fg mb-1">Classifiche settimanali</h3>
                 <p className="text-ds-body-sm text-fg-muted">Sali in classifica ogni settimana e confrontati con la community.</p>
               </div>
-              <div className="rounded-2xl border border-border dark:border-white/10 glass p-5 text-center">
+              <div className="box-neon-soft p-5 text-center">
                 <div className="text-2xl mb-2" aria-hidden>🎯</div>
                 <h3 className="text-ds-body font-bold text-fg mb-1">Missioni & streak giornaliere</h3>
                 <p className="text-ds-body-sm text-fg-muted">Completa missioni e mantieni lo streak per guadagnare crediti extra.</p>
               </div>
-              <div className="rounded-2xl border border-border dark:border-white/10 glass p-5 text-center">
+              <div className="box-neon-soft p-5 text-center">
                 <div className="text-2xl mb-2" aria-hidden>📋</div>
                 <h3 className="text-ds-body font-bold text-fg mb-1">Eventi reali con regole trasparenti</h3>
                 <p className="text-ds-body-sm text-fg-muted">Ogni evento ha criteri di risoluzione chiari e verificabili.</p>
@@ -372,7 +372,7 @@ export default function Home() {
         >
           <Link
             href="/spin"
-            className="block rounded-2xl border-2 border-primary/30 bg-primary/5 glass p-4 md:p-5 hover:border-primary/50 hover:shadow-glow-sm transition-all duration-ds-normal group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none"
+            className="block card-neon-glass p-4 md:p-5 hover:shadow-[0_0_32px_-8px_rgba(var(--primary-glow),0.25)] transition-all duration-ds-normal group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none"
           >
             <div className="flex items-center justify-between gap-2 mb-3">
               <h2 className="text-ds-body font-bold text-fg group-hover:text-primary transition-colors">
@@ -403,7 +403,7 @@ export default function Home() {
         >
           <Link
             href="/missions"
-            className="block rounded-2xl border border-border dark:border-white/10 glass p-4 md:p-5 hover:border-primary/20 hover:shadow-glow-sm transition-all duration-ds-normal group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none"
+            className="block card-neon-glass p-4 md:p-5 hover:shadow-[0_0_32px_-8px_rgba(var(--primary-glow),0.25)] transition-all duration-ds-normal group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none"
           >
             <div className="flex items-center justify-between gap-2 mb-3">
               <h2 className="text-ds-body font-bold text-fg group-hover:text-primary transition-colors">

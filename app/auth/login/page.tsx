@@ -79,7 +79,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-bg flex flex-col">
       <Header />
       <div className="flex-1 flex items-center justify-center px-4 py-8">
-        <div className="max-w-md w-full glass rounded-3xl border border-border dark:border-white/10 p-6 md:p-8">
+        <div className="max-w-md w-full card-neon-glass p-6 md:p-8">
         <h1 className="text-2xl md:text-3xl font-bold text-center text-fg mb-1">
           Accedi
         </h1>
@@ -108,7 +108,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full min-h-[48px] px-4 py-3 border border-border dark:border-white/10 rounded-2xl bg-surface/50 text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary"
+              className="w-full min-h-[48px] px-4 py-3 border border-white/10 rounded-2xl bg-white/5 text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary input-neon-focus"
               placeholder="tua@email.com"
             />
           </div>
@@ -121,7 +121,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full min-h-[48px] px-4 py-3 border border-border dark:border-white/10 rounded-2xl bg-surface/50 text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary"
+              className="w-full min-h-[48px] px-4 py-3 border border-white/10 rounded-2xl bg-white/5 text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary input-neon-focus"
               placeholder="••••••••"
             />
           </div>
@@ -129,7 +129,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading || redirecting}
-            className="w-full min-h-[48px] bg-primary text-white py-3 px-4 rounded-2xl font-semibold hover:bg-primary-hover focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg disabled:opacity-50 transition-colors"
+            className="w-full min-h-[48px] bg-primary text-white py-3 px-4 rounded-2xl font-semibold hover:bg-primary-hover border border-white/20 shadow-[0_0_24px_-6px_rgba(var(--primary-glow),0.45)] hover:shadow-[0_0_28px_-4px_rgba(var(--primary-glow),0.5)] focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg disabled:opacity-50 transition-all"
           >
             {redirecting ? "Reindirizzamento..." : isLoading ? "Accesso..." : "Accedi"}
           </button>
@@ -149,7 +149,7 @@ export default function LoginPage() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={isLoading || redirecting}
-            className="mt-4 w-full min-h-[48px] flex items-center justify-center gap-3 glass border border-border dark:border-white/10 text-fg py-3 px-4 rounded-2xl font-medium hover:border-primary/20 focus:ring-2 focus:ring-primary disabled:opacity-50 transition-colors"
+            className="mt-4 w-full min-h-[48px] flex items-center justify-center gap-3 bg-white/5 border border-white/10 text-fg py-3 px-4 rounded-2xl font-medium hover:border-primary/25 hover:shadow-[0_0_16px_-6px_rgba(var(--primary-glow),0.2)] focus:ring-2 focus:ring-primary disabled:opacity-50 transition-all"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path

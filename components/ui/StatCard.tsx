@@ -11,6 +11,8 @@ interface StatCardProps {
   variant?: "default" | "primary" | "success" | "danger";
   subtitle?: string;
   elevated?: boolean;
+  /** Futuristic LED/neon style */
+  neon?: boolean;
 }
 
 const variantClasses = {
@@ -27,10 +29,13 @@ export default function StatCard({
   variant = "default",
   subtitle,
   elevated = false,
+  neon = false,
 }: StatCardProps) {
-  const cardClass = elevated
-    ? "glass-elevated border-2 border-primary/20"
-    : "glass border border-border dark:border-white/10";
+  const cardClass = neon
+    ? "stat-neon-mini"
+    : elevated
+      ? "glass-elevated border-2 border-primary/20"
+      : "glass border border-border dark:border-white/10";
 
   return (
     <div className={`${cardClass} rounded-2xl md:rounded-2.5xl p-4 md:p-6`}>

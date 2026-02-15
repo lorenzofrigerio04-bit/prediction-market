@@ -25,7 +25,7 @@ export default function StatsCard({
   subtitle,
   elevated = false,
 }: StatsCardProps) {
-  const base = elevated ? "glass-elevated" : "glass border border-border dark:border-white/10";
+  const base = elevated ? "stat-neon-mini shadow-[0_0_20px_-8px_rgba(var(--primary-glow),0.2)]" : "stat-neon-mini";
   return (
     <div className={`${base} rounded-2xl p-4 md:p-6`}>
       <div className="flex items-center justify-between mb-1">

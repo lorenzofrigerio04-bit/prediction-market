@@ -205,8 +205,8 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
     const isReplying = replyingTo === comment.id;
 
     return (
-      <div className={isReply ? "ml-4 md:ml-6 mt-3 pl-3 border-l-2 border-primary/20 dark:border-primary/30" : ""}>
-        <div className="glass rounded-2xl p-4 border border-border dark:border-white/10 transition-all duration-200 hover:border-primary/15 dark:hover:border-primary/20 hover:shadow-[0_0_20px_-6px_rgba(var(--primary-glow),0.12)]">
+        <div className={isReply ? "ml-4 md:ml-6 mt-3 pl-3 border-l-2 border-primary/30" : ""}>
+        <div className="box-neon-soft p-4 transition-all duration-200 hover:border-primary/25 hover:shadow-[0_0_24px_-8px_rgba(var(--primary-glow),0.18)]">
           <div className="flex items-start gap-3 mb-2">
             <div className="w-9 h-9 rounded-full bg-surface/60 border border-border dark:border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-transparent dark:ring-white/5">
               {comment.user.image ? (
@@ -233,7 +233,7 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
                   key={type}
                   onClick={() => handleToggleReaction(comment.id, type as "THUMBS_UP" | "FIRE" | "HEART")}
                   className={`flex items-center gap-1 min-h-[36px] px-2.5 py-1.5 rounded-xl text-ds-body-sm font-medium transition-all duration-200 ${
-                    isActive ? "bg-primary/20 text-primary border border-primary/30 shadow-[0_0_12px_-4px_rgba(var(--primary-glow),0.3)]" : "bg-surface/50 text-fg-muted hover:bg-surface/70 border border-border dark:border-white/10 hover:text-fg"
+                    isActive ? "bg-primary/20 text-primary border border-primary/40 shadow-[0_0_12px_-4px_rgba(var(--primary-glow),0.35)]" : "bg-white/5 text-fg-muted hover:bg-white/10 border border-white/10 hover:text-fg"
                   }`}
                   title={label}
                 >
@@ -261,7 +261,7 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
                 placeholder="Risposta..."
-                className="w-full min-h-[80px] px-4 py-3 border border-border dark:border-white/10 rounded-2xl bg-surface/50 focus:ring-2 focus:ring-primary focus:border-primary focus:shadow-[0_0_0_3px_rgba(var(--primary-glow),0.15)] resize-none text-ds-body text-fg placeholder:text-fg-muted transition-shadow duration-200"
+                className="w-full min-h-[80px] px-4 py-3 border border-white/10 rounded-2xl bg-white/5 focus:ring-2 focus:ring-primary focus:border-primary focus:shadow-[0_0_0_3px_rgba(var(--primary-glow),0.2)] resize-none text-ds-body text-fg placeholder:text-fg-muted transition-all duration-200"
                 rows={2}
                 maxLength={2000}
               />
@@ -297,7 +297,7 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
 
   if (loading) {
     return (
-      <div className="glass rounded-3xl border border-border dark:border-white/10 p-5 md:p-6 shadow-[0_0_24px_-6px_rgba(var(--primary-glow),0.08)]">
+      <div className="card-neon-glass p-5 md:p-6">
         <div className="flex items-center gap-2 mb-4">
           <IconChat className="w-5 h-5 text-primary" aria-hidden />
           <h2 className="text-ds-h2 font-bold text-fg">Commenti</h2>
@@ -311,15 +311,15 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
   }
 
   return (
-    <div className="glass rounded-3xl border border-border dark:border-white/10 p-5 md:p-6 transition-all duration-200 shadow-[0_0_24px_-6px_rgba(var(--primary-glow),0.08)] dark:shadow-[0_0_28px_-8px_rgba(var(--primary-glow),0.12)]">
+    <div className="card-neon-glass p-5 md:p-6 transition-all duration-200">
       <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10 border border-primary/20">
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/15 border border-primary/30 shadow-[0_0_12px_-4px_rgba(var(--primary-glow),0.3)]">
             <IconChat className="w-5 h-5 text-primary" aria-hidden />
           </div>
           <h2 className="text-ds-h2 font-bold text-fg">Commenti</h2>
         </div>
-        <span className="pill-led-neon inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold font-numeric bg-surface border border-border text-fg">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold font-numeric bg-black/40 border border-primary/50 text-white shadow-[0_0_14px_-2px_rgba(var(--primary-glow),0.35)]">
           {comments.length}
         </span>
       </div>
@@ -341,7 +341,7 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Scrivi un commento..."
-                className="w-full min-h-[100px] px-4 py-3 border border-border dark:border-white/10 rounded-2xl bg-surface/50 text-ds-body text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary focus:shadow-[0_0_0_3px_rgba(var(--primary-glow),0.15)] resize-none transition-shadow duration-200"
+                className="w-full min-h-[100px] px-4 py-3 border border-white/10 rounded-2xl bg-white/5 text-ds-body text-fg placeholder:text-fg-muted focus:ring-2 focus:ring-primary focus:border-primary focus:shadow-[0_0_0_3px_rgba(var(--primary-glow),0.2)] focus:border-primary/50 resize-none transition-all duration-200"
                 rows={3}
                 maxLength={2000}
               />
@@ -365,8 +365,8 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
       )}
 
       {comments.length === 0 ? (
-        <div className="text-center py-12 rounded-2xl border border-dashed border-border dark:border-white/10 bg-surface/30">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-surface/60 border border-border dark:border-white/10 mb-3">
+        <div className="text-center py-12 rounded-2xl border border-dashed border-white/10 bg-white/5">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 border border-white/10 mb-3">
             <IconChat className="w-6 h-6 text-fg-muted" aria-hidden />
           </div>
           <p className="text-ds-body-sm text-fg-muted font-medium">Nessun commento.</p>

@@ -9,7 +9,7 @@ interface MarketCardSkeletonProps {
 function MarketCardSkeleton({ index = 0 }: MarketCardSkeletonProps) {
   return (
     <div
-      className="rounded-2xl md:rounded-3xl border border-border dark:border-white/10 glass p-4 md:p-5 h-full flex flex-col animate-feed-in opacity-0"
+      className="rounded-2xl md:rounded-3xl box-neon-soft p-4 md:p-5 h-full flex flex-col animate-feed-in opacity-0"
       style={{ animationDelay: `${Math.min(index * 60, 360)}ms` }}
       aria-hidden
     >
