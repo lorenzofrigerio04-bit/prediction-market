@@ -9,7 +9,6 @@ import EventCard from "@/components/EventCard";
 import OnboardingTour from "@/components/OnboardingTour";
 import LandingEventRow from "@/components/landing/LandingEventRow";
 import HomeSummary from "@/components/home/HomeSummary";
-import { resolveClosedEvents } from "@/lib/resolveClosedEvents";
 import {
   PageHeader,
   SectionContainer,
@@ -127,10 +126,6 @@ export default function Home() {
       }
     })();
   }, [updateSession]);
-
-  useEffect(() => {
-    resolveClosedEvents().catch(() => {});
-  }, []);
 
   // Top summary: crediti, classifica settimanale, streak
   useEffect(() => {
@@ -257,13 +252,13 @@ export default function Home() {
               </Link>
             </div>
             <div className="flex flex-wrap justify-center gap-2 md:gap-3">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold text-fg-muted bg-surface/60 border border-border dark:border-white/10">
+              <span className="pill-led-neon inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold bg-surface border border-border text-fg">
                 Eventi in tempo reale
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold text-fg-muted bg-surface/60 border border-border dark:border-white/10">
+              <span className="pill-led-neon inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold bg-surface border border-border text-fg">
                 Classifiche settimanali
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold text-fg-muted bg-surface/60 border border-border dark:border-white/10">
+              <span className="pill-led-neon inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold bg-surface border border-border text-fg">
                 Nessun rischio reale (NO soldi veri)
               </span>
             </div>
