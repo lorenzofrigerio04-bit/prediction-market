@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Header from "@/components/Header";
 import StreakBadge from "@/components/StreakBadge";
 import StatsCard from "@/components/StatsCard";
 import { trackView } from "@/lib/analytics-client";
@@ -238,6 +239,7 @@ export default function ProfilePage() {
   if (status === "loading" || loading) {
     return (
       <div className="min-h-screen bg-bg">
+        <Header />
         <main className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
           <LoadingBlock message="Caricamento profilo..." />
         </main>
@@ -258,6 +260,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-bg">
+      <Header />
       <main className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
         {error && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-600 dark:text-red-400 text-ds-body-sm">

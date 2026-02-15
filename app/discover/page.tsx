@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useDeferredValue } from "react";
+import Header from "@/components/Header";
 import EventCard from "@/components/EventCard";
 import MarketCardSkeleton from "@/components/discover/MarketCardSkeleton";
 import type { EventCardEvent } from "@/components/EventCard";
@@ -148,6 +149,7 @@ export default function DiscoverPage() {
 
   return (
     <div className="min-h-screen bg-bg">
+      <Header />
       <main className="mx-auto px-4 sm:px-6 py-6 md:py-8 max-w-6xl">
         <PageHeader
           title="Eventi"

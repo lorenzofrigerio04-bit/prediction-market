@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import Header from "@/components/Header";
 import EventCard from "@/components/EventCard";
 import OnboardingTour from "@/components/OnboardingTour";
 import LandingEventRow from "@/components/landing/LandingEventRow";
@@ -211,8 +212,11 @@ export default function Home() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-bg flex items-center justify-center">
-        <LoadingBlock message="" />
+      <div className="min-h-screen bg-bg">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <LoadingBlock message="" />
+        </div>
       </div>
     );
   }
@@ -221,6 +225,7 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-bg relative overflow-x-hidden">
         <div className="landing-bg" aria-hidden />
+        <Header />
         <main className="relative mx-auto px-4 sm:px-6 py-8 md:py-12 lg:py-16 max-w-2xl">
           <section className="mb-12 md:mb-16">
             <div className="landing-hero-card px-6 py-8 md:px-10 md:py-12 text-center">
@@ -352,6 +357,7 @@ export default function Home() {
       {showOnboarding && (
         <OnboardingTour onComplete={handleOnboardingComplete} />
       )}
+      <Header />
       <main className="mx-auto px-page-x py-page-y md:py-8 max-w-6xl">
         <PageHeader
           title={`Bentornato, ${displayName}.`}
@@ -466,21 +472,11 @@ export default function Home() {
               action={{ label: "Vai alle missioni", href: "/missions" }}
             />
           ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                {eventsTrending.map((event) => (
-                  <EventCard key={event.id} event={event} />
-                ))}
-              </div>
-              <div className="mt-6 flex justify-center">
-                <Link
-                  href="/discover"
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-ds-body-sm font-semibold text-primary-fg hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-                >
-                  Visualizza altri eventi
-                </Link>
-              </div>
-            </>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+              {eventsTrending.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
           )}
         </SectionContainer>
       </main>
