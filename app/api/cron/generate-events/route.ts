@@ -49,9 +49,9 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10) || 50));
-    const maxPerCategory = Math.min(10, Math.max(1, parseInt(searchParams.get("maxPerCategory") ?? "3", 10) || 3));
-    const maxTotal = Math.min(30, Math.max(1, parseInt(searchParams.get("maxTotal") ?? "15", 10) || 15));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "80", 10) || 80));
+    const maxPerCategory = Math.min(15, Math.max(1, parseInt(searchParams.get("maxPerCategory") ?? "8", 10) || 8));
+    const maxTotal = Math.min(80, Math.max(1, parseInt(searchParams.get("maxTotal") ?? "40", 10) || 40));
 
     const result = await runPipeline(prisma, {
       limit,

@@ -91,7 +91,7 @@ export async function generateEventsFromCandidates(
 
   // Candidati già ordinati per score da verifyCandidates; limitiamo quanti processare per non eccedere
   // un ragionevole numero di chiamate (maxTotal o un limite implicito da cap categoria).
-  const maxTotal = opts.maxTotal ?? 20; // limite sensato per una run
+  const maxTotal = opts.maxTotal ?? 50; // limite sensato per una run se non specificato
   const toProcess = selectCandidatesWithCaps(verifiedCandidates, { ...opts, maxTotal });
   const generated: GeneratedEvent[] = [];
 

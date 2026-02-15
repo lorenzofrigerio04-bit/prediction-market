@@ -26,9 +26,9 @@ export type PipelineResult = {
   createResult: CreateEventsResult;
 };
 
-const DEFAULT_LIMIT = 50;
-const DEFAULT_MAX_PER_CATEGORY = 3;
-const DEFAULT_MAX_TOTAL = 15;
+const DEFAULT_LIMIT = 80;
+const DEFAULT_MAX_PER_CATEGORY = 8;
+const DEFAULT_MAX_TOTAL = 40;
 
 /**
  * Esegue la pipeline completa: fetch → verify → generate → create.
