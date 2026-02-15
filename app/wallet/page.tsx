@@ -23,7 +23,6 @@ import {
   IconTrendUp,
   IconTrendDown,
   IconTarget,
-  IconShop,
   IconCog,
   IconChat,
 } from "@/components/ui/Icons";
@@ -69,7 +68,7 @@ const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   PREDICTION_LOSS: "Risultato",
   DAILY_BONUS: "Bonus giornaliero",
   MISSION_REWARD: "Missione",
-  SHOP_PURCHASE: "Acquisto shop",
+  SHOP_PURCHASE: "Acquisto", // storico: transazioni shop passate
   ADMIN_ADJUSTMENT: "Aggiustamento Admin",
   REFERRAL_BONUS: "Bonus Referral",
   SPIN_REWARD: "Spin of the Day",
@@ -81,7 +80,7 @@ const TRANSACTION_TYPE_ICONS: Record<string, React.ComponentType<{ className?: s
   PREDICTION_LOSS: IconTrendDown,
   DAILY_BONUS: IconGift,
   MISSION_REWARD: IconTarget,
-  SHOP_PURCHASE: IconShop,
+  SHOP_PURCHASE: IconCurrency, // storico
   ADMIN_ADJUSTMENT: IconCog,
   REFERRAL_BONUS: IconChat,
   SPIN_REWARD: IconSparkles,
@@ -231,7 +230,7 @@ export default function WalletPage() {
         <SectionContainer>
           <h2 className="mb-2 text-ds-label uppercase tracking-wide text-fg-muted">Crediti giocatore</h2>
           <p className="mb-4 text-ds-body-sm text-fg-muted">
-            Il tuo saldo totale. Ogni movimento ha una motivazione (previsioni, bonus, missioni, shop).
+            Il tuo saldo totale. Ogni movimento ha una motivazione (previsioni, bonus, missioni).
           </p>
           <StatCard
             label="Saldo"
@@ -247,7 +246,7 @@ export default function WalletPage() {
         <SectionContainer>
           <h2 className="mb-2 text-ds-label uppercase tracking-wide text-fg-muted">Disponibili</h2>
           <p className="mb-3 text-ds-body-sm text-fg-muted">
-            Crediti utilizzabili subito per fare previsioni o acquisti nello shop. Nessun blocco.
+            Crediti utilizzabili subito per fare previsioni. Nessun blocco.
           </p>
           <div className="pill-credits-neon rounded-2xl p-4">
             <p className="text-2xl font-bold font-numeric text-white md:text-3xl">{formatAmount(stats.credits)}</p>
@@ -274,7 +273,7 @@ export default function WalletPage() {
           />
         </div>
         <p className="mb-8 text-ds-micro text-fg-muted">
-          Guadagni: bonus giornaliero, missioni, vincite previsioni. Spese: scommesse e acquisti shop.
+          Guadagni: bonus giornaliero, missioni, vincite previsioni. Spese: scommesse.
         </p>
 
         {/* 3. Bonus attivi */}

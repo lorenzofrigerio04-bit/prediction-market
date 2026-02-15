@@ -143,21 +143,6 @@ async function main() {
     console.log(`✅ Create ${missions.length} missioni.`);
   }
 
-  // Shop: crea prodotti se non esistono
-  const existingShopItems = await prisma.shopItem.count();
-  if (existingShopItems === 0) {
-    console.log('🛒 Creazione prodotti shop...');
-    const shopItems = [
-      { name: 'Avatar Gold', type: 'COSMETIC', priceCredits: 500, description: 'Avatar esclusivo dorato per il tuo profilo.' },
-      { name: 'Badge Previsionista', type: 'COSMETIC', priceCredits: 300, description: 'Badge speciale da mostrare nei commenti.' },
-      { name: 'Ticket evento premium', type: 'TICKET', priceCredits: 200, description: 'Accesso prioritario a un evento in evidenza.' },
-    ];
-    for (const s of shopItems) {
-      await prisma.shopItem.create({ data: s });
-    }
-    console.log(`✅ Creati ${shopItems.length} prodotti shop.`);
-  }
-
   // Verifica se gli eventi esistono già
   const existingEvents = await prisma.event.count();
   if (existingEvents >= 3) {

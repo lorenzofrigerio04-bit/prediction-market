@@ -213,21 +213,6 @@ model AuditLog {
 }
 
 // ============================================
-// SHOP ITEM MODEL (Negozio crediti)
-// ============================================
-model ShopItem {
-  id            String   @id @default(cuid())
-  name          String
-  type          String   // CREDIT_BUNDLE | COSMETIC | TICKET
-  priceCredits  Int
-  description   String?
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  
-  @@map("shop_items")
-}
-
-// ============================================
 // PREDICTION MODEL
 // ============================================
 model Prediction {

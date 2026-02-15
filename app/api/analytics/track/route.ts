@@ -38,8 +38,6 @@ export async function POST(request: NextRequest) {
       "DAILY_BONUS_CLAIMED",
       "LEADERBOARD_VIEWED",
       "PROFILE_VIEWED",
-      "SHOP_VIEWED",
-      "SHOP_PURCHASED",
     ];
     if (!validEvents.includes(event as AnalyticsEvent)) {
       return NextResponse.json(

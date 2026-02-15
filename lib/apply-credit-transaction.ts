@@ -16,7 +16,7 @@ export interface ApplyCreditTransactionOptions {
 
 /**
  * Applica una transazione crediti: aggiorna user (credits, totalEarned/totalSpent) e crea riga Transaction.
- * Usare sempre questa funzione per ogni movimento crediti (missioni, bonus, previsioni, shop, ecc.).
+ * Usare sempre questa funzione per ogni movimento crediti (missioni, bonus, previsioni, ecc.).
  *
  * @param tx - Prisma client o transaction client (da $transaction)
  * @param userId - ID utente

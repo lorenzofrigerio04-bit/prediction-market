@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   IconBell,
-  IconShop,
   IconChat,
   IconCog,
   IconShield,
@@ -124,7 +123,7 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
         <nav className="flex-1 overflow-y-auto p-4 flex flex-col gap-4" aria-label="Menu utility">
           {isAuthenticated && (
             <>
-              {/* Sezione: Impegnati (missioni, notifiche, shop) — uso meno frequente */}
+              {/* Sezione: Impegnati (missioni, notifiche) — uso meno frequente */}
               <div className="flex flex-col gap-1">
                 <span className="text-ds-micro font-semibold uppercase tracking-label text-fg-muted px-4 py-1">
                   Impegnati
@@ -134,9 +133,6 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
                 </DrawerLink>
                 <DrawerLink href="/notifications" icon={IconBell} active={isActive("/notifications")} onClick={onClose}>
                   Notifiche
-                </DrawerLink>
-                <DrawerLink href="/shop" icon={IconShop} active={isActive("/shop")} onClick={onClose}>
-                  Shop
                 </DrawerLink>
               </div>
 
