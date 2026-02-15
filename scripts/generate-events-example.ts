@@ -1,9 +1,10 @@
 /**
- * Script di test Fase 3: genera eventi da candidati verificati (Fase 1+2).
+ * Script di test Fase 3 + Fase 4: genera eventi da candidati verificati (Fase 1+2).
  * Esegui: npm run generate-events
  * Oppure: npx tsx scripts/generate-events-example.ts [maxEvents]
  *
- * Flusso: fetch trending (Fase 1) -> verify (Fase 2) -> generate (Fase 3).
+ * Flusso: fetch trending (Fase 1) -> verify (Fase 2) -> generate (Fase 3) -> closesAt (Fase 4).
+ * Fase 4: closesAt è calcolato con computeClosesAt (data esplicita vs default per categoria).
  * Richiede OPENAI_API_KEY (o ANTHROPIC_API_KEY se GENERATION_PROVIDER=anthropic).
  * Per test rapidi senza API notizie: usa candidati di esempio come in verify-candidates.
  */
@@ -37,6 +38,14 @@ const SAMPLE_CANDIDATES: NewsCandidate[] = [
     snippet: "Data ufficiale confermata dal Presidente della Repubblica. Quorum richiesto.",
     url: "https://www.governo.it/referendum-22-ottobre",
     sourceName: "Governo italiano",
+    publishedAt: new Date().toISOString(),
+  },
+  // Esempio "senza data" (trend): closesAt = default categoria (es. Intrattenimento 7 giorni)
+  {
+    title: "Il film Dune 3 supererà i 100 milioni di incasso al botteghino italiano?",
+    snippet: "Previsioni degli analisti dopo il lancio del trailer.",
+    url: "https://example.com/dune3-box-office",
+    sourceName: "Cinema News",
     publishedAt: new Date().toISOString(),
   },
 ];

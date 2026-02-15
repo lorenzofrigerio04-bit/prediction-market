@@ -41,6 +41,28 @@ async function main() {
     console.log('✅ Utente admin già esistente:', admin.email);
   }
 
+  // Utente "sistema" per creazione eventi generati (pipeline/cron). Nessun login.
+  const SYSTEM_USER_EMAIL = 'event-generator@system';
+  let systemUser = await prisma.user.findUnique({
+    where: { email: SYSTEM_USER_EMAIL },
+  });
+  if (!systemUser) {
+    console.log('🤖 Creazione utente sistema (event-generator)...');
+    systemUser = await prisma.user.create({
+      data: {
+        email: SYSTEM_USER_EMAIL,
+        name: 'Event Generator (Sistema)',
+        role: 'USER',
+        password: null,
+        credits: 0,
+      },
+    });
+    console.log('✅ Utente sistema creato:', systemUser.email, '| id:', systemUser.id);
+    console.log('   Aggiungi in .env.local: EVENT_GENERATOR_USER_ID=' + systemUser.id);
+  } else {
+    console.log('✅ Utente sistema già esistente:', systemUser.email, '| id:', systemUser.id);
+  }
+
   // Badge: crea se non esistono
   const existingBadges = await prisma.badge.count();
   if (existingBadges === 0) {

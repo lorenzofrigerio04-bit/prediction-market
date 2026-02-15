@@ -16,14 +16,17 @@ const allowedCategoryEnum = z.enum([
   "Intrattenimento",
 ]);
 
-/** Schema per un singolo evento generato (risposta LLM). */
+/** Schema per un singolo evento generato (risposta LLM). closesAt può essere sovrascritto da computeClosesAt (Fase 4). */
 export const generatedEventSchema = z.object({
   title: z.string().min(1, "title obbligatorio"),
   description: z.string().nullable(),
   category: allowedCategoryEnum,
-  closesAt: z.string().min(1, "closesAt obbligatorio"), // ISO 8601
+  closesAt: z.string().min(1, "closesAt obbligatorio"), // ISO 8601 (usato come fallback; computeClosesAt può sovrascrivere)
   resolutionSourceUrl: z.string().url("resolutionSourceUrl deve essere un URL valido"),
   resolutionNotes: z.string().min(1, "resolutionNotes obbligatorie"),
+  // Fase 4: hint opzionali per scadenza variabile (breve vs medio termine)
+  eventDate: z.string().optional().nullable(), // Data dell'evento se nota (ISO 8601); closesAt sarà 1h prima
+  type: z.enum(["shortTerm", "mediumTerm"]).optional().nullable(), // shortTerm 1–7 giorni, mediumTerm 1–4 settimane
 });
 
 /** Schema per la risposta dell'LLM: array di eventi (o oggetto con chiave "events"). */

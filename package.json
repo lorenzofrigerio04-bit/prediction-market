@@ -15,7 +15,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "fetch-trending": "tsx scripts/fetch-trending.ts",
     "verify-candidates": "tsx scripts/verify-candidates-example.ts",
-    "generate-events": "tsx scripts/generate-events-example.ts"
+    "generate-events": "tsx scripts/generate-events-example.ts",
+    "create-events-from-generated": "tsx scripts/create-events-from-generated.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

@@ -69,6 +69,7 @@ Il sistema gestisce automaticamente gli eventi chiusi:
   { "outcome": "YES" | "NO" }
   ```
 - `GET /api/cron/resolve-events` - Endpoint per cron job esterni (richiede `CRON_SECRET`)
+- `GET /api/cron/generate-events` - Pipeline generazione eventi (fetch → verify → generate → create); richiede `CRON_SECRET` o `EVENT_GENERATOR_SECRET`
 
 ### Come Funziona
 
@@ -81,20 +82,13 @@ Il sistema gestisce automaticamente gli eventi chiusi:
 
 ### Configurazione Cron Job (Produzione)
 
-Per chiamare automaticamente la risoluzione ogni minuto:
+- **Risoluzione eventi chiusi**: `GET /api/cron/resolve-events` – richiede header `Authorization: Bearer CRON_SECRET`.
+- **Generazione eventi (pipeline)**: `GET /api/cron/generate-events` – richiede `Authorization: Bearer CRON_SECRET` o `EVENT_GENERATOR_SECRET`. Esegue fetch trending → verifica → generazione LLM → creazione in DB. In `vercel.json` è configurato con schedule `0 8,20 * * *` (due run al giorno alle 08:00 e 20:00 UTC).
+
+Variabili d’ambiente e flusso dettagliato: **[docs/PIPELINE_CRON.md](docs/PIPELINE_CRON.md)**.
 
 ```bash
-# Vercel Cron
-# vercel.json
-{
-  "crons": [{
-    "path": "/api/cron/resolve-events",
-    "schedule": "*/1 * * * *"
-  }]
-}
-
-# GitHub Actions / Altri servizi
-# Chiama GET /api/cron/resolve-events con header:
+# GitHub Actions / Altri servizi: chiama con header
 # Authorization: Bearer YOUR_CRON_SECRET
 ```
 

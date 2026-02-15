@@ -7,7 +7,11 @@ import { SYSTEM_PROMPT, buildUserPrompt } from "./prompts";
 import { parseGeneratedEvents } from "./schema";
 import type { GenerationConfig } from "./config";
 import type { GeneratedEvent } from "./types";
+import type { ClosureHint } from "./closes-at";
 import type { VerifiedCandidate } from "../event-verification/types";
+
+/** Evento generato con hint opzionali per computeClosesAt (Fase 4). */
+export type GeneratedEventWithClosureHints = GeneratedEvent & ClosureHint;
 
 /** Estrae JSON dalla risposta (rimuove eventuali markdown code block). */
 function extractJsonFromResponse(content: string): unknown {
@@ -19,13 +23,14 @@ function extractJsonFromResponse(content: string): unknown {
 
 /**
  * Genera un evento da un singolo candidato verificato usando OpenAI.
- * Ritorna il primo evento valido dall'array restituito dall'LLM (uno candidato → un evento).
+ * Ritorna il primo evento valido dall'array restituito dall'LLM (uno candidato → un evento),
+ * con eventuali eventDate/type per computeClosesAt (Fase 4).
  */
 export async function generateEventWithOpenAI(
   client: OpenAI,
   candidate: VerifiedCandidate,
   config: { model: string; maxRetries: number }
-): Promise<GeneratedEvent | null> {
+): Promise<GeneratedEventWithClosureHints | null> {
   const userPrompt = buildUserPrompt({
     title: candidate.title,
     snippet: candidate.snippet ?? "",
@@ -65,6 +70,8 @@ export async function generateEventWithOpenAI(
         closesAt: first.closesAt,
         resolutionSourceUrl: first.resolutionSourceUrl,
         resolutionNotes: first.resolutionNotes,
+        eventDate: first.eventDate ?? null,
+        type: first.type ?? null,
       };
     } catch (e) {
       lastError = e instanceof Error ? e : new Error(String(e));

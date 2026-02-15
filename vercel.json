@@ -3,9 +3,7 @@
   "framework": "nextjs",
   "installCommand": "npm install",
   "crons": [
-    {
-      "path": "/api/cron/resolve-events",
-      "schedule": "0 0 * * *"
-    }
+    { "path": "/api/cron/resolve-events", "schedule": "0 0 * * *" },
+    { "path": "/api/cron/generate-events", "schedule": "0 8,20 * * *" }
   ]
 }

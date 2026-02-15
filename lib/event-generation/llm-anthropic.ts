@@ -6,7 +6,11 @@ import Anthropic from "@anthropic-ai/sdk";
 import { SYSTEM_PROMPT, buildUserPrompt } from "./prompts";
 import { parseGeneratedEvents } from "./schema";
 import type { GeneratedEvent } from "./types";
+import type { ClosureHint } from "./closes-at";
 import type { VerifiedCandidate } from "../event-verification/types";
+
+/** Evento generato con hint opzionali per computeClosesAt (Fase 4). */
+export type GeneratedEventWithClosureHints = GeneratedEvent & ClosureHint;
 
 function extractJsonFromResponse(content: string): unknown {
   const trimmed = content.trim();
@@ -18,7 +22,7 @@ export async function generateEventWithAnthropic(
   client: Anthropic,
   candidate: VerifiedCandidate,
   config: { model: string; maxRetries: number }
-): Promise<GeneratedEvent | null> {
+): Promise<GeneratedEventWithClosureHints | null> {
   const userPrompt = buildUserPrompt({
     title: candidate.title,
     snippet: candidate.snippet ?? "",
@@ -57,6 +61,8 @@ export async function generateEventWithAnthropic(
         closesAt: first.closesAt,
         resolutionSourceUrl: first.resolutionSourceUrl,
         resolutionNotes: first.resolutionNotes,
+        eventDate: first.eventDate ?? null,
+        type: first.type ?? null,
       };
     } catch (e) {
       lastError = e instanceof Error ? e : new Error(String(e));

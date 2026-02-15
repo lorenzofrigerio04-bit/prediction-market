@@ -11,6 +11,7 @@ import type { GeneratedEvent, GenerateEventsOptions } from "./types";
 import { getGenerationConfigFromEnv, getApiKeyForProvider } from "./config";
 import { generateEventWithOpenAI } from "./llm-openai";
 import { generateEventWithAnthropic } from "./llm-anthropic";
+import { computeClosesAt } from "./closes-at";
 
 const DEFAULT_MAX_PER_CATEGORY = 3;
 
@@ -106,26 +107,58 @@ export async function generateEventsFromCandidates(
     const client = new OpenAI({ apiKey, httpAgent });
     for (const candidate of toProcess) {
       try {
-        const event = await generateEventWithOpenAI(client, candidate, {
+        const raw = await generateEventWithOpenAI(client, candidate, {
           model: config.model,
           maxRetries: config.maxRetries,
         });
-        if (event) generated.push(event);
+        if (raw) {
+          const closesAt = computeClosesAt(candidate, raw, raw.category);
+          generated.push({
+            title: raw.title,
+            description: raw.description,
+            category: raw.category,
+            closesAt,
+            resolutionSourceUrl: raw.resolutionSourceUrl,
+            resolutionNotes: raw.resolutionNotes,
+          });
+        }
       } catch (err) {
+        const isSSL =
+          (typeof err === "object" && err !== null && (err as NodeJS.ErrnoException).code === "UNABLE_TO_GET_ISSUER_CERT_LOCALLY") ||
+          (err instanceof Error && /UNABLE_TO_GET_ISSUER_CERT_LOCALLY/.test(String(err)));
         console.warn(`Generazione saltata per "${candidate.title.slice(0, 50)}...":`, err);
+        if (isSSL && process.env.NODE_ENV !== "production") {
+          console.warn("💡 Per reti aziendali/VPN imposta in .env.local: GENERATION_INSECURE_SSL=1");
+        }
       }
     }
   } else if (config.provider === "anthropic") {
     const client = new Anthropic({ apiKey });
     for (const candidate of toProcess) {
       try {
-        const event = await generateEventWithAnthropic(client, candidate, {
+        const raw = await generateEventWithAnthropic(client, candidate, {
           model: config.model,
           maxRetries: config.maxRetries,
         });
-        if (event) generated.push(event);
+        if (raw) {
+          const closesAt = computeClosesAt(candidate, raw, raw.category);
+          generated.push({
+            title: raw.title,
+            description: raw.description,
+            category: raw.category,
+            closesAt,
+            resolutionSourceUrl: raw.resolutionSourceUrl,
+            resolutionNotes: raw.resolutionNotes,
+          });
+        }
       } catch (err) {
+        const isSSL =
+          (typeof err === "object" && err !== null && (err as NodeJS.ErrnoException).code === "UNABLE_TO_GET_ISSUER_CERT_LOCALLY") ||
+          (err instanceof Error && /UNABLE_TO_GET_ISSUER_CERT_LOCALLY/.test(String(err)));
         console.warn(`Generazione saltata per "${candidate.title.slice(0, 50)}...":`, err);
+        if (isSSL && process.env.NODE_ENV !== "production") {
+          console.warn("💡 Per reti aziendali/VPN imposta in .env.local: GENERATION_INSECURE_SSL=1");
+        }
       }
     }
   } else {
