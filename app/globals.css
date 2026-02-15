@@ -725,11 +725,11 @@ textarea:focus-visible {
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-radius: 1.5rem;
-  border: 1px solid rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(var(--primary) / 0.25);
   box-shadow:
-    0 0 0 1px rgb(255 255 255 / 0.03) inset,
-    0 0 32px -8px rgb(var(--primary-glow) / 0.2),
-    0 24px 48px -24px rgb(0 0 0 / 0.4);
+    0 0 0 1px rgb(255 255 255 / 0.5) inset,
+    0 0 28px -6px rgb(var(--primary-glow) / 0.35),
+    0 20px 40px -20px rgb(0 0 0 / 0.15);
   overflow: hidden;
 }
 .card-neon-glass::before {
@@ -740,10 +740,10 @@ textarea:focus-visible {
   padding: 1px;
   background: linear-gradient(
     135deg,
-    rgb(var(--primary) / 0.5) 0%,
-    rgb(139 92 246 / 0.35) 25%,
-    rgb(14 165 233 / 0.25) 50%,
-    rgb(var(--primary) / 0.4) 100%
+    rgb(var(--primary) / 0.6) 0%,
+    rgb(139 92 246 / 0.45) 25%,
+    rgb(14 165 233 / 0.35) 50%,
+    rgb(var(--primary) / 0.5) 100%
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -787,16 +787,16 @@ textarea:focus-visible {
 .box-neon-soft {
   background: linear-gradient(
     135deg,
-    rgb(var(--surface) / 0.15) 0%,
-    rgb(var(--surface) / 0.08) 100%
+    rgb(var(--surface) / 0.2) 0%,
+    rgb(var(--surface) / 0.1) 100%
   );
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(var(--primary) / 0.2);
   border-radius: 1rem;
   box-shadow:
-    0 0 0 1px rgb(255 255 255 / 0.02) inset,
-    0 0 24px -8px rgb(var(--primary-glow) / 0.12);
+    0 0 0 1px rgb(255 255 255 / 0.3) inset,
+    0 0 20px -6px rgb(var(--primary-glow) / 0.2);
 }
 .dark .box-neon-soft {
   background: linear-gradient(
@@ -814,12 +814,12 @@ textarea:focus-visible {
 .stat-neon-mini {
   background: linear-gradient(
     180deg,
-    rgb(var(--surface) / 0.2) 0%,
-    rgb(var(--surface) / 0.1) 100%
+    rgb(var(--surface) / 0.25) 0%,
+    rgb(var(--surface) / 0.12) 100%
   );
-  border: 1px solid rgb(255 255 255 / 0.06);
+  border: 1px solid rgb(var(--primary) / 0.18);
   border-radius: 1rem;
-  box-shadow: 0 0 16px -6px rgb(var(--primary-glow) / 0.1);
+  box-shadow: 0 0 14px -6px rgb(var(--primary-glow) / 0.18);
 }
 .dark .stat-neon-mini {
   background: linear-gradient(
