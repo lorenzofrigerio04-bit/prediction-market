@@ -1,13 +1,13 @@
 import type { NewsCandidate } from "./types";
 import { getConfigFromEnv } from "./types";
-import { fetchNewsApiCandidates } from "./news";
+import { fetchNewsApiAiCandidates } from "./newsapi-ai";
 
 /** Cache in-memory (stateless per request; condivisa solo nello stesso processo) */
 let cache: { at: number; data: NewsCandidate[] } | null = null;
 
 /**
  * Recupera candidati da tutte le fonti configurate, normalizzati e filtrati.
- * Usabile dal pipeline (cron, route, script) senza toccare il DB.
+ * Usa NewsAPI.ai (Event Registry): piano free 2000 ricerche, 100 articoli/ricerca, produzione consentita.
  *
  * @param limit - Numero massimo di candidati da restituire (default 50)
  * @returns Array di candidati ordinati per publishedAt (più recenti prima)
@@ -24,8 +24,11 @@ export async function fetchTrendingCandidates(
 
   const all: NewsCandidate[] = [];
 
-  // News API (sempre tentata se chiave presente)
-  const newsCandidates = await fetchNewsApiCandidates(Math.ceil(limit * 1.2), config);
+  // NewsAPI.ai (Event Registry) – chiave NEWS_API_KEY
+  const newsCandidates = await fetchNewsApiAiCandidates(
+    Math.min(Math.ceil(limit * 1.2), 100),
+    config
+  );
   all.push(...newsCandidates);
 
   // Altre fonti (GNews, RSS, Reddit) si aggiungono qui in futuro con stesso formato
