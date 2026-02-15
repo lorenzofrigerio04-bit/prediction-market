@@ -14,7 +14,7 @@ dotenv.config({ path: ".env.local", override: true });
 
 import { PrismaClient } from "@prisma/client";
 import { createEventsFromGenerated } from "../lib/event-generation";
-import type { GeneratedEvent } from "../lib/event-generation";
+import type { GeneratedEvent, AllowedCategory } from "../lib/event-generation";
 import { parseOutcomeDateFromText } from "../lib/event-generation/closes-at";
 import { getClosureRules } from "../lib/event-generation/config";
 
@@ -48,7 +48,7 @@ function computeClosesAtIso(title: string, description: string, category: string
 const SAMPLE_DEFS: Array<{
   title: string;
   description: string;
-  category: string;
+  category: AllowedCategory;
   resolutionSourceUrl: string;
   resolutionNotes: string;
 }> = [
@@ -72,7 +72,11 @@ const SAMPLE_DEFS: Array<{
 ];
 
 const SAMPLE_EVENTS: GeneratedEvent[] = SAMPLE_DEFS.map((def) => ({
-  ...def,
+  title: def.title,
+  description: def.description,
+  category: def.category as AllowedCategory,
+  resolutionSourceUrl: def.resolutionSourceUrl,
+  resolutionNotes: def.resolutionNotes,
   closesAt: computeClosesAtIso(def.title, def.description, def.category),
 }));
 
