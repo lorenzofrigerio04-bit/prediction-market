@@ -117,16 +117,31 @@ export async function fetchNewsApiCandidates(
       maxRetries: cfg.maxRetries,
     });
 
+    const rawBody = await res.text();
+    let data: NewsApiResponse;
+    try {
+      data = JSON.parse(rawBody) as NewsApiResponse;
+    } catch {
+      console.error("[event-sources/news] News API risposta non JSON:", rawBody.slice(0, 200));
+      return [];
+    }
+
     if (!res.ok) {
+      const errMsg = (data as { message?: string }).message ?? rawBody.slice(0, 300);
       console.error(
-        `[event-sources/news] News API error: ${res.status} ${res.statusText}`
+        `[event-sources/news] News API HTTP ${res.status}: ${errMsg}`
       );
       return [];
     }
 
-    const data = (await res.json()) as NewsApiResponse;
     if (data.status !== "ok" || !Array.isArray(data.articles)) {
-      console.warn("[event-sources/news] News API risposta inattesa:", data.status);
+      const code = (data as { code?: string }).code;
+      console.warn(
+        "[event-sources/news] News API risposta inattesa:",
+        data.status,
+        code ? `code=${code}` : "",
+        (data as { message?: string }).message ?? ""
+      );
       return [];
     }
 
@@ -136,6 +151,23 @@ export async function fetchNewsApiCandidates(
       if (c) candidates.push(c);
       if (candidates.length >= limit) break;
     }
+
+    if (candidates.length === 0 && data.articles.length > 0) {
+      console.warn(
+        `[event-sources/news] News API ha restituito ${data.articles.length} articoli ma 0 passano i filtri (maxAge=${cfg.maxAgeHours}h, blacklist). Prova EVENT_SOURCES_MAX_AGE_HOURS=168`
+      );
+    } else if (data.articles.length === 0) {
+      console.warn(
+        "[event-sources/news] News API totalResults=",
+        data.totalResults ?? 0,
+        "- nessun articolo nel periodo. Piano free ha ritardo 24h; prova EVENT_SOURCES_MAX_AGE_HOURS=168"
+      );
+    } else {
+      console.info(
+        `[event-sources/news] News API: ${data.articles.length} articoli, ${candidates.length} candidati dopo filtri`
+      );
+    }
+
     return candidates;
   } catch (err) {
     console.error("[event-sources/news] News API fetch failed:", err);
