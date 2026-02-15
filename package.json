@@ -12,7 +12,8 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "fetch-trending": "tsx scripts/fetch-trending.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -27,6 +28,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "dotenv": "^16.4.5",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.14.0",
     "@types/react": "^18.3.0",
