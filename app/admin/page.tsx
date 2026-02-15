@@ -50,6 +50,8 @@ export default function AdminDashboard() {
     total: 0,
     totalPages: 0,
   });
+  const [simulateLoading, setSimulateLoading] = useState(false);
+  const [simulateResult, setSimulateResult] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     fetchEvents();
@@ -110,6 +112,23 @@ export default function AdminDashboard() {
     }
   };
 
+  const runSimulatedActivity = async () => {
+    setSimulateLoading(true);
+    setSimulateResult(null);
+    try {
+      const res = await fetch("/api/admin/run-simulated-activity", { method: "POST" });
+      const data = await res.json();
+      setSimulateResult(data);
+      if (res.ok && data.ok) {
+        fetchEvents();
+      }
+    } catch (e) {
+      setSimulateResult({ error: String(e) });
+    } finally {
+      setSimulateLoading(false);
+    }
+  };
+
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
       Sport: "bg-green-100 text-green-800",
@@ -140,6 +159,27 @@ export default function AdminDashboard() {
           >
             + Crea Evento
           </Link>
+        </div>
+
+        {/* Simulazione bot */}
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <h2 className="text-lg font-semibold text-amber-900 mb-2">Simulazione bot</h2>
+          <p className="text-sm text-amber-800 mb-3">
+            Esegui subito una run di attività simulata (previsioni, commenti, reazioni, follow dai bot).
+            Richiede <code className="bg-amber-100 px-1 rounded">ENABLE_SIMULATED_ACTIVITY=true</code> in produzione.
+          </p>
+          <button
+            onClick={runSimulatedActivity}
+            disabled={simulateLoading}
+            className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 disabled:opacity-50 font-medium"
+          >
+            {simulateLoading ? "Esecuzione..." : "Esegui attività simulata ora"}
+          </button>
+          {simulateResult && (
+            <pre className="mt-3 p-3 bg-white rounded text-xs overflow-auto max-h-40">
+              {JSON.stringify(simulateResult, null, 2)}
+            </pre>
+          )}
         </div>
 
         {/* Status Filters */}
