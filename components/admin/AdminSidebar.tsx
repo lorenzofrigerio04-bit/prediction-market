@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/admin", label: "Eventi", icon: "📋" },
+  { href: "/admin/resolve", label: "Risoluzione eventi", icon: "✅" },
   { href: "/admin/simulate", label: "Simulazione bot", icon: "🤖" },
   { href: "/admin/users", label: "Utenti", icon: "👤" },
   { href: "/admin/moderation", label: "Moderazione", icon: "💬" },
@@ -32,7 +33,7 @@ export default function AdminSidebar() {
         {navItems.map((item) => {
           const isActive =
             item.href === "/admin"
-              ? pathname === "/admin" || pathname.startsWith("/admin/events")
+              ? pathname === "/admin" || (pathname.startsWith("/admin/events") && !pathname.startsWith("/admin/resolve"))
               : pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link

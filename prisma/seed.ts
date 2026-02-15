@@ -1,8 +1,43 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { DEFAULT_BADGES } from '../lib/badges';
+import { parseOutcomeDateFromText } from '../lib/event-generation/closes-at';
+import { getClosureRules } from '../lib/event-generation/config';
 
 const prisma = new PrismaClient();
+
+/**
+ * Calcola closesAt coerente con la data esito dell'evento (titolo + descrizione).
+ * Se nel testo c'è una data esito (es. "fine 2025", "entro 6 mesi"), closesAt = data esito - ore prima.
+ * Altrimenti usa il default per categoria (giorni) in modo deterministico, non random.
+ */
+function computeClosesAtFromText(
+  title: string,
+  description: string,
+  category: string
+): Date {
+  const text = `${title} ${description}`.trim();
+  const outcomeDate = parseOutcomeDateFromText(text);
+  const rules = getClosureRules();
+  const now = new Date();
+
+  if (outcomeDate && outcomeDate.getTime() > now.getTime()) {
+    const closeAt = new Date(
+      outcomeDate.getTime() - rules.hoursBeforeEvent * 60 * 60 * 1000
+    );
+    const minClose = new Date(
+      now.getTime() + rules.minHoursFromNow * 60 * 60 * 1000
+    );
+    return closeAt.getTime() >= minClose.getTime() ? closeAt : minClose;
+  }
+
+  const defaultDays =
+    (rules.defaultDaysByCategory as Record<string, number>)[category] ??
+    rules.mediumTermDays;
+  return new Date(
+    now.getTime() + defaultDays * 24 * 60 * 60 * 1000
+  );
+}
 
 // Credenziali admin (cambia in produzione! vedi DEPLOY_AND_BETA.md Fase 6)
 const ADMIN_EMAIL = 'admin@predictionmarket.it';
@@ -130,35 +165,39 @@ async function main() {
     return;
   }
 
-  // Crea 3 eventi generici
-  const now = new Date();
-  
-  const events = [
+  // Crea 3 eventi con scadenza coerente alla data esito (titolo/descrizione)
+  const eventDefs = [
     {
       title: 'La Juventus vincerà il prossimo campionato di Serie A?',
-      description: 'Previsione sul risultato del campionato italiano di calcio 2024-2025. La Juventus riuscirà a vincere lo scudetto?',
+      description:
+        'Previsione sul risultato del campionato italiano di calcio 2024-2025. La Juventus riuscirà a vincere lo scudetto? Esito verificabile a fine maggio 2025.',
       category: 'Sport',
-      closesAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), // tra 7 giorni
     },
     {
       title: 'Il prezzo del Bitcoin supererà i 100.000$ entro fine anno?',
-      description: 'Previsione sul valore della criptovaluta più famosa. Riuscirà il Bitcoin a raggiungere e superare la soglia dei 100.000 dollari entro il 31 dicembre 2024?',
+      description:
+        'Previsione sul valore della criptovaluta. Riuscirà il Bitcoin a superare i 100.000 dollari entro la fine del 2025? Fonte: exchange principali.',
       category: 'Tecnologia',
-      closesAt: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000), // tra 14 giorni
     },
     {
       title: 'Ci sarà un nuovo governo entro 6 mesi?',
-      description: 'Previsione politica sulla stabilità del governo italiano. Ci sarà un cambio di governo o nuove elezioni nei prossimi 6 mesi?',
+      description:
+        'Previsione politica sulla stabilità del governo italiano. Ci sarà un cambio di governo o nuove elezioni entro 6 mesi?',
       category: 'Politica',
-      closesAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000), // tra 30 giorni
     },
   ];
 
-  console.log('📅 Creazione eventi...');
-  for (const eventData of events) {
+  console.log('📅 Creazione eventi (scadenza coerente con data esito)...');
+  for (const def of eventDefs) {
+    const closesAt = computeClosesAtFromText(def.title, def.description, def.category);
     const event = await prisma.event.create({
       data: {
-        ...eventData,
+        title: def.title,
+        description: def.description,
+        category: def.category,
+        closesAt,
+        resolutionSourceUrl: 'https://example.com/source',
+        resolutionNotes: 'Risoluzione secondo fonte ufficiale alla data di chiusura.',
         createdById: admin.id,
       },
     });

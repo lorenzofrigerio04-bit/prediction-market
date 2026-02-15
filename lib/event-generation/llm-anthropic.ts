@@ -3,7 +3,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
-import { SYSTEM_PROMPT, buildUserPrompt } from "./prompts";
+import { getSystemPrompt, buildUserPrompt } from "./prompts";
 import { parseGeneratedEvents } from "./schema";
 import type { GeneratedEvent } from "./types";
 import type { ClosureHint } from "./closes-at";
@@ -36,7 +36,7 @@ export async function generateEventWithAnthropic(
       const message = await client.messages.create({
         model: config.model,
         max_tokens: 1024,
-        system: SYSTEM_PROMPT,
+        system: getSystemPrompt(),
         messages: [{ role: "user", content: userPrompt }],
       });
 

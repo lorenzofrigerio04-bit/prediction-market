@@ -34,12 +34,18 @@ function isAuthorized(request: NextRequest): { ok: true } | { ok: false; status:
   return { ok: true };
 }
 
+/** Obiettivo: numero di eventi aperti (closesAt nel futuro, non risolti) da mantenere. Default 20. */
+const DEFAULT_TARGET_OPEN_EVENTS = 20;
+/** Massimo eventi da generare in una singola run (evita run troppo lunghe). */
+const DEFAULT_MAX_PER_RUN = 15;
+
 /**
  * GET /api/cron/generate-events
- * Esegue la pipeline end-to-end: fetch trending → verify → generate (LLM) → create in DB.
+ * Mantiene sempre almeno TARGET_OPEN_EVENTS eventi aperti: conta gli eventi aperti, se sotto soglia
+ * esegue la pipeline per generarne di nuovi (fino a maxPerRun per run).
  * Protetto da CRON_SECRET o EVENT_GENERATOR_SECRET (Authorization: Bearer <secret>).
- * Query: limit (optional), maxPerCategory (optional), maxTotal (optional).
- * Risposta: metriche (candidatesCount, verifiedCount, generatedCount, created, skipped, errors, eventIds).
+ * Query: limit, maxPerCategory, maxTotal (opzionali; se non passati si usano target e maxPerRun).
+ * Risposta: metriche (openCount, target, needToGenerate, candidatesCount, created, eventIds, ...).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -48,20 +54,71 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(auth.body, { status: auth.status });
     }
 
+    const now = new Date();
+    const targetOpenEvents =
+      parseInt(process.env.TARGET_OPEN_EVENTS ?? "", 10) || DEFAULT_TARGET_OPEN_EVENTS;
+    const maxPerRun =
+      parseInt(process.env.GENERATE_EVENTS_MAX_PER_RUN ?? "", 10) || DEFAULT_MAX_PER_RUN;
+
+    const openCount = await prisma.event.count({
+      where: {
+        resolved: false,
+        closesAt: { gt: now },
+      },
+    });
+
+    const needToGenerate = Math.max(0, Math.min(targetOpenEvents - openCount, maxPerRun));
+
     const { searchParams } = new URL(request.url);
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "80", 10) || 80));
-    const maxPerCategory = Math.min(15, Math.max(1, parseInt(searchParams.get("maxPerCategory") ?? "8", 10) || 8));
-    const maxTotal = Math.min(80, Math.max(1, parseInt(searchParams.get("maxTotal") ?? "40", 10) || 40));
+    const limitParam = searchParams.get("limit");
+    const maxTotalParam = searchParams.get("maxTotal");
+
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt(limitParam ?? "80", 10) || 80)
+    );
+    const maxPerCategory = Math.min(
+      15,
+      Math.max(1, parseInt(searchParams.get("maxPerCategory") ?? "8", 10) || 8)
+    );
+    const maxTotal =
+      maxTotalParam !== null && maxTotalParam !== ""
+        ? Math.min(80, Math.max(1, parseInt(maxTotalParam, 10) || needToGenerate))
+        : needToGenerate;
+
+    if (needToGenerate <= 0) {
+      return NextResponse.json({
+        success: true,
+        timestamp: now.toISOString(),
+        openCount,
+        target: targetOpenEvents,
+        needToGenerate: 0,
+        message: "Eventi aperti sufficienti, nessuna generazione.",
+        candidatesCount: 0,
+        verifiedCount: 0,
+        generatedCount: 0,
+        created: 0,
+        skipped: 0,
+        errors: [],
+        eventIds: [],
+      });
+    }
 
     const result = await runPipeline(prisma, {
       limit,
-      generation: { maxPerCategory, maxTotal, maxRetries: 2 },
+      generation: {
+        maxPerCategory,
+        maxTotal,
+        maxRetries: 2,
+      },
     });
 
     const { candidatesCount, verifiedCount, generatedCount, createResult } = result;
 
-    // Log metriche per monitoraggio (opzionale)
     console.log("[cron/generate-events]", {
+      openCount,
+      target: targetOpenEvents,
+      needToGenerate,
       candidates: candidatesCount,
       verified: verifiedCount,
       generated: generatedCount,
@@ -73,6 +130,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
+      openCount,
+      target: targetOpenEvents,
+      needToGenerate,
       candidatesCount,
       verifiedCount,
       generatedCount,

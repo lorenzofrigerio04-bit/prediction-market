@@ -34,6 +34,8 @@ export type ClosureRulesConfig = {
   shortTermDays: number;
   /** Giorni per tipo mediumTerm (usato se l'LLM restituisce type: "mediumTerm" e non c'è data). */
   mediumTermDays: number;
+  /** Orizzonte massimo: se la data esito è oltre questo numero di giorni da ora, l'evento viene rifiutato (es. 730 = 2 anni). */
+  maxHorizonDays: number;
 };
 
 export const DEFAULT_CLOSURE_RULES: ClosureRulesConfig = {
@@ -41,6 +43,7 @@ export const DEFAULT_CLOSURE_RULES: ClosureRulesConfig = {
   hoursBeforeEvent: 1,
   shortTermDays: 7,
   mediumTermDays: 21,
+  maxHorizonDays: 730, // 2 anni: eventi con esito oltre 2 anni vengono rifiutati
   defaultDaysByCategory: {
     Sport: 7,
     Politica: 7,
@@ -55,11 +58,15 @@ export const DEFAULT_CLOSURE_RULES: ClosureRulesConfig = {
 /** Restituisce le regole di chiusura (da env opzionale o default). */
 export function getClosureRules(overrides?: Partial<ClosureRulesConfig>): ClosureRulesConfig {
   const minHours = parseInt(process.env.CLOSURE_MIN_HOURS ?? "", 10) || DEFAULT_CLOSURE_RULES.minHoursFromNow;
-  const hoursBefore = parseInt(process.env.CLOSURE_HOURS_BEFORE_EVENT ?? "", 10) ?? DEFAULT_CLOSURE_RULES.hoursBeforeEvent;
+  const hoursBefore =
+    parseInt(process.env.CLOSURE_HOURS_BEFORE_EVENT ?? "", 10) ||
+    DEFAULT_CLOSURE_RULES.hoursBeforeEvent;
+  const maxHorizon = parseInt(process.env.CLOSURE_MAX_HORIZON_DAYS ?? "", 10) || DEFAULT_CLOSURE_RULES.maxHorizonDays;
   return {
     ...DEFAULT_CLOSURE_RULES,
     minHoursFromNow: minHours,
     hoursBeforeEvent: hoursBefore,
+    maxHorizonDays: maxHorizon,
     ...overrides,
   };
 }

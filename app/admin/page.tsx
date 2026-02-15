@@ -36,7 +36,7 @@ interface EventsResponse {
   };
 }
 
-type StatusFilter = "all" | "pending" | "resolved";
+type StatusFilter = "all" | "pending" | "pending_resolution" | "resolved";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -50,12 +50,22 @@ export default function AdminDashboard() {
     total: 0,
     totalPages: 0,
   });
+  const [pendingResolutionCount, setPendingResolutionCount] = useState(0);
   const [simulateLoading, setSimulateLoading] = useState(false);
   const [simulateResult, setSimulateResult] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     fetchEvents();
   }, [statusFilter, page]);
+
+  useEffect(() => {
+    fetch("/api/admin/events?status=pending_resolution&limit=1")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.pagination?.total != null) setPendingResolutionCount(data.pagination.total);
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -106,6 +116,12 @@ export default function AdminDashboard() {
 
       alert("Evento risolto con successo!");
       fetchEvents();
+      fetch("/api/admin/events?status=pending_resolution&limit=1")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data?.pagination?.total != null) setPendingResolutionCount(data.pagination.total);
+        })
+        .catch(() => {});
     } catch (error) {
       console.error("Error resolving event:", error);
       alert("Errore nella risoluzione dell'evento");
@@ -161,8 +177,24 @@ export default function AdminDashboard() {
           </Link>
         </div>
 
+        {/* Banner eventi da risolvere */}
+        {pendingResolutionCount > 0 && (
+          <div className="mb-6 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+            <p className="text-amber-800 dark:text-amber-200 font-medium">
+              Hai {pendingResolutionCount} evento{pendingResolutionCount !== 1 ? "i" : ""} chiusi in attesa di risoluzione.
+              Verifica l&apos;esito dalla fonte e imposta SÌ/NO per accreditare i payout.
+            </p>
+            <Link
+              href="/admin/resolve"
+              className="mt-2 inline-block text-amber-700 dark:text-amber-300 hover:underline font-semibold"
+            >
+              Vai alla Risoluzione eventi →
+            </Link>
+          </div>
+        )}
+
         {/* Simulazione bot */}
-        <div className="mb-6 p-4 bg-white rounded-lg shadow border border-gray-200">
+        <div className="mb-6 p-4 bg-white rounded-lg shadow border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">Simulazione bot</h2>
           <p className="text-sm text-gray-600 mb-3">
             Esegui subito una run di attività simulata (previsioni, commenti, reazioni, follow dai bot).
@@ -188,7 +220,8 @@ export default function AdminDashboard() {
             <span className="text-sm font-medium text-gray-700">Filtri:</span>
             {[
               { id: "all" as StatusFilter, label: "Tutti" },
-              { id: "pending" as StatusFilter, label: "Da risolvere" },
+              { id: "pending" as StatusFilter, label: "Aperti" },
+              { id: "pending_resolution" as StatusFilter, label: "Da risolvere (scaduti)" },
               { id: "resolved" as StatusFilter, label: "Risolti" },
             ].map((btn) => (
               <button

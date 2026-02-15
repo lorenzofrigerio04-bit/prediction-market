@@ -3,8 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 /**
- * Endpoint per cron job che processa automaticamente gli eventi chiusi.
- * Chiamato da Vercel Cron (vedi vercel.json) o da un cron esterno.
+ * Endpoint per cron job: segnala gli eventi chiusi in attesa di risoluzione.
+ * Non imposta l'esito (va verificato dalla fonte e impostato da Admin → Risoluzione).
+ * Risposta: pendingResolutionCount, pendingResolutionIds, pendingResolution.
  * Richiede: GET + header Authorization: Bearer <CRON_SECRET>
  */
 export async function GET(request: NextRequest) {

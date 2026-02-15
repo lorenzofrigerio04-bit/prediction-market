@@ -1409,3 +1409,72 @@ textarea:focus-visible {
 .dark .input-neon-focus:focus {
   box-shadow: 0 0 0 2px rgb(var(--primary) / 0.3), 0 0 24px -6px rgb(var(--primary-glow) / 0.3);
 }
+
+/* —— Header e bottom nav: stesso mood neon/glass —— */
+.header-neon {
+  background: linear-gradient(180deg, rgb(var(--surface) / 0.88) 0%, rgb(var(--surface) / 0.72) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgb(var(--primary) / 0.2);
+  box-shadow:
+    0 4px 24px -8px rgb(0 0 0 / 0.12),
+    0 1px 0 0 rgb(var(--primary) / 0.15);
+}
+.dark .header-neon {
+  background: linear-gradient(180deg, rgb(14 18 28 / 0.94) 0%, rgb(10 14 22 / 0.9) 100%);
+  border-bottom-color: rgb(var(--primary) / 0.25);
+  box-shadow:
+    0 4px 32px -12px rgb(0 0 0 / 0.45),
+    0 1px 0 0 rgb(var(--primary) / 0.22),
+    0 0 48px -20px rgb(var(--primary-glow) / 0.1);
+}
+
+.nav-bottom-neon {
+  border-radius: 1.25rem 1.25rem 0 0;
+  background: linear-gradient(180deg, rgb(var(--surface) / 0.92) 0%, rgb(var(--surface) / 0.78) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgb(var(--primary) / 0.22);
+  border-bottom: none;
+  box-shadow:
+    0 -3px 0 0 rgb(var(--primary) / 0.28),
+    0 -20px 40px -12px rgb(0 0 0 / 0.18),
+    0 0 28px -10px rgb(var(--primary-glow) / 0.08);
+}
+.dark .nav-bottom-neon {
+  background: linear-gradient(180deg, rgb(16 20 32 / 0.96) 0%, rgb(12 16 26 / 0.92) 100%);
+  border-color: rgb(var(--primary) / 0.28);
+  box-shadow:
+    0 -3px 0 0 rgb(var(--primary) / 0.38),
+    0 -28px 48px -16px rgb(0 0 0 / 0.5),
+    0 0 36px -12px rgb(var(--primary-glow) / 0.12),
+    inset 0 1px 0 0 rgb(255 255 255 / 0.04);
+}
+
+.nav-item-neon-active {
+  background: rgb(var(--primary) / 0.18);
+  color: rgb(var(--primary));
+  border: 1px solid rgb(var(--primary) / 0.4);
+  box-shadow: 0 0 20px -6px rgb(var(--primary-glow) / 0.4);
+}
+.dark .nav-item-neon-active {
+  box-shadow: 0 0 24px -6px rgb(var(--primary-glow) / 0.5);
+}
+
+.header-icon-btn {
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 0.75rem;
+  transition: border-color 0.2s, box-shadow 0.2s, color 0.2s;
+}
+.header-icon-btn:hover {
+  border-color: rgb(var(--primary) / 0.4);
+  box-shadow: 0 0 16px -6px rgb(var(--primary-glow) / 0.25);
+  color: rgb(var(--primary));
+}
+.dark .header-icon-btn {
+  border-color: rgb(255 255 255 / 0.06);
+}
+.dark .header-icon-btn:hover {
+  border-color: rgb(var(--primary) / 0.5);
+  box-shadow: 0 0 20px -6px rgb(var(--primary-glow) / 0.35);
+}

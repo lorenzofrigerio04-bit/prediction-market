@@ -9,9 +9,9 @@
 export { generateEventsFromCandidates } from "./generate";
 export { getGenerationConfigFromEnv, getApiKeyForProvider, getClosureRules, DEFAULT_CLOSURE_RULES } from "./config";
 export type { ClosureRulesConfig, ClosureTermType } from "./config";
-export { computeClosesAt, parseExplicitDateFromText } from "./closes-at";
-export type { ClosureHint } from "./closes-at";
-export { buildUserPrompt, SYSTEM_PROMPT } from "./prompts";
+export { computeClosesAt, parseExplicitDateFromText, parseOutcomeDateFromText } from "./closes-at";
+export type { ClosureHint, ClosureResult } from "./closes-at";
+export { buildUserPrompt, getSystemPrompt, getCurrentDateForPrompt, SYSTEM_PROMPT } from "./prompts";
 export { parseGeneratedEvents, validateGeneratedEvent } from "./schema";
 export type { GeneratedEvent, GenerateEventsOptions, AllowedCategory } from "./types";
 export { ALLOWED_CATEGORIES } from "./types";

@@ -47,6 +47,8 @@ export type ValidationResult = { ok: true } | { ok: false; error: string };
 
 /**
  * Valida un singolo evento generato contro il modello Event (stesse regole di POST admin/events).
+ * Gli eventi passati qui provengono da generateEventsFromCandidates, che calcola sempre closesAt
+ * con computeClosesAt (coerenza scadenza scommessa ↔ data esito); non si usa closesAt random.
  */
 export function validateEventPayload(event: GeneratedEvent): ValidationResult {
   if (!event.title || typeof event.title !== "string" || !event.title.trim()) {

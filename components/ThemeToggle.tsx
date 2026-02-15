@@ -42,14 +42,14 @@ export function useTheme() {
   return { theme, setTheme, toggleTheme };
 }
 
-export default function ThemeToggle() {
+export default function ThemeToggle({ className = "" }: { className?: string }) {
   const { theme, toggleTheme } = useTheme();
 
   return (
     <button
       type="button"
       onClick={toggleTheme}
-      className="flex items-center justify-center w-10 h-10 rounded-xl text-fg-muted hover:text-fg hover:bg-surface/50 border border-border dark:border-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+      className={`flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${className}`}
       aria-label={theme === "dark" ? "Attiva tema chiaro" : "Attiva tema scuro"}
     >
       {theme === "dark" ? (

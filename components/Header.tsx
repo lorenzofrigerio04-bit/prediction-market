@@ -39,28 +39,28 @@ export default function Header() {
   return (
     <>
       <header
-        className="sticky top-0 z-40 glass border-b border-border dark:border-white/10 dark:shadow-[0_1px_0_0_rgb(var(--primary)/0.15)]"
+        className="header-neon sticky top-0 z-40"
         style={{ paddingTop: "var(--safe-area-inset-top)" }}
       >
         <div className="mx-auto px-4 max-w-7xl">
           <div className="flex items-center justify-between h-14 md:h-16">
             <Link
               href="/"
-              className="text-ds-h2 font-bold text-fg tracking-headline focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-xl min-h-[44px] flex items-center"
+              className="text-ds-h2 font-bold text-fg tracking-headline focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-xl min-h-[44px] flex items-center dark:drop-shadow-[0_0_20px_rgba(var(--primary-glow),0.15)]"
             >
               Prediction Market
             </Link>
 
-            {/* Desktop: 5 voci principali inline */}
+            {/* Desktop: 5 voci con stile neon */}
             <nav className="hidden md:flex items-center gap-1" aria-label="Menu principale">
               {BOTTOM_NAV_ITEMS.map(({ href, label, Icon }) => (
                 <Link
                   key={href}
                   href={href === "/profile" ? profileHref : href}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-medium transition-colors min-h-[44px] ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px] border ${
                     isActive(href === "/profile" ? profileHref : href)
-                      ? "bg-primary/15 text-primary border border-primary/30 shadow-[0_0_14px_-4px_rgba(var(--primary-glow),0.3)]"
-                      : "text-fg-muted hover:bg-surface/50 hover:text-fg border border-transparent"
+                      ? "nav-item-neon-active"
+                      : "text-fg-muted hover:text-fg border-transparent hover:bg-white/5 dark:hover:bg-white/5 hover:border-primary/20"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -69,12 +69,12 @@ export default function Header() {
               ))}
             </nav>
 
-            <div className="flex items-center gap-1">
-              <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <ThemeToggle className="header-icon-btn min-w-[44px] min-h-[44px] text-fg-muted" />
               <button
                 type="button"
                 onClick={() => setDrawerOpen(true)}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl text-fg-muted hover:bg-surface/50 hover:text-fg transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg touch-manipulation active:scale-[0.98]"
+                className="header-icon-btn min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-fg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg touch-manipulation active:scale-[0.98]"
                 aria-label="Apri menu"
                 aria-expanded={drawerOpen}
               >
@@ -85,13 +85,13 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Bottom nav: solo mobile, 5 voci, accessibili col pollice */}
+      {/* Bottom nav: barra neon/glass con angoli arrotondati */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 glass border-t border-border dark:border-white/10 dark:shadow-[0_-1px_0_0_rgb(var(--primary)/0.12)]"
+        className="nav-bottom-neon md:hidden fixed bottom-0 left-0 right-0 z-40"
         style={{ paddingBottom: "var(--safe-area-inset-bottom)" }}
         aria-label="Navigazione principale"
       >
-        <div className="flex items-center justify-around h-16 px-2">
+        <div className="flex items-center justify-around h-16 px-1">
           {BOTTOM_NAV_ITEMS.map(({ href, label, Icon }) => {
             const linkHref = href === "/profile" ? profileHref : href;
             const active = isActive(linkHref);
@@ -99,8 +99,8 @@ export default function Header() {
               <Link
                 key={href}
                 href={linkHref}
-                className={`${bottomLinkClass} ${
-                  active ? "text-primary bg-primary/15 border border-primary/25 shadow-[0_0_12px_-4px_rgba(var(--primary-glow),0.25)]" : "text-fg-muted hover:text-fg hover:bg-surface/50 border border-transparent"
+                className={`${bottomLinkClass} rounded-xl mx-0.5 border transition-all ${
+                  active ? "nav-item-neon-active" : "text-fg-muted hover:text-fg border-transparent hover:bg-white/5 dark:hover:bg-white/5 hover:border-primary/15"
                 }`}
               >
                 <Icon className="w-6 h-6" />

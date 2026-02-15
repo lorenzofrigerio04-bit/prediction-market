@@ -112,12 +112,16 @@ export async function generateEventsFromCandidates(
           maxRetries: config.maxRetries,
         });
         if (raw) {
-          const closesAt = computeClosesAt(candidate, raw, raw.category);
+          const closure = computeClosesAt(candidate, raw, raw.category);
+          if (!closure.ok) {
+            console.warn(`Evento scartato (scadenza incoerente): "${raw.title.slice(0, 50)}..." — ${closure.reason}`);
+            continue;
+          }
           generated.push({
             title: raw.title,
             description: raw.description,
             category: raw.category,
-            closesAt,
+            closesAt: closure.closesAt,
             resolutionSourceUrl: raw.resolutionSourceUrl,
             resolutionNotes: raw.resolutionNotes,
           });
@@ -141,12 +145,16 @@ export async function generateEventsFromCandidates(
           maxRetries: config.maxRetries,
         });
         if (raw) {
-          const closesAt = computeClosesAt(candidate, raw, raw.category);
+          const closure = computeClosesAt(candidate, raw, raw.category);
+          if (!closure.ok) {
+            console.warn(`Evento scartato (scadenza incoerente): "${raw.title.slice(0, 50)}..." — ${closure.reason}`);
+            continue;
+          }
           generated.push({
             title: raw.title,
             description: raw.description,
             category: raw.category,
-            closesAt,
+            closesAt: closure.closesAt,
             resolutionSourceUrl: raw.resolutionSourceUrl,
             resolutionNotes: raw.resolutionNotes,
           });

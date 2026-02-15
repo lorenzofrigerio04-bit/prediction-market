@@ -1,7 +1,11 @@
 /**
  * Logica per l'assegnazione di closesAt (Fase 4: scadenza variabile).
- * Regole: data esplicita in titolo/descrizione → closesAt = quella data (o 1h prima);
- * altrimenti default per categoria o per type shortTerm/mediumTerm dall'LLM.
+ * Coerenza: la scadenza (closesAt) deve corrispondere al momento in cui l'esito è verificabile.
+ * - Se titolo/descrizione indicano una data esito (es. "entro fine 2023", "elezioni 2025"):
+ *   - data esito nel passato → evento rifiutato;
+ *   - data esito oltre maxHorizonDays → evento rifiutato;
+ *   - altrimenti closesAt = data esito - hoursBeforeEvent.
+ * - Senza data esplicita: shortTerm/mediumTerm (coerente con eventi senza data precisa).
  */
 
 import { getClosureRules, type ClosureRulesConfig } from "./config";
@@ -14,10 +18,70 @@ export type ClosureHint = {
   type?: "shortTerm" | "mediumTerm" | null;
 };
 
+/** Risultato: closesAt valido oppure rifiuto (es. esito nel passato o troppo lontano). */
+export type ClosureResult =
+  | { ok: true; closesAt: string }
+  | { ok: false; reject: true; reason: string };
+
 const IT_MONTHS: Record<string, number> = {
   gennaio: 0, febbraio: 1, marzo: 2, aprile: 3, maggio: 4, giugno: 5,
   luglio: 6, agosto: 7, settembre: 8, ottobre: 9, novembre: 10, dicembre: 11,
 };
+
+/**
+ * Estrae la data di esito dell'evento (quando si saprà il risultato).
+ * Oltre a parseExplicitDateFromText, supporta: "fine del 2023", "entro il 2025", "entro la fine del 2024", "dicembre 2025".
+ */
+export function parseOutcomeDateFromText(text: string): Date | null {
+  if (!text || !text.trim()) return null;
+  const s = text.trim();
+  const now = new Date();
+
+  // "entro 6 mesi", "nei prossimi 6 mesi" → data = oggi + N mesi (esito verificabile a quella data)
+  const entroMesi = /\b(?:entro|nei\s+prossimi?)\s+(\d{1,2})\s+mesi?\b/i.exec(s);
+  if (entroMesi) {
+    const mesi = parseInt(entroMesi[1], 10);
+    if (mesi >= 1 && mesi <= 24) {
+      const d = new Date(now);
+      d.setMonth(d.getMonth() + mesi);
+      if (!Number.isNaN(d.getTime())) return d;
+    }
+  }
+
+  // "fine del 2023", "fine 2023", "entro la fine del 2024", "entro fine 2024"
+  const fineAnno = /\b(?:fine\s+(?:del\s+)?|entro\s+(?:la\s+)?fine\s+(?:del\s+)?)(\d{4})\b/i.exec(s);
+  if (fineAnno) {
+    const year = parseInt(fineAnno[1], 10);
+    const d = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+
+  // "entro il 2025", "entro il 2026"
+  const entroAnno = /\bentro\s+il\s+(\d{4})\b/i.exec(s);
+  if (entroAnno) {
+    const year = parseInt(entroAnno[1], 10);
+    const d = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+
+  // "nel 2025", "entro il 2025" già gestito; "dicembre 2025", "a dicembre 2025"
+  const meseAnno = new RegExp(
+    `\\b(?:a\\s+|nel\\s+|di\\s+)?(${Object.keys(IT_MONTHS).join("|")})\\s+(\\d{4})\\b`,
+    "i"
+  ).exec(s);
+  if (meseAnno) {
+    const monthName = meseAnno[1].toLowerCase();
+    const month = IT_MONTHS[monthName] ?? null;
+    const year = parseInt(meseAnno[2], 10);
+    if (month != null) {
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const d = new Date(year, month, lastDay, 23, 59, 59, 999);
+      if (!Number.isNaN(d.getTime())) return d;
+    }
+  }
+
+  return parseExplicitDateFromText(text);
+}
 
 /**
  * Cerca una data esplicita nel testo (titolo/descrizione/snippet).
@@ -71,18 +135,21 @@ export function parseExplicitDateFromText(text: string): Date | null {
 }
 
 /**
- * Calcola closesAt garantendo che sia nel futuro e almeno minHoursFromNow da ora.
- * Priorità: 1) data estratta da testo, 2) eventDate dall'LLM, 3) type shortTerm/mediumTerm, 4) default categoria.
+ * Calcola closesAt garantendo coerenza con la data esito dell'evento.
+ * - Se è rilevabile una data esito (testo o eventDate LLM): rifiuta se nel passato o oltre maxHorizonDays; altrimenti closesAt = data esito - hoursBeforeEvent.
+ * - Altrimenti: shortTerm/mediumTerm (sempre nel futuro).
+ * Restituisce ClosureResult (ok + closesAt oppure reject + reason).
  */
 export function computeClosesAt(
   candidate: VerifiedCandidate,
   generated: GeneratedEvent & ClosureHint,
   category: AllowedCategory,
   rules?: ClosureRulesConfig
-): string {
+): ClosureResult {
   const config = rules ?? getClosureRules();
   const now = new Date();
   const minClose = new Date(now.getTime() + config.minHoursFromNow * 60 * 60 * 1000);
+  const maxHorizon = new Date(now.getTime() + config.maxHorizonDays * 24 * 60 * 60 * 1000);
 
   const text = [
     candidate.title,
@@ -93,25 +160,54 @@ export function computeClosesAt(
     .filter(Boolean)
     .join(" ");
 
-  // 1) Data esplicita nel testo
-  const parsedFromText = parseExplicitDateFromText(text);
-  if (parsedFromText && parsedFromText.getTime() >= now.getTime()) {
-    const closeAt = new Date(parsedFromText.getTime() - config.hoursBeforeEvent * 60 * 60 * 1000);
-    return closeAt.getTime() >= minClose.getTime() ? closeAt.toISOString() : minClose.toISOString();
+  // 1) Data esito da testo (include "fine 2023", "entro 2025", date esplicite)
+  const outcomeFromText = parseOutcomeDateFromText(text);
+  if (outcomeFromText) {
+    if (outcomeFromText.getTime() < now.getTime()) {
+      return {
+        ok: false,
+        reject: true,
+        reason: `La data esito dell'evento (${outcomeFromText.toISOString().slice(0, 10)}) è nel passato`,
+      };
+    }
+    if (outcomeFromText.getTime() > maxHorizon.getTime()) {
+      return {
+        ok: false,
+        reject: true,
+        reason: `La data esito è oltre l'orizzonte massimo (${config.maxHorizonDays} giorni)`,
+      };
+    }
+    const closeAt = new Date(outcomeFromText.getTime() - config.hoursBeforeEvent * 60 * 60 * 1000);
+    const clamped = closeAt.getTime() >= minClose.getTime() ? closeAt : minClose;
+    return { ok: true, closesAt: clamped.toISOString() };
   }
 
   // 2) eventDate dall'LLM (ISO)
   const eventDateStr = generated.eventDate;
   if (eventDateStr) {
     const eventDate = new Date(eventDateStr);
-    if (!Number.isNaN(eventDate.getTime()) && eventDate.getTime() >= now.getTime()) {
+    if (!Number.isNaN(eventDate.getTime())) {
+      if (eventDate.getTime() < now.getTime()) {
+        return {
+          ok: false,
+          reject: true,
+          reason: `eventDate dall'LLM (${eventDateStr}) è nel passato`,
+        };
+      }
+      if (eventDate.getTime() > maxHorizon.getTime()) {
+        return {
+          ok: false,
+          reject: true,
+          reason: `eventDate oltre l'orizzonte massimo (${config.maxHorizonDays} giorni)`,
+        };
+      }
       const closeAt = new Date(eventDate.getTime() - config.hoursBeforeEvent * 60 * 60 * 1000);
       const candidateClose = closeAt.getTime() >= minClose.getTime() ? closeAt : minClose;
-      return candidateClose.toISOString();
+      return { ok: true, closesAt: candidateClose.toISOString() };
     }
   }
 
-  // 3) type shortTerm / mediumTerm dall'LLM
+  // 3) Nessuna data esplicita: shortTerm / mediumTerm (coerente per eventi senza data precisa)
   const termType = generated.type;
   let daysToAdd: number;
   if (termType === "shortTerm") {
@@ -123,6 +219,6 @@ export function computeClosesAt(
   }
 
   const closeAt = new Date(now.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
-  if (closeAt.getTime() < minClose.getTime()) return minClose.toISOString();
-  return closeAt.toISOString();
+  const clamped = closeAt.getTime() < minClose.getTime() ? minClose : closeAt;
+  return { ok: true, closesAt: clamped.toISOString() };
 }

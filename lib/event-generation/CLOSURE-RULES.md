@@ -35,6 +35,7 @@ La funzione **`computeClosesAt(candidate, generated, category)`** in `lib/event-
    - ISO `YYYY-MM-DD`
    - `DD/MM/YYYY` o `DD-MM-YYYY`
    - Italiano: "il 15 marzo 2025", "15 marzo", "partita del 20 marzo", "elezioni dell'8 settembre"
+   - "entro N mesi" / "nei prossimi N mesi" → data = oggi + N mesi
    - Se la data è nel futuro → `closesAt` = data − `hoursBeforeEvent` (minimo `minHoursFromNow` da ora).
 
 2. **`eventDate` dall’LLM**  
@@ -64,6 +65,16 @@ In tutti i casi, **`closesAt` è sempre ≥ ora + `minHoursFromNow`** (es. almen
 | Senza data (trend)       | "Il film X supererà 100M?"            | Default categoria (es. Intrattenimento 7 giorni) |
 | LLM restituisce eventDate| Lancio prodotto 10 gennaio            | closesAt = 10 gennaio − 1h            |
 | LLM restituisce type     | mediumTerm                             | closesAt = ora + 21 giorni             |
+
+## Garanzia di coerenza (scadenza scommessa ↔ data esito)
+
+La scadenza delle scommesse (`closesAt`) **non è mai random**: deve corrispondere al momento in cui l'esito è verificabile.
+
+- **Generazione (Fase 3+4)**: `generate.ts` chiama sempre `computeClosesAt`; gli eventi con scadenza incoerente (es. data esito nel passato) vengono scartati.
+- **Pipeline create-events**: accetta solo eventi già generati con `computeClosesAt`, quindi coerenza garantita.
+- **Admin**: POST/PATCH accettano **eventOutcomeDate** (data in cui si saprà l'esito); il sistema calcola `closesAt = eventOutcomeDate - hoursBeforeEvent`. Se si invia solo `closesAt`, viene verificata la coerenza con titolo/descrizione (parsing data esito); se incoerente, risposta 400 con data suggerita.
+- **Seed e script**: usano `parseOutcomeDateFromText` + regole di chiusura per calcolare `closesAt` a partire da titolo/descrizione.
+- **Verifica**: `npx tsx scripts/check-events-coherence.ts` elenca tutti gli eventi e segnala COERENTE / INCOERENTE / NESSUNA_DATA / ESITO_NEL_PASSATO.
 
 ## Deliverable Fase 4
 

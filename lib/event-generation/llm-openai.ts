@@ -3,7 +3,7 @@
  */
 
 import OpenAI from "openai";
-import { SYSTEM_PROMPT, buildUserPrompt } from "./prompts";
+import { getSystemPrompt, buildUserPrompt } from "./prompts";
 import { parseGeneratedEvents } from "./schema";
 import type { GenerationConfig } from "./config";
 import type { GeneratedEvent } from "./types";
@@ -44,7 +44,7 @@ export async function generateEventWithOpenAI(
       const completion = await client.chat.completions.create({
         model: config.model,
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: getSystemPrompt() },
           { role: "user", content: userPrompt },
         ],
         temperature: 0.3,

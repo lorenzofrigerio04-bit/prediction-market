@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 import { createAuditLog } from "@/lib/audit";
+import { parseOutcomeDateFromText } from "@/lib/event-generation/closes-at";
+import { getClosureRules } from "@/lib/event-generation/config";
+
+const COHERENCE_TOLERANCE_MS = 48 * 60 * 60 * 1000;
 
 /**
  * GET /api/admin/events/[id]
@@ -47,7 +51,8 @@ export async function PATCH(
       title,
       description,
       category,
-      closesAt,
+      closesAt: closesAtBody,
+      eventOutcomeDate,
       resolutionSourceUrl,
       resolutionNotes,
     } = body;
@@ -69,9 +74,57 @@ export async function PATCH(
     if (title !== undefined) data.title = title;
     if (description !== undefined) data.description = description || null;
     if (category !== undefined) data.category = category;
-    if (closesAt !== undefined) data.closesAt = new Date(closesAt);
     if (resolutionSourceUrl !== undefined) data.resolutionSourceUrl = resolutionSourceUrl?.trim() || null;
     if (resolutionNotes !== undefined) data.resolutionNotes = resolutionNotes?.trim() || null;
+
+    const now = new Date();
+    const rules = getClosureRules();
+    if (eventOutcomeDate != null && String(eventOutcomeDate).trim() !== "") {
+      const outcomeDate = new Date(eventOutcomeDate);
+      if (!Number.isNaN(outcomeDate.getTime()) && outcomeDate.getTime() > now.getTime()) {
+        let closesAtDate = new Date(
+          outcomeDate.getTime() - rules.hoursBeforeEvent * 60 * 60 * 1000
+        );
+        const minClose = new Date(
+          now.getTime() + rules.minHoursFromNow * 60 * 60 * 1000
+        );
+        if (closesAtDate.getTime() < minClose.getTime()) closesAtDate = minClose;
+        data.closesAt = closesAtDate;
+      }
+    } else if (closesAtBody !== undefined) {
+      const closesAtDate = new Date(closesAtBody);
+      if (Number.isNaN(closesAtDate.getTime()) || closesAtDate.getTime() <= now.getTime()) {
+        return NextResponse.json(
+          { error: "La data di chiusura deve essere nel futuro" },
+          { status: 400 }
+        );
+      }
+      const text = [
+        (title !== undefined ? title : event.title) as string,
+        (description !== undefined ? description : event.description) ?? "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      const parsedOutcome = parseOutcomeDateFromText(text);
+      if (parsedOutcome && parsedOutcome.getTime() > now.getTime()) {
+        const expectedClosesAt = new Date(
+          parsedOutcome.getTime() - rules.hoursBeforeEvent * 60 * 60 * 1000
+        );
+        const diff = Math.abs(closesAtDate.getTime() - expectedClosesAt.getTime());
+        if (diff > COHERENCE_TOLERANCE_MS) {
+          return NextResponse.json(
+            {
+              error:
+                "La data di chiusura non è coerente con la data esito dell'evento. Suggerita: " +
+                expectedClosesAt.toISOString().slice(0, 16),
+              suggestedClosesAt: expectedClosesAt.toISOString(),
+            },
+            { status: 400 }
+          );
+        }
+      }
+      data.closesAt = closesAtDate;
+    }
 
     const updated = await prisma.event.update({
       where: { id: eventId },

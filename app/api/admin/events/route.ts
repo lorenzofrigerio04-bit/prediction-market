@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 import { createAuditLog } from "@/lib/audit";
+import { parseOutcomeDateFromText } from "@/lib/event-generation/closes-at";
+import { getClosureRules } from "@/lib/event-generation/config";
 
 /**
  * GET /api/admin/events
@@ -12,15 +14,19 @@ export async function GET(request: NextRequest) {
     await requireAdmin();
 
     const searchParams = request.nextUrl.searchParams;
-    const status = searchParams.get("status") || "all"; // all, pending, resolved
+    const status = searchParams.get("status") || "all"; // all, pending, pending_resolution, resolved
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
 
     const skip = (page - 1) * limit;
+    const now = new Date();
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (status === "pending") {
       where.resolved = false;
+    } else if (status === "pending_resolution") {
+      where.resolved = false;
+      where.closesAt = { lte: now };
     } else if (status === "resolved") {
       where.resolved = true;
     }
@@ -30,7 +36,10 @@ export async function GET(request: NextRequest) {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy:
+          status === "pending_resolution"
+            ? { closesAt: "asc" }
+            : { createdAt: "desc" },
         include: {
           createdBy: {
             select: {
@@ -74,21 +83,34 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/** Tolleranza (ms) per considerare closesAt coerente con la data esito (48h). */
+const COHERENCE_TOLERANCE_MS = 48 * 60 * 60 * 1000;
+
 /**
  * POST /api/admin/events
- * Crea un nuovo evento
+ * Crea un nuovo evento.
+ * Coerenza scadenza–esito: si può passare eventOutcomeDate (data in cui si saprà l'esito);
+ * il sistema calcola closesAt = eventOutcomeDate - ore prima. In alternativa si passa closesAt,
+ * ma se titolo/descrizione contengono una data esito, viene verificata la coerenza.
  */
 export async function POST(request: NextRequest) {
   try {
     const admin = await requireAdmin();
 
     const body = await request.json();
-    const { title, description, category, closesAt, resolutionSourceUrl, resolutionNotes } = body;
+    const {
+      title,
+      description,
+      category,
+      closesAt: closesAtBody,
+      eventOutcomeDate,
+      resolutionSourceUrl,
+      resolutionNotes,
+    } = body;
 
-    // Validazione
-    if (!title || !category || !closesAt) {
+    if (!title || !category) {
       return NextResponse.json(
-        { error: "Titolo, categoria e data di chiusura sono obbligatori" },
+        { error: "Titolo e categoria sono obbligatori" },
         { status: 400 }
       );
     }
@@ -107,17 +129,70 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const closesAtDate = new Date(closesAt);
-    if (isNaN(closesAtDate.getTime())) {
-      return NextResponse.json(
-        { error: "Data di chiusura non valida" },
-        { status: 400 }
-      );
-    }
+    const now = new Date();
+    const rules = getClosureRules();
+    let closesAtDate: Date;
 
-    if (closesAtDate <= new Date()) {
+    if (eventOutcomeDate != null && String(eventOutcomeDate).trim() !== "") {
+      const outcomeDate = new Date(eventOutcomeDate);
+      if (Number.isNaN(outcomeDate.getTime())) {
+        return NextResponse.json(
+          { error: "Data esito evento (eventOutcomeDate) non valida" },
+          { status: 400 }
+        );
+      }
+      if (outcomeDate.getTime() <= now.getTime()) {
+        return NextResponse.json(
+          { error: "La data esito evento deve essere nel futuro" },
+          { status: 400 }
+        );
+      }
+      closesAtDate = new Date(
+        outcomeDate.getTime() - rules.hoursBeforeEvent * 60 * 60 * 1000
+      );
+      const minClose = new Date(
+        now.getTime() + rules.minHoursFromNow * 60 * 60 * 1000
+      );
+      if (closesAtDate.getTime() < minClose.getTime()) {
+        closesAtDate = minClose;
+      }
+    } else if (closesAtBody != null && String(closesAtBody).trim() !== "") {
+      closesAtDate = new Date(closesAtBody);
+      if (Number.isNaN(closesAtDate.getTime())) {
+        return NextResponse.json(
+          { error: "Data di chiusura non valida" },
+          { status: 400 }
+        );
+      }
+      if (closesAtDate.getTime() <= now.getTime()) {
+        return NextResponse.json(
+          { error: "La data di chiusura deve essere nel futuro" },
+          { status: 400 }
+        );
+      }
+      const text = [title, description ?? ""].filter(Boolean).join(" ");
+      const parsedOutcome = parseOutcomeDateFromText(text);
+      if (parsedOutcome && parsedOutcome.getTime() > now.getTime()) {
+        const expectedClosesAt = new Date(
+          parsedOutcome.getTime() - rules.hoursBeforeEvent * 60 * 60 * 1000
+        );
+        const diff = Math.abs(closesAtDate.getTime() - expectedClosesAt.getTime());
+        if (diff > COHERENCE_TOLERANCE_MS) {
+          return NextResponse.json(
+            {
+              error:
+                "La data di chiusura non è coerente con la data esito dell'evento (ricavata da titolo/descrizione). " +
+                "Usa il campo eventOutcomeDate con la data in cui si saprà l'esito, oppure imposta una data di chiusura vicina a: " +
+                expectedClosesAt.toISOString().slice(0, 16),
+              suggestedClosesAt: expectedClosesAt.toISOString(),
+            },
+            { status: 400 }
+          );
+        }
+      }
+    } else {
       return NextResponse.json(
-        { error: "La data di chiusura deve essere nel futuro" },
+        { error: "Fornire data di chiusura (closesAt) oppure data esito evento (eventOutcomeDate)" },
         { status: 400 }
       );
     }
