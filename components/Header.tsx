@@ -9,16 +9,18 @@ import SideDrawer from "./SideDrawer";
 import {
   IconChart,
   IconSearch,
-  IconTarget,
   IconTrophy,
   IconUser,
+  IconWallet,
   IconMenu,
 } from "@/components/ui/Icons";
 
-const BOTTOM_NAV_ITEMS = [
+// Navigazione principale: sempre a portata (barra desktop + bottom bar mobile)
+// Home, Eventi, Wallet, Classifica, Profilo — uso frequente, mobile-first
+const MAIN_NAV_ITEMS = [
   { href: "/", label: "Home", Icon: IconChart },
   { href: "/discover", label: "Eventi", Icon: IconSearch },
-  { href: "/missions", label: "Missioni", Icon: IconTarget },
+  { href: "/wallet", label: "Wallet", Icon: IconWallet },
   { href: "/leaderboard", label: "Classifica", Icon: IconTrophy },
   { href: "/profile", label: "Profilo", Icon: IconUser },
 ] as const;
@@ -35,6 +37,7 @@ export default function Header() {
     pathname === path || (path !== "/" && pathname.startsWith(path));
 
   const profileHref = session ? "/profile" : "/auth/login";
+  const walletHref = session ? "/wallet" : "/auth/login";
 
   return (
     <>
@@ -51,14 +54,16 @@ export default function Header() {
               Prediction Market
             </Link>
 
-            {/* Desktop: 5 voci con stile neon */}
+            {/* Desktop: 5 voci principali (navigazione core) */}
             <nav className="hidden md:flex items-center gap-1" aria-label="Menu principale">
-              {BOTTOM_NAV_ITEMS.map(({ href, label, Icon }) => (
+              {MAIN_NAV_ITEMS.map(({ href, label, Icon }) => {
+                const linkHref = href === "/profile" ? profileHref : href === "/wallet" ? walletHref : href;
+                return (
                 <Link
                   key={href}
-                  href={href === "/profile" ? profileHref : href}
+                  href={linkHref}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px] border ${
-                    isActive(href === "/profile" ? profileHref : href)
+                    isActive(linkHref)
                       ? "nav-item-neon-active"
                       : "text-fg-muted hover:text-fg border-transparent hover:bg-white/5 dark:hover:bg-white/5 hover:border-primary/20"
                   }`}
@@ -66,7 +71,8 @@ export default function Header() {
                   <Icon className="w-5 h-5" />
                   {label}
                 </Link>
-              ))}
+              );
+              })}
             </nav>
 
             <div className="flex items-center gap-2">
@@ -85,15 +91,15 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Bottom nav: barra neon/glass con angoli arrotondati */}
+      {/* Bottom nav mobile: stesse 5 voci, touch-friendly (min 44px) */}
       <nav
         className="nav-bottom-neon md:hidden fixed bottom-0 left-0 right-0 z-40"
         style={{ paddingBottom: "var(--safe-area-inset-bottom)" }}
         aria-label="Navigazione principale"
       >
         <div className="flex items-center justify-around h-16 px-1">
-          {BOTTOM_NAV_ITEMS.map(({ href, label, Icon }) => {
-            const linkHref = href === "/profile" ? profileHref : href;
+          {MAIN_NAV_ITEMS.map(({ href, label, Icon }) => {
+            const linkHref = href === "/profile" ? profileHref : href === "/wallet" ? walletHref : href;
             const active = isActive(linkHref);
             return (
               <Link

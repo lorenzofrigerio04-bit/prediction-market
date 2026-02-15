@@ -10,6 +10,7 @@ import {
   IconChat,
   IconCog,
   IconShield,
+  IconTarget,
   IconLogout,
   IconLock,
   IconClose,
@@ -120,27 +121,44 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-4 flex flex-col gap-1" aria-label="Menu utility">
+        <nav className="flex-1 overflow-y-auto p-4 flex flex-col gap-4" aria-label="Menu utility">
           {isAuthenticated && (
             <>
-              <DrawerLink href="/notifications" icon={IconBell} active={isActive("/notifications")} onClick={onClose}>
-                Notifiche
-              </DrawerLink>
-              <DrawerLink href="/shop" icon={IconShop} active={isActive("/shop")} onClick={onClose}>
-                Shop
-              </DrawerLink>
-              <DrawerLink href="/support" icon={IconChat} active={isActive("/support")} onClick={onClose}>
-                Supporto
-              </DrawerLink>
-              <DrawerLink href="/settings" icon={IconCog} active={isActive("/settings")} onClick={onClose}>
-                Impostazioni
-              </DrawerLink>
-              {isAdmin && (
-                <DrawerLink href="/admin" icon={IconShield} active={isActive("/admin")} onClick={onClose}>
-                  Admin
+              {/* Sezione: Impegnati (missioni, notifiche, shop) — uso meno frequente */}
+              <div className="flex flex-col gap-1">
+                <span className="text-ds-micro font-semibold uppercase tracking-label text-fg-muted px-4 py-1">
+                  Impegnati
+                </span>
+                <DrawerLink href="/missions" icon={IconTarget} active={isActive("/missions")} onClick={onClose}>
+                  Missioni
                 </DrawerLink>
-              )}
-              <div className="mt-4 pt-4 border-t border-border dark:border-white/10">
+                <DrawerLink href="/notifications" icon={IconBell} active={isActive("/notifications")} onClick={onClose}>
+                  Notifiche
+                </DrawerLink>
+                <DrawerLink href="/shop" icon={IconShop} active={isActive("/shop")} onClick={onClose}>
+                  Shop
+                </DrawerLink>
+              </div>
+
+              {/* Sezione: Account e utilità */}
+              <div className="flex flex-col gap-1">
+                <span className="text-ds-micro font-semibold uppercase tracking-label text-fg-muted px-4 py-1">
+                  Account
+                </span>
+                <DrawerLink href="/support" icon={IconChat} active={isActive("/support")} onClick={onClose}>
+                  Supporto
+                </DrawerLink>
+                <DrawerLink href="/settings" icon={IconCog} active={isActive("/settings")} onClick={onClose}>
+                  Impostazioni
+                </DrawerLink>
+                {isAdmin && (
+                  <DrawerLink href="/admin" icon={IconShield} active={isActive("/admin")} onClick={onClose}>
+                    Admin
+                  </DrawerLink>
+                )}
+              </div>
+
+              <div className="mt-2 pt-4 border-t border-border dark:border-white/10">
                 <button
                   type="button"
                   onClick={handleLogout}
@@ -154,10 +172,15 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
           )}
           {!isAuthenticated && (
             <>
-              <DrawerLink href="/support" icon={IconChat} active={isActive("/support")} onClick={onClose}>
-                Supporto
-              </DrawerLink>
-              <div className="mt-4 pt-4 border-t border-border dark:border-white/10">
+              <div className="flex flex-col gap-1">
+                <span className="text-ds-micro font-semibold uppercase tracking-label text-fg-muted px-4 py-1">
+                  Account
+                </span>
+                <DrawerLink href="/support" icon={IconChat} active={isActive("/support")} onClick={onClose}>
+                  Supporto
+                </DrawerLink>
+              </div>
+              <div className="mt-2 pt-4 border-t border-border dark:border-white/10">
                 <Link
                   href="/auth/login"
                   onClick={onClose}
