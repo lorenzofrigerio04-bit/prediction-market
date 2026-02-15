@@ -61,7 +61,7 @@ export default function HomeTeaser({
             <p className="text-ds-body-sm text-fg-muted animate-pulse">Caricamento...</p>
           ) : canSpinToday ? (
             <p className="text-ds-body-sm text-fg">
-              Hai <strong className="text-primary">1 spin gratuito</strong> oggi. Crediti o boost!
+              Un giro al giorno. Vinci fino a <strong className="text-primary">500 crediti</strong>.
             </p>
           ) : (
             <p className="text-ds-body-sm text-fg-muted">

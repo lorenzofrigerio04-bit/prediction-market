@@ -46,18 +46,18 @@ export default function LandingEventRow({ event }: LandingEventRowProps) {
   return (
     <Link
       href={`/events/${event.id}`}
-      className="block rounded-2xl box-neon-soft p-4 transition-all duration-ds-normal ease-ds-ease hover:shadow-[0_0_24px_-8px_rgba(var(--primary-glow),0.2)] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none"
+      className="block rounded-2xl box-neon-soft p-4 md:p-5 transition-all duration-ds-normal ease-ds-ease hover:shadow-[0_0_28px_-8px_rgba(var(--primary-glow),0.25)] hover:border-primary/30 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none group"
     >
       <div className="flex items-start justify-between gap-3 mb-3">
-        <span className="inline-flex items-center gap-2 text-ds-micro font-semibold text-fg-muted shrink-0">
+        <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg text-ds-micro font-semibold bg-white/5 dark:bg-black/40 border border-white/10 dark:border-primary/30 text-fg shrink-0">
           <span aria-hidden>{icon}</span>
           {event.category}
         </span>
-        <span className="text-ds-micro font-semibold text-fg-muted shrink-0">
+        <span className="text-ds-micro font-bold font-numeric text-primary shrink-0">
           {timeLabel}
         </span>
       </div>
-      <h3 className="text-ds-body font-bold text-fg line-clamp-2 leading-snug mb-3">
+      <h3 className="text-ds-body font-bold text-fg line-clamp-2 leading-snug mb-3 group-hover:text-primary/90 transition-colors">
         {event.title}
       </h3>
       <div className="flex items-center gap-2 text-ds-body-sm text-fg-muted mb-3">
@@ -67,13 +67,17 @@ export default function LandingEventRow({ event }: LandingEventRowProps) {
         <span className="font-semibold">{noPct}%</span>
         <span>NO</span>
       </div>
-      <div className="w-full h-2 rounded-full bg-surface/80 border border-border dark:border-white/10 overflow-hidden mb-4">
+      <div className="prediction-bar-led h-2.5 w-full flex rounded-full overflow-hidden mb-4" role="presentation" aria-hidden>
         <div
-          className="h-full bg-primary rounded-full transition-all duration-300"
+          className="prediction-bar-fill-si h-full shrink-0 rounded-full transition-all duration-500"
           style={{ width: `${yesPct}%` }}
         />
+        <div
+          className="prediction-bar-fill-no h-full shrink-0 rounded-full transition-all duration-500"
+          style={{ width: `${noPct}%` }}
+        />
       </div>
-      <span className="inline-flex items-center justify-center min-h-[44px] w-full py-2.5 px-4 rounded-xl bg-primary/20 text-primary font-semibold text-ds-body-sm border border-primary/40 shadow-[0_0_14px_-4px_rgba(var(--primary-glow),0.3)] ds-tap-target">
+      <span className="inline-flex items-center justify-center min-h-[44px] w-full py-2.5 px-4 rounded-xl bg-primary/20 text-primary font-semibold text-ds-body-sm border border-primary/40 shadow-[0_0_16px_-4px_rgba(var(--primary-glow),0.35)] hover:shadow-[0_0_20px_-4px_rgba(var(--primary-glow),0.45)] transition-shadow ds-tap-target">
         Fai la tua previsione
       </span>
     </Link>

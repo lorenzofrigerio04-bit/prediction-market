@@ -341,18 +341,9 @@ export default function WalletPage() {
                 <h3 className="text-ds-h3 font-bold text-fg">Spin of the Day</h3>
                 <p className="mt-1 text-ds-body-sm text-fg-muted">
                   {stats.canSpinToday
-                    ? "Un spin gratuito ogni giorno. Crediti o boost moltiplicatore!"
+                    ? "Un giro al giorno. Vinci fino a 500 crediti, poi scegli se incassare o giocare la ruota moltiplicatrice."
                     : "Hai già usato lo spin di oggi. Torna domani."}
                 </p>
-                {stats.hasActiveBoost && stats.boostMultiplier != null && stats.boostExpiresAt && (
-                  <p className="mt-2 text-ds-body-sm font-medium text-primary">
-                    Boost attivo: ×{stats.boostMultiplier} fino alle{" "}
-                    {new Date(stats.boostExpiresAt).toLocaleTimeString("it-IT", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                )}
               </div>
               <CTAButton
                 href="/spin"

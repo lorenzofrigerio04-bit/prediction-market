@@ -2,15 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { startOfDayUTC } from "@/lib/spin-utils";
+import type { DailySpinCreditsPayload } from "@/lib/spin-config";
 
 export const dynamic = "force-dynamic";
 
-/** Restituisce l'inizio del giorno in UTC (00:00:00) per la data data. */
-function startOfDayUTC(d: Date): Date {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
-}
-
-/** Prossimo momento in cui può fare spin (inizio del giorno successivo UTC). */
 function nextSpinAtUTC(): Date {
   const tomorrow = new Date();
   tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
@@ -29,21 +25,36 @@ export async function GET() {
     }
 
     const userId = session.user.id;
+    const now = new Date();
+    const todayStart = startOfDayUTC(now);
 
     const lastSpin = await prisma.dailySpin.findFirst({
       where: { userId },
       orderBy: { createdAt: "desc" },
-      select: { createdAt: true },
+      select: { createdAt: true, rewardType: true, rewardPayload: true },
     });
 
-    const now = new Date();
-    const todayStart = startOfDayUTC(now);
     const canSpin = !lastSpin || new Date(lastSpin.createdAt) < todayStart;
+    const isTodaySpin =
+      lastSpin && new Date(lastSpin.createdAt) >= todayStart;
+
+    let pendingCredits: number | null = null;
+    let payloadStatus: string | null = null;
+
+    if (isTodaySpin && lastSpin?.rewardType === "CREDITS" && lastSpin.rewardPayload) {
+      const payload = lastSpin.rewardPayload as unknown as DailySpinCreditsPayload;
+      payloadStatus = payload.status;
+      if (payload.status === "PENDING_CHOICE" && payload.amount > 0) {
+        pendingCredits = payload.amount;
+      }
+    }
 
     return NextResponse.json({
       canSpin,
       lastSpinAt: lastSpin?.createdAt ?? null,
       nextSpinAt: canSpin ? null : nextSpinAtUTC().toISOString(),
+      pendingCredits,
+      payloadStatus,
     });
   } catch (error) {
     console.error("Error fetching spin status:", error);

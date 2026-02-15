@@ -1,56 +1,88 @@
 /**
- * Configurazione Spin of the Day: solo moltiplicatori, 7 segmenti.
- * Probabilità ponderate: bassi più frequenti, alti più rari.
+ * Spin of the Day: due ruote.
+ * 1) Ruota crediti: 0–500, probabilità bilanciate (vantaggioso e divertente).
+ * 2) Ruota moltiplicatrice: x0–x100, rischio/opportunità.
  */
 
-export type SpinRewardKind = "BOOST";
-
-export interface SpinRewardBoost {
-  kind: "BOOST";
-  multiplier: number;
-  durationMinutes: number;
-}
-
-export type SpinReward = SpinRewardBoost;
-
-export interface WeightedReward {
+// —— Prima ruota: crediti 0–500 ——
+export interface CreditsSegment {
+  credits: number;
   weight: number;
-  reward: SpinReward;
-  label: string; // per UI: "x1.2", "x2.5", etc.
+  label: string;
 }
 
-/** Moltiplicatori sulla ruota (ordine = segmenti 0..6). */
-export const WHEEL_MULTIPLIERS = [1.2, 1.5, 2, 2.5, 3, 4, 5] as const;
-
-/** Reward possibili: solo BOOST, durata 24h. Pesi: bassi più probabili. */
-export const SPIN_WEIGHTED_REWARDS: WeightedReward[] = [
-  { weight: 28, reward: { kind: "BOOST", multiplier: 1.2, durationMinutes: 24 * 60 }, label: "x1.2" },
-  { weight: 24, reward: { kind: "BOOST", multiplier: 1.5, durationMinutes: 24 * 60 }, label: "x1.5" },
-  { weight: 20, reward: { kind: "BOOST", multiplier: 2, durationMinutes: 24 * 60 }, label: "x2" },
-  { weight: 14, reward: { kind: "BOOST", multiplier: 2.5, durationMinutes: 24 * 60 }, label: "x2.5" },
-  { weight: 8, reward: { kind: "BOOST", multiplier: 3, durationMinutes: 24 * 60 }, label: "x3" },
-  { weight: 4, reward: { kind: "BOOST", multiplier: 4, durationMinutes: 24 * 60 }, label: "x4" },
-  { weight: 2, reward: { kind: "BOOST", multiplier: 5, durationMinutes: 24 * 60 }, label: "x5" },
+/** Segmenti prima ruota: 0, 50, 100, 150, 200, 300, 400, 500. Pesi bilanciati. */
+export const CREDITS_WHEEL_SEGMENTS: CreditsSegment[] = [
+  { credits: 0, weight: 5, label: "0" },
+  { credits: 50, weight: 22, label: "50" },
+  { credits: 100, weight: 20, label: "100" },
+  { credits: 150, weight: 18, label: "150" },
+  { credits: 200, weight: 15, label: "200" },
+  { credits: 300, weight: 10, label: "300" },
+  { credits: 400, weight: 6, label: "400" },
+  { credits: 500, weight: 4, label: "500" },
 ];
 
-const TOTAL_WEIGHT = SPIN_WEIGHTED_REWARDS.reduce((s, r) => s + r.weight, 0);
+const CREDITS_TOTAL_WEIGHT = CREDITS_WHEEL_SEGMENTS.reduce((s, r) => s + r.weight, 0);
 
-export function pickSpinReward(): WeightedReward {
-  let r = Math.random() * TOTAL_WEIGHT;
-  for (const w of SPIN_WEIGHTED_REWARDS) {
-    r -= w.weight;
-    if (r <= 0) return w;
+export function pickFirstSpinCredits(): CreditsSegment {
+  let r = Math.random() * CREDITS_TOTAL_WEIGHT;
+  for (const seg of CREDITS_WHEEL_SEGMENTS) {
+    r -= seg.weight;
+    if (r <= 0) return seg;
   }
-  return SPIN_WEIGHTED_REWARDS[SPIN_WEIGHTED_REWARDS.length - 1];
+  return CREDITS_WHEEL_SEGMENTS[CREDITS_WHEEL_SEGMENTS.length - 1];
 }
 
-export function getRewardIndex(reward: WeightedReward): number {
-  return SPIN_WEIGHTED_REWARDS.findIndex(
-    (r) =>
-      r.reward.kind === "BOOST" &&
-      reward.reward.kind === "BOOST" &&
-      r.reward.multiplier === reward.reward.multiplier
-  );
+export function getCreditsSegmentIndex(credits: number): number {
+  const i = CREDITS_WHEEL_SEGMENTS.findIndex((s) => s.credits === credits);
+  return i >= 0 ? i : 0;
 }
 
-export const SPIN_SEGMENT_COUNT = SPIN_WEIGHTED_REWARDS.length;
+export const CREDITS_SEGMENT_COUNT = CREDITS_WHEEL_SEGMENTS.length;
+
+// —— Seconda ruota: moltiplicatori x0–x100 ——
+export interface MultiplierSegment {
+  multiplier: number;
+  weight: number;
+  label: string;
+}
+
+export const MULTIPLIER_WHEEL_SEGMENTS: MultiplierSegment[] = [
+  { multiplier: 0, weight: 8, label: "×0" },
+  { multiplier: 0.5, weight: 10, label: "×0.5" },
+  { multiplier: 1, weight: 24, label: "×1" },
+  { multiplier: 2, weight: 22, label: "×2" },
+  { multiplier: 5, weight: 14, label: "×5" },
+  { multiplier: 10, weight: 10, label: "×10" },
+  { multiplier: 25, weight: 6, label: "×25" },
+  { multiplier: 50, weight: 4, label: "×50" },
+  { multiplier: 100, weight: 2, label: "×100" },
+];
+
+const MULTIPLIER_TOTAL_WEIGHT = MULTIPLIER_WHEEL_SEGMENTS.reduce((s, r) => s + r.weight, 0);
+
+export function pickMultiplier(): MultiplierSegment {
+  let r = Math.random() * MULTIPLIER_TOTAL_WEIGHT;
+  for (const seg of MULTIPLIER_WHEEL_SEGMENTS) {
+    r -= seg.weight;
+    if (r <= 0) return seg;
+  }
+  return MULTIPLIER_WHEEL_SEGMENTS[MULTIPLIER_WHEEL_SEGMENTS.length - 1];
+}
+
+export function getMultiplierSegmentIndex(multiplier: number): number {
+  const i = MULTIPLIER_WHEEL_SEGMENTS.findIndex((s) => s.multiplier === multiplier);
+  return i >= 0 ? i : 0;
+}
+
+export const MULTIPLIER_SEGMENT_COUNT = MULTIPLIER_WHEEL_SEGMENTS.length;
+
+// —— Payload DailySpin (rewardPayload quando rewardType = CREDITS) ——
+export type SpinPayloadStatus = "PENDING_CHOICE" | "CASHED" | "MULTIPLIED";
+
+export interface DailySpinCreditsPayload {
+  amount: number;
+  status: SpinPayloadStatus;
+  multiplierUsed?: number;
+}

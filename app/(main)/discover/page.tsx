@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useDeferredValue } from "react";
-import Header from "@/components/Header";
 import EventCard from "@/components/EventCard";
 import MarketCardSkeleton from "@/components/discover/MarketCardSkeleton";
 import type { EventCardEvent } from "@/components/EventCard";
@@ -149,14 +148,12 @@ export default function DiscoverPage() {
 
   return (
     <div className="min-h-screen bg-bg">
-      <Header />
       <main className="mx-auto px-4 sm:px-6 py-6 md:py-8 max-w-6xl">
         <PageHeader
           title="Eventi"
           description="Cerca, filtra e ordina gli eventi. Fai la tua previsione su quelli che preferisci."
         />
 
-        {/* Search — mobile-first, sempre in evidenza */}
         <form onSubmit={handleSearch} className="mb-6" role="search">
           <label htmlFor="discover-search" className="sr-only">
             Cerca eventi
@@ -186,7 +183,6 @@ export default function DiscoverPage() {
           </div>
         </form>
 
-        {/* Filtri: Categoria, Stato, Scadenza */}
         <div className="mb-6 space-y-4">
           <FilterChips
             label="Stato"
@@ -231,7 +227,6 @@ export default function DiscoverPage() {
           )}
         </div>
 
-        {/* Risultati */}
         {error ? (
           <EmptyState
             title="Errore di caricamento"

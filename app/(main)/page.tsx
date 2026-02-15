@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import Header from "@/components/Header";
 import EventCard from "@/components/EventCard";
 import OnboardingTour from "@/components/OnboardingTour";
 import LandingEventRow from "@/components/landing/LandingEventRow";
@@ -12,7 +11,6 @@ import HomeSummary from "@/components/home/HomeSummary";
 import {
   PageHeader,
   SectionContainer,
-  CTAButton,
   EmptyState,
   LoadingBlock,
 } from "@/components/ui";
@@ -68,7 +66,6 @@ export default function Home() {
   const [sessionSynced, setSessionSynced] = useState(false);
   const sessionSyncDone = useRef(false);
 
-  // Top summary
   const [credits, setCredits] = useState<number | null>(null);
   const [creditsLoading, setCreditsLoading] = useState(true);
   const [weeklyRank, setWeeklyRank] = useState<number | undefined>(undefined);
@@ -76,12 +73,10 @@ export default function Home() {
   const [streak, setStreak] = useState<number | null>(null);
   const [streakLoading, setStreakLoading] = useState(true);
 
-  // Eventi in tendenza (anteprima 3–4)
   const [eventsTrending, setEventsTrending] = useState<Event[]>([]);
   const [loadingTrending, setLoadingTrending] = useState(true);
   const [eventsError, setEventsError] = useState<string | null>(null);
 
-  // Spin e Missioni
   const [missions, setMissions] = useState<Mission[]>([]);
   const [missionsLoading, setMissionsLoading] = useState(false);
   const [canSpinToday, setCanSpinToday] = useState<boolean | null>(null);
@@ -127,7 +122,6 @@ export default function Home() {
     })();
   }, [updateSession]);
 
-  // Top summary: crediti, classifica settimanale, streak
   useEffect(() => {
     if (status !== "authenticated") return;
     setCreditsLoading(true);
@@ -158,7 +152,6 @@ export default function Home() {
       .finally(() => setStreakLoading(false));
   }, [status]);
 
-  // Eventi in tendenza (anteprima illustrativa, max 4)
   useEffect(() => {
     if (status !== "authenticated") return;
     setLoadingTrending(true);
@@ -174,7 +167,6 @@ export default function Home() {
       .finally(() => setLoadingTrending(false));
   }, [status]);
 
-  // Missioni (anteprima per home)
   useEffect(() => {
     if (status !== "authenticated") return;
     setMissionsLoading(true);
@@ -195,7 +187,6 @@ export default function Home() {
       .finally(() => setSpinLoading(false));
   }, [status]);
 
-  // —— Landing per utenti non loggati (Fase 1)
   const showLanding = status === "unauthenticated";
   const [landingEvents, setLandingEvents] = useState<Event[]>([]);
   const [landingEventsLoading, setLandingEventsLoading] = useState(false);
@@ -228,52 +219,59 @@ export default function Home() {
 
   if (showLanding) {
     return (
-      <div className="min-h-screen bg-bg relative">
+      <div className="min-h-screen bg-bg relative overflow-x-hidden">
         <div className="landing-bg" aria-hidden />
-        <Header />
-        <main className="relative mx-auto px-page-x py-page-y md:py-10 lg:py-14 max-w-2xl">
-          {/* 1) HERO */}
-          <section className="text-center mb-10 md:mb-14">
-            <h1 className="text-ds-display font-bold text-fg mb-3 md:mb-4 max-w-xl mx-auto leading-tight">
-              Prevedi il futuro. Guadagna crediti. Scala la classifica.
-            </h1>
-            <p className="text-ds-body md:text-lg text-fg-muted max-w-xl mx-auto mb-6 md:mb-8 leading-snug">
-              Partecipa ai mercati sociali su eventi reali usando solo crediti virtuali. Più sei preciso, più sali in classifica.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-6">
-              <CTAButton href="/auth/signup" variant="primary" fullWidth className="sm:w-auto">
-                Inizia ora – 100 crediti gratis
-              </CTAButton>
-              <Link
-                href="/auth/login"
-                className="text-ds-body-sm font-medium text-fg-muted hover:text-fg transition-colors focus-visible:underline min-h-[48px] flex items-center justify-center"
-              >
-                Accedi
-              </Link>
-            </div>
-            <div className="flex flex-wrap justify-center gap-2 md:gap-3">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold bg-white/5 dark:bg-black/40 border border-white/10 dark:border-primary/40 text-fg shadow-[0_0_12px_-4px_rgba(var(--primary-glow),0.2)]">
-                Eventi in tempo reale
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold bg-white/5 dark:bg-black/40 border border-white/10 dark:border-primary/40 text-fg shadow-[0_0_12px_-4px_rgba(var(--primary-glow),0.2)]">
-                Classifiche settimanali
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-ds-micro font-semibold bg-white/5 dark:bg-black/40 border border-white/10 dark:border-primary/40 text-fg shadow-[0_0_12px_-4px_rgba(var(--primary-glow),0.2)]">
-                Nessun rischio reale (NO soldi veri)
-              </span>
+        <main className="relative mx-auto px-4 sm:px-6 py-8 md:py-12 lg:py-16 max-w-2xl">
+          <section className="mb-12 md:mb-16">
+            <div className="landing-hero-card px-6 py-8 md:px-10 md:py-12 text-center">
+              <p className="text-ds-caption font-semibold uppercase tracking-wider text-primary mb-4 md:mb-5">
+                Mercati di previsione · Solo crediti virtuali
+              </p>
+              <h1 className="landing-hero-title text-ds-display font-bold mb-3 md:mb-4 max-w-2xl mx-auto leading-tight tracking-headline">
+                Prevedi il futuro. Guadagna crediti. Scala la classifica.
+              </h1>
+              <p className="text-ds-body md:text-lg text-fg-muted max-w-xl mx-auto mb-8 md:mb-10 leading-snug">
+                Partecipa ai mercati sociali su eventi reali. Più sei preciso, più sali. Zero rischio, zero soldi veri.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-8">
+                <Link
+                  href="/auth/signup"
+                  className="landing-cta-primary w-full sm:w-auto min-h-[52px] px-8 py-4 rounded-2xl font-semibold text-ds-body inline-flex items-center justify-center transition-all hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                >
+                  Inizia ora — 100 crediti gratis
+                </Link>
+                <Link
+                  href="/auth/login"
+                  className="w-full sm:w-auto min-h-[52px] px-6 py-4 rounded-2xl font-semibold text-ds-body border-2 border-primary/50 text-primary bg-primary/5 hover:bg-primary/10 hover:border-primary/70 hover:shadow-[0_0_24px_-8px_rgba(var(--primary-glow),0.3)] transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg inline-flex items-center justify-center"
+                >
+                  Accedi
+                </Link>
+              </div>
+              <div className="flex flex-wrap justify-center gap-2 md:gap-3">
+                <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-ds-micro font-semibold bg-primary/15 dark:bg-black/50 border border-primary/40 text-fg dark:text-white/95 shadow-[0_0_14px_-4px_rgba(var(--primary-glow),0.3)]">
+                  ⚡ Eventi in tempo reale
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-ds-micro font-semibold bg-primary/15 dark:bg-black/50 border border-primary/40 text-fg dark:text-white/95 shadow-[0_0_14px_-4px_rgba(var(--primary-glow),0.3)]">
+                  🏆 Classifiche settimanali
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-ds-micro font-semibold bg-primary/15 dark:bg-black/50 border border-primary/40 text-fg dark:text-white/95 shadow-[0_0_14px_-4px_rgba(var(--primary-glow),0.3)]">
+                  🛡️ Nessun rischio reale
+                </span>
+              </div>
             </div>
           </section>
 
-          {/* 2) EVENT FEED PREVIEW */}
-          <section className="mb-10 md:mb-14">
-            <h2 className="text-ds-h2 font-bold text-fg mb-4">Eventi in corso</h2>
+          <section className="mb-12 md:mb-16">
+            <h2 className="landing-section-title text-ds-h2 font-bold text-fg mb-6">
+              Eventi in corso
+            </h2>
             {landingEventsLoading ? (
               <LoadingBlock message="Caricamento eventi..." />
             ) : landingEvents.length === 0 ? (
               <EmptyState
                 title="Nessun evento attivo ora"
-                description="Intanto completa le missioni di onboarding e guadagna crediti."
-                action={{ label: "Inizia ora – 100 crediti gratis", href: "/auth/signup" }}
+                description="Registrati e ricevi 100 crediti gratis. Quando apriranno nuovi eventi sarai pronto."
+                action={{ label: "Inizia ora — 100 crediti gratis", href: "/auth/signup" }}
               />
             ) : (
               <ul className="flex flex-col gap-4" aria-label="Anteprima eventi">
@@ -294,33 +292,39 @@ export default function Home() {
             )}
           </section>
 
-          {/* 3) PERCHÉ GIOCARE */}
-          <section className="mb-10 md:mb-14">
-            <h2 className="text-ds-h2 font-bold text-fg mb-4 text-center">Perché giocare</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="box-neon-soft p-5 text-center">
-                <div className="text-2xl mb-2" aria-hidden>🏆</div>
+          <section className="mb-12 md:mb-16">
+            <h2 className="landing-section-title text-ds-h2 font-bold text-fg mb-6 text-center">
+              Perché giocare
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-5">
+              <div className="box-neon-soft p-5 md:p-6 text-center hover:shadow-[0_0_28px_-8px_rgba(var(--primary-glow),0.22)] transition-shadow">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/15 border border-primary/30 text-2xl mb-3" aria-hidden>🏆</div>
                 <h3 className="text-ds-body font-bold text-fg mb-1">Classifiche settimanali</h3>
                 <p className="text-ds-body-sm text-fg-muted">Sali in classifica ogni settimana e confrontati con la community.</p>
               </div>
-              <div className="box-neon-soft p-5 text-center">
-                <div className="text-2xl mb-2" aria-hidden>🎯</div>
-                <h3 className="text-ds-body font-bold text-fg mb-1">Missioni & streak giornaliere</h3>
-                <p className="text-ds-body-sm text-fg-muted">Completa missioni e mantieni lo streak per guadagnare crediti extra.</p>
+              <div className="box-neon-soft p-5 md:p-6 text-center hover:shadow-[0_0_28px_-8px_rgba(var(--primary-glow),0.22)] transition-shadow">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/15 border border-primary/30 text-2xl mb-3" aria-hidden>🎯</div>
+                <h3 className="text-ds-body font-bold text-fg mb-1">Missioni & streak</h3>
+                <p className="text-ds-body-sm text-fg-muted">Completa missioni e mantieni lo streak per crediti extra.</p>
               </div>
-              <div className="box-neon-soft p-5 text-center">
-                <div className="text-2xl mb-2" aria-hidden>📋</div>
-                <h3 className="text-ds-body font-bold text-fg mb-1">Eventi reali con regole trasparenti</h3>
+              <div className="box-neon-soft p-5 md:p-6 text-center hover:shadow-[0_0_28px_-8px_rgba(var(--primary-glow),0.22)] transition-shadow">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/15 border border-primary/30 text-2xl mb-3" aria-hidden>📋</div>
+                <h3 className="text-ds-body font-bold text-fg mb-1">Regole trasparenti</h3>
                 <p className="text-ds-body-sm text-fg-muted">Ogni evento ha criteri di risoluzione chiari e verificabili.</p>
               </div>
             </div>
           </section>
 
-          {/* CTA sempre visibile in fondo */}
-          <section className="text-center pt-4 pb-8">
-            <CTAButton href="/auth/signup" variant="primary" fullWidth className="max-w-sm mx-auto">
-              Inizia ora – 100 crediti gratis
-            </CTAButton>
+          <section className="text-center pt-6 pb-10">
+            <div className="landing-hero-card inline-block px-8 py-6 md:px-10 md:py-8">
+              <p className="text-ds-body font-semibold text-fg mb-3">Pronto a iniziare?</p>
+              <Link
+                href="/auth/signup"
+                className="landing-cta-primary w-full max-w-sm mx-auto min-h-[52px] px-6 py-4 rounded-2xl font-semibold text-ds-body text-white inline-flex items-center justify-center transition-all hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+              >
+                Inizia ora — 100 crediti gratis
+              </Link>
+            </div>
           </section>
         </main>
       </div>
@@ -348,14 +352,12 @@ export default function Home() {
       {showOnboarding && (
         <OnboardingTour onComplete={handleOnboardingComplete} />
       )}
-      <Header />
       <main className="mx-auto px-page-x py-page-y md:py-8 max-w-6xl">
         <PageHeader
           title={`Bentornato, ${displayName}.`}
           description="Ecco cosa succede oggi."
         />
 
-        {/* 1) Summary box */}
         <HomeSummary
           credits={credits}
           weeklyRank={weeklyRank}
@@ -365,7 +367,6 @@ export default function Home() {
           streakLoading={streakLoading}
         />
 
-        {/* 2) Spin of the day */}
         <section
           className="mb-section md:mb-section-lg"
           aria-label="Spin of the Day"
@@ -386,7 +387,7 @@ export default function Home() {
               <p className="text-ds-body-sm text-fg-muted animate-pulse">Caricamento...</p>
             ) : canSpinToday ? (
               <p className="text-ds-body-sm text-fg">
-                Hai <strong className="text-primary">1 spin gratuito</strong> oggi. Crediti o boost!
+                Un giro al giorno. Vinci fino a <strong className="text-primary">500 crediti</strong>.
               </p>
             ) : (
               <p className="text-ds-body-sm text-fg-muted">
@@ -396,7 +397,6 @@ export default function Home() {
           </Link>
         </section>
 
-        {/* 3) Missioni */}
         <section
           className="mb-section md:mb-section-lg"
           aria-label="Missioni"
@@ -437,7 +437,6 @@ export default function Home() {
           </Link>
         </section>
 
-        {/* 4) Eventi in tendenza (anteprima illustrativa) */}
         <SectionContainer
           title="Eventi in tendenza"
           action={

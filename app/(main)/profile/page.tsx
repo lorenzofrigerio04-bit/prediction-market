@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Header from "@/components/Header";
 import StreakBadge from "@/components/StreakBadge";
 import StatsCard from "@/components/StatsCard";
 import { trackView } from "@/lib/analytics-client";
@@ -122,7 +121,6 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [allBadges, setAllBadges] = useState<BadgeFromApi[]>([]);
 
-  // Username edit
   const [editingUsername, setEditingUsername] = useState(false);
   const [usernameInput, setUsernameInput] = useState("");
   const [usernameError, setUsernameError] = useState<string | null>(null);
@@ -240,7 +238,6 @@ export default function ProfilePage() {
   if (status === "loading" || loading) {
     return (
       <div className="min-h-screen bg-bg">
-        <Header />
         <main className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
           <LoadingBlock message="Caricamento profilo..." />
         </main>
@@ -261,7 +258,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-bg">
-      <Header />
       <main className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
         {error && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-600 dark:text-red-400 text-ds-body-sm">
@@ -269,7 +265,6 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* ——— Identità e status ——— */}
         <Card neon className="p-6 md:p-8 mb-6">
           <div className="flex flex-col items-center text-center">
             <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-gradient-to-br from-primary to-accent-700 flex items-center justify-center text-white text-3xl md:text-4xl font-bold shrink-0 overflow-hidden">
@@ -352,7 +347,6 @@ export default function ProfilePage() {
           </div>
         </Card>
 
-        {/* ——— Statistiche ——— */}
         <SectionContainer title="Statistiche">
           <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6">
             <StatsCard
@@ -387,7 +381,6 @@ export default function ProfilePage() {
           </div>
         </SectionContainer>
 
-        {/* ——— Impostazioni (un solo blocco ordinato) ——— */}
         <SectionContainer title="Impostazioni">
           <Card neon className="p-5 md:p-6">
             <ul className="space-y-0 divide-y divide-border dark:divide-white/10">
@@ -440,7 +433,6 @@ export default function ProfilePage() {
           </Card>
         </SectionContainer>
 
-        {/* ——— Badge ——— */}
         <SectionContainer title="Badge">
           <Card neon className="p-5 md:p-6">
             {allBadges.length === 0 ? (
@@ -469,7 +461,6 @@ export default function ProfilePage() {
           </Card>
         </SectionContainer>
 
-        {/* ——— Eventi seguiti ——— */}
         <SectionContainer title="Eventi seguiti">
           <Card neon className="p-5 md:p-6">
             {(profileData.followedEventsCount ?? 0) === 0 ? (
@@ -496,7 +487,6 @@ export default function ProfilePage() {
           </Card>
         </SectionContainer>
 
-        {/* ——— Le Mie Previsioni ——— */}
         <SectionContainer title="Le Mie Previsioni">
           <Card neon className="p-5 md:p-6">
             <FilterChips

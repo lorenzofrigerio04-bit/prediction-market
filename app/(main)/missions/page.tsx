@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Header from "@/components/Header";
 import Link from "next/link";
 import { trackView } from "@/lib/analytics-client";
 import {
@@ -173,7 +172,6 @@ export default function MissionsPage() {
   if (status === "loading" || loading) {
     return (
       <div className="min-h-screen bg-bg">
-        <Header />
         <main className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
           <LoadingBlock message="Caricamento missioni..." />
         </main>
@@ -185,14 +183,12 @@ export default function MissionsPage() {
 
   return (
     <div className="min-h-screen bg-bg">
-      <Header />
       <main className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
         <PageHeader
           title="Missioni"
           description="Un motivo in più per tornare domani: completa le missioni, mantieni la serie e guadagna crediti extra."
         />
 
-        {/* Card: Moltiplicatore bonus + esempio */}
         <SectionContainer>
           <Card neon className="p-5 overflow-hidden">
             <div className="flex flex-wrap items-start justify-between gap-4">

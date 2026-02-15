@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import Header from "@/components/Header";
 import LeaderboardRow from "@/components/LeaderboardRow";
 import { trackView } from "@/lib/analytics-client";
 import {
@@ -103,7 +102,6 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-screen bg-bg">
-      <Header />
       <main className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
         <PageHeader
           title="🏆 Classifica"
