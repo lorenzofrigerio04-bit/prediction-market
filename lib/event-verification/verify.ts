@@ -1,6 +1,7 @@
 /**
  * Funzione principale: verifyCandidates(candidates) – Fase 2.
  * Filtra e ordina i candidati per verificabilità (esito binario, fonte, scadenza, vaghezza).
+ * Scarta anche candidati la cui data esito (es. "entro fine 2023") è già nel passato.
  */
 
 import type { NewsCandidate } from "../event-sources/types";
@@ -11,6 +12,7 @@ import {
   isDomainAllowed,
   isTitleTooVague,
 } from "./criteria";
+import { parseOutcomeDateFromText } from "../event-generation/closes-at";
 
 /**
  * Calcola lo score di verificabilità (0–1) dai criteri di risolvibilità.
@@ -46,11 +48,17 @@ export function verifyCandidates(
   const cfg = config ?? getVerificationConfigFromEnv();
   const results: VerifiedCandidate[] = [];
 
+  const now = Date.now();
   for (const c of candidates) {
     if (!c.title || !c.url) continue;
 
     if (!isDomainAllowed(c.url, cfg)) continue;
     if (isTitleTooVague(c.title, cfg)) continue;
+
+    // Scarta candidati con data esito già passata (es. "entro fine 2023", "elezioni 2022")
+    const text = [c.title, c.snippet ?? ""].filter(Boolean).join(" ");
+    const outcomeDate = parseOutcomeDateFromText(text);
+    if (outcomeDate && outcomeDate.getTime() < now) continue;
 
     const criteria = evaluateResolvabilityCriteria(
       c.title,

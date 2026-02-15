@@ -11,6 +11,15 @@ La pipeline end-to-end recupera notizie trending, le verifica, genera eventi con
 
 Gli eventi creati compaiono in **Discover** come quelli creati a mano; nessuna modifica alla UI.
 
+### Eventi già in DB: nessuna modifica
+
+La pipeline **crea solo nuovi eventi**; non modifica né rimuove eventi esistenti. Se in lista vedi ancora eventi con scadenza sbagliata (es. "Il ddl X sarà approvato entro la fine del 2023?"), sono stati creati **prima** dell’introduzione dei controlli su data esito e closesAt. Per non vederli più:
+
+- **Risolvili dall’admin** (Risoluzione eventi chiusi) oppure chiudili/archiviali se previsto.
+- I **nuovi** eventi generati dal cron (o da una run manuale) rispettano già le regole: data esito nel passato → evento scartato in verifica e in generazione; closesAt nel passato → rifiutato in creazione.
+
+Quindi sì: per vedere l’effetto del fix sui “nuovi” eventi bisogna aspettare una run del cron (o lanciare manualmente `GET /api/cron/generate-events`); gli eventi vecchi sbagliati restano finché non li gestisci dall’admin.
+
 ## Endpoint
 
 - **GET /api/cron/generate-events** – Esegue l’intera pipeline (fetch → verify → generate → create).

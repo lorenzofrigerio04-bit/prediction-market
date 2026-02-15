@@ -6,7 +6,9 @@
 
 import type { PrismaClient } from "@prisma/client";
 import { fetchTrendingCandidates } from "@/lib/event-sources";
+import type { NewsCandidate } from "@/lib/event-sources/types";
 import { verifyCandidates, getVerificationConfigFromEnv } from "@/lib/event-verification";
+import type { VerificationConfig } from "@/lib/event-verification/types";
 import { generateEventsFromCandidates } from "./generate";
 import { createEventsFromGenerated } from "./create-events";
 import type { CreateEventsResult } from "./create-events";
@@ -15,6 +17,10 @@ import type { GenerateEventsOptions } from "./types";
 export type RunPipelineOptions = {
   /** Numero massimo di candidati da fetch (Fase 1). Default 50. */
   limit?: number;
+  /** Se fornito, salta il fetch e usa questi candidati (utile per fallback con candidati di esempio). */
+  candidatesOverride?: NewsCandidate[];
+  /** Config verifica da usare al posto del default da env (utile con candidatesOverride per far passare i candidati di esempio). */
+  verificationConfig?: VerificationConfig;
   /** Opzioni per generateEventsFromCandidates: maxPerCategory, maxTotal, ecc. */
   generation?: GenerateEventsOptions;
 };
@@ -49,10 +55,12 @@ export async function runPipeline(
     provider: options?.generation?.provider,
   };
 
-  const candidates = await fetchTrendingCandidates(limit);
+  const candidates =
+    options?.candidatesOverride ?? (await fetchTrendingCandidates(limit));
   const candidatesCount = candidates.length;
 
-  const verificationConfig = getVerificationConfigFromEnv();
+  const verificationConfig =
+    options?.verificationConfig ?? getVerificationConfigFromEnv();
   const verified = verifyCandidates(candidates, verificationConfig);
   const verifiedCount = verified.length;
 

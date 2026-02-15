@@ -53,6 +53,8 @@ export default function AdminDashboard() {
   const [pendingResolutionCount, setPendingResolutionCount] = useState(0);
   const [simulateLoading, setSimulateLoading] = useState(false);
   const [simulateResult, setSimulateResult] = useState<Record<string, unknown> | null>(null);
+  const [generateLoading, setGenerateLoading] = useState(false);
+  const [generateResult, setGenerateResult] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     fetchEvents();
@@ -210,6 +212,39 @@ export default function AdminDashboard() {
           {simulateResult && (
             <pre className="mt-3 p-3 bg-gray-50 rounded border border-gray-200 text-xs overflow-auto max-h-40">
               {JSON.stringify(simulateResult, null, 2)}
+            </pre>
+          )}
+        </div>
+
+        {/* Generazione eventi (pipeline: notizie → LLM → DB) */}
+        <div className="mb-6 p-4 bg-white rounded-lg shadow border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Generazione eventi</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            Esegue la pipeline (notizie → verifica → LLM → creazione in DB). Utile sul sito deployato per creare nuovi eventi senza aspettare il cron. Richiede NEWS_API_KEY e OPENAI/ANTHROPIC in produzione.
+          </p>
+          <button
+            onClick={async () => {
+              setGenerateLoading(true);
+              setGenerateResult(null);
+              try {
+                const res = await fetch("/api/admin/run-generate-events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ maxTotal: 5 }) });
+                const data = await res.json();
+                setGenerateResult(data);
+                if (res.ok && data.created > 0) fetchEvents();
+              } catch (e) {
+                setGenerateResult({ error: String(e) });
+              } finally {
+                setGenerateLoading(false);
+              }
+            }}
+            disabled={generateLoading}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
+          >
+            {generateLoading ? "Generazione in corso..." : "Genera eventi ora (max 5)"}
+          </button>
+          {generateResult && (
+            <pre className="mt-3 p-3 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-xs overflow-auto max-h-40">
+              {JSON.stringify(generateResult, null, 2)}
             </pre>
           )}
         </div>

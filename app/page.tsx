@@ -157,7 +157,7 @@ export default function Home() {
     if (status !== "authenticated") return;
     setLoadingTrending(true);
     setEventsError(null);
-    const params = new URLSearchParams({ sort: "popular", status: "open", limit: "4" });
+    const params = new URLSearchParams({ sort: "recent", status: "open", limit: "4" });
     fetch(`/api/events?${params}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => setEventsTrending(data?.events ?? []))
@@ -195,7 +195,7 @@ export default function Home() {
     if (!showLanding) return;
     setLandingEventsLoading(true);
     try {
-      const res = await fetch("/api/events?filter=popular&limit=5&status=open");
+      const res = await fetch("/api/events?sort=recent&limit=5&status=open");
       if (res.ok) {
         const data: EventsResponse = await res.json();
         setLandingEvents(data.events ?? []);
@@ -341,7 +341,7 @@ export default function Home() {
   const refetchTrending = () => {
     setLoadingTrending(true);
     setEventsError(null);
-    const params = new URLSearchParams({ sort: "popular", status: "open", limit: "4" });
+    const params = new URLSearchParams({ sort: "recent", status: "open", limit: "4" });
     fetch(`/api/events?${params}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => setEventsTrending(data?.events ?? []))

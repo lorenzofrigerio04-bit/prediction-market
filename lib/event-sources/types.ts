@@ -29,7 +29,7 @@ export type EventSourcesConfig = {
 
 /** Default: italiano, ultime 7 giorni (piano free News API ha ritardo 24h), blacklist minima */
 export const DEFAULT_CONFIG: EventSourcesConfig = {
-  timeoutMs: 15000,
+  timeoutMs: 25000,
   maxRetries: 3,
   language: "it",
   maxAgeHours: 168,

@@ -79,7 +79,7 @@ export default function DiscoverPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [status, setStatus] = useState<StatusType>("open");
   const [deadline, setDeadline] = useState<DeadlineType>("");
-  const [sort, setSort] = useState<SortType>("popular");
+  const [sort, setSort] = useState<SortType>("recent");
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<EventsResponse["pagination"] | null>(null);
   const [error, setError] = useState<string | null>(null);
