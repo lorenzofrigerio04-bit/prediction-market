@@ -13,6 +13,33 @@ Hai implementato backend (LMSR, feed, validator, ecc.) ma **il sito pubblico non
 
 ---
 
+## Verifica che il deploy sia davvero attivo
+
+Dopo **push** e **deploy** su Vercel, per essere sicuro che il sito pubblico mostri il codice nuovo:
+
+1. **Controlla il Build in fondo alla pagina**  
+   In fondo a ogni pagina del sito c’è scritto **"Build xxxxxxx"** (es. `Build a0963b6`). Quel codice è l’hash del commit con cui è stato fatto il deploy.  
+   - Dopo un **nuovo deploy**, l’hash deve **cambiare** (es. da `a0963b6` a `f3a2c91`).  
+   - Se vedi ancora il **vecchio** hash → il browser sta mostrando una versione in cache o il deploy non è partito.  
+   - In **locale** vedi sempre `Build dev`.
+
+2. **Hard refresh per evitare la cache del browser**  
+   - **Mac:** `Cmd + Shift + R`  
+   - **Windows:** `Ctrl + F5`  
+   Oppure apri il sito in una **finestra in incognito**.
+
+3. **Controlla su Vercel che l’ultimo deploy sia "Ready"**  
+   Vercel → tuo progetto → **Deployments** → l’ultimo deploy deve essere **Ready** (verde). Se è "Building" o "Error", il sito pubblico non è ancora aggiornato.
+
+4. **Se il progetto non è collegato a Git**  
+   Vercel non si aggiorna da solo. In quel caso fai un deploy a mano da terminale:  
+   `npx vercel --prod`  
+   (vedi sotto “Opzione A” in `DEPLOY_UI_UPDATE.md`.)
+
+Quando vedi il **nuovo** hash "Build …" in fondo alla pagina, il sito pubblico sta servendo l’ultima versione.
+
+---
+
 ## Cosa fare (in ordine)
 
 ### 1. Fare deploy
