@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import EventCard from "@/components/EventCard";
@@ -62,6 +62,8 @@ interface Mission {
 
 export default function Home() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const debugMode = searchParams.get("debug") === "1";
   const { data: session, status, update: updateSession } = useSession();
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
   const [sessionSynced, setSessionSynced] = useState(false);
@@ -386,6 +388,11 @@ export default function Home() {
           title={`Bentornato, ${displayName}.`}
           description="Ecco cosa succede oggi."
         />
+        {debugMode && (
+          <p className="text-ds-micro text-fg-muted mb-2" aria-hidden>
+            debug: version=footer / markets_count={eventsTrending.length} / feed_used
+          </p>
+        )}
 
         <HomeSummary
           credits={credits}
