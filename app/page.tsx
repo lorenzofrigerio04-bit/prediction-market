@@ -84,6 +84,14 @@ export default function Home() {
   const [missionsLoading, setMissionsLoading] = useState(false);
   const [canSpinToday, setCanSpinToday] = useState<boolean | null>(null);
   const [spinLoading, setSpinLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<{ version?: { commit: string; env: string; baseApiUrl: string }; health?: { dbConnected: boolean; markets_count: number } } | null>(null);
+
+  useEffect(() => {
+    if (!debugMode) return;
+    Promise.all([fetch("/api/version").then((r) => r.ok ? r.json() : null), fetch("/api/health").then((r) => r.ok ? r.json() : null)])
+      .then(([version, health]) => setDebugInfo({ version: version ?? undefined, health: health ?? undefined }))
+      .catch(() => setDebugInfo(null));
+  }, [debugMode]);
 
   useEffect(() => {
     if (status === "unauthenticated" || status === "loading") {
@@ -389,9 +397,10 @@ export default function Home() {
           description="Ecco cosa succede oggi."
         />
         {debugMode && (
-          <p className="text-ds-micro text-fg-muted mb-2" aria-hidden>
-            debug: version=footer / markets_count={eventsTrending.length} / feed_used
-          </p>
+          <div className="text-ds-micro text-fg-muted mb-2 p-2 rounded bg-white/5" aria-hidden>
+            <p>debug: commit={debugInfo?.version?.commit ?? "—"} env={debugInfo?.version?.env ?? "—"} baseApiUrl={debugInfo?.version?.baseApiUrl ? `${debugInfo.version.baseApiUrl.slice(0, 40)}…` : "—"}</p>
+            <p>dbConnected={String(debugInfo?.health?.dbConnected ?? "—")} markets_count={debugInfo?.health?.markets_count ?? eventsTrending.length} (UI: {eventsTrending.length}) endpoint: {status === "authenticated" ? "/api/feed → fallback /api/events" : "/api/events"}</p>
+          </div>
         )}
 
         <HomeSummary
