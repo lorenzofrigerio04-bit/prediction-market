@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { getCanonicalBaseUrl } from "@/lib/canonical-base-url";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { sendVerificationEmail } from "@/lib/email";
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
       data: { identifier: email, token, expires },
     });
 
-    const baseUrl = process.env.NEXTAUTH_URL ?? request.nextUrl.origin;
+    const baseUrl = getCanonicalBaseUrl();
     const verifyUrl = `${baseUrl}/auth/verify-email?token=${encodeURIComponent(token)}`;
 
     const result = await sendVerificationEmail(email, verifyUrl);

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getCanonicalBaseUrl } from "@/lib/canonical-base-url";
 import { prisma } from "@/lib/prisma";
 import {
   getClosedUnresolvedEvents,
@@ -47,8 +48,7 @@ export async function GET(request: NextRequest) {
     }
 
     const events = await getClosedUnresolvedEvents(prisma);
-    const baseUrl =
-      process.env.NEXTAUTH_URL || request.nextUrl.origin;
+    const baseUrl = getCanonicalBaseUrl();
     const cronSecret = process.env.CRON_SECRET?.trim();
 
     const autoResolved: { id: string; title: string; outcome: "YES" | "NO" }[] =

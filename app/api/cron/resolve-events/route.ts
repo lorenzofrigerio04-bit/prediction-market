@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getCanonicalBaseUrl } from "@/lib/canonical-base-url";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Chiama l'endpoint di risoluzione con il segreto per autorizzare il cron
-    const baseUrl = process.env.NEXTAUTH_URL || request.nextUrl.origin;
+    const baseUrl = getCanonicalBaseUrl();
     const resolveResponse = await fetch(`${baseUrl}/api/events/resolve-closed`, {
       method: "POST",
       headers: {

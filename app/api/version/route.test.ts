@@ -13,6 +13,8 @@ describe("GET /api/version", () => {
     }
   }
 
+  const envKeysUsedByHelper = ["NEXTAUTH_URL", "NEXT_PUBLIC_SITE_URL", "VERCEL", "VERCEL_URL", "PORT"];
+
   function restoreEnv() {
     for (const [k, v] of Object.entries(savedEnv)) {
       if (v === undefined) delete process.env[k];
@@ -22,12 +24,18 @@ describe("GET /api/version", () => {
 
   afterEach(() => {
     restoreEnv();
+    // Isolate canonical base URL helper env
+    for (const k of envKeysUsedByHelper) {
+      if (!(k in savedEnv)) delete process.env[k];
+    }
   });
 
   it("returns JSON with commit, buildTime, env, baseUrl and baseUrl never ends with /api", async () => {
-    saveEnv(["VERCEL", "VERCEL_URL", "PORT", "VERCEL_GIT_COMMIT_SHA", "NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA", "GIT_COMMIT_SHA"]);
+    saveEnv([...envKeysUsedByHelper, "VERCEL_GIT_COMMIT_SHA", "NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA", "GIT_COMMIT_SHA"]);
     delete process.env.VERCEL;
     delete process.env.VERCEL_URL;
+    delete process.env.NEXTAUTH_URL;
+    delete process.env.NEXT_PUBLIC_SITE_URL;
     process.env.PORT = "3000";
 
     const { GET } = await import("./route");
@@ -47,9 +55,11 @@ describe("GET /api/version", () => {
   });
 
   it("returns env=vercel and origin-only baseUrl when VERCEL is set", async () => {
-    saveEnv(["VERCEL", "VERCEL_URL", "VERCEL_GIT_COMMIT_SHA"]);
+    saveEnv([...envKeysUsedByHelper, "VERCEL_GIT_COMMIT_SHA"]);
     process.env.VERCEL = "1";
     process.env.VERCEL_URL = "myapp.vercel.app";
+    delete process.env.NEXTAUTH_URL;
+    delete process.env.NEXT_PUBLIC_SITE_URL;
     process.env.VERCEL_GIT_COMMIT_SHA = "abc123def456";
 
     const { GET } = await import("./route");
@@ -62,5 +72,23 @@ describe("GET /api/version", () => {
     expect(data.baseUrl).toBe("https://myapp.vercel.app");
     expect(data.baseUrl.endsWith("/api")).toBe(false);
     expect(data.commit).toBe("abc123def456");
+  });
+
+  it("prefers NEXTAUTH_URL over VERCEL_URL (canonical on preview)", async () => {
+    saveEnv([...envKeysUsedByHelper, "VERCEL_GIT_COMMIT_SHA"]);
+    process.env.VERCEL = "1";
+    process.env.VERCEL_URL = "prediction-market-abc123-team.vercel.app";
+    process.env.NEXTAUTH_URL = "https://prediction-market-livid.vercel.app";
+    process.env.VERCEL_GIT_COMMIT_SHA = "sha789";
+
+    const { GET } = await import("./route");
+    const req = new NextRequest("https://prediction-market-abc123-team.vercel.app/api/version");
+    const res = await GET(req);
+    expect(res.status).toBe(200);
+    const data = await res.json();
+
+    expect(data.env).toBe("vercel");
+    expect(data.baseUrl).toBe("https://prediction-market-livid.vercel.app");
+    expect(data.baseUrl.endsWith("/api")).toBe(false);
   });
 });

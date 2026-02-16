@@ -84,7 +84,7 @@ export default function Home() {
   const [missionsLoading, setMissionsLoading] = useState(false);
   const [canSpinToday, setCanSpinToday] = useState<boolean | null>(null);
   const [spinLoading, setSpinLoading] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<{ version?: { commit: string; env: string; baseApiUrl: string }; health?: { dbConnected: boolean; markets_count: number } } | null>(null);
+  const [debugInfo, setDebugInfo] = useState<{ version?: { commit: string; env: string; baseUrl: string }; health?: { dbConnected: boolean; markets_count: number } } | null>(null);
 
   useEffect(() => {
     if (!debugMode) return;
@@ -398,7 +398,7 @@ export default function Home() {
         />
         {debugMode && (
           <div className="text-ds-micro text-fg-muted mb-2 p-2 rounded bg-white/5" aria-hidden>
-            <p>debug: commit={debugInfo?.version?.commit ?? "—"} env={debugInfo?.version?.env ?? "—"} baseApiUrl={debugInfo?.version?.baseApiUrl ? `${debugInfo.version.baseApiUrl.slice(0, 40)}…` : "—"}</p>
+            <p>debug: commit={debugInfo?.version?.commit ?? "—"} env={debugInfo?.version?.env ?? "—"} baseUrl={debugInfo?.version?.baseUrl ? `${debugInfo.version.baseUrl.slice(0, 40)}…` : "—"}</p>
             <p>dbConnected={String(debugInfo?.health?.dbConnected ?? "—")} markets_count={debugInfo?.health?.markets_count ?? eventsTrending.length} (UI: {eventsTrending.length}) endpoint: {status === "authenticated" ? "/api/feed → fallback /api/events" : "/api/events"}</p>
           </div>
         )}
