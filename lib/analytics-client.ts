@@ -5,6 +5,7 @@
 
 export type ClientAnalyticsEvent =
   | "EVENT_VIEWED"
+  | "EVENT_CLICKED"
   | "EVENT_RESOLVED_VIEWED"
   | "LEADERBOARD_VIEWED"
   | "PROFILE_VIEWED"
@@ -12,6 +13,7 @@ export type ClientAnalyticsEvent =
 
 const VALID_VIEW_EVENTS: ClientAnalyticsEvent[] = [
   "EVENT_VIEWED",
+  "EVENT_CLICKED",
   "EVENT_RESOLVED_VIEWED",
   "LEADERBOARD_VIEWED",
   "PROFILE_VIEWED",

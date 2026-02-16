@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { track, type AnalyticsEvent } from "@/lib/analytics";
+import { persistMarketAnalyticsRaw } from "@/lib/analytics/persist-raw";
 
 /**
  * POST /api/analytics/track
@@ -28,6 +29,7 @@ export async function POST(request: NextRequest) {
       "USER_SIGNUP",
       "ONBOARDING_COMPLETE",
       "EVENT_VIEWED",
+      "EVENT_CLICKED",
       "EVENT_FOLLOWED",
       "PREDICTION_PLACED",
       "COMMENT_POSTED",
@@ -52,6 +54,15 @@ export async function POST(request: NextRequest) {
     } as Record<string, string | number | boolean | undefined>, {
       request,
     });
+
+    const eventId = properties.eventId as string | undefined;
+    if (eventId && typeof eventId === "string" && (event === "EVENT_VIEWED" || event === "EVENT_CLICKED")) {
+      persistMarketAnalyticsRaw({
+        eventId,
+        userId: session?.user?.id ?? undefined,
+        eventType: event === "EVENT_VIEWED" ? "impression" : "click",
+      }).catch((e) => console.error("[analytics] persist raw error:", e));
+    }
 
     return NextResponse.json({ ok: true });
   } catch (e) {

@@ -36,4 +36,6 @@ export type GenerateEventsOptions = {
   maxRetries?: number;
   /** Provider: "openai" | "anthropic". Default da env GENERATION_PROVIDER o "openai". */
   provider?: "openai" | "anthropic";
+  /** Feedback: pesi per categoria (0.5–1). Categorie con peso più alto vengono privilegiate nel cap. */
+  categoryWeights?: Record<string, number>;
 };

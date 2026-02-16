@@ -44,7 +44,6 @@ function parseListFromEnv(envValue: string | undefined): string[] {
 
 function loadDomainsFromFile(filePath: string): { whitelist: string[]; blacklist: string[] } {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const fs = require("fs");
     const path = require("path");
     const resolved = path.isAbsolute(filePath) ? filePath : path.resolve(process.cwd(), filePath);

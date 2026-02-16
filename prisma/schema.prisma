@@ -55,6 +55,8 @@ model User {
   notifications Notification[]
   createdEvents Event[] @relation("EventCreator")
   eventFollows  EventFollower[]
+  userSessions UserSession[]
+  userProfile  UserProfile?
   
   // NextAuth relazioni
   accounts      Account[]
@@ -140,26 +142,45 @@ model Event {
   // Statistiche aggregate
   yesPredictions Int   @default(0) // numero previsioni SÌ
   noPredictions  Int   @default(0) // numero previsioni NO
+  /// @deprecated Use LMSR (q_yes, q_no, p_init, b) during migration period. Kept for backward compatibility.
   totalCredits   Int   @default(0) // totale crediti investiti
+  /// @deprecated Use LMSR (q_yes, q_no) during migration period. Kept for backward compatibility.
   yesCredits     Int   @default(0) // crediti su SÌ
+  /// @deprecated Use LMSR (q_yes, q_no) during migration period. Kept for backward compatibility.
   noCredits      Int   @default(0) // crediti su NO
   
   // Probabilità calcolata (yesCredits / totalCredits * 100)
   probability    Float  @default(50.0) // percentuale previsione SÌ
+  
+  // LMSR (Liquidity-Maker Logarithmic Market Scoring Rule)
+  p_init  Float  @default(0.5)  // initial probability (yes)
+  b       Float  @default(100)  // liquidity parameter
+  q_yes   Float  @default(0)   // quantity of YES shares
+  q_no    Float  @default(0)   // quantity of NO shares
+  
+  // Time coherence
+  realWorldEventTime     DateTime? // when the real-world event occurs
+  resolutionTimeExpected DateTime? // when resolution is expected
+  resolutionBufferHours  Int?     // buffer hours after resolutionTimeExpected
+  resolutionStatus       String   @default("PENDING") // PENDING, RESOLVED, DISPUTED, etc.
   
   // Creatore (admin)
   createdById   String
   createdBy     User   @relation("EventCreator", fields: [createdById], references: [id])
   
   // Relazioni
-  predictions   Prediction[]
-  comments      Comment[]
-  followers     EventFollower[]
+  predictions    Prediction[]
+  comments       Comment[]
+  followers      EventFollower[]
+  marketMetrics  MarketMetrics[]
   
   @@index([category])
   @@index([closesAt])
   @@index([resolved])
+  @@index([closesAt, resolved])
   @@index([seasonId])
+  @@index([realWorldEventTime])
+  @@index([resolutionStatus])
   @@map("events")
 }
 
@@ -226,7 +247,12 @@ model Prediction {
   
   // Previsione
   outcome     String // "YES" o "NO"
-  credits     Int // quanti crediti ha investito
+  credits     Int // quanti crediti ha investito (deprecated: kept for backward compatibility)
+  
+  // LMSR (Logarithmic Market Scoring Rule) fields
+  sharesYes   Float? // YES shares purchased (LMSR)
+  sharesNo    Float? // NO shares purchased (LMSR)
+  costBasis   Float? // Cost in credits (LMSR cost function)
   
   // Risultato (null se evento non ancora risolto)
   resolved    Boolean  @default(false)
@@ -241,6 +267,7 @@ model Prediction {
   @@index([userId])
   @@index([eventId])
   @@index([resolved])
+  @@index([userId, resolved])
   @@map("predictions")
 }
 
@@ -489,4 +516,99 @@ model Notification {
   @@index([read])
   @@index([createdAt])
   @@map("notifications")
+}
+
+// ============================================
+// MARKET METRICS MODEL (Hourly market analytics)
+// ============================================
+model MarketMetrics {
+  id          String   @id @default(cuid())
+  
+  // Relazione
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  // Timestamp (hour bucket)
+  hour        DateTime // truncated to hour
+  
+  // Metriche
+  volume      Float    @default(0) // volume di trading nell'ora
+  uniqueUsers Int      @default(0) // utenti unici che hanno fatto trading
+  impressions Int      @default(0) // visualizzazioni dell'evento
+  clicks      Int      @default(0) // click sull'evento
+  successScore Float?  // (volumeRate*0.4) + (userRate*0.3) + (ctr*0.3)
+  
+  createdAt   DateTime @default(now())
+  
+  @@unique([eventId, hour])
+  @@index([eventId])
+  @@index([hour])
+  @@index([eventId, hour])
+  @@map("market_metrics")
+}
+
+// ============================================
+// MARKET ANALYTICS RAW (Raw view/click events for aggregation)
+// ============================================
+model MarketAnalyticsRaw {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String?  // null for anonymous
+  eventType String   // "impression" | "click"
+  createdAt DateTime @default(now())
+  
+  @@index([eventId, eventType, createdAt])
+  @@index([createdAt])
+  @@map("market_analytics_raw")
+}
+
+// ============================================
+// USER SESSION MODEL (Analytics sessioni utente)
+// ============================================
+model UserSession {
+  id             String   @id @default(cuid())
+  
+  // Relazione
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Timestamps sessione
+  startedAt      DateTime @default(now())
+  endedAt        DateTime?
+  
+  // Metriche sessione
+  durationSeconds Int?    // durata in secondi (calcolata se endedAt presente)
+  pageViews      Int      @default(0) // numero di pagine visitate
+  actions        Int      @default(0) // numero di azioni (click, previsioni, etc.)
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([startedAt])
+  @@index([endedAt])
+  @@map("user_sessions")
+}
+
+// ============================================
+// USER PROFILE MODEL (Profilo utente esteso)
+// ============================================
+model UserProfile {
+  id                String   @id @default(cuid())
+  
+  // Relazione 1:1 con User
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Preferenze
+  preferredCategories Json?  // array di categorie preferite: ["Sport", "Tecnologia", ...]
+  riskTolerance     String?  // LOW, MEDIUM, HIGH
+  preferredHorizon  String?  // SHORT (giorni), MEDIUM (settimane), LONG (mesi)
+  noveltySeeking   Float?   // 0.0 - 1.0, quanto cerca novità
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([userId])
+  @@map("user_profiles")
 }

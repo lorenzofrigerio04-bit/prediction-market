@@ -5,6 +5,9 @@
 
 import type { PrismaClient } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit";
+import { validateMarket } from "@/lib/validator";
+import { getBParameter } from "@/lib/pricing/initialization";
+import { getBufferHoursForCategory } from "@/lib/markets";
 import type { GeneratedEvent } from "./types";
 import { ALLOWED_CATEGORIES } from "./types";
 
@@ -110,6 +113,22 @@ export async function createEventsFromGenerated(
       continue;
     }
 
+    const marketValidation = validateMarket({
+      title: ev.title,
+      description: ev.description ?? null,
+      closesAt: ev.closesAt,
+      resolutionSourceUrl: ev.resolutionSourceUrl ?? null,
+      resolutionNotes: ev.resolutionNotes ?? null,
+    });
+    if (!marketValidation.valid) {
+      result.errors.push({
+        index: i,
+        title: ev.title.slice(0, 50),
+        reason: `Validator (hard fail): ${marketValidation.reasons.join("; ")}`,
+      });
+      continue;
+    }
+
     const normalized = normalizeTitle(ev.title);
     if (existingNormalizedTitles.has(normalized)) {
       result.skipped++;
@@ -118,6 +137,8 @@ export async function createEventsFromGenerated(
 
     try {
       const closesAtDate = new Date(ev.closesAt);
+      const b = getBParameter(ev.category as Parameters<typeof getBParameter>[0], "Medium");
+      const resolutionBufferHours = getBufferHoursForCategory(ev.category);
       const event = await prisma.event.create({
         data: {
           title: ev.title.trim(),
@@ -127,6 +148,9 @@ export async function createEventsFromGenerated(
           resolutionSourceUrl: ev.resolutionSourceUrl.trim(),
           resolutionNotes: ev.resolutionNotes.trim(),
           createdById: creatorId,
+          resolutionStatus: marketValidation.needsReview ? "NEEDS_REVIEW" : "PENDING",
+          b,
+          resolutionBufferHours,
         },
       });
       result.created++;
@@ -138,7 +162,15 @@ export async function createEventsFromGenerated(
         action: "EVENT_CREATE",
         entityType: "event",
         entityId: event.id,
-        payload: { title: event.title, category: event.category, source: "event-generation" },
+        payload: {
+          title: event.title,
+          category: event.category,
+          source: "event-generation",
+          ...(marketValidation.needsReview && {
+            needsReview: true,
+            validationReasons: marketValidation.reasons,
+          }),
+        },
       });
     } catch (err) {
       result.errors.push({

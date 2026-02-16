@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { getEventProbability } from "@/lib/pricing/price-display";
 
 export interface LandingEventRowEvent {
   id: string;
@@ -8,6 +9,10 @@ export interface LandingEventRowEvent {
   category: string;
   closesAt: string;
   probability: number;
+  // LMSR fields (optional for backward compatibility)
+  q_yes?: number | null;
+  q_no?: number | null;
+  b?: number | null;
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -38,7 +43,17 @@ interface LandingEventRowProps {
 }
 
 export default function LandingEventRow({ event }: LandingEventRowProps) {
-  const yesPct = Math.round(event.probability);
+  // Use LMSR price if available, otherwise fall back to probability
+  let yesPct: number;
+  if (event.q_yes !== null && event.q_yes !== undefined && 
+      event.q_no !== null && event.q_no !== undefined && 
+      event.b !== null && event.b !== undefined) {
+    // Use LMSR price
+    yesPct = Math.round(getEventProbability(event));
+  } else {
+    // Fallback to probability field
+    yesPct = Math.round(event.probability);
+  }
   const noPct = 100 - yesPct;
   const timeLabel = getTimeRemaining(event.closesAt);
   const icon = getCategoryIcon(event.category);

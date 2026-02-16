@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { IconClock, IconChat, IconCurrency, IconTrendUp } from "@/components/ui/Icons";
+import { getEventProbability } from "@/lib/pricing/price-display";
 
 export interface EventCardEvent {
   id: string;
@@ -15,6 +16,10 @@ export interface EventCardEvent {
   totalCredits: number;
   yesCredits?: number;
   noCredits?: number;
+  // LMSR fields (optional for backward compatibility)
+  q_yes?: number | null;
+  q_no?: number | null;
+  b?: number | null;
   _count: {
     predictions: number;
     comments: number;
@@ -27,20 +32,33 @@ interface EventCardProps {
 
 function useEventDerived(event: EventCardEvent) {
   return useMemo(() => {
-    const total = event.totalCredits || 0;
-    const yes =
-      typeof event.yesCredits === "number"
-        ? event.yesCredits
-        : total > 0
-          ? Math.round((event.probability / 100) * total)
-          : 0;
-    const no = total - yes;
-    const yesPct = total > 0 ? Math.round((yes / total) * 100) : Math.round(event.probability);
+    // Use LMSR price if available, otherwise fall back to probability
+    let yesPct: number;
+    if (event.q_yes !== null && event.q_yes !== undefined && 
+        event.q_no !== null && event.q_no !== undefined && 
+        event.b !== null && event.b !== undefined) {
+      // Use LMSR price
+      yesPct = Math.round(getEventProbability(event));
+    } else {
+      // Fallback to probability field or calculate from yesCredits/totalCredits
+      const total = event.totalCredits || 0;
+      const yes =
+        typeof event.yesCredits === "number"
+          ? event.yesCredits
+          : total > 0
+            ? Math.round((event.probability / 100) * total)
+            : 0;
+      yesPct = total > 0 ? Math.round((yes / total) * 100) : Math.round(event.probability);
+    }
+    
     const noPct = 100 - yesPct;
+    const total = event.totalCredits || 0;
+    const yes = typeof event.yesCredits === "number" ? event.yesCredits : Math.round((yesPct / 100) * total);
+    const no = total - yes;
     const yesMultiplier = yes > 0 ? Math.max(1, total / yes) : 1;
     const noMultiplier = no > 0 ? Math.max(1, total / no) : 1;
     return { yesPct, noPct, yesMultiplier, noMultiplier };
-  }, [event.totalCredits, event.yesCredits, event.noCredits, event.probability]);
+  }, [event.totalCredits, event.yesCredits, event.noCredits, event.probability, event.q_yes, event.q_no, event.b]);
 }
 
 function getTimeRemaining(closesAt: string | Date): string {

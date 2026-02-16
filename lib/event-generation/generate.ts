@@ -44,9 +44,9 @@ function selectCandidatesWithCaps(
 }
 
 /**
- * Dopo aver generato gli eventi, applica cap per categoria e maxTotal:
- * ordina per "ordine di priorità" (manteniamo l'ordine di generazione che segue lo score)
- * e tronca per rispettare maxPerCategory e maxTotal.
+ * Dopo aver generato gli eventi, applica cap per categoria e maxTotal.
+ * Se categoryWeights (feedback) sono forniti, ordina per peso categoria (desc) così che
+ * le categorie con maggior successo ottengano per prime i slot (boost successful categories).
  */
 function applyCategoryCaps(
   events: GeneratedEvent[],
@@ -54,10 +54,15 @@ function applyCategoryCaps(
 ): GeneratedEvent[] {
   const maxPerCategory = options.maxPerCategory ?? DEFAULT_MAX_PER_CATEGORY;
   const maxTotal = options.maxTotal ?? Infinity;
+  const categoryWeights = options.categoryWeights ?? {};
+  const weight = (cat: string) => categoryWeights[cat] ?? 0.5;
+  const sorted = [...events].sort(
+    (a, b) => weight(b.category) - weight(a.category)
+  );
   const categoryCount = new Map<string, number>();
   const result: GeneratedEvent[] = [];
 
-  for (const e of events) {
+  for (const e of sorted) {
     if (result.length >= maxTotal) break;
     const n = categoryCount.get(e.category) ?? 0;
     if (n >= maxPerCategory) continue;

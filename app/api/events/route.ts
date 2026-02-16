@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { cacheGetJson, cacheSetJson } from "@/lib/cache/redis";
+
+const TRENDING_CACHE_TTL_SEC = 10 * 60; // 10 minutes
+const TRENDING_KEY_PREFIX = "trending:";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +18,17 @@ export async function GET(request: NextRequest) {
     const sort = searchParams.get("sort") || ""; // popular | expiring | recent | discussed
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "12");
+
+    const orderKey = sort || (filter === "popular" ? "popular" : filter === "expiring" ? "expiring" : "recent");
+    const isTrendingRequest = orderKey === "popular" && !search.trim() && status === "open" && !deadline && page === 1 && limit === 12;
+    const trendingCacheKey = isTrendingRequest ? TRENDING_KEY_PREFIX + (category || "all") : null;
+
+    if (trendingCacheKey) {
+      const cached = await cacheGetJson<{ events: unknown[]; pagination: unknown }>(trendingCacheKey);
+      if (cached) {
+        return NextResponse.json(cached);
+      }
+    }
 
     const skip = (page - 1) * limit;
     const now = new Date();
@@ -57,8 +72,7 @@ export async function GET(request: NextRequest) {
       where.AND = where.AND ? [...where.AND, searchClause] : [searchClause];
     }
 
-    // Ordinamento: sort ha priorità su filter per compatibilità
-    const orderKey = sort || (filter === "popular" ? "popular" : filter === "expiring" ? "expiring" : "recent");
+    // Ordinamento
     let orderBy: any = {};
     if (orderKey === "popular") {
       orderBy = { totalCredits: "desc" };
@@ -96,7 +110,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({
+    const payload = {
       events,
       pagination: {
         page,
@@ -104,7 +118,13 @@ export async function GET(request: NextRequest) {
         total,
         totalPages: Math.ceil(total / limit),
       },
-    });
+    };
+
+    if (trendingCacheKey) {
+      cacheSetJson(trendingCacheKey, payload, TRENDING_CACHE_TTL_SEC).catch(() => {});
+    }
+
+    return NextResponse.json(payload);
   } catch (error) {
     console.error("Error fetching events:", error);
     return NextResponse.json(

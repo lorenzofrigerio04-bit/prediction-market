@@ -4,6 +4,7 @@ import { memo } from "react";
 import Link from "next/link";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { IconClock, IconArrowRight } from "@/components/ui/Icons";
+import { getEventProbability } from "@/lib/pricing/price-display";
 
 export interface MarketCardEvent {
   id: string;
@@ -16,6 +17,10 @@ export interface MarketCardEvent {
   totalCredits: number;
   resolved: boolean;
   outcome?: string | null;
+  // LMSR fields (optional for backward compatibility)
+  q_yes?: number | null;
+  q_no?: number | null;
+  b?: number | null;
   _count: {
     predictions: number;
     comments: number;
@@ -41,9 +46,20 @@ function MarketCard({ event, index = 0 }: MarketCardProps) {
   };
 
   const isUrgent = timeUntilClose > 0 && timeUntilClose < 24 * 60 * 60 * 1000;
-  const yesPct = event.totalCredits > 0
-    ? Math.round((event.yesCredits / event.totalCredits) * 100)
-    : Math.round(event.probability);
+  
+  // Use LMSR price if available, otherwise fall back to probability
+  let yesPct: number;
+  if (event.q_yes !== null && event.q_yes !== undefined && 
+      event.q_no !== null && event.q_no !== undefined && 
+      event.b !== null && event.b !== undefined) {
+    // Use LMSR price
+    yesPct = Math.round(getEventProbability(event));
+  } else {
+    // Fallback to yesCredits/totalCredits or probability
+    yesPct = event.totalCredits > 0
+      ? Math.round((event.yesCredits / event.totalCredits) * 100)
+      : Math.round(event.probability);
+  }
   const noPct = 100 - yesPct;
 
   const ctaLabel = event.resolved ? "Vedi risultato" : "Fai la tua previsione";

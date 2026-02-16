@@ -8,7 +8,7 @@ export type AuditPayload = Record<string, unknown>;
 export async function createAuditLog(
   prisma: PrismaClient,
   params: {
-    userId: string;
+    userId?: string | null;
     action: string;
     entityType: string;
     entityId?: string | null;
@@ -17,7 +17,7 @@ export async function createAuditLog(
 ) {
   return prisma.auditLog.create({
     data: {
-      userId: params.userId,
+      userId: params.userId ?? null,
       action: params.action,
       entityType: params.entityType,
       entityId: params.entityId ?? null,

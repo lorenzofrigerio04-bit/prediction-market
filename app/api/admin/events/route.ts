@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 import { createAuditLog } from "@/lib/audit";
+import { validateMarket } from "@/lib/validator";
+import { getBParameter } from "@/lib/pricing/initialization";
+import { getBufferHoursForCategory } from "@/lib/markets";
 import { parseOutcomeDateFromText } from "@/lib/event-generation/closes-at";
 import { getClosureRules } from "@/lib/event-generation/config";
 
@@ -197,7 +200,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Crea l'evento
+    const marketValidation = validateMarket({
+      title,
+      description: description ?? null,
+      closesAt: closesAtDate.toISOString(),
+      resolutionSourceUrl: resolutionSourceUrl.trim(),
+      resolutionNotes: resolutionNotes.trim(),
+    });
+    if (!marketValidation.valid) {
+      return NextResponse.json(
+        { error: "Validazione mercato fallita", reasons: marketValidation.reasons },
+        { status: 400 }
+      );
+    }
+
+    const b = getBParameter(category as Parameters<typeof getBParameter>[0], "Medium");
+    const resolutionBufferHours = getBufferHoursForCategory(category);
+
     const event = await prisma.event.create({
       data: {
         title,
@@ -207,6 +226,9 @@ export async function POST(request: NextRequest) {
         resolutionSourceUrl: resolutionSourceUrl.trim(),
         resolutionNotes: resolutionNotes.trim(),
         createdById: admin.id,
+        resolutionStatus: marketValidation.needsReview ? "NEEDS_REVIEW" : "PENDING",
+        b,
+        resolutionBufferHours,
       },
       include: {
         createdBy: {

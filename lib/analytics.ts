@@ -13,6 +13,7 @@ export type AnalyticsEvent =
   | "USER_SIGNUP"
   | "ONBOARDING_COMPLETE"
   | "EVENT_VIEWED"
+  | "EVENT_CLICKED"
   | "EVENT_FOLLOWED"
   | "PREDICTION_PLACED"
   | "COMMENT_POSTED"

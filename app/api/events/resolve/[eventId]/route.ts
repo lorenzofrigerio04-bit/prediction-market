@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { applyCreditTransaction } from "@/lib/apply-credit-transaction";
+import { invalidatePriceCache } from "@/lib/cache/price";
+import { invalidateTrendingCache } from "@/lib/cache/trending";
+import { invalidateAllFeedCaches } from "@/lib/feed-cache";
 
 /**
  * Risolve manualmente un singolo evento specificando l'outcome
@@ -163,6 +166,12 @@ export async function POST(
         });
       }
     }
+
+    Promise.all([
+      invalidatePriceCache(event.id),
+      invalidateTrendingCache(),
+      invalidateAllFeedCaches(),
+    ]).catch((e) => console.error("Cache invalidation error:", e));
 
     return NextResponse.json({
       message: "Evento risolto con successo",
