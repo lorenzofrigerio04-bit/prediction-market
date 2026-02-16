@@ -157,16 +157,25 @@ export default function Home() {
     if (status !== "authenticated") return;
     setLoadingTrending(true);
     setEventsError(null);
-    // Feed personalizzato (trending + per te + esplorazione); fallback a lista eventi se fallisce
+    const fallbackToEvents = () =>
+      fetch("/api/events?sort=recent&status=open&limit=8")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => setEventsTrending(data?.events ?? []));
+    // Feed personalizzato (trending + per te + esplorazione); fallback a lista eventi se fallisce o vuoto
     fetch("/api/feed?limit=8")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setEventsTrending(data?.items ?? []))
-      .catch(() => {
-        const params = new URLSearchParams({ sort: "recent", status: "open", limit: "8" });
-        return fetch(`/api/events?${params}`)
-          .then((r) => (r.ok ? r.json() : null))
-          .then((fallback) => setEventsTrending(fallback?.events ?? []));
+      .then((r) => {
+        if (!r.ok) return null;
+        return r.json();
       })
+      .then((data) => {
+        const items = data?.items ?? [];
+        if (items.length > 0) {
+          setEventsTrending(items);
+        } else {
+          fallbackToEvents();
+        }
+      })
+      .catch(() => fallbackToEvents())
       .catch(() => {
         setEventsError("Impossibile caricare gli eventi.");
         setEventsTrending([]);
@@ -347,14 +356,18 @@ export default function Home() {
   const refetchTrending = () => {
     setLoadingTrending(true);
     setEventsError(null);
+    const fallbackToEvents = () =>
+      fetch("/api/events?sort=recent&status=open&limit=8")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => setEventsTrending(data?.events ?? []));
     fetch("/api/feed?limit=8")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setEventsTrending(data?.items ?? []))
-      .catch(() =>
-        fetch("/api/events?sort=recent&status=open&limit=8")
-          .then((r) => (r.ok ? r.json() : null))
-          .then((fallback) => setEventsTrending(fallback?.events ?? []))
-      )
+      .then((data) => {
+        const items = data?.items ?? [];
+        if (items.length > 0) setEventsTrending(items);
+        else fallbackToEvents();
+      })
+      .catch(() => fallbackToEvents())
       .catch(() => {
         setEventsError("Impossibile caricare gli eventi.");
         setEventsTrending([]);

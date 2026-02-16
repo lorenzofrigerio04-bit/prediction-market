@@ -13,6 +13,45 @@ const MAX_LIMIT = 100;
 const CANDIDATE_POOL_SIZE = 100;
 const CACHE_TTL_SEC = 5 * 60; // 5 minutes
 
+const feedEventSelect = {
+  id: true,
+  title: true,
+  description: true,
+  category: true,
+  createdAt: true,
+  closesAt: true,
+  probability: true,
+  totalCredits: true,
+  yesCredits: true,
+  noCredits: true,
+  resolved: true,
+  outcome: true,
+  q_yes: true,
+  q_no: true,
+  b: true,
+  createdBy: {
+    select: { id: true, name: true, image: true },
+  },
+  _count: {
+    select: { predictions: true, comments: true },
+  },
+} as const;
+
+/**
+ * Fallback: return recent open events (same shape as feed) when personalization fails.
+ * Used when MarketMetrics/UserProfile are missing or generateFeedCandidates throws.
+ */
+async function getRecentEventsAsFeed(limit: number): Promise<CachedFeedItem[]> {
+  const now = new Date();
+  const events = await prisma.event.findMany({
+    where: { resolved: false, closesAt: { gt: now } },
+    select: feedEventSelect,
+    take: limit,
+    orderBy: { createdAt: "desc" },
+  });
+  return events as unknown as CachedFeedItem[];
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -28,64 +67,44 @@ export async function GET(request: NextRequest) {
     );
     const offset = Math.max(0, parseInt(searchParams.get("offset") ?? "0", 10) || 0);
 
-    let fullList = await getFeedCache(userId);
+    let fullList: CachedFeedItem[] | null = await getFeedCache(userId);
 
     if (!fullList) {
-      const candidates = await generateFeedCandidates(prisma, userId, CANDIDATE_POOL_SIZE);
-      if (candidates.length === 0) {
-        return NextResponse.json({
-          items: [],
-          pagination: { total: 0, limit, offset, hasMore: false },
-        });
+      try {
+        const candidates = await generateFeedCandidates(prisma, userId, CANDIDATE_POOL_SIZE);
+        if (candidates.length === 0) {
+          fullList = await getRecentEventsAsFeed(limit + offset);
+        } else {
+          const eventIds = candidates.map((c) => c.eventId);
+          const events = await prisma.event.findMany({
+            where: {
+              id: { in: eventIds },
+              resolved: false,
+              closesAt: { gt: new Date() },
+            },
+            select: feedEventSelect,
+          });
+
+          const byId = new Map(events.map((e) => [e.id, e]));
+          const ordered = eventIds.map((id) => byId.get(id)).filter(Boolean) as typeof events;
+          const reranked = rerankFeed(
+            ordered.map((e) => {
+              const { id, ...rest } = e;
+              return { eventId: id, ...rest };
+            }),
+            Date.now()
+          );
+
+          fullList = reranked.map(({ eventId, ...rest }) => ({
+            id: eventId,
+            ...rest,
+          })) as CachedFeedItem[];
+          await setFeedCache(userId, fullList, CACHE_TTL_SEC);
+        }
+      } catch (err) {
+        console.warn("Feed personalization failed, using recent events:", err);
+        fullList = await getRecentEventsAsFeed(MAX_LIMIT);
       }
-
-      const eventIds = candidates.map((c) => c.eventId);
-      const events = await prisma.event.findMany({
-        where: {
-          id: { in: eventIds },
-          resolved: false,
-          closesAt: { gt: new Date() },
-        },
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          category: true,
-          createdAt: true,
-          closesAt: true,
-          probability: true,
-          totalCredits: true,
-          yesCredits: true,
-          noCredits: true,
-          resolved: true,
-          outcome: true,
-          q_yes: true,
-          q_no: true,
-          b: true,
-          createdBy: {
-            select: { id: true, name: true, image: true },
-          },
-          _count: {
-            select: { predictions: true, comments: true },
-          },
-        },
-      });
-
-      const byId = new Map(events.map((e) => [e.id, e]));
-      const ordered = eventIds.map((id) => byId.get(id)).filter(Boolean) as typeof events;
-      const reranked = rerankFeed(
-        ordered.map((e) => {
-          const { id, ...rest } = e;
-          return { eventId: id, ...rest };
-        }),
-        Date.now()
-      );
-
-      fullList = reranked.map(({ eventId, ...rest }) => ({
-        id: eventId,
-        ...rest,
-      })) as CachedFeedItem[];
-      await setFeedCache(userId, fullList, CACHE_TTL_SEC);
     }
 
     const total = fullList.length;

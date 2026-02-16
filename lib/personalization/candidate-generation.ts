@@ -23,47 +23,57 @@ export interface FeedCandidate {
 
 /**
  * Load user profile for personalization; returns null if no profile (anonymous or new user).
+ * If UserProfile table is missing or query fails, returns null (neutral profile used).
  */
 async function loadUserProfile(
   prisma: PrismaClient,
   userId: string | null
 ): Promise<UserProfileView | null> {
   if (!userId) return null;
-  const row = await prisma.userProfile.findUnique({
-    where: { userId },
-    select: {
-      preferredCategories: true,
-      riskTolerance: true,
-      preferredHorizon: true,
-    },
-  });
-  if (!row?.riskTolerance || !row?.preferredHorizon) return null;
-  const preferredCategories =
-    (row.preferredCategories as Record<string, number>) ?? {};
-  return {
-    preferredCategories,
-    riskTolerance: row.riskTolerance as RiskToleranceLevel,
-    preferredHorizon: row.preferredHorizon as PreferredHorizonLevel,
-  };
+  try {
+    const row = await prisma.userProfile.findUnique({
+      where: { userId },
+      select: {
+        preferredCategories: true,
+        riskTolerance: true,
+        preferredHorizon: true,
+      },
+    });
+    if (!row?.riskTolerance || !row?.preferredHorizon) return null;
+    const preferredCategories =
+      (row.preferredCategories as Record<string, number>) ?? {};
+    return {
+      preferredCategories,
+      riskTolerance: row.riskTolerance as RiskToleranceLevel,
+      preferredHorizon: row.preferredHorizon as PreferredHorizonLevel,
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**
  * Aggregate volume_6h and impressions per event from MarketMetrics (last 6 hours).
+ * If MarketMetrics table is missing or query fails (e.g. migration not run in prod), returns empty map.
  */
 async function getMetricsLast6h(prisma: PrismaClient): Promise<Map<string, { volume_6h: number; impressions: number }>> {
-  const sixHoursAgo = new Date(Date.now() - SIX_HOURS_MS);
-  const rows = await prisma.marketMetrics.findMany({
-    where: { hour: { gte: sixHoursAgo } },
-    select: { eventId: true, volume: true, impressions: true },
-  });
-  const map = new Map<string, { volume_6h: number; impressions: number }>();
-  for (const r of rows) {
-    const cur = map.get(r.eventId) ?? { volume_6h: 0, impressions: 0 };
-    cur.volume_6h += r.volume;
-    cur.impressions += r.impressions;
-    map.set(r.eventId, cur);
+  try {
+    const sixHoursAgo = new Date(Date.now() - SIX_HOURS_MS);
+    const rows = await prisma.marketMetrics.findMany({
+      where: { hour: { gte: sixHoursAgo } },
+      select: { eventId: true, volume: true, impressions: true },
+    });
+    const map = new Map<string, { volume_6h: number; impressions: number }>();
+    for (const r of rows) {
+      const cur = map.get(r.eventId) ?? { volume_6h: 0, impressions: 0 };
+      cur.volume_6h += r.volume;
+      cur.impressions += r.impressions;
+      map.set(r.eventId, cur);
+    }
+    return map;
+  } catch {
+    return new Map();
   }
-  return map;
 }
 
 /**
