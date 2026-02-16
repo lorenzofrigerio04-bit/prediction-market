@@ -338,17 +338,16 @@ export default function EventDetailPage({
             </div>
           )}
 
-          {/* Statistiche: Prevede SÌ (LMSR) + Previsioni */}
+          {/* Statistiche: sempre LMSR (q_yes, q_no, b) */}
           {(() => {
             const qYes = event.q_yes ?? 0;
             const qNo = event.q_no ?? 0;
             const b = event.b ?? 100;
-            const useLmsr = typeof event.q_yes === "number" || typeof event.q_no === "number" || (qYes + qNo > 0);
-            const displayProbability = useLmsr ? getEventProbability(event) : event.probability;
-            const yesPct = useLmsr ? getPrice(qYes, qNo, b, "YES") * 100 : (event.totalCredits > 0 ? (event.yesCredits / event.totalCredits) * 100 : 50);
-            const creditsInPlay = useLmsr && event.totalCredits === 0 && (qYes > 0 || qNo > 0)
-              ? Math.round(cost(qYes, qNo, b))
-              : event.totalCredits;
+            const displayProbability = getEventProbability(event);
+            const yesPct = getPrice(qYes, qNo, b, "YES") * 100;
+            const creditsInPlay = event.totalCredits > 0
+              ? event.totalCredits
+              : (qYes > 0 || qNo > 0 ? Math.round(cost(qYes, qNo, b)) : 0);
             return (
               <>
                 <div className="grid grid-cols-2 gap-3 mb-6">
@@ -362,7 +361,6 @@ export default function EventDetailPage({
                   </div>
                 </div>
 
-                {/* Crediti in gioco (LMSR: cost(q) se totalCredits=0 e ci sono scommesse) */}
                 <div className="pill-credits-neon flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl mb-6">
                   <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
                   <span className="text-lg md:text-xl font-bold text-white font-numeric tabular-nums">
@@ -370,11 +368,10 @@ export default function EventDetailPage({
                   </span>
                 </div>
 
-                {/* Barra SÌ/NO — LMSR price (percentuale) o legacy yesCredits/totalCredits */}
                 <div className="mb-6">
                   <div className="flex justify-between text-ds-caption font-medium text-fg-muted mb-2">
-                    <span>SÌ {useLmsr ? (event.q_yes ?? 0).toLocaleString() : event.yesCredits.toLocaleString()} ({event.yesPredictions})</span>
-                    <span>NO {useLmsr ? (event.q_no ?? 0).toLocaleString() : event.noCredits.toLocaleString()} ({event.noPredictions})</span>
+                    <span>SÌ {(event.q_yes ?? 0).toLocaleString()} ({event.yesPredictions})</span>
+                    <span>NO {(event.q_no ?? 0).toLocaleString()} ({event.noPredictions})</span>
                   </div>
                   <div
                     className="prediction-bar-led h-3 w-full flex animate-bar-pulse"

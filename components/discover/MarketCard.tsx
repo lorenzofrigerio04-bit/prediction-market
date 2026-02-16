@@ -47,19 +47,11 @@ function MarketCard({ event, index = 0 }: MarketCardProps) {
 
   const isUrgent = timeUntilClose > 0 && timeUntilClose < 24 * 60 * 60 * 1000;
   
-  // Use LMSR price if available, otherwise fall back to probability
-  let yesPct: number;
-  if (event.q_yes !== null && event.q_yes !== undefined && 
-      event.q_no !== null && event.q_no !== undefined && 
-      event.b !== null && event.b !== undefined) {
-    // Use LMSR price
-    yesPct = Math.round(getEventProbability({ q_yes: event.q_yes, q_no: event.q_no, b: event.b }));
-  } else {
-    // Fallback to yesCredits/totalCredits or probability
-    yesPct = event.totalCredits > 0
-      ? Math.round((event.yesCredits / event.totalCredits) * 100)
-      : Math.round(event.probability);
-  }
+  // Sempre LMSR: percentuale da q_yes, q_no, b (0/0 → 50%)
+  const qYes = event.q_yes ?? 0;
+  const qNo = event.q_no ?? 0;
+  const b = event.b ?? 100;
+  const yesPct = b > 0 ? Math.round(getEventProbability({ q_yes: qYes, q_no: qNo, b })) : 50;
   const noPct = 100 - yesPct;
 
   const ctaLabel = event.resolved ? "Vedi risultato" : "Fai la tua previsione";

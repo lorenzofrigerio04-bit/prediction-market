@@ -19,6 +19,7 @@
     "create-events-from-generated": "tsx scripts/create-events-from-generated.ts",
     "check-events-coherence": "tsx scripts/check-events-coherence.ts",
     "simulate-activity": "tsx scripts/simulate-activity.ts",
+    "remove-bot-activity": "tsx scripts/remove-bot-activity.ts",
     "trigger-simulate-activity-once": "tsx scripts/trigger-simulate-activity-once.ts",
     "test": "vitest run",
     "test:watch": "vitest"

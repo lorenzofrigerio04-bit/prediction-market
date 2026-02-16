@@ -1,11 +1,12 @@
 /**
  * Previsioni simulate: bot che piazzano previsioni su eventi aperti.
- * Stessa logica dell'API predictions (senza missioni/badge/analytics).
- * Riusabile dal cron per far muovere le quote.
+ * Usa LMSR (executePredictionBuy). I bot scommettono solo su eventi con attività (q_yes + q_no > 0)
+ * e scelgono SÌ/NO in proporzione al prezzo attuale per mantenere la proporzione (es. 1/2 → altre scommesse 1:2).
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { applyCreditTransaction } from "@/lib/apply-credit-transaction";
+import { getPrice } from "@/lib/pricing/lmsr";
+import { executePredictionBuy, TradeError } from "@/lib/pricing/trade";
 import { MAX_PREDICTIONS_PER_RUN } from "./config";
 
 /** Crediti per scommessa: range da “piccola” a “sostanziale” per sembrare utenti reali */
@@ -20,21 +21,13 @@ export interface CreateSimulatedPredictionParams {
 }
 
 export interface RunSimulatedPredictionsOptions {
-  /** Massimo previsioni da creare in una run (default: MAX_PREDICTIONS_PER_RUN) */
   maxPredictions?: number;
-  /** Crediti minimi per singola previsione (default: 10) */
   minCredits?: number;
-  /** Crediti massimi per singola previsione (default: 150) */
   maxCredits?: number;
 }
 
 /**
- * Crea una previsione a nome di un utente (es. bot).
- * Stessa logica di app/api/predictions/route.ts (righe 56–161): verifica evento esistente,
- * non risolto, closesAt > now, utente con crediti sufficienti, nessuna prediction esistente
- * per userId+eventId; poi in transazione: prediction.create, applyCreditTransaction,
- * event.update (totalCredits, yesCredits/noCredits, yesPredictions/noPredictions),
- * ricalcolo e update event.probability.
+ * Crea una previsione a nome di un bot usando LMSR (executePredictionBuy).
  * Non chiama missioni, badge o analytics.
  */
 export async function createSimulatedPrediction(
@@ -49,6 +42,16 @@ export async function createSimulatedPrediction(
 
   const event = await prisma.event.findUnique({
     where: { id: eventId },
+    select: {
+      id: true,
+      title: true,
+      category: true,
+      resolved: true,
+      closesAt: true,
+      q_yes: true,
+      q_no: true,
+      b: true,
+    },
   });
 
   if (!event) {
@@ -63,80 +66,35 @@ export async function createSimulatedPrediction(
     return { success: false, error: "Previsioni per questo evento sono chiuse" };
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { credits: true },
-  });
-
-  if (!user || user.credits < credits) {
-    return { success: false, error: "Crediti insufficienti" };
-  }
-
-  const existingPrediction = await prisma.prediction.findUnique({
-    where: {
-      userId_eventId: { userId, eventId: event.id },
-    },
-  });
-
-  if (existingPrediction) {
-    return { success: false, error: "Previsione già esistente per questo evento" };
+  const qYes = event.q_yes ?? 0;
+  const qNo = event.q_no ?? 0;
+  if (qYes + qNo <= 0) {
+    return { success: false, error: "Evento senza attività LMSR (0/0): i bot non scommettono" };
   }
 
   try {
-    const result = await prisma.$transaction(async (tx) => {
-      const prediction = await tx.prediction.create({
-        data: {
-          userId,
-          eventId: event.id,
-          outcome,
-          credits,
+    const result = await prisma.$transaction((tx) =>
+      executePredictionBuy(tx, {
+        event: {
+          id: event.id,
+          title: event.title,
+          category: event.category,
+          resolved: event.resolved,
+          closesAt: event.closesAt,
+          q_yes: event.q_yes,
+          q_no: event.q_no,
+          b: event.b,
         },
-      });
-
-      await applyCreditTransaction(tx, userId, "PREDICTION_BET", -credits, {
-        description: `Previsione ${outcome === "YES" ? "SÌ" : "NO"} su "${event.title}"`,
-        referenceId: prediction.id,
-        referenceType: "prediction",
-      });
-
-      const updateData: {
-        totalCredits: { increment: number };
-        yesCredits?: { increment: number };
-        noCredits?: { increment: number };
-        yesPredictions?: { increment: number };
-        noPredictions?: { increment: number };
-      } = {
-        totalCredits: { increment: credits },
-      };
-
-      if (outcome === "YES") {
-        updateData.yesCredits = { increment: credits };
-        updateData.yesPredictions = { increment: 1 };
-      } else {
-        updateData.noCredits = { increment: credits };
-        updateData.noPredictions = { increment: 1 };
-      }
-
-      const updatedEvent = await tx.event.update({
-        where: { id: event.id },
-        data: updateData,
-      });
-
-      const newProbability =
-        updatedEvent.totalCredits > 0
-          ? (updatedEvent.yesCredits / updatedEvent.totalCredits) * 100
-          : 50.0;
-
-      await tx.event.update({
-        where: { id: event.id },
-        data: { probability: newProbability },
-      });
-
-      return prediction;
-    });
-
-    return { success: true, predictionId: result.id };
-  } catch (err: unknown) {
+        userId,
+        outcome,
+        creditsToSpend: credits,
+      })
+    );
+    return { success: true, predictionId: result.prediction.id };
+  } catch (err) {
+    if (err instanceof TradeError) {
+      return { success: false, error: err.message };
+    }
     const code = err && typeof err === "object" && "code" in err ? (err as { code: string }).code : null;
     if (code === "P2002") {
       return { success: false, error: "Previsione già esistente per questo evento" };
@@ -146,10 +104,9 @@ export async function createSimulatedPrediction(
 }
 
 /**
- * Esegue una run di previsioni simulate: recupera eventi aperti (resolved: false, closesAt > now),
- * per un numero limitato sceglie a caso evento + bot che non ha già previsto; outcome e crediti
- * random (crediti in [minCredits, maxCredits], outcome influenzato da event.probability).
- * Chiama createSimulatedPrediction per ciascuno. Le quote degli eventi si aggiornano come con utenti reali.
+ * Esegue una run di previsioni simulate: solo eventi con q_yes + q_no > 0.
+ * Per ogni evento, outcome scelto con probabilità pari al prezzo attuale (SÌ con p_yes, NO con p_no)
+ * così le nuove scommesse mantengono la proporzione (es. 1/2 → altre scommesse in media 1:2).
  */
 export async function runSimulatedPredictions(
   prisma: PrismaClient,
@@ -170,17 +127,30 @@ export async function runSimulatedPredictions(
       resolved: false,
       closesAt: { gt: now },
     },
-    select: { id: true, title: true, probability: true },
+    select: {
+      id: true,
+      title: true,
+      q_yes: true,
+      q_no: true,
+      b: true,
+    },
   });
 
-  if (openEvents.length === 0) {
+  // Solo eventi con attività LMSR (q_yes + q_no > 0): su 0/0 i bot non scommettono
+  const eventsWithActivity = openEvents.filter((e) => {
+    const qYes = e.q_yes ?? 0;
+    const qNo = e.q_no ?? 0;
+    return qYes + qNo > 0;
+  });
+
+  if (eventsWithActivity.length === 0) {
     return { created: 0, errors: [] };
   }
 
   const existingPredictions = await prisma.prediction.findMany({
     where: {
       userId: { in: botUserIds },
-      eventId: { in: openEvents.map((e) => e.id) },
+      eventId: { in: eventsWithActivity.map((e) => e.id) },
     },
     select: { userId: true, eventId: true },
   });
@@ -189,8 +159,8 @@ export async function runSimulatedPredictions(
     existingPredictions.map((p) => `${p.eventId}:${p.userId}`)
   );
 
-  const candidates: { event: (typeof openEvents)[number]; userId: string }[] = [];
-  for (const event of openEvents) {
+  const candidates: { event: (typeof eventsWithActivity)[number]; userId: string }[] = [];
+  for (const event of eventsWithActivity) {
     for (const userId of botUserIds) {
       if (!predictedKey.has(`${event.id}:${userId}`)) {
         candidates.push({ event, userId });
@@ -206,7 +176,11 @@ export async function runSimulatedPredictions(
 
   for (const { event, userId } of toCreate) {
     const credits = randomInt(minCredits, maxCredits);
-    const outcome = Math.random() < event.probability / 100 ? "YES" : "NO";
+    const qYes = event.q_yes ?? 0;
+    const qNo = event.q_no ?? 0;
+    const b = event.b ?? 100;
+    const pYes = getPrice(qYes, qNo, b, "YES");
+    const outcome = Math.random() < pYes ? "YES" : "NO";
 
     const result = await createSimulatedPrediction(prisma, {
       userId,

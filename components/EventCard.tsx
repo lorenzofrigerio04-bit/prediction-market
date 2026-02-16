@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { IconClock, IconChat, IconCurrency, IconTrendUp } from "@/components/ui/Icons";
 import { getEventProbability } from "@/lib/pricing/price-display";
+import { cost } from "@/lib/pricing/lmsr";
 
 export interface EventCardEvent {
   id: string;
@@ -32,33 +33,20 @@ interface EventCardProps {
 
 function useEventDerived(event: EventCardEvent) {
   return useMemo(() => {
-    // Use LMSR price if available, otherwise fall back to probability
-    let yesPct: number;
-    if (event.q_yes !== null && event.q_yes !== undefined && 
-        event.q_no !== null && event.q_no !== undefined && 
-        event.b !== null && event.b !== undefined) {
-      // Use LMSR price
-      yesPct = Math.round(getEventProbability({ q_yes: event.q_yes, q_no: event.q_no, b: event.b }));
-    } else {
-      // Fallback to probability field or calculate from yesCredits/totalCredits
-      const total = event.totalCredits || 0;
-      const yes =
-        typeof event.yesCredits === "number"
-          ? event.yesCredits
-          : total > 0
-            ? Math.round((event.probability / 100) * total)
-            : 0;
-      yesPct = total > 0 ? Math.round((yes / total) * 100) : Math.round(event.probability);
-    }
-    
+    const qYes = event.q_yes ?? 0;
+    const qNo = event.q_no ?? 0;
+    const b = event.b ?? 100;
+    // Sempre LMSR: percentuale da q_yes, q_no, b (0/0 → 50%)
+    const yesPct = b > 0 ? Math.round(getEventProbability({ q_yes: qYes, q_no: qNo, b })) : 50;
     const noPct = 100 - yesPct;
     const total = event.totalCredits || 0;
-    const yes = typeof event.yesCredits === "number" ? event.yesCredits : Math.round((yesPct / 100) * total);
-    const no = total - yes;
-    const yesMultiplier = yes > 0 ? Math.max(1, total / yes) : 1;
-    const noMultiplier = no > 0 ? Math.max(1, total / no) : 1;
+    const yes = qYes;
+    const no = qNo;
+    const totalForMultiplier = total > 0 ? total : (qYes + qNo > 0 ? qYes + qNo : 1);
+    const yesMultiplier = yes > 0 ? Math.max(1, totalForMultiplier / yes) : 1;
+    const noMultiplier = no > 0 ? Math.max(1, totalForMultiplier / no) : 1;
     return { yesPct, noPct, yesMultiplier, noMultiplier };
-  }, [event.totalCredits, event.yesCredits, event.noCredits, event.probability, event.q_yes, event.q_no, event.b]);
+  }, [event.totalCredits, event.q_yes, event.q_no, event.b]);
 }
 
 function getTimeRemaining(closesAt: string | Date): string {
@@ -181,13 +169,23 @@ export default function EventCard({ event }: EventCardProps) {
           </p>
         </div>
 
-        {/* CREDITI IN GIOCO — unico box nero bordo blu neon */}
-        <div className="pill-credits-neon flex items-center justify-center gap-2 py-3 px-4 rounded-2xl mb-4">
-          <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
-          <span className="text-lg md:text-xl font-bold text-white font-numeric tabular-nums">
-            {event.totalCredits.toLocaleString("it-IT")} CREDITI IN GIOCO
-          </span>
-        </div>
+        {/* CREDITI IN GIOCO — LMSR: totalCredits se >0, altrimenti cost(q_yes,q_no,b) */}
+        {(() => {
+          const qYes = event.q_yes ?? 0;
+          const qNo = event.q_no ?? 0;
+          const b = event.b ?? 100;
+          const creditsLabel = event.totalCredits > 0
+            ? event.totalCredits
+            : (qYes > 0 || qNo > 0 ? Math.round(cost(qYes, qNo, b)) : 0);
+          return (
+            <div className="pill-credits-neon flex items-center justify-center gap-2 py-3 px-4 rounded-2xl mb-4">
+              <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
+              <span className="text-lg md:text-xl font-bold text-white font-numeric tabular-nums">
+                {creditsLabel.toLocaleString("it-IT")} CREDITI IN GIOCO
+              </span>
+            </div>
+          );
+        })()}
 
         {/* FOOTER: tre stat neon-mini */}
         <div className="grid grid-cols-3 gap-2 mt-auto pt-3 border-t border-white/10">
