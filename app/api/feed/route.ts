@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
         Date.now()
       );
 
-      fullList = reranked.map(({ eventId, id: _dropped, ...rest }) => ({
+      fullList = reranked.map(({ eventId, ...rest }) => ({
         id: eventId,
         ...rest,
       })) as CachedFeedItem[];
