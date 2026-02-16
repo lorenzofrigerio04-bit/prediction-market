@@ -55,8 +55,19 @@ export async function GET(request: NextRequest) {
           closesAt: true,
           probability: true,
           totalCredits: true,
+          yesCredits: true,
+          noCredits: true,
           resolved: true,
           outcome: true,
+          q_yes: true,
+          q_no: true,
+          b: true,
+          createdBy: {
+            select: { id: true, name: true, image: true },
+          },
+          _count: {
+            select: { predictions: true, comments: true },
+          },
         },
       });
 

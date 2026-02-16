@@ -157,10 +157,16 @@ export default function Home() {
     if (status !== "authenticated") return;
     setLoadingTrending(true);
     setEventsError(null);
-    const params = new URLSearchParams({ sort: "recent", status: "open", limit: "4" });
-    fetch(`/api/events?${params}`)
+    // Feed personalizzato (trending + per te + esplorazione); fallback a lista eventi se fallisce
+    fetch("/api/feed?limit=8")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setEventsTrending(data?.events ?? []))
+      .then((data) => setEventsTrending(data?.items ?? []))
+      .catch(() => {
+        const params = new URLSearchParams({ sort: "recent", status: "open", limit: "8" });
+        return fetch(`/api/events?${params}`)
+          .then((r) => (r.ok ? r.json() : null))
+          .then((fallback) => setEventsTrending(fallback?.events ?? []));
+      })
       .catch(() => {
         setEventsError("Impossibile caricare gli eventi.");
         setEventsTrending([]);
@@ -341,10 +347,14 @@ export default function Home() {
   const refetchTrending = () => {
     setLoadingTrending(true);
     setEventsError(null);
-    const params = new URLSearchParams({ sort: "recent", status: "open", limit: "4" });
-    fetch(`/api/events?${params}`)
+    fetch("/api/feed?limit=8")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setEventsTrending(data?.events ?? []))
+      .then((data) => setEventsTrending(data?.items ?? []))
+      .catch(() =>
+        fetch("/api/events?sort=recent&status=open&limit=8")
+          .then((r) => (r.ok ? r.json() : null))
+          .then((fallback) => setEventsTrending(fallback?.events ?? []))
+      )
       .catch(() => {
         setEventsError("Impossibile caricare gli eventi.");
         setEventsTrending([]);
