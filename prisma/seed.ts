@@ -122,6 +122,24 @@ async function main() {
     console.log(`✅ Creati ${DEFAULT_BADGES.length} badge.`);
   }
 
+  // Shop: crea prodotti se non esistono
+  const existingShopItems = await prisma.shopItem.count();
+  if (existingShopItems === 0) {
+    console.log('🛒 Creazione prodotti shop...');
+    const shopItems = [
+      { name: 'Boost x1.5 (1 giorno)', description: 'Moltiplicatore crediti 1.5x per 24 ore', priceCredits: 100 },
+      { name: 'Boost x2 (1 giorno)', description: 'Moltiplicatore crediti 2x per 24 ore', priceCredits: 250 },
+      { name: 'Profilo in evidenza (24h)', description: 'Il tuo profilo appare in evidenza nella classifica per 24 ore', priceCredits: 75 },
+      { name: 'Badge esclusivo "Early Adopter"', description: 'Sblocca il badge Early Adopter nel profilo', priceCredits: 500 },
+    ];
+    for (const item of shopItems) {
+      await prisma.shopItem.create({
+        data: { ...item, active: true },
+      });
+    }
+    console.log(`✅ Creati ${shopItems.length} prodotti shop.`);
+  }
+
   // Missioni: crea se non esistono
   const existingMissions = await prisma.mission.count();
   if (existingMissions === 0) {

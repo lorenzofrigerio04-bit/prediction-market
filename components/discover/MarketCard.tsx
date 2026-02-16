@@ -53,7 +53,7 @@ function MarketCard({ event, index = 0 }: MarketCardProps) {
       event.q_no !== null && event.q_no !== undefined && 
       event.b !== null && event.b !== undefined) {
     // Use LMSR price
-    yesPct = Math.round(getEventProbability(event));
+    yesPct = Math.round(getEventProbability({ q_yes: event.q_yes, q_no: event.q_no, b: event.b }));
   } else {
     // Fallback to yesCredits/totalCredits or probability
     yesPct = event.totalCredits > 0

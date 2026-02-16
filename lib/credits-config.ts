@@ -58,6 +58,8 @@ export const CREDIT_TRANSACTION_TYPES = {
   SPIN_REWARD: "SPIN_REWARD",
   /** Rimborso/ricarica crediti per utenti bot della simulazione */
   SIMULATED_TOPUP: "SIMULATED_TOPUP",
+  /** Acquisto da shop (spesa crediti) */
+  SHOP_PURCHASE: "SHOP_PURCHASE",
 } as const;
 
 export type CreditTransactionType =

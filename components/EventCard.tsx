@@ -38,7 +38,7 @@ function useEventDerived(event: EventCardEvent) {
         event.q_no !== null && event.q_no !== undefined && 
         event.b !== null && event.b !== undefined) {
       // Use LMSR price
-      yesPct = Math.round(getEventProbability(event));
+      yesPct = Math.round(getEventProbability({ q_yes: event.q_yes, q_no: event.q_no, b: event.b }));
     } else {
       // Fallback to probability field or calculate from yesCredits/totalCredits
       const total = event.totalCredits || 0;

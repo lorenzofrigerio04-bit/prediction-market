@@ -23,7 +23,8 @@ export type AnalyticsEvent =
   | "MISSION_COMPLETED"
   | "DAILY_BONUS_CLAIMED"
   | "LEADERBOARD_VIEWED"
-  | "PROFILE_VIEWED";
+  | "PROFILE_VIEWED"
+  | "SHOP_PURCHASED";
 
 export type AnalyticsProperties = {
   userId?: string;

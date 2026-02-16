@@ -1,6 +1,6 @@
 /**
  * Client-side: invia eventi analytics tramite API (per view events).
- * Usare in useEffect sulle pagine: EVENT_VIEWED, LEADERBOARD_VIEWED, PROFILE_VIEWED, MISSION_VIEWED, EVENT_RESOLVED_VIEWED.
+ * Usare in useEffect sulle pagine: EVENT_VIEWED, LEADERBOARD_VIEWED, PROFILE_VIEWED, MISSION_VIEWED, EVENT_RESOLVED_VIEWED, SHOP_VIEWED.
  */
 
 export type ClientAnalyticsEvent =
@@ -9,7 +9,8 @@ export type ClientAnalyticsEvent =
   | "EVENT_RESOLVED_VIEWED"
   | "LEADERBOARD_VIEWED"
   | "PROFILE_VIEWED"
-  | "MISSION_VIEWED";
+  | "MISSION_VIEWED"
+  | "SHOP_VIEWED";
 
 const VALID_VIEW_EVENTS: ClientAnalyticsEvent[] = [
   "EVENT_VIEWED",
@@ -18,6 +19,7 @@ const VALID_VIEW_EVENTS: ClientAnalyticsEvent[] = [
   "LEADERBOARD_VIEWED",
   "PROFILE_VIEWED",
   "MISSION_VIEWED",
+  "SHOP_VIEWED",
 ];
 
 export function trackView(

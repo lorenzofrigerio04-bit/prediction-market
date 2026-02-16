@@ -63,11 +63,14 @@ export async function GET(request: NextRequest) {
       const byId = new Map(events.map((e) => [e.id, e]));
       const ordered = eventIds.map((id) => byId.get(id)).filter(Boolean) as typeof events;
       const reranked = rerankFeed(
-        ordered.map((e) => ({ eventId: e.id, category: e.category, createdAt: e.createdAt, ...e })),
+        ordered.map((e) => {
+          const { id, ...rest } = e;
+          return { eventId: id, ...rest };
+        }),
         Date.now()
       );
 
-      fullList = reranked.map(({ eventId, ...rest }) => ({
+      fullList = reranked.map(({ eventId, id: _dropped, ...rest }) => ({
         id: eventId,
         ...rest,
       })) as CachedFeedItem[];

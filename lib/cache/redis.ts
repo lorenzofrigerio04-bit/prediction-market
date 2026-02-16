@@ -10,7 +10,10 @@ export function getRedisClient(): import("ioredis").Redis | null {
   if (!url?.trim()) return null;
   if (redisClient) return redisClient;
   try {
-    const Redis = require("ioredis") as typeof import("ioredis");
+    const Redis = (require("ioredis").default ?? require("ioredis")) as new (
+      url: string,
+      opts?: object
+    ) => import("ioredis").Redis;
     redisClient = new Redis(url, { maxRetriesPerRequest: 2 });
     return redisClient;
   } catch {

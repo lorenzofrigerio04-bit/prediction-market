@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { PrismaClient } from "@prisma/client";
 import {
   parseOutcomeFromContent,
   checkResolutionSource,
@@ -201,7 +202,7 @@ describe("getClosedUnresolvedEvents", () => {
       event: {
         findMany: vi.fn().mockResolvedValue(events),
       },
-    } as Parameters<typeof getClosedUnresolvedEvents>[0];
+    } as unknown as PrismaClient;
 
     const result = await getClosedUnresolvedEvents(prisma);
     expect(result).toEqual(events);

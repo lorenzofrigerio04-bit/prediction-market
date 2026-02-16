@@ -591,6 +591,21 @@ model UserSession {
 }
 
 // ============================================
+// SHOP ITEM MODEL (Prodotti acquistabili con crediti)
+// ============================================
+model ShopItem {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  priceCredits Int
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("shop_items")
+}
+
+// ============================================
 // USER PROFILE MODEL (Profilo utente esteso)
 // ============================================
 model UserProfile {

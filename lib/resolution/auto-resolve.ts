@@ -4,6 +4,8 @@
  * Only considers events that are closed (closesAt <= now) and not yet resolved.
  */
 
+import type { PrismaClient } from "@prisma/client";
+
 export type AutoResolveResult =
   | { outcome: "YES" }
   | { outcome: "NO" }
@@ -146,33 +148,15 @@ export async function checkResolutionSource(
   }
 }
 
-/** Prisma client type for dependency injection (tests). */
-type PrismaLike = {
-  event: {
-    findMany: (args: {
-      where: {
-        closesAt: { lte: Date };
-        resolved: boolean;
-      };
-      select: Record<string, boolean>;
-      orderBy: { closesAt: "asc" };
-    }) => Promise<ClosedEventForResolve[]>;
-    update: (args: {
-      where: { id: string };
-      data: { resolutionStatus: string };
-    }) => Promise<unknown>;
-  };
-};
-
 /**
  * Fetch all closed, unresolved events (closesAt <= now, resolved = false).
  * Used by the cron to decide which markets to check for auto-resolution.
  */
 export async function getClosedUnresolvedEvents(
-  prisma: PrismaLike
+  prisma: PrismaClient
 ): Promise<ClosedEventForResolve[]> {
   const now = new Date();
-  return prisma.event.findMany({
+  const rows = await prisma.event.findMany({
     where: {
       closesAt: { lte: now },
       resolved: false,
@@ -186,4 +170,5 @@ export async function getClosedUnresolvedEvents(
     },
     orderBy: { closesAt: "asc" },
   });
+  return rows as ClosedEventForResolve[];
 }
