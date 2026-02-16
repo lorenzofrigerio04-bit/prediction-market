@@ -37,7 +37,7 @@ function isAuthorized(
  * Checks closed markets (closesAt <= now, resolved = false) against resolutionSourceUrl.
  * - If outcome is clear (YES/NO): auto-resolves via POST /api/admin/events/[id]/resolve with auto=true.
  * - If uncertain or error: sets resolutionStatus to NEEDS_REVIEW.
- * Schedule: run every 15 minutes (e.g. Vercel Cron: "*/15 * * * *").
+ * Schedule: run every 15 minutes (e.g. Vercel Cron: 0,15,30,45 * * * *).
  */
 export async function GET(request: NextRequest) {
   try {
