@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
         id: n.id,
         userId: n.userId,
         type: n.type,
-        data: n.data,
+        data: n.data ? (typeof n.data === 'string' ? JSON.parse(n.data) : n.data) : null,
         readAt: n.readAt?.toISOString() || null,
         createdAt: n.createdAt.toISOString(),
       })),
