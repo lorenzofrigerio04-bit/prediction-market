@@ -41,15 +41,18 @@ export async function POST(request: Request) {
       );
     }
 
-    // Controlla se ha già preso il bonus oggi
-    const now = new Date();
-    // lastDailyBonus non esiste nello schema - sempre null
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
 
-    // Verifica se è lo stesso giorno (confronta solo data, non ora)
-    // lastDailyBonus non esiste - sempre permettere bonus (da migliorare con controllo su Transaction)
-    const isSameDay = false; //
+    const alreadyClaimedToday = await prisma.transaction.findFirst({
+      where: {
+        userId,
+        type: "DAILY_BONUS",
+        createdAt: { gte: todayStart },
+      },
+    });
 
-    if (isSameDay) {
+    if (alreadyClaimedToday) {
       return NextResponse.json(
         { error: "Hai già riscattato il bonus giornaliero oggi" },
         { status: 400 }

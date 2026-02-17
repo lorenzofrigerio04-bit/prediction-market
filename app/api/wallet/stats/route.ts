@@ -39,17 +39,31 @@ export async function GET() {
       );
     }
 
-    // Controlla se può prendere il daily bonus oggi
-    const currentDate = new Date();
-    // lastDailyBonus non esiste nello schema - sempre permettere bonus
-    const canClaimDailyBonus = true;
-    const nextBonusAmount = getNextDailyBonusAmount(      user.streakCount,
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+
+    const alreadyClaimedBonusToday = await prisma.transaction.findFirst({
+      where: {
+        userId,
+        type: "DAILY_BONUS",
+        createdAt: { gte: todayStart },
+      },
+    });
+    const canClaimDailyBonus = !alreadyClaimedBonusToday;
+    const nextBonusAmount = getNextDailyBonusAmount(
+      user.streakCount,
       canClaimDailyBonus
     );
     const bonusMultiplier = getDailyBonusMultiplier(user.streakCount);
 
-    const todayStart = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), currentDate.getUTCDate(), 0, 0, 0, 0));
-    const canSpinToday = true; // dailySpin non implementato
+    const spinToday = await prisma.transaction.findFirst({
+      where: {
+        userId,
+        type: "SPIN_REWARD",
+        createdAt: { gte: todayStart },
+      },
+    });
+    const canSpinToday = !spinToday;
     const hasActiveBoost = false; // boostExpiresAt e boostMultiplier non esistono nello schema
 
     return NextResponse.json({

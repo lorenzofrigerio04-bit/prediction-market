@@ -33,30 +33,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
-    const { eventId, outcome, credits } = body;
+    const body = await request.json().catch(() => ({}));
+    const eventId =
+      typeof body.eventId === "string" ? body.eventId.trim() : null;
+    const outcome =
+      body.outcome === "YES" || body.outcome === "NO" ? body.outcome : null;
+    const credits = typeof body.credits === "number" ? body.credits : Number(body.credits);
 
-    // Validazione
-    if (!eventId || !outcome || !credits) {
+    if (!eventId || !outcome) {
       return NextResponse.json(
-        { error: "EventId, outcome e credits sono obbligatori" },
+        { error: "EventId e outcome sono obbligatori" },
         { status: 400 }
       );
     }
 
-    if (outcome !== "YES" && outcome !== "NO") {
-      return NextResponse.json(
-        { error: "Outcome deve essere YES o NO" },
-        { status: 400 }
-      );
-    }
-
-    if (credits < 1) {
+    if (Number.isNaN(credits) || credits < 1) {
       return NextResponse.json(
         { error: "Devi investire almeno 1 credito" },
         { status: 400 }
       );
     }
+
+    const creditsToSpend = Math.floor(credits);
 
     // Verifica che l'evento esista (per 404 e per passare al trade)
     const event = await prisma.event.findUnique({
@@ -68,6 +66,8 @@ export async function POST(request: NextRequest) {
         resolved: true,
         closesAt: true,
         b: true,
+        q_yes: true,
+        q_no: true,
       },
     });
 
@@ -89,13 +89,13 @@ export async function POST(request: NextRequest) {
             category: event.category,
             resolved: event.resolved,
             closesAt: event.closesAt,
-            q_yes: null,
-            q_no: null,
-            b: event.b,
+            q_yes: event.q_yes ?? null,
+            q_no: event.q_no ?? null,
+            b: event.b ?? 100,
           },
           userId: session.user.id,
           outcome: outcome as "YES" | "NO",
-          creditsToSpend: credits,
+          creditsToSpend,
         })
       );
     } catch (err) {

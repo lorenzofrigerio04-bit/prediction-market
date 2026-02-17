@@ -108,10 +108,16 @@ export async function GET() {
       ? ((totalReturn - totalInvested) / totalInvested) * 100 
       : 0;
 
+    const totalPredictions = activePredictions + wonPredictions + lostPredictions;
+    const correctPredictions = wonPredictions;
+    const accuracy =
+      totalPredictions > 0 ? (correctPredictions / totalPredictions) * 100 : 0;
+
     return NextResponse.json({
       user: {
         id: user.id,
         name: user.name,
+        username: user.name ?? null,
         email: user.email,
         image: user.image,
         createdAt: user.createdAt,
@@ -120,11 +126,14 @@ export async function GET() {
         credits: user.credits,
         totalEarned: user.totalEarned,
         totalSpent,
-        streak: user.streakCount,
+        streak: user.streakCount ?? 0,
         activePredictions,
         wonPredictions,
         lostPredictions,
-        roi: Math.round(roi * 100) / 100, // Round to 2 decimal places
+        totalPredictions,
+        correctPredictions,
+        accuracy: Math.round(accuracy * 100) / 100,
+        roi: Math.round(roi * 100) / 100,
       },
       badges: user.userBadges.map((ub) => ({
         ...ub.badge,

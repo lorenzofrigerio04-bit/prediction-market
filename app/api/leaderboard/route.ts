@@ -129,10 +129,11 @@ export async function GET(request: Request) {
       })
     );
 
-    // Filter out users with no predictions in the period
-    const filteredData = leaderboardData.filter(
-      (user) => (user as LeaderboardUser & { totalPredictions: number }).totalPredictions > 0
-    );
+    // Filter out users with no predictions in the period or zero score
+    const filteredData = leaderboardData.filter((user) => {
+      const u = user as LeaderboardUser & { totalPredictions: number };
+      return u.totalPredictions > 0 && (u.totalSpent > 0 || u.totalEarned > 0);
+    });
 
     // Sort by performance score (weighted combination of accuracy, ROI, and streak)
     // Score = (accuracy * 0.4) + (ROI * 0.4) + (streak * 0.2)

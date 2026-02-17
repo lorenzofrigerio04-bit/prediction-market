@@ -56,6 +56,8 @@ export const CREDIT_TRANSACTION_TYPES = {
   REFERRAL_BONUS: "REFERRAL_BONUS",
   SIGNUP_CREDITS: "SIGNUP_CREDITS",
   SPIN_REWARD: "SPIN_REWARD",
+  /** Crediti vinti dalla ruota non ancora incassati (pending) */
+  SPIN_PENDING: "SPIN_PENDING",
   /** Rimborso/ricarica crediti per utenti bot della simulazione */
   SIMULATED_TOPUP: "SIMULATED_TOPUP",
   /** Acquisto da shop (spesa crediti) */

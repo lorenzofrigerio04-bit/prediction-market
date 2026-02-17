@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
           event: {
             select: {
               id: true,
+              title: true,
               category: true,
               resolved: true,
               outcome: true,
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     return NextResponse.json({
-      Prediction: predictions.map((p) => ({
+      predictions: predictions.map((p) => ({
         id: p.id,
         outcome: p.outcome,
         credits: p.credits,
@@ -69,12 +70,15 @@ export async function GET(request: NextRequest) {
         won: p.won,
         payout: p.payout,
         createdAt: p.createdAt,
+        resolvedAt: null,
         event: {
           id: p.event.id,
+          title: p.event.title,
           category: p.event.category,
           resolved: p.event.resolved,
           outcome: p.event.outcome,
           closesAt: p.event.closesAt,
+          resolvedAt: p.event.resolvedAt,
         },
       })),
       pagination: {

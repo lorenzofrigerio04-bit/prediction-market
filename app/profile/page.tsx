@@ -184,7 +184,7 @@ export default function ProfilePage() {
       const res = await fetch("/api/badges");
       if (res.ok) {
         const data = await res.json();
-        setAllBadges(data.badges ?? []);
+        setAllBadges(Array.isArray(data) ? data : (data.badges ?? []));
       }
     } catch {
       // ignore

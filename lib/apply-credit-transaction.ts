@@ -66,21 +66,13 @@ export async function applyCreditTransaction(
   }
 
   const isCredit = amount > 0;
-  let effectiveAmount = Math.abs(amount);
-  if (isCredit && applyBoost) {
-  if (isCredit && applyBoost) {
-    // boostMultiplier e boostExpiresAt non esistono nello schema - nessun boost applicato
-    effectiveAmount = Math.abs(amount);
-  }
-  }
+  const effectiveAmount = Math.abs(amount);
 
   const updated = await tx.user.update({
     where: { id: userId },
     data: {
       credits: { [isCredit ? "increment" : "decrement"]: effectiveAmount },
-      ...(isCredit
-        ? { totalEarned: { increment: effectiveAmount } }
-        : { totalSpent: { increment: effectiveAmount } }),
+      ...(isCredit ? { totalEarned: { increment: effectiveAmount } } : {}),
     },
     select: { credits: true },
   });
