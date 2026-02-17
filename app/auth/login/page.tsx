@@ -43,7 +43,10 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError(ERROR_MESSAGES[result.error] || result.error || ERROR_MESSAGES.Default);
+        const errorMsg = result.error === 'undefined' || !result.error 
+          ? ERROR_MESSAGES.Default 
+          : ERROR_MESSAGES[result.error] || result.error;
+        setError(errorMsg);
         setIsLoading(false);
         return;
       }
@@ -63,8 +66,10 @@ export default function LoginPage() {
       // Breve attesa per assicurare che il browser abbia scritto il cookie
       await new Promise((r) => setTimeout(r, 300));
       window.location.href = "/auth/success?callbackUrl=/";
-    } catch (err) {
-      setError("Si è verificato un errore. Riprova.");
+    } catch (err: any) {
+      console.error('[LoginPage] Errore durante signIn:', err);
+      const errorMsg = err?.message || err?.toString() || "Si è verificato un errore. Riprova.";
+      setError(errorMsg);
       setIsLoading(false);
     }
   };
