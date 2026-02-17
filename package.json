@@ -21,6 +21,7 @@
     "simulate-activity": "tsx scripts/simulate-activity.ts",
     "remove-bot-activity": "tsx scripts/remove-bot-activity.ts",
     "trigger-simulate-activity-once": "tsx scripts/trigger-simulate-activity-once.ts",
+    "db:update-existing": "tsx scripts/update-existing-data.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

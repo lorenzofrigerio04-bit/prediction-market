@@ -23,11 +23,34 @@ export async function GET() {
     const userId = session.user.id;
 
     const [allBadges, userBadges] = await Promise.all([
-      Promise.resolve([]),  // badge model non esiste
-      Promise.resolve([]),  // userBadge model non esiste
+      prisma.badge.findMany({
+        orderBy: { rarity: "asc" },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          icon: true,
+          rarity: true,
+        },
+      }),
+      prisma.userBadge.findMany({
+        where: { userId },
+        select: {
+          badgeId: true,
+          unlockedAt: true,
+        },
+      }),
     ]);
 
-        return NextResponse.json([]);
+    const userBadgeIds = new Set(userBadges.map((ub) => ub.badgeId));
+
+    const badgesWithStatus = allBadges.map((badge) => ({
+      ...badge,
+      unlocked: userBadgeIds.has(badge.id),
+      unlockedAt: userBadges.find((ub) => ub.badgeId === badge.id)?.unlockedAt || null,
+    }));
+
+    return NextResponse.json(badgesWithStatus);
   } catch (error) {
     console.error("Error fetching badges:", error);
     return NextResponse.json(

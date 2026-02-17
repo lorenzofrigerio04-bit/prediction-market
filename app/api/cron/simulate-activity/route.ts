@@ -31,7 +31,7 @@ async function handleSimulateActivity(request: NextRequest) {
       );
     }
     if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
     }
 
     if (!ENABLE_SIMULATED_ACTIVITY) {

@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const userId = await getUserId();
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
     }
 
     const count = await prisma.notification.count({

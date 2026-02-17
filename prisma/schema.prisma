@@ -1,6 +1,5 @@
-// Schema Prisma per Prediction Market
-// NOTA: Se hai già uno schema Prisma completo altrove, aggiungi solo il model Notification
-// e la relazione notifications Notification[] al tuo model User esistente
+// Schema Prisma per Prediction Market (PostgreSQL)
+// Database: PostgreSQL - usare DATABASE_URL con connection string valida
 
 generator client {
   provider = "prisma-client-js"
@@ -11,7 +10,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Model User base - Se hai già un model User, aggiungi solo la relazione notifications Notification[]
+// Utente: auth, crediti, streak, relazioni con eventi/previsioni/notifiche/badge/follow
 model User {
   id            String    @id @default(cuid())
   email         String?   @unique
@@ -37,6 +36,7 @@ model User {
   Transaction Transaction[]
   userBadges  UserBadge[]
   eventFollows EventFollower[]
+  userMissions UserMission[]
 
   @@map("users")
 }
@@ -46,6 +46,7 @@ model Notification {
   userId    String
   type      String // EVENT_CLOSING_SOON | EVENT_RESOLVED | RANK_UP | STREAK_RISK
   data      String? // Dati aggiuntivi in formato JSON (es: { eventId, eventTitle, oldRank, newRank, etc })
+  message   String? // Campo legacy - i messaggi sono generati da type+data
   readAt    DateTime?
   createdAt DateTime  @default(now())
 
@@ -91,8 +92,20 @@ model Event {
   outcome               String? // YES o NO - risultato quando risolto
   resolutionDisputedAt  DateTime? // Data di disputa della risoluzione
   resolutionDisputedBy  String? // ID utente che ha disputato
+  // Campi legacy/computed per compatibilità (calcolati dalle predictions o da LMSR)
+  probability           Float?
+  yesCredits            Int?
+  noCredits             Int?
+  totalCredits          Int?
+  yesPredictions        Int?
+  noPredictions         Int?
+  q_yes                 Float?
+  q_no                  Float?
+  p_init                Float?
+  realWorldEventTime    DateTime?
+  resolutionTimeExpected DateTime?
   createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  updatedAt             DateTime  @default(now()) @updatedAt
 
   // Relazioni
   createdBy  User         @relation("EventCreator", fields: [createdById], references: [id])
@@ -149,18 +162,19 @@ model Reaction {
   @@map("comment_reactions")
 }
 
+// Previsione: un utente per evento, amount e credits devono restare uguali (sempre impostare entrambi in create/update)
 model Prediction {
   id        String   @id @default(cuid())
   eventId   String
   userId    String
   outcome   String // YES o NO
-  amount    Int // Crediti scommessi
-  credits   Int // Alias per amount (per compatibilità)
+  amount    Int    @default(0) // Crediti scommessi (sempre uguale a credits) - default temporaneo per migration
+  credits   Int // Alias per amount: mantenere uguale a amount per compatibilità lettura
   won       Boolean? // true se ha vinto, false se ha perso, null se non ancora risolto
   payout    Int? // Crediti vinti (se ha vinto)
   resolved  Boolean  @default(false) // Se l'evento è stato risolto
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
 
   // Relazioni
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -248,4 +262,74 @@ model EventFollower {
   @@index([eventId])
   @@index([createdAt])
   @@map("event_followers")
+}
+
+// Template missioni (daily/weekly): target, reward, tipo
+model Mission {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  type        String   // MAKE_PREDICTIONS, WIN_PREDICTIONS, DAILY_LOGIN, FOLLOW_EVENTS
+  target      Int      // obiettivo (es. 3 previsioni)
+  reward      Int      // crediti ricompensa
+  period      String   // DAILY | WEEKLY
+  category    String?  // categoria opzionale per filtrare (es. Tech)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  userMissions UserMission[]
+
+  @@index([period])
+  @@index([active])
+  @@map("missions")
+}
+
+// Progresso utente per una missione in un periodo (un record per user+mission+periodStart)
+model UserMission {
+  id         String    @id @default(cuid())
+  userId     String
+  missionId  String
+  periodStart DateTime // inizio giorno o settimana
+  progress   Int      @default(0)
+  completed  Boolean  @default(false)
+  completedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mission Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, missionId, periodStart])
+  @@index([userId])
+  @@index([missionId])
+  @@index([periodStart])
+  @@map("user_missions")
+}
+
+// Prodotti negozio (solo crediti virtuali)
+model ShopItem {
+  id            String   @id @default(cuid())
+  name          String
+  type          String   @default("CREDIT_BUNDLE") // CREDIT_BUNDLE, COSMETIC, TICKET - default temporaneo per migration
+  priceCredits  Int
+  description   String?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([active])
+  @@map("shop_items")
+}
+
+// Stagioni/tornei (per leaderboard o eventi futuri)
+model Season {
+  id        String    @id @default(cuid())
+  name      String
+  startAt   DateTime
+  endAt     DateTime
+  createdAt DateTime  @default(now())
+
+  @@index([startAt])
+  @@index([endAt])
+  @@map("seasons")
 }

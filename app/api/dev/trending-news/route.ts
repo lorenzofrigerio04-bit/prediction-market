@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       );
     }
     if (secret && authHeader !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
     }
 
     const limit = Math.min(

@@ -125,7 +125,32 @@ async function main() {
     console.log(`✅ Creati ${DEFAULT_BADGES.length} badge.`);
   }
 
-  // Shop (shopItem) e Missioni (mission) non sono nello schema Prisma: seed saltato
+  // Missioni di default (daily + weekly)
+  const missionCount = await prisma.mission.count();
+  if (missionCount === 0) {
+    const missions = [
+      { name: 'Fai 3 previsioni', description: 'Completa 3 previsioni oggi', type: 'MAKE_PREDICTIONS', target: 3, reward: 30, period: 'DAILY' as const },
+      { name: 'Accedi oggi', description: 'Fai login per mantenere la serie', type: 'DAILY_LOGIN', target: 1, reward: 10, period: 'DAILY' as const },
+      { name: '5 previsioni nella settimana', description: 'Completa 5 previsioni questa settimana', type: 'MAKE_PREDICTIONS', target: 5, reward: 80, period: 'WEEKLY' as const },
+    ];
+    for (const m of missions) {
+      await prisma.mission.create({ data: m });
+    }
+    console.log(`✅ Create ${missions.length} missioni di default.`);
+  }
+
+  // Shop: prodotti esempio (solo crediti virtuali)
+  const shopCount = await prisma.shopItem.count();
+  if (shopCount === 0) {
+    await prisma.shopItem.createMany({
+      data: [
+        { name: 'Pacchetto 50 crediti', type: 'CREDIT_BUNDLE', priceCredits: 0, description: 'Omaggio iniziale (non in vendita)', active: false },
+        { name: 'Badge esclusivo', type: 'COSMETIC', priceCredits: 200, description: 'Sblocca un badge profilo speciale', active: true },
+        { name: 'Biglietto evento', type: 'TICKET', priceCredits: 100, description: 'Accesso a evento a premi', active: true },
+      ],
+    });
+    console.log('✅ Creati prodotti shop di esempio.');
+  }
 
   // Verifica se gli eventi esistono già
   const existingEvents = await prisma.event.count();

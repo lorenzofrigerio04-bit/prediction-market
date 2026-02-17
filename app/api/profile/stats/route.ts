@@ -18,7 +18,7 @@ export async function GET() {
 
     const userId = session.user.id;
 
-    // Fetch user with basic stats
+    // Fetch user with basic stats, badges and followed events
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -30,6 +30,31 @@ export async function GET() {
         totalEarned: true,
         streakCount: true,
         createdAt: true,
+        userBadges: {
+          select: {
+            unlockedAt: true,
+            badge: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                icon: true,
+                rarity: true,
+              },
+            },
+          },
+        },
+        eventFollows: {
+          select: {
+            event: {
+              select: {
+                id: true,
+                title: true,
+                closesAt: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -101,9 +126,12 @@ export async function GET() {
         lostPredictions,
         roi: Math.round(roi * 100) / 100, // Round to 2 decimal places
       },
-      badges: [], // Badges non implementati nello schema attuale
-      followedEventsCount: 0, // EventFollower non implementato nello schema attuale
-      followedEvents: [], // EventFollower non implementato nello schema attuale
+      badges: user.userBadges.map((ub) => ({
+        ...ub.badge,
+        unlockedAt: ub.unlockedAt,
+      })),
+      followedEventsCount: user.eventFollows.length,
+      followedEvents: user.eventFollows.map((ef) => ef.event),
     });
   } catch (error) {
     console.error("Error fetching profile stats:", error);
