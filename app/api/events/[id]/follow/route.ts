@@ -87,7 +87,6 @@ export async function POST(
       return NextResponse.json({
         success: true,
         isFollowing: false,
-        message: "Non segui più questo evento",
       });
     } else {
       await prisma.eventFollower.create({
@@ -103,7 +102,6 @@ export async function POST(
       return NextResponse.json({
         success: true,
         isFollowing: true,
-        message: "Evento seguito",
       });
     }
   } catch (error) {

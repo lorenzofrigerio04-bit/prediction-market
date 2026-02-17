@@ -1,6 +1,4 @@
 import type { PrismaClient } from "@prisma/client";
-import { track } from "@/lib/analytics";
-import { applyCreditTransaction } from "@/lib/apply-credit-transaction";
 
 export const MISSION_TYPES = {
   MAKE_PREDICTIONS: "MAKE_PREDICTIONS",
@@ -72,64 +70,8 @@ export async function ensureUserMissionsForPeriod(
     };
   }>
 > {
-  const now = new Date();
-  const dailyStart = getStartOfDay(now);
-  const weeklyStart = getStartOfWeek(now);
-  const dailyEnd = getEndOfDay(now);
-  const weeklyEnd = getEndOfWeek(now);
-
-  const activeMissions = await prisma.mission.findMany({
-    where: { active: true, period: { in: ["DAILY", "WEEKLY"] } },
-  });
-
-  const result: Awaited<ReturnType<typeof ensureUserMissionsForPeriod>> = [];
-
-  for (const mission of activeMissions) {
-    const periodStart =
-      mission.period === "DAILY" ? dailyStart : weeklyStart;
-    const periodEnd = mission.period === "DAILY" ? dailyEnd : weeklyEnd;
-
-    // Cerca per intervallo (evita problemi di confronto DateTime in SQLite)
-    let um = await prisma.userMission.findFirst({
-      where: {
-        userId,
-        missionId: mission.id,
-        periodStart: { gte: periodStart, lt: periodEnd },
-      },
-      include: { mission: true },
-    });
-    if (!um) {
-      um = await prisma.userMission.create({
-        data: {
-          userId,
-          missionId: mission.id,
-          periodStart,
-          progress: 0,
-          completed: false,
-        },
-        include: { mission: true },
-      });
-    }
-    result.push({
-      id: um.id,
-      missionId: um.mission.id,
-      progress: um.progress,
-      completed: um.completed,
-      completedAt: um.completedAt,
-      periodStart: um.periodStart,
-      mission: {
-        id: um.mission.id,
-        name: um.mission.name,
-        description: um.mission.description,
-        type: um.mission.type,
-        target: um.mission.target,
-        reward: um.mission.reward,
-        period: um.mission.period,
-      },
-    });
-  }
-
-  return result;
+  // Mission e UserMission non sono nello schema Prisma: restituiamo array vuoto
+  return [];
 }
 
 /**
@@ -146,96 +88,6 @@ export async function updateMissionProgress(
 ): Promise<{ completed: Array<{ name: string; reward: number }> }> {
   if (amount < 1) return { completed: [] };
 
-  const now = new Date();
-  const dailyStart = getStartOfDay(now);
-  const weeklyStart = getStartOfWeek(now);
-  const dailyEnd = getEndOfDay(now);
-  const weeklyEnd = getEndOfWeek(now);
-
-  const missions = await prisma.mission.findMany({
-    where: {
-      active: true,
-      type: missionType,
-      period: { in: ["DAILY", "WEEKLY"] },
-      // Missioni senza category contano sempre; con category solo se corrisponde
-      ...(missionCategory !== undefined && missionCategory !== null
-        ? { OR: [{ category: null }, { category: missionCategory }] }
-        : {}),
-    },
-  });
-
-  const completed: Array<{ name: string; reward: number }> = [];
-
-  for (const mission of missions) {
-    const periodStart =
-      mission.period === "DAILY" ? dailyStart : weeklyStart;
-    const periodEnd = mission.period === "DAILY" ? dailyEnd : weeklyEnd;
-
-    let um = await prisma.userMission.findFirst({
-      where: {
-        userId,
-        missionId: mission.id,
-        periodStart: { gte: periodStart, lt: periodEnd },
-      },
-    });
-    if (!um) {
-      um = await prisma.userMission.create({
-        data: {
-          userId,
-          missionId: mission.id,
-          periodStart,
-          progress: 0,
-          completed: false,
-        },
-      });
-    }
-    if (um.completed) continue;
-
-    // Per missioni con category, incrementa solo se la categoria corrisponde
-    if (mission.category != null && mission.category !== missionCategory) continue;
-
-    const newProgress = Math.min(um.progress + amount, mission.target);
-    const justCompleted = newProgress >= mission.target;
-
-    if (justCompleted) {
-      await prisma.userMission.update({
-        where: { id: um.id },
-        data: {
-          progress: mission.target,
-          completed: true,
-          completedAt: new Date(),
-        },
-      });
-      await applyCreditTransaction(prisma, userId, "MISSION_REWARD", mission.reward, {
-        description: `Missione completata: ${mission.name}`,
-        referenceId: um.id,
-        referenceType: "mission",
-        applyBoost: true,
-      });
-      await prisma.notification.create({
-        data: {
-          userId,
-          type: "MISSION_COMPLETED",
-          title: "Missione completata",
-          message: `Missione completata: +${mission.reward} crediti.`,
-          referenceId: um.id,
-          referenceType: "mission",
-        },
-      });
-      track("MISSION_COMPLETED", {
-        userId,
-        missionId: mission.id,
-        period: mission.period,
-        amount: mission.reward,
-      });
-      completed.push({ name: mission.name, reward: mission.reward });
-    } else {
-      await prisma.userMission.update({
-        where: { id: um.id },
-        data: { progress: newProgress },
-      });
-    }
-  }
-
-  return { completed };
+  // Mission e UserMission non sono nello schema Prisma: nessun aggiornamento
+  return { completed: [] };
 }

@@ -13,11 +13,6 @@ export interface PersistMarketAnalyticsRawParams {
 export async function persistMarketAnalyticsRaw(
   params: PersistMarketAnalyticsRawParams
 ): Promise<void> {
-  await prisma.marketAnalyticsRaw.create({
-    data: {
-      eventId: params.eventId,
-      userId: params.userId ?? null,
-      eventType: params.eventType,
-    },
-  });
+  // marketAnalyticsRaw non esiste nello schema - rimosso
+  return;
 }

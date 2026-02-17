@@ -43,10 +43,7 @@ export async function GET(request: NextRequest) {
   const ok = hasSecret && hasUrl && hasDatabase && urlMatches;
 
   return NextResponse.json({
-    ok,
-    message: ok
-      ? "Configurazione auth OK."
-      : "Controlla le variabili d'ambiente su Vercel (vedi sotto).",
+    ok: ok ? "Configurazione auth OK." : "Controlla le variabili d'ambiente su Vercel (vedi sotto).",
     checks: {
       NEXTAUTH_SECRET: hasSecret ? "impostato" : "mancante o troppo corto",
       NEXTAUTH_URL: hasUrl ? "impostato" : "mancante o non valido",

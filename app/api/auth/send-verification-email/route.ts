@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
     }
     if (user.emailVerified) {
       return NextResponse.json(
-        { message: "Email già verificata.", verified: true },
         { status: 200 }
       );
     }
@@ -56,10 +55,6 @@ export async function POST(request: NextRequest) {
     const token = generateToken();
     const expires = new Date(Date.now() + VERIFY_EXPIRY_HOURS * 60 * 60 * 1000);
 
-    await prisma.verificationToken.deleteMany({ where: { identifier: email } });
-    await prisma.verificationToken.create({
-      data: { identifier: email, token, expires },
-    });
 
     const baseUrl = getCanonicalBaseUrl();
     const verifyUrl = `${baseUrl}/auth/verify-email?token=${encodeURIComponent(token)}`;
@@ -73,7 +68,6 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      message: "Email di verifica inviata. Controlla la casella (e lo spam).",
     });
   } catch (e) {
     console.error("[send-verification-email]", e);

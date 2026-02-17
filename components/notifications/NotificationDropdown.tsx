@@ -13,13 +13,13 @@ interface NotificationDropdownProps {
 function formatNotificationMessage(notification: Notification): string {
   switch (notification.type) {
     case NotificationType.EVENT_CLOSING_SOON:
-      return `"${notification.data.eventTitle}" chiude tra poco!`;
+      return `"${(typeof notification.data === "string" ? JSON.parse(notification.data) : notification.data || {}).eventTitle}" chiude tra poco!`;
     case NotificationType.EVENT_RESOLVED:
-      return `"${notification.data.eventTitle}" è stato risolto: ${notification.data.outcome === 'yes' ? 'Sì' : 'No'}`;
+      return `"${(typeof notification.data === "string" ? JSON.parse(notification.data) : notification.data || {}).eventTitle}" è stato risolto: ${(typeof notification.data === "string" ? JSON.parse(notification.data) : notification.data || {}).outcome === 'yes' ? 'Sì' : 'No'}`;
     case NotificationType.RANK_UP:
-      return `Sei salito dalla posizione ${notification.data.oldRank} alla ${notification.data.newRank}! 🎉`;
+      return `Sei salito dalla posizione ${(typeof notification.data === "string" ? JSON.parse(notification.data) : notification.data || {}).oldRank} alla ${(typeof notification.data === "string" ? JSON.parse(notification.data) : notification.data || {}).newRank}! 🎉`;
     case NotificationType.STREAK_RISK:
-      return `Attenzione! La tua streak di ${notification.data.currentStreak} giorni rischia di finire. Fai una previsione entro ${notification.data.hoursUntilMidnight} ore!`;
+      return `Attenzione! La tua streak di ${(typeof notification.data === "string" ? JSON.parse(notification.data) : notification.data || {}).currentStreak} giorni rischia di finire. Fai una previsione entro ${(typeof notification.data === "string" ? JSON.parse(notification.data) : notification.data || {}).hoursUntilMidnight} ore!`;
     default:
       return 'Nuova notifica';
   }
@@ -105,7 +105,7 @@ export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
               href={
                 notification.type === NotificationType.EVENT_CLOSING_SOON ||
                 notification.type === NotificationType.EVENT_RESOLVED
-                  ? `/eventi/${notification.data.eventId}`
+                  ? `/eventi/${(typeof notification.data === "string" ? JSON.parse(notification.data) : notification.data || {})?.eventId || ""}`
                   : '/notifiche'
               }
               className={`notification-dropdown-item ${notification.readAt ? 'read' : 'unread'}`}

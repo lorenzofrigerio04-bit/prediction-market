@@ -43,7 +43,6 @@ export async function GET(request: NextRequest) {
           event: {
             select: {
               id: true,
-              title: true,
               category: true,
               resolved: true,
               outcome: true,
@@ -62,7 +61,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     return NextResponse.json({
-      predictions: predictions.map((p) => ({
+      Prediction: predictions.map((p) => ({
         id: p.id,
         outcome: p.outcome,
         credits: p.credits,
@@ -70,15 +69,12 @@ export async function GET(request: NextRequest) {
         won: p.won,
         payout: p.payout,
         createdAt: p.createdAt,
-        resolvedAt: p.resolvedAt,
         event: {
           id: p.event.id,
-          title: p.event.title,
           category: p.event.category,
           resolved: p.event.resolved,
           outcome: p.event.outcome,
           closesAt: p.event.closesAt,
-          resolvedAt: p.event.resolvedAt,
         },
       })),
       pagination: {
@@ -89,7 +85,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error fetching predictions:", error);
+    console.error("Error fetching Prediction:", error);
     return NextResponse.json(
       { error: "Errore nel caricamento delle previsioni" },
       { status: 500 }

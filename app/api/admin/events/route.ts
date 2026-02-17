@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
           },
           _count: {
             select: {
-              predictions: true,
+              Prediction: true,
               comments: true,
             },
           },
@@ -246,7 +246,6 @@ export async function POST(request: NextRequest) {
       action: "EVENT_CREATE",
       entityType: "event",
       entityId: event.id,
-      payload: { title: event.title, category: event.category },
     });
 
     return NextResponse.json({ event }, { status: 201 });

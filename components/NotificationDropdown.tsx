@@ -3,15 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 
+import { getNotificationTitle, getNotificationMessage, getNotificationLink } from '@/lib/notification-templates';
+
 interface Notification {
   id: string;
   type: string;
-  title: string;
-  message: string;
-  read: boolean;
+  data: any;
+  readAt: string | null;
   createdAt: string;
-  referenceId: string | null;
-  referenceType: string | null;
 }
 
 interface NotificationDropdownProps {
@@ -39,20 +38,8 @@ const getNotificationIcon = (type: string) => {
   }
 };
 
-const getNotificationLink = (notification: Notification): string | null => {
-  if (notification.referenceType === "event" && notification.referenceId) {
-    return `/events/${notification.referenceId}`;
-  }
-  if (notification.referenceType === "comment" && notification.referenceId) {
-    return null;
-  }
-  if (notification.referenceType === "badge" || notification.referenceType === "mission") {
-    return "/profile";
-  }
-  if (notification.type === "STREAK_AT_RISK") {
-    return "/wallet";
-  }
-  return null;
+const getLink = (notification: Notification): string | null => {
+  return getNotificationLink(notification.type, notification.data);
 };
 
 const formatDate = (dateString: string) => {
@@ -82,21 +69,21 @@ export default function NotificationDropdown({
   onMarkAllAsRead,
   onRefresh,
 }: NotificationDropdownProps) {
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.readAt).length;
 
   const handleNotificationClick = (notification: Notification) => {
-    if (!notification.read) {
+    if (!notification.readAt) {
       onMarkAsRead(notification.id);
     }
   };
 
   const NotificationItem = ({ notification }: { notification: Notification }) => {
-    const link = getNotificationLink(notification);
+    const link = getLink(notification);
     const icon = getNotificationIcon(notification.type);
     const content = (
       <div
         className={`p-3 hover:bg-gray-50 transition-colors cursor-pointer ${
-          !notification.read ? "bg-blue-50" : ""
+          !notification.readAt ? "bg-blue-50" : ""
         }`}
         onClick={() => handleNotificationClick(notification)}
       >
@@ -106,17 +93,17 @@ export default function NotificationDropdown({
             <div className="flex items-start justify-between gap-2">
               <h4
                 className={`text-sm font-medium ${
-                  !notification.read ? "text-gray-900" : "text-gray-700"
+                  !notification.readAt ? "text-gray-900" : "text-gray-700"
                 }`}
               >
-                {notification.title}
+                {getNotificationTitle(notification.type, notification.data)}
               </h4>
-              {!notification.read && (
+              {!notification.readAt && (
                 <span className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1.5"></span>
               )}
             </div>
             <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-              {notification.message}
+              {getNotificationMessage(notification.type, notification.data)}
             </p>
             <p className="text-xs text-gray-400 mt-1">
               {formatDate(notification.createdAt)}

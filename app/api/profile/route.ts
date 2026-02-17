@@ -43,22 +43,24 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: validated.error }, { status: 400 });
     }
 
+    // Note: username field doesn't exist in User model, using name instead
+    // Check if name is already taken
     const existing = await prisma.user.findFirst({
       where: {
-        username: validated.username,
+        name: validated.username,
         id: { not: session.user.id },
       },
     });
     if (existing) {
-      return NextResponse.json({ error: "Username già in uso" }, { status: 409 });
+      return NextResponse.json({ error: "Nome già in uso" }, { status: 409 });
     }
 
     await prisma.user.update({
       where: { id: session.user.id },
-      data: { username: validated.username },
+      data: { name: validated.username },
     });
 
-    return NextResponse.json({ username: validated.username });
+    return NextResponse.json({ name: validated.username });
   } catch (error) {
     console.error("Error updating profile:", error);
     return NextResponse.json(

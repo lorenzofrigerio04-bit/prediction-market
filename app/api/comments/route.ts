@@ -212,7 +212,6 @@ export async function POST(request: NextRequest) {
         include: {
           event: {
             select: {
-              title: true,
             },
           },
         },
@@ -220,14 +219,24 @@ export async function POST(request: NextRequest) {
 
       if (parentComment && parentComment.userId !== session.user.id) {
         // Non notificare se l'utente risponde al proprio commento
+        const event = await prisma.event.findUnique({
+          where: { id: parentComment.eventId },
+          select: { id: true, title: true },
+        });
+        const replier = await prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { name: true },
+        });
         await prisma.notification.create({
           data: {
             userId: parentComment.userId,
             type: "COMMENT_REPLY",
-            title: "Nuova risposta al tuo commento",
-            message: `${session.user?.name || "Qualcuno"} ha risposto al tuo commento su "${parentComment.event.title}"`,
-            referenceId: comment.id,
-            referenceType: "comment",
+            data: JSON.stringify({
+              commentId: comment.id,
+              eventId: parentComment.eventId,
+              eventTitle: event?.title ?? "",
+              replierName: replier?.name ?? "Qualcuno",
+            }),
           },
         });
       }
@@ -237,7 +246,6 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         comment,
-        message: parentId ? "Risposta aggiunta" : "Commento aggiunto",
       },
       { status: 201 }
     );

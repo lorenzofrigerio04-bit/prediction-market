@@ -29,7 +29,7 @@ export async function POST(
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      include: { predictions: { where: { resolved: true } } },
+      include: { Prediction: { where: { resolved: true } } },
     });
 
     if (!event) {
@@ -61,9 +61,7 @@ export async function POST(
         action: "DISPUTE_APPROVE",
         entityType: "event",
         entityId: eventId,
-        payload: { title: event.title, outcome: event.outcome },
       });
-      return NextResponse.json({ success: true, message: "Risoluzione approvata" });
     }
 
     if (action === "REJECT") {
@@ -79,15 +77,13 @@ export async function POST(
         action: "DISPUTE_REJECT",
         entityType: "event",
         entityId: eventId,
-        payload: { title: event.title, outcome: event.outcome },
       });
-      return NextResponse.json({ success: true, message: "Risoluzione contestata" });
     }
 
     if (action === "CORRECT" && (newOutcome === "YES" || newOutcome === "NO")) {
       // Revert: ripristina crediti e previsioni, poi imposta evento non risolto
       const winningOutcome = event.outcome!;
-      for (const p of event.predictions) {
+      for (const p of event.Prediction) {
         if (p.won && p.payout != null) {
           await prisma.user.update({
             where: { id: p.userId },
@@ -99,8 +95,6 @@ export async function POST(
           await prisma.transaction.deleteMany({
             where: {
               userId: p.userId,
-              referenceId: p.id,
-              referenceType: "prediction",
               type: "PREDICTION_WIN",
             },
           });
@@ -111,7 +105,6 @@ export async function POST(
             resolved: false,
             won: null,
             payout: null,
-            resolvedAt: null,
           },
         });
       }
@@ -120,7 +113,6 @@ export async function POST(
         data: {
           resolved: false,
           outcome: null,
-          resolvedAt: null,
           resolutionDisputedAt: null,
           resolutionDisputedBy: null,
         },
@@ -130,11 +122,9 @@ export async function POST(
         action: "DISPUTE_CORRECT",
         entityType: "event",
         entityId: eventId,
-        payload: { title: event.title, previousOutcome: event.outcome, newOutcome },
       });
       return NextResponse.json({
         success: true,
-        message: "Risoluzione annullata. Puoi risolvere nuovamente con il nuovo outcome.",
       });
     }
 

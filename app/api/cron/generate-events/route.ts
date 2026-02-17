@@ -93,7 +93,6 @@ export async function GET(request: NextRequest) {
         openCount,
         target: targetOpenEvents,
         needToGenerate: 0,
-        message: "Eventi aperti sufficienti, nessuna generazione.",
         candidatesCount: 0,
         verifiedCount: 0,
         generatedCount: 0,

@@ -139,20 +139,22 @@ export async function checkAndAwardBadges(
 ): Promise<{ awarded: string[] }> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: {
-      totalPredictions: true,
-      correctPredictions: true,
-      streak: true,
-      accuracy: true,
-    },
+    select: { id: true, streakCount: true },
   });
   if (!user) return { awarded: [] };
 
+  const [totalPredictions, correctCount, resolvedCount] = await Promise.all([
+    prisma.prediction.count({ where: { userId } }),
+    prisma.prediction.count({ where: { userId, won: true } }),
+    prisma.prediction.count({ where: { userId, resolved: true } }),
+  ]);
+  const accuracy = resolvedCount > 0 ? Math.round((correctCount / resolvedCount) * 100) : 0;
+
   const stats = {
-    totalPredictions: user.totalPredictions,
-    correctPredictions: user.correctPredictions,
-    streak: user.streak,
-    accuracy: user.accuracy,
+    totalPredictions,
+    correctPredictions: correctCount,
+    streak: user.streakCount,
+    accuracy,
   };
 
   const existingBadgeIds = new Set(
@@ -184,10 +186,11 @@ export async function checkAndAwardBadges(
       data: {
         userId,
         type: "BADGE_AWARDED",
-        title: "Badge sbloccato! 🎉",
-        message: `Hai sbloccato il badge "${badge.name}": ${badge.description}`,
-        referenceId: badge.id,
-        referenceType: "badge",
+        data: JSON.stringify({
+          badgeId: badge.id,
+          badgeName: badge.name,
+          badgeDescription: badge.description,
+        }),
       },
     });
   }

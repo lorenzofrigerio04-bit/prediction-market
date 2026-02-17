@@ -48,19 +48,16 @@ export async function GET(request: NextRequest) {
     }
 
     const events = await getClosedUnresolvedEvents(prisma);
+    const needsReview: Array<{ id: string; reason: string }> = [];
+    const autoResolved: Array<{ id: string; outcome: "YES" | "NO" }> = [];
+    const errors: Array<{ id: string; error: string }> = [];
     const baseUrl = getCanonicalBaseUrl();
     const cronSecret = process.env.CRON_SECRET?.trim();
-
-    const autoResolved: { id: string; title: string; outcome: "YES" | "NO" }[] =
-      [];
-    const needsReview: { id: string; title: string; reason?: string }[] = [];
-    const errors: { id: string; title: string; error: string }[] = [];
 
     for (const event of events) {
       if (!event.resolutionSourceUrl?.trim()) {
         needsReview.push({
           id: event.id,
-          title: event.title,
           reason: "missing resolution source URL",
         });
         await prisma.event.update({
@@ -92,14 +89,12 @@ export async function GET(request: NextRequest) {
         if (res.ok) {
           autoResolved.push({
             id: event.id,
-            title: event.title,
             outcome: result.outcome,
           });
         } else {
           const errBody = await res.json().catch(() => ({}));
           errors.push({
             id: event.id,
-            title: event.title,
             error: (errBody as { error?: string }).error ?? `HTTP ${res.status}`,
           });
           await prisma.event.update({
@@ -113,7 +108,6 @@ export async function GET(request: NextRequest) {
       if ("needsReview" in result && result.needsReview) {
         needsReview.push({
           id: event.id,
-          title: event.title,
           reason: "outcome uncertain from source",
         });
         await prisma.event.update({
@@ -126,7 +120,6 @@ export async function GET(request: NextRequest) {
       if ("error" in result) {
         errors.push({
           id: event.id,
-          title: event.title,
           error: result.error,
         });
         await prisma.event.update({

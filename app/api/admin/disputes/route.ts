@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       orderBy: { resolvedAt: "desc" },
       include: {
         createdBy: { select: { id: true, name: true, email: true } },
-        _count: { select: { predictions: true } },
+        _count: { select: { Prediction: true } },
       },
     });
 

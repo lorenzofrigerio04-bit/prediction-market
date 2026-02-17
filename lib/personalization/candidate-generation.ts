@@ -26,30 +26,12 @@ export interface FeedCandidate {
  * If UserProfile table is missing or query fails, returns null (neutral profile used).
  */
 async function loadUserProfile(
-  prisma: PrismaClient,
+  _prisma: PrismaClient,
   userId: string | null
 ): Promise<UserProfileView | null> {
   if (!userId) return null;
-  try {
-    const row = await prisma.userProfile.findUnique({
-      where: { userId },
-      select: {
-        preferredCategories: true,
-        riskTolerance: true,
-        preferredHorizon: true,
-      },
-    });
-    if (!row?.riskTolerance || !row?.preferredHorizon) return null;
-    const preferredCategories =
-      (row.preferredCategories as Record<string, number>) ?? {};
-    return {
-      preferredCategories,
-      riskTolerance: row.riskTolerance as RiskToleranceLevel,
-      preferredHorizon: row.preferredHorizon as PreferredHorizonLevel,
-    };
-  } catch {
-    return null;
-  }
+  // UserProfile non è nello schema Prisma: personalizzazione disabilitata
+  return null;
 }
 
 /**
@@ -58,16 +40,13 @@ async function loadUserProfile(
  */
 async function getMetricsLast6h(prisma: PrismaClient): Promise<Map<string, { volume_6h: number; impressions: number }>> {
   try {
-    const sixHoursAgo = new Date(Date.now() - SIX_HOURS_MS);
-    const rows = await prisma.marketMetrics.findMany({
-      where: { hour: { gte: sixHoursAgo } },
-      select: { eventId: true, volume: true, impressions: true },
-    });
     const map = new Map<string, { volume_6h: number; impressions: number }>();
+    // marketMetrics non esiste nello schema - rows vuoto
+    const rows: any[] = [];
     for (const r of rows) {
       const cur = map.get(r.eventId) ?? { volume_6h: 0, impressions: 0 };
-      cur.volume_6h += r.volume;
-      cur.impressions += r.impressions;
+      cur.volume_6h += r.volume ?? 0;
+      cur.impressions += r.impressions ?? 0;
       map.set(r.eventId, cur);
     }
     return map;
@@ -92,7 +71,6 @@ async function getOpenMarketsWithMetrics(
         category: true,
         closesAt: true,
         createdAt: true,
-        totalCredits: true,
         b: true,
       },
       take: poolSize,
@@ -108,7 +86,7 @@ async function getOpenMarketsWithMetrics(
       category: e.category,
       closesAt: e.closesAt,
       createdAt: e.createdAt,
-      totalCredits: e.totalCredits ?? 0,
+      totalCredits: 0,
       b: e.b ?? 100,
       volume_6h: m?.volume_6h ?? 0,
       impressions: m?.impressions ?? 0,

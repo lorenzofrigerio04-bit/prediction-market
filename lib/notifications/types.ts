@@ -6,6 +6,9 @@ export enum NotificationType {
   EVENT_RESOLVED = 'EVENT_RESOLVED',
   RANK_UP = 'RANK_UP',
   STREAK_RISK = 'STREAK_RISK',
+  COMMENT_REPLY = 'COMMENT_REPLY',
+  BADGE_AWARDED = 'BADGE_AWARDED',
+  MISSION_COMPLETED = 'MISSION_COMPLETED',
 }
 
 /**
@@ -30,6 +33,22 @@ export interface NotificationData {
   STREAK_RISK: {
     currentStreak: number;
     hoursUntilMidnight: number;
+  };
+  COMMENT_REPLY: {
+    commentId: string;
+    eventId: string;
+    eventTitle: string;
+    replierName: string;
+  };
+  BADGE_AWARDED: {
+    badgeId: string;
+    badgeName: string;
+    badgeDescription: string;
+  };
+  MISSION_COMPLETED: {
+    missionId: string;
+    missionName: string;
+    reward: number;
   };
 }
 

@@ -21,20 +21,14 @@ const feedEventSelect = {
   category: true,
   createdAt: true,
   closesAt: true,
-  probability: true,
-  totalCredits: true,
-  yesCredits: true,
-  noCredits: true,
   resolved: true,
   outcome: true,
-  q_yes: true,
-  q_no: true,
   b: true,
   createdBy: {
     select: { id: true, name: true, image: true },
   },
   _count: {
-    select: { predictions: true, comments: true },
+    select: { Prediction: true, comments: true },
   },
 } as const;
 
@@ -49,7 +43,6 @@ async function getRecentEventsAsFeed(limit: number): Promise<CachedFeedItem[]> {
     where: {
       resolved: false,
       closesAt: { gt: now },
-      NOT: { title: { startsWith: DEBUG_TITLE_PREFIX } },
     },
     select: feedEventSelect,
     take: limit,
@@ -87,7 +80,6 @@ export async function GET(request: NextRequest) {
               id: { in: eventIds },
               resolved: false,
               closesAt: { gt: new Date() },
-              NOT: { title: { startsWith: DEBUG_TITLE_PREFIX } },
             },
             select: feedEventSelect,
           });

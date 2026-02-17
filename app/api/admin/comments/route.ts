@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: "desc" },
         include: {
           user: { select: { id: true, name: true, email: true } },
-          event: { select: { id: true, title: true } },
           _count: { select: { reactions: true, replies: true } },
         },
       }),

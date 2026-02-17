@@ -1,0 +1,250 @@
+// Schema Prisma per Prediction Market
+// NOTA: Se hai già uno schema Prisma completo altrove, aggiungi solo il model Notification
+// e la relazione notifications Notification[] al tuo model User esistente
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Model User base - Se hai già un model User, aggiungi solo la relazione notifications Notification[]
+model User {
+  id            String    @id @default(cuid())
+  email         String?   @unique
+  name          String?
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  role          String?   @default("USER") // USER, ADMIN, BOT
+  streakCount   Int       @default(0) @map("streak_count")
+  credits       Int       @default(100)
+  totalEarned   Int       @default(0) @map("total_earned") // Totale crediti guadagnati
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relazione con Notification
+  notifications Notification[]
+
+  // Relazioni con Event, Comment, Reaction
+  events      Event[]       @relation("EventCreator")
+  comments    Comment[]
+  reactions   Reaction[]
+  Prediction  Prediction[]
+  Transaction Transaction[]
+  userBadges  UserBadge[]
+  eventFollows EventFollower[]
+
+  @@map("users")
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String // EVENT_CLOSING_SOON | EVENT_RESOLVED | RANK_UP | STREAK_RISK
+  data      String? // Dati aggiuntivi in formato JSON (es: { eventId, eventTitle, oldRank, newRank, etc })
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  // Relazione con User
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, readAt])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String? // Null se azione di sistema
+  action     String // Es: EVENT_CREATE, EVENT_RESOLVE, COMMENT_HIDE, etc.
+  entityType String // Es: "event", "comment", "user", etc.
+  entityId   String? // ID dell'entità su cui è stata eseguita l'azione
+  payload    String? // Dati aggiuntivi in formato JSON
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+model Event {
+  id                    String    @id @default(cuid())
+  title                 String
+  description           String?
+  category              String
+  closesAt              DateTime
+  resolutionSourceUrl   String?
+  resolutionNotes       String?
+  createdById           String
+  resolutionStatus      String    @default("PENDING") // PENDING, NEEDS_REVIEW, RESOLVED
+  b                     Float // Parameter for LMSR pricing
+  resolutionBufferHours Int       @default(24)
+  resolved              Boolean   @default(false)
+  resolvedAt            DateTime? // Data di risoluzione
+  outcome               String? // YES o NO - risultato quando risolto
+  resolutionDisputedAt  DateTime? // Data di disputa della risoluzione
+  resolutionDisputedBy  String? // ID utente che ha disputato
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Relazioni
+  createdBy  User         @relation("EventCreator", fields: [createdById], references: [id])
+  comments   Comment[]
+  Prediction Prediction[]
+  followers  EventFollower[]
+
+  @@index([createdById])
+  @@index([closesAt])
+  @@index([resolved])
+  @@index([category])
+  @@map("events")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  parentId  String? // Per risposte/thread
+  content   String
+  hidden    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relazioni
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  parent    Comment?   @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[]  @relation("CommentReplies")
+  reactions Reaction[]
+
+  @@index([eventId])
+  @@index([userId])
+  @@index([parentId])
+  @@index([hidden])
+  @@index([createdAt])
+  @@map("comments")
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String
+  type      String // thumbs_up, fire, heart, etc.
+  createdAt DateTime @default(now())
+
+  // Relazioni
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId, type]) // Un utente può avere solo una reazione di ogni tipo per commento
+  @@index([commentId])
+  @@index([userId])
+  @@map("comment_reactions")
+}
+
+model Prediction {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  outcome   String // YES o NO
+  amount    Int // Crediti scommessi
+  credits   Int // Alias per amount (per compatibilità)
+  won       Boolean? // true se ha vinto, false se ha perso, null se non ancora risolto
+  payout    Int? // Crediti vinti (se ha vinto)
+  resolved  Boolean  @default(false) // Se l'evento è stato risolto
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relazioni
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId]) // Un utente può fare una sola previsione per evento
+  @@index([eventId])
+  @@index([userId])
+  @@index([resolved])
+  @@index([createdAt])
+  @@map("predictions")
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String // PREDICTION_WIN, PREDICTION_LOSS, DAILY_BONUS, MISSION_REWARD, etc.
+  amount      Int // Importo in crediti (positivo per guadagni, negativo per perdite)
+  referenceId String? // ID di riferimento (es: predictionId, eventId, missionId)
+  createdAt   DateTime @default(now())
+
+  // Relazioni
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+model Badge {
+  id          String     @id @default(cuid())
+  name        String
+  description String
+  icon        String
+  rarity      String // COMMON, RARE, EPIC, LEGENDARY
+  criteria    String? // JSON string con criteri per sbloccare il badge
+  createdAt   DateTime  @default(now())
+
+  // Relazioni
+  userBadges UserBadge[]
+
+  @@index([rarity])
+  @@map("badges")
+}
+
+model UserBadge {
+  id         String   @id @default(cuid())
+  userId     String
+  badgeId    String
+  unlockedAt DateTime @default(now())
+
+  // Relazioni
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@index([badgeId])
+  @@map("user_badges")
+}
+
+model VerificationToken {
+  token      String   @id
+  identifier String // Email address
+  expires    DateTime
+
+  @@index([identifier])
+  @@index([expires])
+  @@map("verification_tokens")
+}
+
+model EventFollower {
+  id      String   @id @default(cuid())
+  userId  String
+  eventId String
+  createdAt DateTime @default(now())
+
+  // Relazioni
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([userId])
+  @@index([eventId])
+  @@index([createdAt])
+  @@map("event_followers")
+}

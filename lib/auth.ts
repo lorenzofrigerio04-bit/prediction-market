@@ -27,17 +27,38 @@ export const authOptions: NextAuthOptions = {
     // }),
   ],
   callbacks: {
-    session: ({ session, token }) => {
-      // IMPORTANTE: Aggiunge userId alla session per getUserId()
+    session: async ({ session, token }) => {
+      // IMPORTANTE: Aggiunge userId e role alla session
       if (session.user && token.sub) {
         (session.user as any).id = token.sub;
+        // Aggiunge role dal token alla session
+        if (token.role) {
+          (session.user as any).role = token.role;
+        } else {
+          // Fallback: recupera role dal database se non presente nel token
+          const user = await prisma.user.findUnique({
+            where: { id: token.sub },
+            select: { role: true },
+          });
+          if (user?.role) {
+            (session.user as any).role = user.role;
+          }
+        }
       }
       return session;
     },
-    jwt: ({ token, user }) => {
-      // Aggiunge userId al token quando l'utente fa login
+    jwt: async ({ token, user }) => {
+      // Aggiunge userId e role al token quando l'utente fa login
       if (user) {
         token.sub = user.id;
+        // Recupera role dal database
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { role: true },
+        });
+        if (dbUser?.role) {
+          token.role = dbUser.role;
+        }
       }
       return token;
     },

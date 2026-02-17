@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const limited = rateLimit(`predictions:${session.user.id}`, PREDICTIONS_LIMIT);
+    const limited = rateLimit(`Prediction:${session.user.id}`, PREDICTIONS_LIMIT);
     if (limited) {
       return NextResponse.json(
         { error: "Troppe previsioni in poco tempo. Riprova tra un minuto." },
@@ -67,8 +67,6 @@ export async function POST(request: NextRequest) {
         category: true,
         resolved: true,
         closesAt: true,
-        q_yes: true,
-        q_no: true,
         b: true,
       },
     });
@@ -91,8 +89,8 @@ export async function POST(request: NextRequest) {
             category: event.category,
             resolved: event.resolved,
             closesAt: event.closesAt,
-            q_yes: event.q_yes,
-            q_no: event.q_no,
+            q_yes: null,
+            q_no: null,
             b: event.b,
           },
           userId: session.user.id,
@@ -148,7 +146,6 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         prediction: result.prediction,
-        message: "Previsione creata con successo",
       },
       { status: 201 }
     );

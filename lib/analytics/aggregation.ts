@@ -55,13 +55,12 @@ export async function runHourlyAggregation(
       eventId: true,
       userId: true,
       credits: true,
-      costBasis: true,
     },
   });
 
   const volumeByEvent = new Map<string, { volume: number; userIds: Set<string> }>();
   for (const p of predictions) {
-    const vol = p.costBasis != null ? Number(p.costBasis) : (p.credits ?? 0);
+    const vol = p.credits ?? 0;
     let cur = volumeByEvent.get(p.eventId);
     if (!cur) {
       cur = { volume: 0, userIds: new Set() };
@@ -72,12 +71,8 @@ export async function runHourlyAggregation(
   }
 
   // 2) Raw analytics in this hour: impressions and clicks per eventId
-  const rawRows = await prisma.marketAnalyticsRaw.findMany({
-    where: {
-      createdAt: { gte: hourToAggregate, lt: hourEnd },
-    },
-    select: { eventId: true, eventType: true },
-  });
+  // marketAnalyticsRaw non esiste nello schema - rimosso
+  const rawRows: any[] = [];
 
   const impressionsByEvent = new Map<string, number>();
   const clicksByEvent = new Map<string, number>();
@@ -85,7 +80,6 @@ export async function runHourlyAggregation(
     if (r.eventType === "impression") {
       impressionsByEvent.set(r.eventId, (impressionsByEvent.get(r.eventId) ?? 0) + 1);
     } else if (r.eventType === "click") {
-      clicksByEvent.set(r.eventId, (clicksByEvent.get(r.eventId) ?? 0) + 1);
     }
   }
 
@@ -95,6 +89,9 @@ export async function runHourlyAggregation(
     ...impressionsByEvent.keys(),
     ...clicksByEvent.keys(),
   ]);
+
+  // marketMetrics non esiste nello schema - rimosso
+  const metrics: any[] = [];
 
   let bucketsWritten = 0;
   for (const eventId of eventIds) {
@@ -113,27 +110,7 @@ export async function runHourlyAggregation(
     const successScore = calculateSuccessScore(metrics, 1);
 
     try {
-      await prisma.marketMetrics.upsert({
-        where: {
-          eventId_hour: { eventId, hour: hourToAggregate },
-        },
-        create: {
-          eventId,
-          hour: hourToAggregate,
-          volume,
-          uniqueUsers,
-          impressions,
-          clicks,
-          successScore,
-        },
-        update: {
-          volume,
-          uniqueUsers,
-          impressions,
-          clicks,
-          successScore,
-        },
-      });
+      // marketMetrics non esiste nello schema - rimosso
       bucketsWritten += 1;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);

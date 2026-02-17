@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { IconClock, IconChat, IconCurrency, IconTrendUp } from "@/components/ui/Icons";
 import { getEventProbability } from "@/lib/pricing/price-display";
 import { cost } from "@/lib/pricing/lmsr";
+import type { EventFomoStats } from "@/lib/fomo/event-stats";
 
 export interface EventCardEvent {
   id: string;
@@ -25,6 +26,8 @@ export interface EventCardEvent {
     predictions: number;
     comments: number;
   };
+  /** Statistiche FOMO (opzionale) */
+  fomo?: EventFomoStats;
 }
 
 interface EventCardProps {
@@ -49,8 +52,8 @@ function useEventDerived(event: EventCardEvent) {
   }, [event.totalCredits, event.q_yes, event.q_no, event.b]);
 }
 
-function getTimeRemaining(closesAt: string | Date): string {
-  const timeUntilClose = new Date(closesAt).getTime() - Date.now();
+function getTimeRemaining(closesAt: string | Date, countdownMs?: number): string {
+  const timeUntilClose = countdownMs !== undefined ? countdownMs : new Date(closesAt).getTime() - Date.now();
   if (timeUntilClose <= 0) return "Chiuso";
   const hours = Math.floor(timeUntilClose / (1000 * 60 * 60));
   const days = Math.floor(hours / 24);
@@ -60,13 +63,44 @@ function getTimeRemaining(closesAt: string | Date): string {
   return minutes > 0 ? `${minutes} min` : "Presto";
 }
 
+/**
+ * Hook per countdown live che si aggiorna ogni secondo
+ */
+function useLiveCountdown(closesAt: string | Date, initialCountdownMs?: number) {
+  const [countdownMs, setCountdownMs] = useState(() => {
+    if (initialCountdownMs !== undefined) return initialCountdownMs;
+    return new Date(closesAt).getTime() - Date.now();
+  });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newCountdown = new Date(closesAt).getTime() - Date.now();
+      setCountdownMs(newCountdown);
+      if (newCountdown <= 0) {
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [closesAt]);
+
+  return countdownMs;
+}
+
 export default function EventCard({ event }: EventCardProps) {
   const { yesPct, noPct, yesMultiplier, noMultiplier } = useEventDerived(event);
-  const timeLabel = getTimeRemaining(event.closesAt);
-  const timeUntilClose = new Date(event.closesAt).getTime() - Date.now();
+  
+  // Usa countdown live se disponibile dalle statistiche FOMO
+  const liveCountdownMs = useLiveCountdown(event.closesAt, event.fomo?.countdownMs);
+  const timeLabel = getTimeRemaining(event.closesAt, liveCountdownMs);
+  const timeUntilClose = liveCountdownMs;
   const isUrgent = timeUntilClose > 0 && timeUntilClose < 24 * 60 * 60 * 1000;
   const isClosed = timeUntilClose <= 0;
   const higherMultiplierIsYes = yesMultiplier >= noMultiplier;
+  
+  // Statistiche FOMO
+  const fomo = event.fomo;
+  const showPointsMultiplier = fomo && fomo.pointsMultiplier > 1.0 && fomo.isClosingSoon;
 
   return (
     <Link
@@ -82,18 +116,25 @@ export default function EventCard({ event }: EventCardProps) {
             </span>
             <span className="truncate">{event.category}</span>
           </span>
-          <span
-            className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold font-numeric ${
-              isClosed
-                ? "bg-white/5 text-fg-muted border border-white/10"
-                : isUrgent
-                  ? "bg-warning-bg/90 text-warning border border-warning/30 dark:bg-warning-bg/50 dark:text-warning dark:border-warning/40 dark:shadow-[0_0_14px_-2px_rgba(253,224,71,0.4)]"
-                  : "bg-black/40 dark:bg-black/50 border border-primary/50 text-white shadow-[0_0_12px_-2px_rgba(var(--primary-glow),0.35)]"
-            }`}
-          >
-            <IconClock className="w-4 h-4" aria-hidden />
-            {timeLabel}
-          </span>
+          <div className="flex items-center gap-2">
+            <span
+              className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold font-numeric ${
+                isClosed
+                  ? "bg-white/5 text-fg-muted border border-white/10"
+                  : isUrgent
+                    ? "bg-warning-bg/90 text-warning border border-warning/30 dark:bg-warning-bg/50 dark:text-warning dark:border-warning/40 dark:shadow-[0_0_14px_-2px_rgba(253,224,71,0.4)]"
+                    : "bg-black/40 dark:bg-black/50 border border-primary/50 text-white shadow-[0_0_12px_-2px_rgba(var(--primary-glow),0.35)]"
+              }`}
+            >
+              <IconClock className="w-4 h-4" aria-hidden />
+              {timeLabel}
+            </span>
+            {showPointsMultiplier && (
+              <span className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-lg text-ds-micro font-bold bg-primary/20 text-primary border border-primary/40">
+                ×{fomo.pointsMultiplier.toFixed(1)}
+              </span>
+            )}
+          </div>
         </div>
 
         <h3 className="text-ds-h2 font-bold text-fg mb-1 line-clamp-2 leading-snug tracking-title group-hover:text-primary transition-colors">
@@ -191,10 +232,10 @@ export default function EventCard({ event }: EventCardProps) {
         <div className="grid grid-cols-3 gap-2 mt-auto pt-3 border-t border-white/10">
           <div className="stat-neon-mini flex flex-col items-center justify-center rounded-xl py-2.5 px-2 text-center">
             <span className="text-base md:text-lg font-bold text-fg font-numeric tabular-nums">
-              {event._count.predictions}
+              {fomo?.participantsCount !== undefined ? fomo.participantsCount : event._count.predictions}
             </span>
             <span className="text-ds-caption text-fg-muted font-semibold uppercase tracking-label">
-              Previsioni
+              {fomo?.participantsCount !== undefined ? "Partecipanti" : "Previsioni"}
             </span>
           </div>
           <div className="stat-neon-mini flex flex-col items-center justify-center rounded-xl py-2.5 px-2 text-center">
@@ -208,9 +249,11 @@ export default function EventCard({ event }: EventCardProps) {
           </div>
           <div className="stat-neon-mini flex flex-col items-center justify-center rounded-xl py-2.5 px-2 text-center">
             <IconTrendUp className="w-4 h-4 text-primary shrink-0 mx-auto mb-0.5" aria-hidden />
-            <span className="text-base md:text-lg font-bold text-fg font-numeric tabular-nums">—</span>
+            <span className="text-base md:text-lg font-bold text-fg font-numeric tabular-nums">
+              {fomo?.votesVelocity !== undefined ? fomo.votesVelocity.toFixed(1) : "—"}
+            </span>
             <span className="text-ds-caption text-fg-muted font-semibold uppercase tracking-label">
-              Trend
+              {fomo?.votesVelocity !== undefined ? "Voti/h" : "Trend"}
             </span>
           </div>
         </div>

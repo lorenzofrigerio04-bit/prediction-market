@@ -25,7 +25,7 @@ export interface RunSimulatedReactionsOptions {
 
 /**
  * Crea una reazione a nome di un utente (es. bot).
- * Verifica che il commento esista e che non ci sia già CommentReaction per userId+commentId+type.
+ * Verifica che il commento esista e che non ci sia già Reaction per userId+commentId+type.
  * Crea solo, niente toggle.
  */
 export async function createSimulatedReaction(
@@ -46,7 +46,7 @@ export async function createSimulatedReaction(
     return { success: false, error: "Commento non trovato" };
   }
 
-  const existingReaction = await prisma.commentReaction.findFirst({
+  const existingReaction = await prisma.reaction.findFirst({
     where: {
       userId,
       commentId,
@@ -58,7 +58,7 @@ export async function createSimulatedReaction(
     return { success: false, error: "Reazione già presente" };
   }
 
-  const reaction = await prisma.commentReaction.create({
+  const reaction = await prisma.reaction.create({
     data: {
       userId,
       commentId,

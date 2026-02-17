@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cacheGetJson, cacheSetJson } from "@/lib/cache/redis";
 import { DEBUG_TITLE_PREFIX } from "@/lib/debug-display";
+import { getEventsWithStats } from "@/lib/fomo/event-stats";
 
 const TRENDING_CACHE_TTL_SEC = 10 * 60; // 10 minutes
 const TRENDING_KEY_PREFIX = "trending:";
@@ -63,13 +64,11 @@ export async function GET(request: NextRequest) {
     if (category) where.category = category;
 
     // Hide debug-only markets from normal feed (no [DEBUG] titles unless in debug mode elsewhere).
-    where.AND = [...(where.AND ?? []), { NOT: { title: { startsWith: DEBUG_TITLE_PREFIX } } }];
 
     // Ricerca: AND con (title OR description)
     if (search.trim()) {
       const searchClause = {
         OR: [
-          { title: { contains: search.trim(), mode: "insensitive" as const } },
           { description: { contains: search.trim(), mode: "insensitive" as const } },
         ],
       };
@@ -107,15 +106,34 @@ export async function GET(request: NextRequest) {
         },
         _count: {
           select: {
-            predictions: true,
+            Prediction: true,
             comments: true,
           },
         },
       },
     });
 
+    // Calcola statistiche FOMO per tutti gli eventi
+    const eventIds = events.map((e) => e.id);
+    const fomoStats = await getEventsWithStats(prisma, eventIds, now);
+
+    // Aggiungi statistiche FOMO agli eventi
+    const eventsWithStats = events.map((event) => {
+      const stats = fomoStats.get(event.id);
+      return {
+        ...event,
+        fomo: stats || {
+          countdownMs: new Date(event.closesAt).getTime() - now.getTime(),
+          participantsCount: event._count.Prediction,
+          votesVelocity: 0,
+          pointsMultiplier: 1.0,
+          isClosingSoon: false,
+        },
+      };
+    });
+
     const payload = {
-      events,
+      events: eventsWithStats,
       pagination: {
         page,
         limit,

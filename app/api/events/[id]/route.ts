@@ -29,7 +29,7 @@ export async function GET(
         },
         _count: {
           select: {
-            predictions: true,
+            Prediction: true,
             comments: true,
           },
         },
@@ -47,8 +47,8 @@ export async function GET(
     const priceData = {
       eventId: event.id,
       probability: getEventProbability(event),
-      q_yes: event.q_yes ?? 0,
-      q_no: event.q_no ?? 0,
+      q_yes: 0,
+      q_no: 0,
       b: event.b ?? 100,
     };
     setCachedPrice(eventId, priceData).catch(() => {});
@@ -67,9 +67,9 @@ export async function GET(
       const [pred, follow] = await Promise.all([
         prisma.prediction.findUnique({
           where: {
-            userId_eventId: {
-              userId: session.user.id,
+            eventId_userId: {
               eventId: event.id,
+              userId: session.user.id,
             },
           },
         }),

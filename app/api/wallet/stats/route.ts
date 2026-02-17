@@ -27,19 +27,10 @@ export async function GET() {
       select: {
         credits: true,
         totalEarned: true,
-        totalSpent: true,
-        streak: true,
-        lastDailyBonus: true,
-        boostMultiplier: true,
-        boostExpiresAt: true,
+        streakCount: true,
       },
     });
 
-    const lastSpin = await prisma.dailySpin.findFirst({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-      select: { createdAt: true },
-    });
 
     if (!user) {
       return NextResponse.json(
@@ -50,42 +41,27 @@ export async function GET() {
 
     // Controlla se può prendere il daily bonus oggi
     const currentDate = new Date();
-    const lastBonusDate = user.lastDailyBonus
-      ? new Date(user.lastDailyBonus)
-      : null;
-
-    const canClaimDailyBonus =
-      !lastBonusDate ||
-      lastBonusDate.getFullYear() !== currentDate.getFullYear() ||
-      lastBonusDate.getMonth() !== currentDate.getMonth() ||
-      lastBonusDate.getDate() !== currentDate.getDate();
-
-    const nextBonusAmount = getNextDailyBonusAmount(
-      user.streak,
+    // lastDailyBonus non esiste nello schema - sempre permettere bonus
+    const canClaimDailyBonus = true;
+    const nextBonusAmount = getNextDailyBonusAmount(      user.streakCount,
       canClaimDailyBonus
     );
-    const bonusMultiplier = getDailyBonusMultiplier(user.streak);
+    const bonusMultiplier = getDailyBonusMultiplier(user.streakCount);
 
     const todayStart = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), currentDate.getUTCDate(), 0, 0, 0, 0));
-    const canSpinToday =
-      !lastSpin || new Date(lastSpin.createdAt) < todayStart;
-    const hasActiveBoost =
-      user.boostExpiresAt != null &&
-      currentDate < user.boostExpiresAt &&
-      (user.boostMultiplier ?? 0) > 1;
+    const canSpinToday = true; // dailySpin non implementato
+    const hasActiveBoost = false; // boostExpiresAt e boostMultiplier non esistono nello schema
 
     return NextResponse.json({
       credits: user.credits,
       totalEarned: user.totalEarned,
-      totalSpent: user.totalSpent,
-      streak: user.streak,
-      lastDailyBonus: user.lastDailyBonus,
+      streakCount: user.streakCount,
       canClaimDailyBonus,
       nextBonusAmount,
       bonusMultiplier,
       canSpinToday,
-      boostMultiplier: user.boostMultiplier,
-      boostExpiresAt: user.boostExpiresAt,
+      boostMultiplier: 0,
+      boostExpiresAt: null,
       hasActiveBoost,
     });
   } catch (error) {

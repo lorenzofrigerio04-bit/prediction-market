@@ -25,8 +25,6 @@ export async function GET(
       where: { id: eventId },
       select: {
         id: true,
-        q_yes: true,
-        q_no: true,
         b: true,
       },
     });
@@ -38,8 +36,8 @@ export async function GET(
       );
     }
 
-    const qYes = event.q_yes ?? 0;
-    const qNo = event.q_no ?? 0;
+    const qYes = 0;
+    const qNo = 0;
     const b = event.b ?? 100;
     const probability = getEventProbability(event);
 

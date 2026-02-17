@@ -11,7 +11,6 @@ function computeWinnerPayout(
   finalQYes: number,
   finalQNo: number,
   b: number,
-  costBasis: number
 ): number {
   const finalCost = cost(finalQYes, finalQNo, b);
   return Math.max(0, Math.floor(finalCost - costBasis));

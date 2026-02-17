@@ -27,11 +27,11 @@ export async function GET() {
       ensureUserMissionsForPeriod(prisma, userId),
       prisma.user.findUnique({
         where: { id: userId },
-        select: { streak: true },
+        select: { streakCount: true },
       }),
     ]);
 
-    const bonusMultiplier = getDailyBonusMultiplier(user?.streak ?? 0);
+    const bonusMultiplier = getDailyBonusMultiplier(user?.streakCount ?? 0);
 
     const formatted = missions.map((um) => ({
       id: um.id,
@@ -52,7 +52,7 @@ export async function GET() {
       missions: formatted,
       daily: formatted.filter((m) => m.period === "DAILY"),
       weekly: formatted.filter((m) => m.period === "WEEKLY"),
-      streak: user?.streak ?? 0,
+      streak: user?.streakCount ?? 0,
       bonusMultiplier,
     });
   } catch (error) {

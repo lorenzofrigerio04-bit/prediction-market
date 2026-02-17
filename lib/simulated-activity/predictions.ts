@@ -9,6 +9,51 @@ import { getPrice } from "@/lib/pricing/lmsr";
 import { executePredictionBuy, TradeError } from "@/lib/pricing/trade";
 import { MAX_PREDICTIONS_PER_RUN } from "./config";
 
+/** Calcola q_yes/q_no da Prediction (Event non ha questi campi nello schema). */
+async function getEventLmsrState(
+  prisma: PrismaClient,
+  eventId: string
+): Promise<{ qYes: number; qNo: number }> {
+  const rows = await prisma.prediction.groupBy({
+    by: ["outcome"],
+    where: { eventId },
+    _sum: { amount: true },
+  });
+  let qYes = 0;
+  let qNo = 0;
+  for (const r of rows) {
+    const sum = r._sum.amount ?? 0;
+    if (r.outcome === "YES") qYes = sum;
+    else if (r.outcome === "NO") qNo = sum;
+  }
+  return { qYes, qNo };
+}
+
+/** Calcola q_yes/q_no per più eventi in una query. */
+async function getLmsrStateForEvents(
+  prisma: PrismaClient,
+  eventIds: string[]
+): Promise<Map<string, { qYes: number; qNo: number }>> {
+  const map = new Map<string, { qYes: number; qNo: number }>();
+  if (eventIds.length === 0) return map;
+  const rows = await prisma.prediction.groupBy({
+    by: ["eventId", "outcome"],
+    where: { eventId: { in: eventIds } },
+    _sum: { amount: true },
+  });
+  for (const r of rows) {
+    let cur = map.get(r.eventId);
+    if (!cur) {
+      cur = { qYes: 0, qNo: 0 };
+      map.set(r.eventId, cur);
+    }
+    const sum = r._sum.amount ?? 0;
+    if (r.outcome === "YES") cur.qYes = sum;
+    else if (r.outcome === "NO") cur.qNo = sum;
+  }
+  return map;
+}
+
 /** Crediti per scommessa: range da “piccola” a “sostanziale” per sembrare utenti reali */
 const MIN_CREDITS_DEFAULT = 50;
 const MAX_CREDITS_DEFAULT = 650;
@@ -48,8 +93,6 @@ export async function createSimulatedPrediction(
       category: true,
       resolved: true,
       closesAt: true,
-      q_yes: true,
-      q_no: true,
       b: true,
     },
   });
@@ -66,8 +109,7 @@ export async function createSimulatedPrediction(
     return { success: false, error: "Previsioni per questo evento sono chiuse" };
   }
 
-  const qYes = event.q_yes ?? 0;
-  const qNo = event.q_no ?? 0;
+  const { qYes, qNo } = await getEventLmsrState(prisma, eventId);
   if (qYes + qNo <= 0) {
     return { success: false, error: "Evento senza attività LMSR (0/0): i bot non scommettono" };
   }
@@ -81,8 +123,8 @@ export async function createSimulatedPrediction(
           category: event.category,
           resolved: event.resolved,
           closesAt: event.closesAt,
-          q_yes: event.q_yes,
-          q_no: event.q_no,
+          q_yes: qYes,
+          q_no: qNo,
           b: event.b,
         },
         userId,
@@ -130,18 +172,20 @@ export async function runSimulatedPredictions(
     select: {
       id: true,
       title: true,
-      q_yes: true,
-      q_no: true,
       b: true,
     },
   });
 
+  const eventIds = openEvents.map((e) => e.id);
+  const lmsrByEvent = await getLmsrStateForEvents(prisma, eventIds);
+
   // Solo eventi con attività LMSR (q_yes + q_no > 0): su 0/0 i bot non scommettono
-  const eventsWithActivity = openEvents.filter((e) => {
-    const qYes = e.q_yes ?? 0;
-    const qNo = e.q_no ?? 0;
-    return qYes + qNo > 0;
-  });
+  const eventsWithActivity = openEvents
+    .map((e) => {
+      const { qYes, qNo } = lmsrByEvent.get(e.id) ?? { qYes: 0, qNo: 0 };
+      return { ...e, q_yes: qYes, q_no: qNo };
+    })
+    .filter((e) => e.q_yes + e.q_no > 0);
 
   if (eventsWithActivity.length === 0) {
     return { created: 0, errors: [] };

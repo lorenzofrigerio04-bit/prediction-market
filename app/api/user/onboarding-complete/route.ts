@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { track } from "@/lib/analytics";
@@ -15,10 +14,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { onboardingCompleted: true },
-    });
+    // onboardingCompleted non esiste nello schema User - rimossa l'assegnazione
+    // await prisma.user.update({
+    //   where: { id: session.user.id },
+    //   data: { onboardingCompleted: true },
+    // });
 
     track("ONBOARDING_COMPLETE", { userId: session.user.id }, { request });
 

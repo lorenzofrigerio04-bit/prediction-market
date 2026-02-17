@@ -24,16 +24,11 @@ export async function GET() {
       select: {
         id: true,
         name: true,
-        username: true,
         email: true,
         image: true,
         credits: true,
         totalEarned: true,
-        totalSpent: true,
-        streak: true,
-        totalPredictions: true,
-        correctPredictions: true,
-        accuracy: true,
+        streakCount: true,
         createdAt: true,
       },
     });
@@ -69,42 +64,20 @@ export async function GET() {
       }),
     ]);
 
-    // Fetch badges
-    const badges = await prisma.userBadge.findMany({
-      where: { userId },
-      include: {
-        badge: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            icon: true,
-            rarity: true,
-          },
-        },
+    // Calculate total spent from transactions (negative amounts)
+    const totalSpentResult = await prisma.transaction.aggregate({
+      where: {
+        userId,
+        amount: { lt: 0 },
       },
-      orderBy: {
-        unlockedAt: "desc",
+      _sum: {
+        amount: true,
       },
     });
-
-    // Eventi seguiti
-    const [followedEventsCount, eventFollows] = await Promise.all([
-      prisma.eventFollower.count({ where: { userId } }),
-      prisma.eventFollower.findMany({
-        where: { userId },
-        include: {
-          event: {
-            select: { id: true, title: true },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 20,
-      }),
-    ]);
+    const totalSpent = Math.abs(totalSpentResult._sum.amount || 0);
 
     // Calculate ROI (Return on Investment)
-    const totalInvested = user.totalSpent;
+    const totalInvested = totalSpent;
     const totalReturn = user.totalEarned;
     const roi = totalInvested > 0 
       ? ((totalReturn - totalInvested) / totalInvested) * 100 
@@ -114,7 +87,6 @@ export async function GET() {
       user: {
         id: user.id,
         name: user.name,
-        username: user.username,
         email: user.email,
         image: user.image,
         createdAt: user.createdAt,
@@ -122,29 +94,16 @@ export async function GET() {
       stats: {
         credits: user.credits,
         totalEarned: user.totalEarned,
-        totalSpent: user.totalSpent,
-        streak: user.streak,
-        accuracy: user.accuracy,
-        totalPredictions: user.totalPredictions,
-        correctPredictions: user.correctPredictions,
+        totalSpent,
+        streak: user.streakCount,
         activePredictions,
         wonPredictions,
         lostPredictions,
         roi: Math.round(roi * 100) / 100, // Round to 2 decimal places
       },
-      badges: badges.map((ub) => ({
-        id: ub.badge.id,
-        name: ub.badge.name,
-        description: ub.badge.description,
-        icon: ub.badge.icon,
-        rarity: ub.badge.rarity,
-        unlockedAt: ub.unlockedAt,
-      })),
-      followedEventsCount,
-      followedEvents: eventFollows.map((ef) => ({
-        id: ef.event.id,
-        title: ef.event.title,
-      })),
+      badges: [], // Badges non implementati nello schema attuale
+      followedEventsCount: 0, // EventFollower non implementato nello schema attuale
+      followedEvents: [], // EventFollower non implementato nello schema attuale
     });
   } catch (error) {
     console.error("Error fetching profile stats:", error);

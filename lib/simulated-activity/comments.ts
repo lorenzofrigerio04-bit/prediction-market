@@ -94,10 +94,12 @@ export async function createSimulatedComment(
         data: {
           userId: parentComment.userId,
           type: "COMMENT_REPLY",
-          title: "Nuova risposta al tuo commento",
-          message: `${replierName} ha risposto al tuo commento su "${parentComment.event.title}"`,
-          referenceId: comment.id,
-          referenceType: "comment",
+          data: JSON.stringify({
+            commentId: comment.id,
+            eventId: parentComment.eventId,
+            eventTitle: parentComment.event.title,
+            replierName,
+          }),
         },
       });
     }

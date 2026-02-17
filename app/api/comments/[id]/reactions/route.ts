@@ -45,7 +45,7 @@ export async function POST(
     }
 
     // Verifica se l'utente ha già questa reazione su questo commento
-    const existingReaction = await prisma.commentReaction.findFirst({
+    const existingReaction = await prisma.reaction.findFirst({
       where: {
         userId: session.user.id,
         commentId,
@@ -55,7 +55,7 @@ export async function POST(
 
     if (existingReaction) {
       // Rimuovi la reazione (toggle off)
-      await prisma.commentReaction.delete({
+      await prisma.reaction.delete({
         where: {
           id: existingReaction.id,
         },
@@ -64,11 +64,10 @@ export async function POST(
       return NextResponse.json({
         success: true,
         action: "removed",
-        message: "Reazione rimossa",
       });
     } else {
       // Aggiungi la reazione
-      await prisma.commentReaction.create({
+      await prisma.reaction.create({
         data: {
           userId: session.user.id,
           commentId,
@@ -85,7 +84,6 @@ export async function POST(
       return NextResponse.json({
         success: true,
         action: "added",
-        message: "Reazione aggiunta",
       });
     }
   } catch (error: any) {
@@ -140,7 +138,7 @@ export async function DELETE(
     }
 
     // Trova e rimuovi la reazione
-    const reaction = await prisma.commentReaction.findFirst({
+    const reaction = await prisma.reaction.findFirst({
       where: {
         userId: session.user.id,
         commentId,
@@ -155,7 +153,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.commentReaction.delete({
+    await prisma.reaction.delete({
       where: {
         id: reaction.id,
       },
@@ -163,7 +161,6 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: "Reazione rimossa",
     });
   } catch (error) {
     console.error("Error deleting reaction:", error);

@@ -82,17 +82,11 @@ export async function getFeedbackFromMetrics(
   const minEvents = options?.minEvents ?? DEFAULT_MIN_EVENTS;
   const since = new Date(Date.now() - lookbackHours * 60 * 60 * 1000);
 
-  const metrics = await prisma.marketMetrics.findMany({
-    where: { hour: { gte: since } },
-    select: {
-      eventId: true,
-      successScore: true,
-    },
-  });
-
+  // marketMetrics non esiste nello schema - metrics vuoto
+  const metrics: any[] = [];
   const events = await prisma.event.findMany({
     where: {
-      id: { in: [...new Set(metrics.map((m) => m.eventId))] },
+      id: { in: [] }, // Nessun evento da filtrare senza marketMetrics
     },
     select: {
       id: true,

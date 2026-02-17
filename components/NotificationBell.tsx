@@ -7,12 +7,9 @@ import NotificationDropdown from "./NotificationDropdown";
 interface Notification {
   id: string;
   type: string;
-  title: string;
-  message: string;
-  read: boolean;
+  data: any;
+  readAt: string | null;
   createdAt: string;
-  referenceId: string | null;
-  referenceType: string | null;
 }
 
 export default function NotificationBell() {
@@ -104,7 +101,7 @@ export default function NotificationBell() {
         // Update local state
         setNotifications((prev) =>
           prev.map((n) =>
-            n.id === notificationId ? { ...n, read: true } : n
+            n.id === notificationId ? { ...n, readAt: new Date().toISOString() } : n
           )
         );
         // Update unread count
@@ -128,7 +125,7 @@ export default function NotificationBell() {
       if (response.ok) {
         // Update local state
         setNotifications((prev) =>
-          prev.map((n) => ({ ...n, read: true }))
+          prev.map((n) => ({ ...n, readAt: new Date().toISOString() }))
         );
         setUnreadCount(0);
       }

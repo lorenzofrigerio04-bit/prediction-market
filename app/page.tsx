@@ -16,6 +16,8 @@ import {
   LoadingBlock,
 } from "@/components/ui";
 import { getDisplayTitle, isDebugTitle } from "@/lib/debug-display";
+import type { EventFomoStats } from "@/lib/fomo/event-stats";
+import { generateNotificationsOnDemand } from "@/lib/notifications/client";
 
 const ONBOARDING_STORAGE_KEY = "prediction-market-onboarding-completed";
 
@@ -38,6 +40,8 @@ interface Event {
     predictions: number;
     comments: number;
   };
+  /** Statistiche FOMO */
+  fomo?: EventFomoStats;
 }
 
 interface EventsResponse {
@@ -84,6 +88,11 @@ export default function Home() {
   const [eventsTrending, setEventsTrending] = useState<Event[]>([]);
   const [loadingTrending, setLoadingTrending] = useState(true);
   const [eventsError, setEventsError] = useState<string | null>(null);
+
+  const [eventsClosingSoon, setEventsClosingSoon] = useState<Event[]>([]);
+  const [loadingClosingSoon, setLoadingClosingSoon] = useState(true);
+  const [eventsTrendingNow, setEventsTrendingNow] = useState<Event[]>([]);
+  const [loadingTrendingNow, setLoadingTrendingNow] = useState(true);
 
   const [missions, setMissions] = useState<Mission[]>([]);
   const [missionsLoading, setMissionsLoading] = useState(false);
@@ -198,6 +207,28 @@ export default function Home() {
       .finally(() => setLoadingTrending(false));
   }, [status]);
 
+  // Fetch eventi in scadenza (< 6h)
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    setLoadingClosingSoon(true);
+    fetch("/api/events/closing-soon?limit=6")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setEventsClosingSoon(data?.events ?? []))
+      .catch(() => setEventsClosingSoon([]))
+      .finally(() => setLoadingClosingSoon(false));
+  }, [status]);
+
+  // Fetch eventi trending (votesVelocity desc)
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    setLoadingTrendingNow(true);
+    fetch("/api/events/trending-now?limit=6")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setEventsTrendingNow(data?.events ?? []))
+      .catch(() => setEventsTrendingNow([]))
+      .finally(() => setLoadingTrendingNow(false));
+  }, [status]);
+
   useEffect(() => {
     if (status !== "authenticated") return;
     setMissionsLoading(true);
@@ -216,6 +247,13 @@ export default function Home() {
       .then((data) => (data?.canSpin != null ? setCanSpinToday(data.canSpin) : setCanSpinToday(null)))
       .catch(() => setCanSpinToday(null))
       .finally(() => setSpinLoading(false));
+  }, [status]);
+
+  // Genera notifiche on-demand quando utente apre Home (best-effort)
+  useEffect(() => {
+    if (status === "authenticated") {
+      generateNotificationsOnDemand();
+    }
   }, [status]);
 
   const showLanding = status === "unauthenticated";
@@ -488,25 +526,49 @@ export default function Home() {
           </Link>
         </section>
 
+        {/* Sezione: In scadenza (< 6h) */}
+        {eventsClosingSoon.length > 0 && (
+          <SectionContainer
+            title="In scadenza"
+            action={
+              <Link
+                href="/discover?status=open&deadline=24h"
+                className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
+              >
+                Vedi tutti
+              </Link>
+            }
+          >
+            {loadingClosingSoon ? (
+              <LoadingBlock message="Caricamento eventi..." />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                {(debugMode ? eventsClosingSoon : eventsClosingSoon.filter((e) => !isDebugTitle(e.title))).map((event) => (
+                  <EventCard
+                    key={event.id}
+                    event={{ ...event, title: getDisplayTitle(event.title, debugMode) }}
+                  />
+                ))}
+              </div>
+            )}
+          </SectionContainer>
+        )}
+
+        {/* Sezione: In tendenza (votesVelocity desc) */}
         <SectionContainer
-          title="Eventi in tendenza"
+          title="In tendenza"
           action={
             <Link
-              href="/discover"
+              href="/discover?sort=popular"
               className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
             >
               Vedi tutti gli eventi
             </Link>
           }
         >
-          {eventsError ? (
-            <EmptyState
-              description={eventsError}
-              action={{ label: "Riprova", onClick: refetchTrending }}
-            />
-          ) : loadingTrending ? (
+          {loadingTrendingNow ? (
             <LoadingBlock message="Caricamento eventi..." />
-          ) : eventsTrending.length === 0 ? (
+          ) : eventsTrendingNow.length === 0 ? (
             <EmptyState
               title="Nessun evento in tendenza"
               description={
@@ -518,7 +580,7 @@ export default function Home() {
             />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-              {(debugMode ? eventsTrending : eventsTrending.filter((e) => !isDebugTitle(e.title))).map((event) => (
+              {(debugMode ? eventsTrendingNow : eventsTrendingNow.filter((e) => !isDebugTitle(e.title))).map((event) => (
                 <EventCard
                   key={event.id}
                   event={{ ...event, title: getDisplayTitle(event.title, debugMode) }}

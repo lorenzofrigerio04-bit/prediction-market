@@ -22,7 +22,7 @@ export interface ApplyCreditTransactionOptions {
  * @param userId - ID utente
  * @param type - Tipo transazione (PREDICTION_BET, DAILY_BONUS, ...)
  * @param amount - Importo: positivo = accredito, negativo = addebito
- * @param options - description, referenceId, referenceType, skipUserUpdate (solo storico)
+ * @param options - referenceId, skipUserUpdate (solo storico), applyBoost
  * @returns Nuovo saldo crediti dopo la transazione
  */
 export async function applyCreditTransaction(
@@ -59,10 +59,7 @@ export async function applyCreditTransaction(
         userId,
         type,
         amount,
-        description,
         referenceId,
-        referenceType,
-        balanceAfter,
       },
     });
     return balanceAfter;
@@ -70,21 +67,11 @@ export async function applyCreditTransaction(
 
   const isCredit = amount > 0;
   let effectiveAmount = Math.abs(amount);
-
   if (isCredit && applyBoost) {
-    const user = await tx.user.findUnique({
-      where: { id: userId },
-      select: { boostMultiplier: true, boostExpiresAt: true },
-    });
-    const now = new Date();
-    if (
-      user?.boostMultiplier != null &&
-      user.boostExpiresAt != null &&
-      now < user.boostExpiresAt &&
-      user.boostMultiplier > 1
-    ) {
-      effectiveAmount = Math.round(amount * user.boostMultiplier);
-    }
+  if (isCredit && applyBoost) {
+    // boostMultiplier e boostExpiresAt non esistono nello schema - nessun boost applicato
+    effectiveAmount = Math.abs(amount);
+  }
   }
 
   const updated = await tx.user.update({
@@ -103,10 +90,7 @@ export async function applyCreditTransaction(
       userId,
       type,
       amount: isCredit ? effectiveAmount : -effectiveAmount,
-      description,
       referenceId,
-      referenceType,
-      balanceAfter: updated.credits,
     },
   });
 

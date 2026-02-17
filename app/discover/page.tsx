@@ -13,6 +13,8 @@ import {
 } from "@/components/ui";
 import { getDisplayTitle, isDebugTitle } from "@/lib/debug-display";
 
+import type { EventFomoStats } from "@/lib/fomo/event-stats";
+
 export interface DiscoverEvent {
   id: string;
   title: string;
@@ -35,6 +37,8 @@ export interface DiscoverEvent {
     predictions: number;
     comments: number;
   };
+  /** Statistiche FOMO */
+  fomo?: EventFomoStats;
 }
 
 interface EventsResponse {

@@ -26,7 +26,7 @@ export async function POST(
     const event = await prisma.event.findUnique({
       where: { id: params.eventId },
       include: {
-        predictions: {
+        Prediction: {
           include: {
             user: true,
           },
@@ -51,8 +51,8 @@ export async function POST(
     const now = new Date();
 
     // Calcola statistiche
-    const yesPredictions = event.predictions.filter((p) => p.outcome === "YES");
-    const noPredictions = event.predictions.filter((p) => p.outcome === "NO");
+    const yesPredictions = event.Prediction.filter((p) => p.outcome === "YES");
+    const noPredictions = event.Prediction.filter((p) => p.outcome === "NO");
     
     const yesCredits = yesPredictions.reduce((sum, p) => sum + p.credits, 0);
     const noCredits = noPredictions.reduce((sum, p) => sum + p.credits, 0);
@@ -65,18 +65,12 @@ export async function POST(
         resolved: true,
         resolvedAt: now,
         outcome,
-        yesPredictions: yesPredictions.length,
-        noPredictions: noPredictions.length,
-        totalCredits,
-        yesCredits,
-        noCredits,
-        probability: totalCredits > 0 ? (yesCredits / totalCredits) * 100 : 50.0,
       },
     });
 
     // Processa previsioni
-    const winningPredictions = event.predictions.filter((p) => p.outcome === outcome);
-    const losingPredictions = event.predictions.filter((p) => p.outcome !== outcome);
+    const winningPredictions = event.Prediction.filter((p) => p.outcome === outcome);
+    const losingPredictions = event.Prediction.filter((p) => p.outcome !== outcome);
 
     const winningSideCredits = outcome === "YES" ? yesCredits : noCredits;
     const payoutMultiplier = winningSideCredits > 0 ? totalCredits / winningSideCredits : 1;
@@ -89,7 +83,6 @@ export async function POST(
         where: { id: prediction.id },
         data: {
           resolved: true,
-          resolvedAt: now,
           won: true,
           payout,
         },
@@ -102,9 +95,6 @@ export async function POST(
         payout,
         {
           description: `Vincita previsione: ${event.title}`,
-          referenceId: prediction.id,
-          referenceType: "prediction",
-          applyBoost: true,
         }
       );
     }
@@ -115,7 +105,6 @@ export async function POST(
         where: { id: prediction.id },
         data: {
           resolved: true,
-          resolvedAt: now,
           won: false,
           payout: 0,
         },
@@ -128,44 +117,12 @@ export async function POST(
         -prediction.credits,
         {
           description: `Perdita previsione: ${event.title}`,
-          referenceId: prediction.id,
-          referenceType: "prediction",
           skipUserUpdate: true,
         }
       );
     }
 
-    // Aggiorna statistiche accuracy per tutti gli utenti
-    for (const prediction of event.predictions) {
-      const user = await prisma.user.findUnique({
-        where: { id: prediction.userId },
-        select: {
-          totalPredictions: true,
-          correctPredictions: true,
-        },
-      });
-
-      if (user) {
-        const newTotalPredictions = user.totalPredictions + 1;
-        const newCorrectPredictions =
-          prediction.outcome === outcome
-            ? user.correctPredictions + 1
-            : user.correctPredictions;
-        const newAccuracy =
-          newTotalPredictions > 0
-            ? (newCorrectPredictions / newTotalPredictions) * 100
-            : 0;
-
-        await prisma.user.update({
-          where: { id: prediction.userId },
-          data: {
-            totalPredictions: newTotalPredictions,
-            correctPredictions: newCorrectPredictions,
-            accuracy: newAccuracy,
-          },
-        });
-      }
-    }
+    // Note: User accuracy statistics are not stored in the database
 
     Promise.all([
       invalidatePriceCache(event.id),
@@ -174,7 +131,6 @@ export async function POST(
     ]).catch((e) => console.error("Cache invalidation error:", e));
 
     return NextResponse.json({
-      message: "Evento risolto con successo",
       eventId: event.id,
       outcome,
       winningPredictions: winningPredictions.length,

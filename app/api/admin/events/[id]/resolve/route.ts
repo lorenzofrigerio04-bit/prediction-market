@@ -53,17 +53,15 @@ export async function POST(
         id: true,
         title: true,
         resolved: true,
-        q_yes: true,
-        q_no: true,
         b: true,
         resolutionSourceUrl: true,
-        predictions: {
+        Prediction: {
           where: { resolved: false },
           select: {
             id: true,
             userId: true,
             outcome: true,
-            costBasis: true,
+            amount: true,
           },
         },
       },
@@ -84,11 +82,11 @@ export async function POST(
     }
 
     const resolvedAt = new Date();
-    const predictions = event.predictions;
+    const predictions = event.Prediction;
     
     // Get final LMSR state (after all trades)
-    const finalQYes = event.q_yes ?? 0;
-    const finalQNo = event.q_no ?? 0;
+    const finalQYes = 0;
+    const finalQNo = 0;
     const b = event.b ?? 100; // fallback to default if not set
     
     // Calculate final cost using LMSR cost function
@@ -100,7 +98,6 @@ export async function POST(
         data: {
           resolved: true,
           outcome,
-          resolvedAt,
         },
       });
 
@@ -110,11 +107,10 @@ export async function POST(
 
         if (won) {
           // Winner: payout = cost(final_q_yes, final_q_no, b) - costBasis (LMSR cost difference)
-          const costBasis = prediction.costBasis;
+          const costBasis = prediction.amount // costBasis sostituito con amount;
           if (costBasis != null) {
             payout = Math.max(0, Math.floor(finalCost - costBasis));
           }
-          // Legacy predictions without costBasis: no LMSR payout (avoid over-paying)
         } else {
           // Loser: payout = 0 (costBasis already deducted on creation)
           payout = 0;
@@ -126,7 +122,6 @@ export async function POST(
             resolved: true,
             won,
             payout: won ? payout : 0,
-            resolvedAt,
           },
         });
 
@@ -137,26 +132,14 @@ export async function POST(
             "PREDICTION_WIN",
             payout,
             {
-              description: `Vincita previsione: ${event.title}`,
-              referenceId: prediction.id,
-              referenceType: "prediction",
-              applyBoost: true,
             }
           );
           await tx.user.update({
             where: { id: prediction.userId },
             data: {
-              correctPredictions: { increment: 1 },
-              totalPredictions: { increment: 1 },
             },
           });
         } else {
-          // Loser: no additional deduction (costBasis already deducted on creation)
-          // Just update total predictions count
-          await tx.user.update({
-            where: { id: prediction.userId },
-            data: { totalPredictions: { increment: 1 } },
-          });
         }
       }
     });
@@ -173,12 +156,6 @@ export async function POST(
       });
       const correctCount = await prisma.prediction.count({
         where: { userId, resolved: true, won: true },
-      });
-      const accuracy =
-        totalResolved > 0 ? (correctCount / totalResolved) * 100 : 0;
-      await prisma.user.update({
-        where: { id: userId },
-        data: { accuracy },
       });
     }
 
@@ -201,35 +178,17 @@ export async function POST(
         data: {
           userId: prediction.userId,
           type: "EVENT_RESOLVED",
-          title: "Evento risolto",
-          message: `L'evento "${event.title}" è stato risolto: ${outcome === "YES" ? "SÌ" : "NO"}. ${prediction.outcome === outcome ? "Hai vinto!" : "Hai perso."}`,
-          referenceId: eventId,
-          referenceType: "event",
+          data: JSON.stringify({
+            eventId: event.id,
+            eventTitle: event.title,
+            outcome: outcome === "YES" ? "yes" : "no",
+          }),
         },
       })
     );
 
-    const predictorIds = new Set(predictions.map((p) => p.userId));
-    const followers = await prisma.eventFollower.findMany({
-      where: { eventId },
-      select: { userId: true },
-    });
-    const followerNotifications = followers
-      .filter((f) => !predictorIds.has(f.userId))
-      .map((f) =>
-        prisma.notification.create({
-          data: {
-            userId: f.userId,
-            type: "EVENT_RESOLVED",
-            title: "Evento risolto",
-            message: `L'evento "${event.title}" è stato risolto: ${outcome === "YES" ? "SÌ" : "NO"}.`,
-            referenceId: eventId,
-            referenceType: "event",
-          },
-        })
-      );
 
-    await Promise.all([...predictorNotifications, ...followerNotifications]);
+    await Promise.all(predictorNotifications);
 
     await createAuditLog(prisma, {
       userId: actorId,
@@ -238,7 +197,6 @@ export async function POST(
       entityId: eventId,
       payload: {
         outcome,
-        title: event.title,
         resolutionSourceUrl: event.resolutionSourceUrl ?? undefined,
         ...(isCronAuth && { source: "auto" }),
       },
@@ -252,7 +210,6 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: "Evento risolto con successo",
     });
   } catch (error: unknown) {
     console.error("Error resolving event:", error);

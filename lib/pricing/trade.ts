@@ -4,7 +4,7 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { buyShares, getPrice } from "./lmsr";
+import { buyShares } from "./lmsr";
 import { applyCreditTransaction } from "@/lib/apply-credit-transaction";
 
 type PrismaTx = Pick<
@@ -108,7 +108,7 @@ export async function executePredictionBuy(
     }),
     tx.prediction.findUnique({
       where: {
-        userId_eventId: { userId, eventId: event.id },
+        eventId_userId: { eventId: event.id, userId },
       },
     }),
   ]);
@@ -126,19 +126,13 @@ export async function executePredictionBuy(
     );
   }
 
-  const newQYes = outcome === "YES" ? qYes + sharesBought : qYes;
-  const newQNo = outcome === "NO" ? qNo + sharesBought : qNo;
-  const newProbability = getPrice(newQYes, newQNo, b, "YES") * 100;
-
   const prediction = await tx.prediction.create({
     data: {
       userId,
       eventId: event.id,
       outcome,
+      amount: creditsToSpend,
       credits: creditsToSpend,
-      sharesYes: outcome === "YES" ? sharesBought : null,
-      sharesNo: outcome === "NO" ? sharesBought : null,
-      costBasis: actualCostPaid,
     },
   });
 
@@ -148,16 +142,7 @@ export async function executePredictionBuy(
     referenceType: "prediction",
   });
 
-  await tx.event.update({
-    where: { id: event.id },
-    data: {
-      q_yes: newQYes,
-      q_no: newQNo,
-      probability: newProbability,
-      yesPredictions: outcome === "YES" ? { increment: 1 } : undefined,
-      noPredictions: outcome === "NO" ? { increment: 1 } : undefined,
-    },
-  });
+  // Event nello schema non ha q_yes, q_no, probability, yesPredictions, noPredictions (LMSR si deriva dalle Prediction)
 
   return {
     prediction: {
@@ -166,9 +151,9 @@ export async function executePredictionBuy(
       eventId: prediction.eventId,
       outcome: prediction.outcome,
       credits: prediction.credits,
-      sharesYes: prediction.sharesYes,
-      sharesNo: prediction.sharesNo,
-      costBasis: prediction.costBasis,
+      sharesYes: outcome === "YES" ? sharesBought : null,
+      sharesNo: outcome === "NO" ? sharesBought : null,
+      costBasis: actualCostPaid,
       createdAt: prediction.createdAt,
     },
     actualCostPaid,

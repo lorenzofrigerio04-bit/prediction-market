@@ -94,30 +94,27 @@ export async function getOrCreateBotUsers(
     const email = botEmail(i);
     let user = await prisma.user.findUnique({
       where: { email },
-      select: { id: true, email: true, name: true, username: true },
+      select: { id: true, email: true, name: true },
     });
 
     if (!user) {
       const name = nameFromPool(i - 1);
-      const username = usernameForBot(name, i);
       user = await prisma.user.create({
         data: {
           email,
           name,
-          username,
-          password: null,
           credits: BOT_INITIAL_CREDITS,
           role: "BOT",
         },
-        select: { id: true, email: true, name: true, username: true },
+        select: { id: true, email: true, name: true },
       });
     }
 
     result.push({
       id: user.id,
-      email: user.email,
+      email: user.email ?? "",
       name: user.name,
-      username: user.username,
+      username: user.name,
     });
   }
 

@@ -29,17 +29,16 @@ export async function POST(request: NextRequest) {
         prisma.event.findMany({
           where: {
             OR: [
-              { status: 'OPEN', closesAt: { lte: oneHourFromNow } },
-              { status: 'RESOLVED', resolvedAt: { gte: oneDayAgo } },
+              { resolved: false, closesAt: { lte: oneHourFromNow } },
+              { resolved: true, resolvedAt: { gte: oneDayAgo } },
             ],
           },
           select: { 
-            id: true, 
-            title: true, 
+            id: true,
+            title: true,
             closesAt: true, 
             resolved: true, 
             resolvedAt: true,
-            status: true,
           },
         }),
         prisma.prediction.findMany({
@@ -71,7 +70,7 @@ export async function POST(request: NextRequest) {
           id: e.id,
           title: e.title,
           closesAt: e.closesAt,
-          resolved: e.resolved || e.status === 'RESOLVED',
+          resolved: e.resolved,
           resolvedAt: e.resolvedAt,
         })),
         userPredictions: userPredictions.map(p => ({
@@ -90,14 +89,12 @@ export async function POST(request: NextRequest) {
       let createdCount = 0;
       for (const notif of notificationsToCreate) {
         // Verifica se notifica simile esiste già (ultime 24h)
-        const eventId = (notif.data as any)?.eventId;
+        // Note: data is a JSON string, so we can't use Prisma JSON filters
+        // Filtering by type and createdAt should be sufficient to avoid duplicates
         const exists = await prisma.notification.findFirst({
           where: {
             userId,
             type: notif.type,
-            ...(eventId ? {
-              data: { path: ['eventId'], equals: eventId },
-            } : {}),
             createdAt: { gte: oneDayAgo },
           },
         });

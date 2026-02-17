@@ -17,12 +17,8 @@ export async function GET(
       select: {
         id: true,
         name: true,
-        username: true,
         image: true,
-        streak: true,
-        totalPredictions: true,
-        correctPredictions: true,
-        accuracy: true,
+        streakCount: true,
       },
     });
 
@@ -36,12 +32,8 @@ export async function GET(
     return NextResponse.json({
       id: user.id,
       name: user.name,
-      username: user.username,
       image: user.image,
-      streak: user.streak,
-      totalPredictions: user.totalPredictions,
-      correctPredictions: user.correctPredictions,
-      accuracy: Math.round(user.accuracy * 100) / 100,
+      streak: user.streakCount,
     });
   } catch (error) {
     console.error("Error fetching public profile:", error);

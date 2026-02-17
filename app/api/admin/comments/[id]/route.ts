@@ -19,7 +19,6 @@ export async function PATCH(
 
     const comment = await prisma.comment.findUnique({
       where: { id: commentId },
-      include: { event: { select: { title: true } } },
     });
     if (!comment) {
       return NextResponse.json({ error: "Commento non trovato" }, { status: 404 });
@@ -37,7 +36,6 @@ export async function PATCH(
         entityId: commentId,
         payload: { reason: reason || null, eventId: comment.eventId, contentPreview: comment.content.slice(0, 100) },
       });
-      return NextResponse.json({ success: true, message: "Commento nascosto" });
     }
 
     return NextResponse.json({ error: "Azione non supportata" }, { status: 400 });
@@ -79,7 +77,6 @@ export async function DELETE(
       entityId: commentId,
       payload: { reason: reason || null, eventId: comment.eventId, contentPreview: comment.content.slice(0, 100) },
     });
-    return NextResponse.json({ success: true, message: "Commento eliminato" });
   } catch (error: any) {
     if (error.message === "Non autenticato" || error.message?.includes("Accesso negato")) {
       return NextResponse.json({ error: error.message }, { status: 403 });

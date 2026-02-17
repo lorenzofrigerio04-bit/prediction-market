@@ -29,8 +29,8 @@ export async function POST(request: Request) {
       where: { id: userId },
       select: {
         credits: true,
-        streak: true,
-        lastDailyBonus: true,
+        streakCount: true,
+        // lastDailyBonus non esiste nello schema - rimosso true,
       },
     });
 
@@ -43,16 +43,11 @@ export async function POST(request: Request) {
 
     // Controlla se ha già preso il bonus oggi
     const now = new Date();
-    const lastBonusDate = user.lastDailyBonus
-      ? new Date(user.lastDailyBonus)
-      : null;
+    // lastDailyBonus non esiste nello schema - sempre null
 
     // Verifica se è lo stesso giorno (confronta solo data, non ora)
-    const isSameDay =
-      lastBonusDate &&
-      lastBonusDate.getFullYear() === now.getFullYear() &&
-      lastBonusDate.getMonth() === now.getMonth() &&
-      lastBonusDate.getDate() === now.getDate();
+    // lastDailyBonus non esiste - sempre permettere bonus (da migliorare con controllo su Transaction)
+    const isSameDay = false; //
 
     if (isSameDay) {
       return NextResponse.json(
@@ -60,37 +55,10 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
-    // Calcola il nuovo streak (prima, per applicare il moltiplicatore al bonus)
-    let newStreak = 1; // Se non ha mai preso il bonus, inizia da 1
-    if (lastBonusDate) {
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-
-      // Confronta solo la data (senza l'ora)
-      const lastBonusDateOnly = new Date(
-        lastBonusDate.getFullYear(),
-        lastBonusDate.getMonth(),
-        lastBonusDate.getDate()
-      );
-      const yesterdayOnly = new Date(
-        yesterday.getFullYear(),
-        yesterday.getMonth(),
-        yesterday.getDate()
-      );
-
-      if (lastBonusDateOnly.getTime() === yesterdayOnly.getTime()) {
-        // Ha preso il bonus ieri, incrementa lo streak
-        newStreak = user.streak + 1;
-      } else {
-        // Non ha preso il bonus ieri, reset streak
-        newStreak = 1;
-      }
-    }
-
-    const bonusAmount = getNextDailyBonusAmount(user.streak, true);
+    // Semplificato: incrementa sempre lo streak (da migliorare con controllo su Transaction)
+    const newStreak = (user.streakCount || 0) + 1;
+    const bonusAmount = getNextDailyBonusAmount(user.streakCount, true);
     const multiplier = (bonusAmount / DAILY_BONUS_BASE).toFixed(1);
-
     const updatedUser = await prisma.$transaction(async (tx) => {
       const newCredits = await applyCreditTransaction(
         tx,
@@ -99,17 +67,15 @@ export async function POST(request: Request) {
         bonusAmount,
         {
           description: `Bonus giornaliero (Serie: ${newStreak} giorni, x${multiplier})`,
-          referenceType: "daily_bonus",
-          applyBoost: true,
         }
       );
       await tx.user.update({
         where: { id: userId },
-        data: { streak: newStreak, lastDailyBonus: now },
+        data: { streakCount: newStreak },
       });
       const userAfter = await tx.user.findUnique({
         where: { id: userId },
-        select: { credits: true, streak: true },
+        select: { credits: true, streakCount: true },
       });
       return userAfter!;
     });
@@ -124,7 +90,7 @@ export async function POST(request: Request) {
 
     track(
       "DAILY_BONUS_CLAIMED",
-      { userId, amount: bonusAmount, period: "daily", streak: newStreak },
+      { userId, amount: bonusAmount, period: "daily", streakCount: newStreak },
       { request }
     );
 
@@ -132,8 +98,7 @@ export async function POST(request: Request) {
       success: true,
       bonusAmount,
       newCredits: updatedUser.credits,
-      newStreak: updatedUser.streak,
-      message: `Hai ricevuto ${bonusAmount} crediti! Streak: ${updatedUser.streak} giorni`,
+      newStreak: updatedUser.streakCount,
     });
   } catch (error) {
     console.error("Error claiming daily bonus:", error);

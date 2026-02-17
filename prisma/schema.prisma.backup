@@ -1,0 +1,130 @@
+// Schema Prisma per Prediction Market
+// NOTA: Se hai già uno schema Prisma completo altrove, aggiungi solo il model Notification
+// e la relazione notifications Notification[] al tuo model User esistente
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Model User base - Se hai già un model User, aggiungi solo la relazione notifications Notification[]
+model User {
+  id            String    @id @default(cuid())
+  email         String?   @unique
+  name          String?
+  emailVerified DateTime?
+  image         String?
+  streakCount   Int       @default(0)
+  credits       Int       @default(100)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relazione con Notification
+  notifications Notification[]
+
+  // Relazioni con Event, Comment, Reaction
+  events    Event[]    @relation("EventCreator")
+  comments  Comment[]
+  reactions Reaction[]
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String // EVENT_CLOSING_SOON | EVENT_RESOLVED | RANK_UP | STREAK_RISK
+  data      String? // Dati aggiuntivi in formato JSON (es: { eventId, eventTitle, oldRank, newRank, etc })
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  // Relazione con User
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, readAt])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String? // Null se azione di sistema
+  action     String // Es: EVENT_CREATE, EVENT_RESOLVE, COMMENT_HIDE, etc.
+  entityType String // Es: "event", "comment", "user", etc.
+  entityId   String? // ID dell'entità su cui è stata eseguita l'azione
+  payload    String? // Dati aggiuntivi in formato JSON
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([action])
+}
+
+model Event {
+  id                    String   @id @default(cuid())
+  title                 String
+  description           String?
+  category              String
+  closesAt              DateTime
+  resolutionSourceUrl   String?
+  resolutionNotes       String?
+  createdById           String
+  resolutionStatus      String   @default("PENDING") // PENDING, NEEDS_REVIEW, RESOLVED
+  b                     Float // Parameter for LMSR pricing
+  resolutionBufferHours Int      @default(24)
+  resolved              Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relazioni
+  createdBy User      @relation("EventCreator", fields: [createdById], references: [id])
+  comments  Comment[]
+
+  @@index([createdById])
+  @@index([closesAt])
+  @@index([resolved])
+  @@index([category])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  parentId  String? // Per risposte/thread
+  content   String
+  hidden    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relazioni
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  parent    Comment?   @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[]  @relation("CommentReplies")
+  reactions Reaction[]
+
+  @@index([eventId])
+  @@index([userId])
+  @@index([parentId])
+  @@index([hidden])
+  @@index([createdAt])
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String
+  type      String // thumbs_up, fire, heart, etc.
+  createdAt DateTime @default(now())
+
+  // Relazioni
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId, type]) // Un utente può avere solo una reazione di ogni tipo per commento
+  @@index([commentId])
+  @@index([userId])
+}

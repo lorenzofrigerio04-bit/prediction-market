@@ -9,12 +9,9 @@ import Header from "@/components/Header";
 interface Notification {
   id: string;
   type: string;
-  title: string;
-  message: string;
-  read: boolean;
+  data: any;
+  readAt: string | null;
   createdAt: string;
-  referenceId: string | null;
-  referenceType: string | null;
 }
 
 const getNotificationIcon = (type: string) => {
@@ -34,17 +31,10 @@ const getNotificationIcon = (type: string) => {
   }
 };
 
+import { getNotificationTitle, getNotificationMessage, getNotificationLink as getLinkFromData } from '@/lib/notification-templates';
+
 const getNotificationLink = (notification: Notification): string | null => {
-  if (notification.referenceType === "event" && notification.referenceId) {
-    return `/events/${notification.referenceId}`;
-  }
-  if (notification.referenceType === "badge" || notification.referenceType === "mission") {
-    return "/profile";
-  }
-  if (notification.type === "STREAK_AT_RISK") {
-    return "/wallet";
-  }
-  return null;
+  return getLinkFromData(notification.type, notification.data);
 };
 
 const formatDate = (dateString: string) => {
@@ -111,7 +101,7 @@ export default function NotificationsPage() {
       if (response.ok) {
         setNotifications((prev) =>
           prev.map((n) =>
-            n.id === notificationId ? { ...n, read: true } : n
+            n.id === notificationId ? { ...n, readAt: new Date().toISOString() } : n
           )
         );
       }
@@ -133,7 +123,7 @@ export default function NotificationsPage() {
 
       if (response.ok) {
         setNotifications((prev) =>
-          prev.map((n) => ({ ...n, read: true }))
+          prev.map((n) => ({ ...n, readAt: new Date().toISOString() }))
         );
       }
     } catch (error) {
@@ -157,7 +147,7 @@ export default function NotificationsPage() {
     );
   }
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.readAt).length;
 
   return (
     <div className="min-h-screen bg-bg">
@@ -199,11 +189,11 @@ export default function NotificationsPage() {
               const content = (
                 <div
                   className={`p-4 transition-colors flex items-start gap-4 ${
-                    !notification.read ? "bg-primary/5 border-l-4 border-l-primary" : "hover:bg-surface/30"
+                    !notification.readAt ? "bg-primary/5 border-l-4 border-l-primary" : "hover:bg-surface/30"
                   }`}
-                  onClick={() => !notification.read && handleMarkAsRead(notification.id)}
+                  onClick={() => !notification.readAt && handleMarkAsRead(notification.id)}
                   onKeyDown={(e) => {
-                    if ((e.key === "Enter" || e.key === " ") && !notification.read) {
+                    if ((e.key === "Enter" || e.key === " ") && !notification.readAt) {
                       e.preventDefault();
                       handleMarkAsRead(notification.id);
                     }
@@ -214,10 +204,10 @@ export default function NotificationsPage() {
                   <span className="text-2xl flex-shrink-0" aria-hidden>{icon}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className={`text-base font-semibold ${!notification.read ? "text-fg" : "text-fg-muted"}`}>
-                        {notification.title}
+                      <h3 className={`text-base font-semibold ${!notification.readAt ? "text-fg" : "text-fg-muted"}`}>
+                        {getNotificationTitle(notification.type, notification.data)}
                       </h3>
-                      {!notification.read && (
+                      {!notification.readAt && (
                         <button
                           type="button"
                           onClick={(e) => {
@@ -231,7 +221,7 @@ export default function NotificationsPage() {
                         </button>
                       )}
                     </div>
-                    <p className="text-sm text-fg-muted mt-1">{notification.message}</p>
+                    <p className="text-sm text-fg-muted mt-1">{getNotificationMessage(notification.type, notification.data)}</p>
                     <p className="text-xs text-fg-subtle mt-2">{formatDate(notification.createdAt)}</p>
                   </div>
                 </div>

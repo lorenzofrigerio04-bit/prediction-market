@@ -1,0 +1,353 @@
+# BUILD ERRORS LOG
+# Generato il: 2026-02-17
+# Build completo eseguito con: npm run build e npx tsc --noEmit
+
+================================================================================
+CATEGORIA 1: MODELLI PRISMA MANCANTI (Missing Prisma Models)
+================================================================================
+
+I seguenti modelli Prisma NON esistono nello schema ma vengono referenziati nel codice:
+
+1. eventFollower
+   File: app/api/events/[id]/follow/route.ts
+   Righe: 24, 74, 84, 92
+   Errore: Property 'eventFollower' does not exist on type 'PrismaClient'
+   Azione richiesta: Aggiungere modello EventFollower allo schema Prisma O rimuovere codice
+
+2. userBadge
+   File: app/api/profile/stats/route.ts
+   Riga: 70
+   Errore: Property 'userBadge' does not exist on type 'PrismaClient'
+   Azione richiesta: Aggiungere modello UserBadge allo schema Prisma O rimuovere codice
+
+3. shopItem
+   File: app/api/shop/purchase/route.ts
+   Riga: 30
+   Errore: Property 'shopItem' does not exist on type 'PrismaClient'
+   Azione richiesta: Aggiungere modello ShopItem allo schema Prisma O rimuovere codice
+
+4. dailySpin
+   File: app/api/spin/cash-out/route.ts (righe: 25, 56)
+   File: app/api/spin/claim/route.ts (righe: 27, 48)
+   File: app/api/spin/multiplier/route.ts (righe: 25, 60)
+   File: app/api/spin/status/route.ts (riga: 31)
+   File: app/api/wallet/stats/route.ts (riga: 38)
+   File: app/api/profile/stats/route.ts (righe: 90, 91)
+   Errore: Property 'dailySpin' does not exist on type 'PrismaClient'
+   Azione richiesta: Aggiungere modello DailySpin allo schema Prisma O rimuovere codice
+
+TOTALE: 4 modelli mancanti, ~11 occorrenze nel codice
+
+================================================================================
+CATEGORIA 2: CAMPI NON ESISTENTI NEI MODELLI PRISMA (Non-existent Fields)
+================================================================================
+
+2.1 Campi User mancanti:
+
+- username
+  File: app/api/profile/[userId]/route.ts (righe: 20, 36)
+  File: app/api/profile/route.ts (righe: 48, 58)
+  File: app/api/profile/stats/route.ts (righe: 27, 113)
+  Errore: 'username' does not exist in type 'UserSelect' / Property 'username' does not exist
+  Schema attuale: User ha solo (id, email, name, emailVerified, image, streakCount, credits, totalEarned, createdAt, updatedAt)
+  Azione: Aggiungere campo 'username' allo schema User O rimuovere uso nel codice
+
+- streak (dovrebbe essere streakCount)
+  File: app/api/leaderboard/route.ts (righe: 56, 122)
+  File: app/api/missions/route.ts (righe: 30, 34, 55)
+  File: app/api/profile/[userId]/route.ts (riga: 38)
+  File: app/api/profile/stats/route.ts (riga: 122)
+  File: app/api/wallet/daily-bonus/route.ts (righe: 32, 84, 91, 106, 110, 133)
+  Errore: 'streak' does not exist in type 'UserSelect' / Property 'streak' does not exist
+  Schema attuale: User ha 'streakCount' (non 'streak')
+  Azione: Sostituire tutte le occorrenze di 'streak' con 'streakCount' nel codice
+
+- totalSpent
+  File: app/api/leaderboard/route.ts (riga: 67)
+  File: app/api/profile/stats/route.ts (righe: 103, 121)
+  File: app/api/wallet/stats/route.ts (riga: 30)
+  Errore: Property 'totalSpent' does not exist / 'totalSpent' does not exist in type 'UserSelect'
+  Schema attuale: User NON ha campo 'totalSpent'
+  Azione: Aggiungere campo 'totalSpent' allo schema User O calcolare dinamicamente da Transaction
+
+- onboardingCompleted
+  File: app/api/user/onboarding-complete/route.ts (riga: 20)
+  Errore: 'onboardingCompleted' does not exist in type 'UserUpdateInput'
+  Schema attuale: User NON ha campo 'onboardingCompleted'
+  Azione: Aggiungere campo 'onboardingCompleted' allo schema User O rimuovere codice
+
+- lastDailyBonus
+  File: app/api/wallet/daily-bonus/route.ts (righe: 46, 47)
+  Errore: Property 'lastDailyBonus' does not exist
+  Schema attuale: User NON ha campo 'lastDailyBonus'
+  Azione: Aggiungere campo 'lastDailyBonus' allo schema User O rimuovere codice
+
+2.2 Campi Event mancanti:
+
+- status (dovrebbe essere resolutionStatus)
+  File: app/api/notifications/generate/route.ts (righe: 32, 33, 41, 72)
+  Errore: 'status' does not exist in type 'EventWhereInput' / Property 'status' does not exist
+  Schema attuale: Event ha 'resolutionStatus' (non 'status')
+  Azione: Sostituire 'status' con 'resolutionStatus' nel codice
+
+- yesPredictions
+  File: app/api/events/resolve/[eventId]/route.ts (riga: 68)
+  Errore: 'yesPredictions' does not exist in type 'EventUpdateInput'
+  Schema attuale: Event NON ha campo 'yesPredictions'
+  Azione: Rimuovere assegnazione O calcolare dinamicamente
+
+- totalCredits
+  File: app/api/events/trending-now/route.ts (riga: 73)
+  Errore: Property 'totalCredits' does not exist
+  Schema attuale: Event NON ha campo 'totalCredits'
+  Azione: Calcolare dinamicamente da Prediction.amount O rimuovere uso
+
+2.3 Campi Prediction mancanti:
+
+- resolvedAt (dovrebbe essere 'resolved')
+  File: app/api/events/resolve/[eventId]/route.ts (righe: 92, 115)
+  Errore: 'resolvedAt' does not exist in type 'PredictionUpdateInput'. Did you mean 'resolved'?
+  Schema attuale: Prediction ha 'resolved' (Boolean), NON 'resolvedAt'
+  Azione: Usare campo 'resolved' invece di 'resolvedAt' O aggiungere campo 'resolvedAt' se necessario
+
+- userId_eventId (composite unique key)
+  File: app/api/events/[id]/route.ts (riga: 68)
+  Errore: 'userId_eventId' does not exist in type 'PredictionWhereUniqueInput'
+  Schema attuale: Prediction ha @@unique([eventId, userId]) ma Prisma non genera automaticamente userId_eventId
+  Azione: Usare { eventId_userId: { eventId: X, userId: Y } } O query con where normale
+
+2.4 Campi Notification mancanti:
+
+- read (dovrebbe essere readAt)
+  File: app/api/notifications/[id]/read/route.ts (riga: 49)
+  Errore: 'read' does not exist in type 'NotificationUpdateInput'
+  Schema attuale: Notification ha 'readAt' (DateTime?), NON 'read' (Boolean)
+  Azione: Usare 'readAt' invece di 'read' (impostare a new Date() quando letto)
+
+2.5 Campi mancanti su tipi TypeScript personalizzati:
+
+- outcome (su tipo oggetto)
+  File: app/api/cron/auto-resolve/route.ts (riga: 91)
+  Errore: 'outcome' does not exist in type '{ id: string; }'
+  Azione: Aggiungere campo 'outcome' al tipo dell'oggetto autoResolved
+
+- predictions (case sensitive - dovrebbe essere Prediction)
+  File: app/api/events/closing-soon/route.ts (riga: 62)
+  File: app/api/events/route.ts (riga: 127)
+  File: app/api/events/trending-now/route.ts (riga: 58)
+  Errore: Property 'predictions' does not exist. Did you mean 'Prediction'?
+  Azione: Sostituire 'predictions' con 'Prediction' (case-sensitive Prisma _count)
+
+- totalPredictions, correctPredictions
+  File: app/api/events/resolve/[eventId]/route.ts (righe: 142, 145, 146)
+  File: app/api/leaderboard/route.ts (righe: 87, 88, 104, 105, 132)
+  Errore: Property does not exist on type
+  Azione: Calcolare dinamicamente da aggregazioni Prisma O aggiungere ai tipi TypeScript
+
+- q_yes, q_no (proprietà mancanti su CachedPrice)
+  File: app/api/events/[id]/price/route.ts (riga: 49)
+  File: app/api/events/[id]/route.ts (riga: 52)
+  Errore: Missing properties from type 'CachedPrice': q_yes, q_no
+  Azione: Aggiungere q_yes e q_no agli oggetti passati O aggiornare tipo CachedPrice
+
+- title (proprietà mancante su Event)
+  File: app/api/feed/route.ts (riga: 100)
+  File: app/api/notifications/generate/route.ts (riga: 84)
+  File: app/api/predictions/route.ts (riga: 85)
+  Errore: Property 'title' is missing but required
+  Schema attuale: Event HA campo 'title' nello schema
+  Azione: Assicurarsi che 'title' sia incluso nelle query select di Prisma
+
+- accuracy
+  File: app/api/leaderboard/route.ts (righe: 142, 149)
+  Errore: Property 'accuracy' does not exist on type 'LeaderboardUser'
+  Azione: Aggiungere campo 'accuracy' al tipo TypeScript LeaderboardUser O calcolare dinamicamente
+
+2.6 Variabili non definite:
+
+- errors
+  File: app/api/cron/auto-resolve/route.ts (righe: 95, 120, 137)
+  Errore: Cannot find name 'errors'. Did you mean 'Error'?
+  Azione: Dichiarare variabile 'errors' o correggere nome variabile
+
+- costBasis
+  File: app/api/admin/events/[id]/resolve/resolve-lmsr.test.ts (riga: 16)
+  Errore: Cannot find name 'costBasis'
+  Azione: Importare o definire funzione/variabile 'costBasis'
+
+TOTALE: ~50+ errori relativi a campi non esistenti
+
+================================================================================
+CATEGORIA 3: ERRORI DI SINTASSI E ARGOMENTI (Syntax/Argument Errors)
+================================================================================
+
+3.1 Argomenti errati nelle chiamate di funzione:
+
+- resolve-lmsr.test.ts
+  Righe: 26, 37, 49, 58
+  Errore: Expected 3 arguments, but got 4
+  Azione: Verificare signature funzione e correggere numero argomenti
+
+3.2 Conversioni di tipo errate:
+
+- app/api/feed/route.ts (riga: 100)
+  Errore: Conversion of type may be a mistake. Property 'title' is missing
+  Azione: Assicurarsi che Event includa 'title' nella query select
+
+- app/api/notifications/generate/route.ts (riga: 84)
+  Errore: Types of property 'events' are incompatible. Property 'title' is missing
+  Azione: Includere 'title' nella query select degli Event
+
+- app/api/notifications/generate/route.ts (riga: 96)
+  Errore: Type is not assignable to type 'NotificationWhereInput'. Property 'path' does not exist
+  Azione: Correggere query Prisma - 'data' è String, non oggetto con 'path'
+
+- app/api/predictions/route.ts (riga: 85)
+  Errore: Type is missing properties: title, q_yes, q_no
+  Azione: Includere 'title' nella query Event e aggiungere q_yes/q_no se necessario
+
+TOTALE: ~10 errori di sintassi/argomenti
+
+================================================================================
+RIEPILOGO STATISTICHE
+================================================================================
+
+Totale errori TypeScript: ~90+
+Totale file con errori: ~30 file
+
+Distribuzione per categoria:
+- Modelli Prisma mancanti: 4 modelli, ~11 occorrenze
+- Campi non esistenti: ~50+ errori
+- Errori di sintassi/argomenti: ~10 errori
+- Variabili non definite: 2 variabili
+
+File più problematici (per numero di errori):
+1. app/api/leaderboard/route.ts (~15 errori)
+2. app/api/wallet/daily-bonus/route.ts (~10 errori)
+3. app/api/profile/stats/route.ts (~10 errori)
+4. app/api/events/resolve/[eventId]/route.ts (~8 errori)
+5. app/api/notifications/generate/route.ts (~6 errori)
+6. app/api/events/[id]/follow/route.ts (~4 errori)
+7. app/api/spin/*.ts (vari file, ~10 errori totali)
+
+================================================================================
+MAPPA MODELLI PRISMA: ESISTENTI vs USATI NEL CODICE
+================================================================================
+
+Modelli ESISTENTI nello schema Prisma:
+✅ User
+✅ Notification
+✅ Event
+✅ Comment
+✅ Reaction
+✅ Prediction
+✅ Transaction
+✅ AuditLog
+
+Modelli USATI nel codice ma NON esistenti nello schema:
+❌ eventFollower (usato in 2 file)
+❌ userBadge (usato in 1 file)
+❌ shopItem (usato in 1 file)
+❌ dailySpin (usato in 5 file)
+
+================================================================================
+MAPPA CAMPI: SCHEMA vs CODICE
+================================================================================
+
+User - Campi nello schema:
+✅ id, email, name, emailVerified, image, streakCount, credits, totalEarned, createdAt, updatedAt
+
+User - Campi usati nel codice ma NON nello schema:
+❌ username (usato in 3 file)
+❌ streak (usato in 5 file) → Dovrebbe essere 'streakCount'
+❌ totalSpent (usato in 3 file)
+❌ onboardingCompleted (usato in 1 file)
+❌ lastDailyBonus (usato in 1 file)
+
+Event - Campi nello schema:
+✅ id, title, description, category, closesAt, resolutionSourceUrl, resolutionNotes,
+   createdById, resolutionStatus, b, resolutionBufferHours, resolved, resolvedAt,
+   outcome, resolutionDisputedAt, resolutionDisputedBy, createdAt, updatedAt
+
+Event - Campi usati nel codice ma NON nello schema:
+❌ status → Dovrebbe essere 'resolutionStatus'
+❌ yesPredictions → Non esiste, calcolare dinamicamente
+❌ totalCredits → Non esiste, calcolare dinamicamente
+
+Prediction - Campi nello schema:
+✅ id, eventId, userId, outcome, amount, credits, won, payout, resolved, createdAt, updatedAt
+
+Prediction - Campi usati nel codice ma NON nello schema:
+❌ resolvedAt → Dovrebbe usare 'resolved' (Boolean) o aggiungere campo DateTime
+
+Notification - Campi nello schema:
+✅ id, userId, type, data, readAt, createdAt
+
+Notification - Campi usati nel codice ma NON nello schema:
+❌ read → Dovrebbe essere 'readAt' (DateTime?)
+
+================================================================================
+AZIONI RACCOMANDATE (Priorità)
+================================================================================
+
+PRIORITÀ ALTA (Bloccanti per build):
+
+1. Modelli Prisma mancanti:
+   - Decidere se aggiungere EventFollower, UserBadge, ShopItem, DailySpin allo schema
+   - OPPURE rimuovere completamente il codice che li usa
+
+2. Campi User:
+   - Sostituire tutte le occorrenze di 'streak' con 'streakCount' (5 file)
+   - Decidere se aggiungere: username, totalSpent, onboardingCompleted, lastDailyBonus
+   - OPPURE rimuovere/calcolare dinamicamente
+
+3. Campi Event:
+   - Sostituire 'status' con 'resolutionStatus' (1 file)
+   - Assicurarsi che 'title' sia incluso nelle query select (3 file)
+
+4. Campi Prediction:
+   - Correggere uso di 'resolvedAt' → usare 'resolved' o aggiungere campo
+   - Correggere query con userId_eventId → usare sintassi corretta Prisma
+
+5. Campi Notification:
+   - Sostituire 'read' con 'readAt' (1 file)
+
+6. Variabili non definite:
+   - Dichiarare 'errors' in app/api/cron/auto-resolve/route.ts
+   - Importare/definire 'costBasis' in resolve-lmsr.test.ts
+
+PRIORITÀ MEDIA:
+
+1. Correzioni case-sensitive:
+   - Sostituire 'predictions' con 'Prediction' in _count (3 file)
+
+2. Tipi TypeScript:
+   - Aggiungere q_yes, q_no a CachedPrice o agli oggetti passati
+   - Aggiungere accuracy a LeaderboardUser o calcolare dinamicamente
+   - Aggiungere outcome al tipo oggetto in auto-resolve
+
+PRIORITÀ BASSA:
+
+1. Argomenti funzione:
+   - Correggere chiamate funzione in resolve-lmsr.test.ts (4 occorrenze)
+
+2. Conversioni tipo:
+   - Verificare e correggere conversioni di tipo esplicite
+
+================================================================================
+NOTE IMPORTANTI
+================================================================================
+
+1. DOPO ogni modifica allo schema Prisma, eseguire:
+   npx prisma generate
+   npx prisma validate
+
+2. Verificare build incrementale dopo ogni categoria di correzione:
+   npm run build
+
+3. NON correggere errori uno alla volta - seguire approccio sistematico per categoria
+
+4. Alcuni campi possono essere calcolati dinamicamente invece di essere aggiunti allo schema:
+   - totalSpent: somma Transaction.amount negativi
+   - totalPredictions: count di Prediction
+   - correctPredictions: count di Prediction con won=true

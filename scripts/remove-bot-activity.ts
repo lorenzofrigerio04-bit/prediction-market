@@ -161,7 +161,7 @@ async function main() {
   const deletedComments = await prisma.comment.deleteMany({
     where: { userId: { in: botIds } },
   });
-  const deletedReactions = await prisma.commentReaction.deleteMany({
+  const deletedReactions = await prisma.reaction.deleteMany({
     where: { userId: { in: botIds } },
   });
   const deletedFollows = await prisma.eventFollower.deleteMany({

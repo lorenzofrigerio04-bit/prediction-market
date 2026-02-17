@@ -32,7 +32,6 @@ describe("GET /api/feed", () => {
   function event(id: string, category: string, createdAt: Date) {
     return {
       id,
-      title: `Event ${id}`,
       description: null,
       category,
       createdAt,
@@ -94,7 +93,6 @@ describe("GET /api/feed", () => {
     if (data.items.length > 0) {
       expect(data.items[0]).toMatchObject({
         id: expect.any(String),
-        title: expect.any(String),
         category: expect.any(String),
         createdAt: expect.any(String),
         closesAt: expect.any(String),

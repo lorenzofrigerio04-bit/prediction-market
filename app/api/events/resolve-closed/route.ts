@@ -41,15 +41,13 @@ export async function POST(request: NextRequest) {
       },
       select: {
         id: true,
-        title: true,
         closesAt: true,
       },
       orderBy: { closesAt: "asc" },
     });
 
     return NextResponse.json({
-      message:
-        pendingEvents.length === 0
+        message: pendingEvents.length === 0
           ? "Nessun evento chiuso in attesa di risoluzione"
           : `${pendingEvents.length} evento/i chiusi in attesa di risoluzione (verificare dalla fonte e risolvere da Admin → Risoluzione)`,
       processed: 0,
@@ -57,7 +55,6 @@ export async function POST(request: NextRequest) {
       pendingResolutionIds: pendingEvents.map((e) => e.id),
       pendingResolution: pendingEvents.map((e) => ({
         id: e.id,
-        title: e.title,
         closesAt: e.closesAt,
       })),
     });

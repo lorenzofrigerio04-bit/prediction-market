@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
 import { DEFAULT_BADGES } from '../lib/badges';
 import { parseOutcomeDateFromText } from '../lib/event-generation/closes-at';
 import { getClosureRules } from '../lib/event-generation/config';
@@ -39,19 +38,16 @@ function computeClosesAtFromText(
   );
 }
 
-// Credenziali admin (cambia in produzione! vedi DEPLOY_AND_BETA.md Fase 6)
+  // Credenziali admin (cambia in produzione! vedi DEPLOY_AND_BETA.md Fase 6)
 const ADMIN_EMAIL = 'admin@predictionmarket.it';
-const ADMIN_PASSWORD = 'Admin2025!';
 
 async function main() {
   console.log('🌱 Inizio seed database...');
 
-  // Crea o trova utente admin (con password per login email/password)
+  // Crea o trova utente admin
   let admin = await prisma.user.findUnique({
     where: { email: ADMIN_EMAIL },
   });
-
-  const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
 
   if (!admin) {
     console.log('👤 Creazione utente admin...');
@@ -61,19 +57,20 @@ async function main() {
         name: 'Admin',
         role: 'ADMIN',
         credits: 10000,
-        password: hashedPassword,
       },
     });
     console.log('✅ Utente admin creato:', admin.email);
-  } else if (!admin.password) {
-    console.log('👤 Impostazione password per admin esistente...');
-    admin = await prisma.user.update({
-      where: { id: admin.id },
-      data: { password: hashedPassword },
-    });
-    console.log('✅ Password admin impostata:', admin.email);
   } else {
-    console.log('✅ Utente admin già esistente:', admin.email);
+    // Assicurati che l'admin abbia il ruolo corretto
+    if (admin.role !== 'ADMIN') {
+      admin = await prisma.user.update({
+        where: { id: admin.id },
+        data: { role: 'ADMIN' },
+      });
+      console.log('✅ Ruolo admin impostato:', admin.email);
+    } else {
+      console.log('✅ Utente admin già esistente:', admin.email);
+    }
   }
 
   // Utente "sistema" per creazione eventi generati (pipeline/cron). Nessun login.
@@ -88,7 +85,6 @@ async function main() {
         email: SYSTEM_USER_EMAIL,
         name: 'Event Generator (Sistema)',
         role: 'USER',
-        password: null,
         credits: 0,
       },
     });
@@ -122,44 +118,7 @@ async function main() {
     console.log(`✅ Creati ${DEFAULT_BADGES.length} badge.`);
   }
 
-  // Shop: crea prodotti se non esistono
-  const existingShopItems = await prisma.shopItem.count();
-  if (existingShopItems === 0) {
-    console.log('🛒 Creazione prodotti shop...');
-    const shopItems = [
-      { name: 'Boost x1.5 (1 giorno)', description: 'Moltiplicatore crediti 1.5x per 24 ore', priceCredits: 100 },
-      { name: 'Boost x2 (1 giorno)', description: 'Moltiplicatore crediti 2x per 24 ore', priceCredits: 250 },
-      { name: 'Profilo in evidenza (24h)', description: 'Il tuo profilo appare in evidenza nella classifica per 24 ore', priceCredits: 75 },
-      { name: 'Badge esclusivo "Early Adopter"', description: 'Sblocca il badge Early Adopter nel profilo', priceCredits: 500 },
-    ];
-    for (const item of shopItems) {
-      await prisma.shopItem.create({
-        data: { ...item, active: true },
-      });
-    }
-    console.log(`✅ Creati ${shopItems.length} prodotti shop.`);
-  }
-
-  // Missioni: crea se non esistono
-  const existingMissions = await prisma.mission.count();
-  if (existingMissions === 0) {
-    console.log('📋 Creazione missioni...');
-    const missions = [
-      { name: 'Prevedi 1 evento oggi', description: 'Fai almeno 1 previsione oggi', type: 'MAKE_PREDICTIONS', target: 1, reward: 30, period: 'DAILY', category: null },
-      { name: 'Previsioni giornaliere', description: 'Fai 3 previsioni oggi', type: 'MAKE_PREDICTIONS', target: 3, reward: 50, period: 'DAILY', category: null },
-      { name: '1 previsione su Tech', description: 'Fai 1 previsione su Tecnologia', type: 'MAKE_PREDICTIONS', target: 1, reward: 30, period: 'DAILY', category: 'Tecnologia' },
-      { name: 'Login giornaliero', description: 'Riscatta il bonus giornaliero nel Wallet', type: 'DAILY_LOGIN', target: 1, reward: 25, period: 'DAILY', category: null },
-      { name: 'Completa 5 previsioni settimanali', description: 'Fai 5 previsioni questa settimana', type: 'MAKE_PREDICTIONS', target: 5, reward: 100, period: 'WEEKLY', category: null },
-      { name: 'Previsioni settimanali', description: 'Fai 10 previsioni questa settimana', type: 'MAKE_PREDICTIONS', target: 10, reward: 150, period: 'WEEKLY', category: null },
-      { name: 'Segui 3 categorie', description: 'Segui almeno 3 eventi (anche in categorie diverse)', type: 'FOLLOW_EVENTS', target: 3, reward: 40, period: 'WEEKLY', category: null },
-      { name: 'Vincita giornaliera', description: 'Vinci 1 previsione oggi', type: 'WIN_PREDICTIONS', target: 1, reward: 30, period: 'DAILY', category: null },
-      { name: 'Vincite settimanali', description: 'Vinci 5 previsioni questa settimana', type: 'WIN_PREDICTIONS', target: 5, reward: 200, period: 'WEEKLY', category: null },
-    ];
-    for (const m of missions) {
-      await prisma.mission.create({ data: m });
-    }
-    console.log(`✅ Create ${missions.length} missioni.`);
-  }
+  // Shop (shopItem) e Missioni (mission) non sono nello schema Prisma: seed saltato
 
   // Verifica se gli eventi esistono già
   const existingEvents = await prisma.event.count();
@@ -199,6 +158,7 @@ async function main() {
         description: def.description,
         category: def.category,
         closesAt,
+        b: 100,
         resolutionSourceUrl: 'https://example.com/source',
         resolutionNotes: 'Risoluzione secondo fonte ufficiale alla data di chiusura.',
         createdById: admin.id,
@@ -209,10 +169,9 @@ async function main() {
 
   console.log('🎉 Seed completato con successo!');
   console.log('');
-  console.log('🔐 Credenziali admin (login email/password):');
+  console.log('👤 Utente admin creato:');
   console.log('   Email:    ', ADMIN_EMAIL);
-  console.log('   Password: ', ADMIN_PASSWORD);
-  console.log('   (cambia la password in produzione: vedi DEPLOY_AND_BETA.md Fase 6)');
+  console.log('   Ruolo:    ADMIN');
 }
 
 main()

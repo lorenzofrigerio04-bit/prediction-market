@@ -96,7 +96,6 @@ export async function computeProfileFromPredictions(
     prisma.prediction.findMany({
       where: { userId },
       select: {
-        costBasis: true,
         credits: true,
         createdAt: true,
         event: {
@@ -119,7 +118,7 @@ export async function computeProfileFromPredictions(
     const cat = p.event.category;
     categoryCounts[cat] = (categoryCounts[cat] ?? 0) + 1;
 
-    const cost = p.costBasis ?? p.credits ?? 0;
+    const cost = p.credits ?? 0;
     totalCost += cost;
 
     const closesAt = p.event.closesAt.getTime();
@@ -150,26 +149,8 @@ export async function computeProfileFromPredictions(
  * Call this after each trade; safe to call with no predictions (no-op for new users until first trade).
  */
 export async function updateUserProfileFromTrade(
-  prisma: PrismaClient,
-  userId: string
+  _prisma: PrismaClient,
+  _userId: string
 ): Promise<void> {
-  const extracted = await computeProfileFromPredictions(prisma, userId);
-  if (!extracted) return;
-
-  await prisma.userProfile.upsert({
-    where: { userId },
-    create: {
-      userId,
-      preferredCategories: extracted.preferredCategories as object,
-      riskTolerance: extracted.riskTolerance,
-      preferredHorizon: extracted.preferredHorizon,
-      noveltySeeking: extracted.noveltySeeking,
-    },
-    update: {
-      preferredCategories: extracted.preferredCategories as object,
-      riskTolerance: extracted.riskTolerance,
-      preferredHorizon: extracted.preferredHorizon,
-      noveltySeeking: extracted.noveltySeeking,
-    },
-  });
+  // UserProfile non è nello schema Prisma: no-op
 }
