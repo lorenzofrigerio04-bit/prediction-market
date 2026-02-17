@@ -1,9 +1,13 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import { DEFAULT_BADGES } from '../lib/badges';
 import { parseOutcomeDateFromText } from '../lib/event-generation/closes-at';
 import { getClosureRules } from '../lib/event-generation/config';
 
 const prisma = new PrismaClient();
+
+/** Password iniziale per l'admin (cambia in produzione). Puoi usare ADMIN_DEFAULT_PASSWORD in .env */
+const ADMIN_DEFAULT_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || 'Admin123!';
 
 /**
  * Calcola closesAt coerente con la data esito dell'evento (titolo + descrizione).
@@ -49,6 +53,8 @@ async function main() {
     where: { email: ADMIN_EMAIL },
   });
 
+  const adminPasswordHash = await bcrypt.hash(ADMIN_DEFAULT_PASSWORD, 10);
+
   if (!admin) {
     console.log('👤 Creazione utente admin...');
     admin = await prisma.user.create({
@@ -56,22 +62,23 @@ async function main() {
         email: ADMIN_EMAIL,
         name: 'Admin',
         role: 'ADMIN',
+        password: adminPasswordHash,
         credits: 10000,
       },
     });
     console.log('✅ Utente admin creato:', admin.email);
   } else {
-    // Assicurati che l'admin abbia il ruolo corretto
-    if (admin.role !== 'ADMIN') {
-      admin = await prisma.user.update({
-        where: { id: admin.id },
-        data: { role: 'ADMIN' },
-      });
-      console.log('✅ Ruolo admin impostato:', admin.email);
-    } else {
-      console.log('✅ Utente admin già esistente:', admin.email);
-    }
+    // Assicurati che l'admin abbia il ruolo corretto e una password per il login
+    await prisma.user.update({
+      where: { id: admin.id },
+      data: {
+        role: 'ADMIN',
+        password: adminPasswordHash,
+      },
+    });
+    console.log('✅ Utente admin già esistente; password aggiornata per il login:', admin.email);
   }
+  console.log('   Password admin (cambiala al primo accesso):', ADMIN_DEFAULT_PASSWORD);
 
   // Utente "sistema" per creazione eventi generati (pipeline/cron). Nessun login.
   const SYSTEM_USER_EMAIL = 'event-generator@system';

@@ -8,23 +8,33 @@
 
 import { getServerSession } from 'next-auth';
 import type { NextAuthOptions } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
+import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-
-// NOTA: Il layout.tsx importa authOptions da questo file (@/lib/auth)
-// Se hai già una configurazione next-auth esistente, importala qui:
-// Esempio: import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-// Oppure definisci authOptions qui con la tua configurazione completa
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
-    // Aggiungi qui i tuoi provider (Google, Credentials, etc.)
-    // Esempio:
-    // GoogleProvider({
-    //   clientId: process.env.GOOGLE_CLIENT_ID!,
-    //   clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    // }),
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null;
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+          select: { id: true, email: true, name: true, password: true, role: true },
+        });
+        if (!user) return null;
+        if (!user.password) return null;
+        const ok = await bcrypt.compare(credentials.password, user.password);
+        if (!ok) return null;
+        return { id: user.id, email: user.email ?? '', name: user.name ?? null, image: null };
+      },
+    }),
   ],
   callbacks: {
     session: async ({ session, token }) => {
@@ -64,10 +74,8 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    // Opzionale: personalizza le pagine di autenticazione
-    // signIn: '/auth/login',
-    // signOut: '/auth/logout',
-    // error: '/auth/error',
+    signIn: '/auth/login',
+    error: '/auth/login', // così gli errori di login mostrano la pagina di login invece della generica "Error"
   },
   session: {
     strategy: 'jwt', // Usa JWT invece di database session (più semplice)

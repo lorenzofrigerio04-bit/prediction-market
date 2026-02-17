@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
       data: {
         email,
         name: name || null,
+        password: hashedPassword,
         credits: INITIAL_CREDITS,
       },
     });

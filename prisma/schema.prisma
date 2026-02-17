@@ -18,6 +18,7 @@ model User {
   name          String?
   emailVerified DateTime? @map("email_verified")
   image         String?
+  password      String?   // Hash bcrypt per login con email/password
   role          String?   @default("USER") // USER, ADMIN, BOT
   streakCount   Int       @default(0) @map("streak_count")
   credits       Int       @default(100)
