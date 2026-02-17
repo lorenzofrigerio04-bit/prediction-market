@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { getDisplayTitle } from "@/lib/debug-display";
 import Header from "@/components/Header";
 import PredictionModal from "@/components/PredictionModal";
 import CommentsSection from "@/components/CommentsSection";
@@ -70,6 +71,11 @@ export default function EventDetailPage({
 }) {
   const { data: session } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const debugMode =
+    searchParams.get("debug") === "1" ||
+    (typeof process.env.NEXT_PUBLIC_DEBUG_MODE !== "undefined" &&
+      process.env.NEXT_PUBLIC_DEBUG_MODE === "true");
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [userPrediction, setUserPrediction] = useState<UserPrediction | null>(
     null
@@ -164,9 +170,9 @@ export default function EventDetailPage({
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({
-          title: event?.title ?? "Evento",
+          title: getDisplayTitle(event?.title ?? "Evento", debugMode),
           url,
-          text: event?.title,
+          text: getDisplayTitle(event?.title ?? "", debugMode),
         });
       } else {
         await navigator.clipboard.writeText(url);
@@ -280,7 +286,7 @@ export default function EventDetailPage({
           </div>
 
           <h1 className="text-ds-h2 font-bold text-fg mb-3 leading-snug tracking-title">
-            {event.title}
+            {getDisplayTitle(event.title, debugMode)}
           </h1>
 
           <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -467,7 +473,7 @@ export default function EventDetailPage({
       {showPredictionModal && (
         <PredictionModal
           eventId={event.id}
-          eventTitle={event.title}
+          eventTitle={getDisplayTitle(event.title, debugMode)}
           isOpen={showPredictionModal}
           onClose={() => setShowPredictionModal(false)}
           onSuccess={handlePredictionSuccess}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import StreakBadge from "@/components/StreakBadge";
@@ -14,6 +14,7 @@ import {
   FilterChips,
   LoadingBlock,
 } from "@/components/ui";
+import { getDisplayTitle } from "@/lib/debug-display";
 
 interface ProfileStats {
   user: {
@@ -114,6 +115,11 @@ const RARITY_COLORS: Record<string, string> = {
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const debugMode =
+    searchParams.get("debug") === "1" ||
+    (typeof process.env.NEXT_PUBLIC_DEBUG_MODE !== "undefined" &&
+      process.env.NEXT_PUBLIC_DEBUG_MODE === "true");
   const [profileData, setProfileData] = useState<ProfileStats | null>(null);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -474,7 +480,7 @@ export default function ProfilePage() {
                   {(profileData.followedEvents ?? []).slice(0, 10).map((ev) => (
                     <li key={ev.id}>
                       <Link href={`/events/${ev.id}`} className="text-primary font-medium hover:underline line-clamp-2">
-                        {ev.title}
+                        {getDisplayTitle(ev.title, debugMode)}
                       </Link>
                     </li>
                   ))}
@@ -530,7 +536,7 @@ export default function ProfilePage() {
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2 mb-1">
                             <span>{isWon ? "✅" : isLost ? "❌" : "⏳"}</span>
-                            <h3 className="font-semibold text-fg line-clamp-2">{prediction.event.title}</h3>
+                            <h3 className="font-semibold text-fg line-clamp-2">{getDisplayTitle(prediction.event.title, debugMode)}</h3>
                             <span className="px-2 py-0.5 text-xs bg-surface/50 rounded-xl text-fg-muted border border-border dark:border-white/10 shrink-0">
                               {prediction.event.category}
                             </span>

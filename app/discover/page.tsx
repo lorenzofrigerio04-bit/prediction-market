@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useDeferredValue } from "react";
+import { useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import EventCard from "@/components/EventCard";
 import MarketCardSkeleton from "@/components/discover/MarketCardSkeleton";
@@ -10,6 +11,7 @@ import {
   EmptyState,
   FilterChips,
 } from "@/components/ui";
+import { getDisplayTitle, isDebugTitle } from "@/lib/debug-display";
 
 export interface DiscoverEvent {
   id: string;
@@ -70,6 +72,11 @@ const DEADLINE_OPTIONS: { id: DeadlineType; label: string }[] = [
 const SKELETON_COUNT = 6;
 
 export default function DiscoverPage() {
+  const searchParams = useSearchParams();
+  const debugMode =
+    searchParams.get("debug") === "1" ||
+    (typeof process.env.NEXT_PUBLIC_DEBUG_MODE !== "undefined" &&
+      process.env.NEXT_PUBLIC_DEBUG_MODE === "true");
   const [events, setEvents] = useState<DiscoverEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState("");
@@ -279,13 +286,13 @@ export default function DiscoverPage() {
               {total} {total === 1 ? "evento" : "eventi"} trovati
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-              {events.map((event) => (
+              {(debugMode ? events : events.filter((e) => !isDebugTitle(e.title))).map((event) => (
                 <EventCard
                   key={event.id}
                   event={
                     {
                       id: event.id,
-                      title: event.title,
+                      title: getDisplayTitle(event.title, debugMode),
                       description: event.description,
                       category: event.category,
                       closesAt: event.closesAt,

@@ -3,23 +3,102 @@
  * 1) Counts events and shows sample row
  * 2) Deletes ALL events (and dependent rows in order)
  * 3) Inserts ONE binary (YES/NO) market with LMSR params
- * 4) Verifies: count=1, price returns 0.5
+ * 4) Optionally creates N starter-pack markets (--starter-pack=N, default 0)
+ * 5) Verifies and prints summary
  *
- * Run: npx dotenv -e .env.local -- tsx scripts/hard-reset-and-seed.ts
- * Or:  tsx scripts/hard-reset-and-seed.ts   (uses .env / .env.local via dotenv in app)
+ * Usage:
+ *   npx dotenv -e .env.local -- tsx scripts/hard-reset-and-seed.ts
+ *   npx dotenv -e .env.local -- tsx scripts/hard-reset-and-seed.ts --starter-pack=10
+ *   tsx scripts/hard-reset-and-seed.ts --starter-pack=5
  */
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { getBParameter } from "../lib/pricing/initialization";
 import { getPrice } from "../lib/pricing/lmsr";
+import { getBufferHoursForCategory } from "../lib/markets";
+import type { Category } from "../lib/pricing/initialization";
 
 const prisma = new PrismaClient();
+
+/** Parse --starter-pack=N from process.argv. Default 0. */
+function parseStarterPack(): number {
+  const arg = process.argv.find((a) => a.startsWith("--starter-pack="));
+  if (!arg) return 0;
+  const n = parseInt(arg.split("=")[1] ?? "0", 10);
+  return Number.isNaN(n) || n < 0 ? 0 : n;
+}
 
 const KNOWN_GOOD_TITLE = "[DEBUG] Mercato binario YES/NO — Hard reset seed";
 const KNOWN_GOOD_CATEGORY = "Tecnologia";
 
+/** Categories for starter pack: sport, tech, crypto (Economia), meteo (Scienza), entertainment. */
+const STARTER_PACK_CATEGORIES: Category[] = [
+  "Sport",
+  "Tecnologia",
+  "Economia",
+  "Scienza",
+  "Intrattenimento",
+];
+
+/** Real-looking titles (no [DEBUG]) per category. */
+const STARTER_PACK_TITLES: Record<Category, string[]> = {
+  Sport: [
+    "La squadra di casa vince la prossima partita di campionato?",
+    "Il favorito vince il prossimo Grand Slam?",
+    "Oltre 2.5 gol nella finale di coppa?",
+  ],
+  Tecnologia: [
+    "Apple lancia un nuovo iPhone entro il prossimo trimestre?",
+    "Il prezzo di Nvidia supera 150$ entro fine mese?",
+    "Un grande modello open-source supera GPT-4 su MMLU?",
+  ],
+  Economia: [
+    "Bitcoin supera 100.000$ entro fine anno?",
+    "La Fed taglia i tassi nel prossimo meeting?",
+    "L'indice S&P 500 chiude in rialzo questa settimana?",
+  ],
+  Scienza: [
+    "Temperatura massima domani sopra i 30°C in centro?",
+    "Piove durante il weekend nella tua città?",
+    "Viene annunciata una missione con equipaggio su Marte entro il 2030?",
+  ],
+  Intrattenimento: [
+    "Il film favorito vince l'Oscar al miglior film?",
+    "La serie più attesa esce nella prossima stagione?",
+    "Un artista italiano vince Sanremo?",
+  ],
+  Politica: [],
+  Cultura: [],
+};
+
+/** Compute q_yes, q_no so that LMSR price for YES equals pInit (with q_yes,q_no baseline). */
+function quantitiesForPInit(pInit: number, b: number): { q_yes: number; q_no: number } {
+  if (pInit <= 0 || pInit >= 1) return { q_yes: 0, q_no: 0 };
+  if (Math.abs(pInit - 0.5) < 0.001) return { q_yes: 0, q_no: 0 };
+  if (pInit > 0.5) {
+    const q_yes = b * Math.log(pInit / (1 - pInit));
+    return { q_yes, q_no: 0 };
+  }
+  const q_no = b * Math.log((1 - pInit) / pInit);
+  return { q_yes: 0, q_no };
+}
+
+/** Pick random in [min, max] (hours). */
+function randomHours(min: number, max: number): number {
+  return min + Math.random() * (max - min);
+}
+
+/** Pick random p_init in [0.35, 0.65] with 2 decimals. */
+function randomPInit(): number {
+  return Math.round((0.35 + Math.random() * 0.3) * 100) / 100;
+}
+
 async function main() {
+  const starterPackCount = parseStarterPack();
   console.log("=== HARD RESET + SEED ===\n");
+  if (starterPackCount > 0) {
+    console.log("Starter pack requested:", starterPackCount, "markets\n");
+  }
 
   // ---- STEP 1: DB truth ----
   const dbUrl = process.env.DATABASE_URL ?? "";
@@ -136,6 +215,53 @@ async function main() {
     throw new Error("Expected initial probability 50%, got " + probability);
   }
 
+  // ---- STEP 4: Optional starter pack ----
+  const starterPackIds: string[] = [];
+  if (starterPackCount > 0) {
+    console.log("\n--- Starter pack: creating", starterPackCount, "markets ---");
+    const now = new Date();
+    const titlesByCategory: Record<string, string[]> = {};
+    for (const cat of STARTER_PACK_CATEGORIES) {
+      titlesByCategory[cat] = [...(STARTER_PACK_TITLES[cat] ?? [])];
+    }
+    for (let i = 0; i < starterPackCount; i++) {
+      const category = STARTER_PACK_CATEGORIES[i % STARTER_PACK_CATEGORIES.length];
+      const pool = titlesByCategory[category];
+      const title = pool.length > 0 ? pool[i % pool.length]! : `Mercato ${category} #${i + 1}`;
+      const closeInHours = randomHours(2, 72);
+      const bufferHours = getBufferHoursForCategory(category);
+      const marketCloseTime = new Date(now.getTime() + closeInHours * 60 * 60 * 1000);
+      const realWorldEventTime = new Date(
+        marketCloseTime.getTime() + (bufferHours + 1) * 60 * 60 * 1000
+      );
+      const b = getBParameter(category, "Medium");
+      const p_init = randomPInit();
+      const { q_yes, q_no } = quantitiesForPInit(p_init, b);
+
+      const e = await prisma.event.create({
+        data: {
+          title,
+          description: `Mercato starter pack (${category}). Chiusura tra ${Math.round(closeInHours)}h.`,
+          category,
+          closesAt: marketCloseTime,
+          realWorldEventTime,
+          resolutionTimeExpected: realWorldEventTime,
+          resolutionBufferHours: bufferHours,
+          resolutionStatus: "PENDING",
+          resolutionSourceUrl: "https://example.com/resolution",
+          resolutionNotes: "Risoluzione da fonte ufficiale.",
+          createdById: systemUser!.id,
+          p_init,
+          b,
+          q_yes,
+          q_no,
+        },
+      });
+      starterPackIds.push(e.id);
+    }
+    console.log("Starter pack created:", starterPackIds.length, "markets.");
+  }
+
   const finalCount = await prisma.event.count();
   console.log("\nEvents count (final):", finalCount);
 
@@ -147,6 +273,16 @@ async function main() {
     console.warn("Could not invalidate trending cache:", e);
   }
 
+  // ---- Summary ----
+  console.log("\n=== SUMMARY ===");
+  console.log("Known-good event id:", event.id);
+  if (starterPackCount > 0) {
+    console.log("Starter pack created:", starterPackIds.length);
+    console.log("Sample IDs:", starterPackIds.slice(0, 5).join(", "));
+    if (starterPackIds.length > 5) {
+      console.log("(all IDs:", starterPackIds.join(", ") + ")");
+    }
+  }
   console.log("\n=== DONE. Verify with: GET /api/health, GET /api/events, GET /api/events/" + event.id + "/price ===");
 }
 

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { generateFeedCandidates } from "@/lib/personalization/candidate-generation";
 import { rerankFeed } from "@/lib/personalization/reranking";
 import { getFeedCache, setFeedCache, type CachedFeedItem } from "@/lib/feed-cache";
+import { DEBUG_TITLE_PREFIX, isDebugTitle } from "@/lib/debug-display";
 
 export const dynamic = "force-dynamic";
 
@@ -41,10 +42,15 @@ const feedEventSelect = {
  * Fallback: return recent open events (same shape as feed) when personalization fails.
  * Used when MarketMetrics/UserProfile are missing or generateFeedCandidates throws.
  */
+/** Hide [DEBUG] markets from normal feed. */
 async function getRecentEventsAsFeed(limit: number): Promise<CachedFeedItem[]> {
   const now = new Date();
   const events = await prisma.event.findMany({
-    where: { resolved: false, closesAt: { gt: now } },
+    where: {
+      resolved: false,
+      closesAt: { gt: now },
+      NOT: { title: { startsWith: DEBUG_TITLE_PREFIX } },
+    },
     select: feedEventSelect,
     take: limit,
     orderBy: { createdAt: "desc" },
@@ -81,6 +87,7 @@ export async function GET(request: NextRequest) {
               id: { in: eventIds },
               resolved: false,
               closesAt: { gt: new Date() },
+              NOT: { title: { startsWith: DEBUG_TITLE_PREFIX } },
             },
             select: feedEventSelect,
           });
@@ -106,6 +113,9 @@ export async function GET(request: NextRequest) {
         fullList = await getRecentEventsAsFeed(MAX_LIMIT);
       }
     }
+
+    // Ensure debug-only markets never appear in feed for normal users.
+    fullList = fullList.filter((e) => !isDebugTitle(e.title));
 
     const total = fullList.length;
     const items = fullList.slice(offset, offset + limit);

@@ -15,6 +15,7 @@ import {
   EmptyState,
   LoadingBlock,
 } from "@/components/ui";
+import { getDisplayTitle, isDebugTitle } from "@/lib/debug-display";
 
 const ONBOARDING_STORAGE_KEY = "prediction-market-onboarding-completed";
 
@@ -63,7 +64,11 @@ interface Mission {
 export default function Home() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const debugMode = searchParams.get("debug") === "1";
+  // Debug panel and [DEBUG] titles only when ?debug=1 or NEXT_PUBLIC_DEBUG_MODE=true.
+  const debugMode =
+    searchParams.get("debug") === "1" ||
+    (typeof process.env.NEXT_PUBLIC_DEBUG_MODE !== "undefined" &&
+      process.env.NEXT_PUBLIC_DEBUG_MODE === "true");
   const { data: session, status, update: updateSession } = useSession();
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
   const [sessionSynced, setSessionSynced] = useState(false);
@@ -305,12 +310,12 @@ export default function Home() {
               />
             ) : (
               <ul className="flex flex-col gap-4" aria-label="Anteprima eventi">
-                {landingEvents.map((event) => (
+                {(debugMode ? landingEvents : landingEvents.filter((e) => !isDebugTitle(e.title))).map((event) => (
                   <li key={event.id}>
                     <LandingEventRow
                       event={{
                         id: event.id,
-                        title: event.title,
+                        title: getDisplayTitle(event.title, debugMode),
                         category: event.category,
                         closesAt: event.closesAt,
                         probability: event.probability,
@@ -396,6 +401,7 @@ export default function Home() {
           title={`Bentornato, ${displayName}.`}
           description="Ecco cosa succede oggi."
         />
+        {/* Debug panel: only when ?debug=1 or NEXT_PUBLIC_DEBUG_MODE=true. */}
         {debugMode && (
           <div className="text-ds-micro text-fg-muted mb-2 p-2 rounded bg-white/5" aria-hidden>
             <p>debug: commit={debugInfo?.version?.commit ?? "—"} env={debugInfo?.version?.env ?? "—"} baseUrl={debugInfo?.version?.baseUrl ? `${debugInfo.version.baseUrl.slice(0, 40)}…` : "—"}</p>
@@ -512,8 +518,11 @@ export default function Home() {
             />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-              {eventsTrending.map((event) => (
-                <EventCard key={event.id} event={event} />
+              {(debugMode ? eventsTrending : eventsTrending.filter((e) => !isDebugTitle(e.title))).map((event) => (
+                <EventCard
+                  key={event.id}
+                  event={{ ...event, title: getDisplayTitle(event.title, debugMode) }}
+                />
               ))}
             </div>
           )}

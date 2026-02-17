@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cacheGetJson, cacheSetJson } from "@/lib/cache/redis";
+import { DEBUG_TITLE_PREFIX } from "@/lib/debug-display";
 
 const TRENDING_CACHE_TTL_SEC = 10 * 60; // 10 minutes
 const TRENDING_KEY_PREFIX = "trending:";
@@ -60,6 +61,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (category) where.category = category;
+
+    // Hide debug-only markets from normal feed (no [DEBUG] titles unless in debug mode elsewhere).
+    where.AND = [...(where.AND ?? []), { NOT: { title: { startsWith: DEBUG_TITLE_PREFIX } } }];
 
     // Ricerca: AND con (title OR description)
     if (search.trim()) {
