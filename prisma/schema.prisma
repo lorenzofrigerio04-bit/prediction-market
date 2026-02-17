@@ -46,3 +46,18 @@ model Notification {
   @@index([userId, readAt])
   @@index([createdAt])
 }
+
+model AuditLog {
+  id         String    @id @default(cuid())
+  userId     String?   // Null se azione di sistema
+  action     String    // Es: EVENT_CREATE, EVENT_RESOLVE, COMMENT_HIDE, etc.
+  entityType String    // Es: "event", "comment", "user", etc.
+  entityId   String?   // ID dell'entità su cui è stata eseguita l'azione
+  payload    String?   // Dati aggiuntivi in formato JSON
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([action])
+}

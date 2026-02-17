@@ -45,7 +45,9 @@ export async function GET(request: NextRequest) {
 
     const rows = logs.map((log) => ({
       ...log,
+      payload: log.payload ? (typeof log.payload === 'string' ? JSON.parse(log.payload) : log.payload) : null,
       user: log.userId ? userMap[log.userId] ?? null : null,
+      createdAt: log.createdAt.toISOString(),
     }));
 
     return NextResponse.json({

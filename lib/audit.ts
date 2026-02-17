@@ -21,7 +21,8 @@ export async function createAuditLog(
       action: params.action,
       entityType: params.entityType,
       entityId: params.entityId ?? null,
-      payload: (params.payload as object) ?? undefined,
+      // Convert payload to JSON string for SQLite compatibility
+      payload: params.payload ? JSON.stringify(params.payload) : null,
     },
   });
 }
