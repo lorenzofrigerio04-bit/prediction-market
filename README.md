@@ -70,6 +70,7 @@ Il sistema gestisce automaticamente gli eventi chiusi:
   ```
 - `GET /api/cron/resolve-events` - Endpoint per cron job esterni (richiede `CRON_SECRET`)
 - `GET /api/cron/generate-events` - Pipeline generazione eventi (fetch → verify → generate → create); richiede `CRON_SECRET` o `EVENT_GENERATOR_SECRET`
+- `GET|POST /api/cron/generate-markets` - Pipeline generazione mercati (ingestion → LLM → validator → publish); richiede `CRON_SECRET`
 
 ### Come Funziona
 
@@ -84,6 +85,36 @@ Il sistema gestisce automaticamente gli eventi chiusi:
 
 - **Risoluzione eventi chiusi**: `GET /api/cron/resolve-events` – richiede header `Authorization: Bearer CRON_SECRET`.
 - **Generazione eventi (pipeline)**: `GET /api/cron/generate-events` – richiede `Authorization: Bearer CRON_SECRET` o `EVENT_GENERATOR_SECRET`. Esegue fetch trending → verifica → generazione LLM → creazione in DB. In `vercel.json` è configurato con schedule `0 8,20 * * *` (due run al giorno alle 08:00 e 20:00 UTC).
+- **Generazione mercati (pipeline)**: `GET /api/cron/generate-markets` – richiede **`CRON_SECRET`** (`Authorization: Bearer CRON_SECRET`). Esegue ingestion/trend → draft (LLM) → validator → publish. In `vercel.json` è configurato con schedule `*/30 * * * *` (ogni 30 minuti; per ogni 15 minuti usa `*/15 * * * *` se i rate limit lo consentono).
+
+#### Variabili d’ambiente per generate-markets
+
+- **CRON_SECRET** (obbligatorio) – usato da Vercel Cron e per trigger manuale.
+- **DATABASE_URL**, **NEWS_API_KEY**, **OPENAI_API_KEY** (o **ANTHROPIC_API_KEY** se `GENERATION_PROVIDER=anthropic`) – richieste dalla pipeline (vedi `.env.example`).
+
+#### Come funziona il cron (Vercel)
+
+Vercel invoca l’URL del cron (es. `https://tuo-progetto.vercel.app/api/cron/generate-markets`) con metodo **GET** e aggiunge automaticamente l’header `Authorization: Bearer <CRON_SECRET>` se `CRON_SECRET` è impostato nelle Environment Variables del progetto. Non serve configurare nulla oltre a `vercel.json` e le variabili d’ambiente.
+
+#### Trigger manuale
+
+```bash
+# GET (stesso comportamento del cron; publishCount = 5)
+curl -X GET "https://tuo-progetto.vercel.app/api/cron/generate-markets" \
+  -H "Authorization: Bearer YOUR_CRON_SECRET"
+
+# POST con numero di mercati da pubblicare (opzionale)
+curl -X POST "https://tuo-progetto.vercel.app/api/cron/generate-markets" \
+  -H "Authorization: Bearer YOUR_CRON_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"publishCount": 10}'
+```
+
+#### Verificare che il cron sia eseguito
+
+- **Log**: In Vercel → Project → Logs (o Runtime Logs), filtra per la funzione `/api/cron/generate-markets`. In caso di successo vedrai log tipo `[cron/generate-markets] summary` con `candidates`, `approved`, `published`, `errors`.
+- **Risposta HTTP**: La risposta JSON contiene `ok`, `candidates`, `approved`, `rejected`, `published`, `errors`. Controlla che `ok === true` e eventualmente `published > 0`.
+- **Database**: Verifica che il numero di eventi/mercati creati aumenti dopo una run (es. conta i record creati dopo l’orario dell’ultimo cron, o usa Prisma Studio / query SQL sulla tabella degli eventi con `createdAt` recente).
 
 Variabili d’ambiente e flusso dettagliato: **[docs/PIPELINE_CRON.md](docs/PIPELINE_CRON.md)**.
 

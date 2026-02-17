@@ -57,6 +57,96 @@ export type GenerateMarketsResponse = {
   missingEnv?: string[];
 };
 
+/** Runs the pipeline with the given publishCount; returns response body and status. */
+async function runGenerateMarkets(
+  publishCount: number
+): Promise<{ body: GenerateMarketsResponse; status: number }> {
+  const missingEnv = getMissingEnvVars();
+  if (missingEnv.length > 0) {
+    console.warn("[cron/generate-markets] Missing required env vars:", missingEnv.join(", "));
+    return {
+      body: {
+        ok: false,
+        candidates: 0,
+        approved: 0,
+        rejected: 0,
+        published: 0,
+        errors: [],
+        missingEnv: [...missingEnv],
+      },
+      status: 503,
+    };
+  }
+
+  const result = await runPipeline(prisma, {
+    limit: Math.max(publishCount * 4, 40),
+    generation: {
+      maxPerCategory: Math.max(2, Math.ceil(publishCount / 2)),
+      maxTotal: publishCount,
+      maxRetries: 2,
+    },
+  });
+
+  const { candidatesCount, generatedCount, createResult } = result;
+  const published = createResult.created;
+  const approved = generatedCount;
+  const rejected = candidatesCount - published;
+  const errors = createResult.errors.map(
+    (e) => `[${e.index}] ${e.title}: ${e.reason}`
+  );
+
+  console.log("[cron/generate-markets] summary", {
+    candidates: candidatesCount,
+    approved,
+    rejected,
+    published,
+    errors: errors.length,
+  });
+
+  return {
+    body: {
+      ok: true,
+      candidates: candidatesCount,
+      approved,
+      rejected,
+      published,
+      errors,
+    },
+    status: 200,
+  };
+}
+
+/**
+ * GET /api/cron/generate-markets
+ *
+ * Same as POST with default publishCount. Used by Vercel Cron (sends GET).
+ * Protected by CRON_SECRET: Authorization: Bearer <CRON_SECRET>.
+ */
+export async function GET(request: NextRequest) {
+  const auth = isAuthorized(request);
+  if (!auth.ok) {
+    return NextResponse.json(auth.body, { status: auth.status });
+  }
+  try {
+    const { body, status } = await runGenerateMarkets(DEFAULT_PUBLISH_COUNT);
+    return NextResponse.json(body, { status });
+  } catch (error) {
+    console.error("[cron/generate-markets] error:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json(
+      {
+        ok: false,
+        candidates: 0,
+        approved: 0,
+        rejected: 0,
+        published: 0,
+        errors: [message],
+      } satisfies GenerateMarketsResponse,
+      { status: 500 }
+    );
+  }
+}
+
 /**
  * POST /api/cron/generate-markets
  *
@@ -76,21 +166,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(auth.body, { status: auth.status });
     }
 
-    const missingEnv = getMissingEnvVars();
-    if (missingEnv.length > 0) {
-      console.warn("[cron/generate-markets] Missing required env vars:", missingEnv.join(", "));
-      const body: GenerateMarketsResponse = {
-        ok: false,
-        candidates: 0,
-        approved: 0,
-        rejected: 0,
-        published: 0,
-        errors: [],
-        missingEnv: [...missingEnv],
-      };
-      return NextResponse.json(body, { status: 503 });
-    }
-
     let publishCount = DEFAULT_PUBLISH_COUNT;
     try {
       const contentType = request.headers.get("content-type") || "";
@@ -104,40 +179,8 @@ export async function POST(request: NextRequest) {
       // ignore invalid JSON; use default publishCount
     }
 
-    const result = await runPipeline(prisma, {
-      limit: Math.max(publishCount * 4, 40),
-      generation: {
-        maxPerCategory: Math.max(2, Math.ceil(publishCount / 2)),
-        maxTotal: publishCount,
-        maxRetries: 2,
-      },
-    });
-
-    const { candidatesCount, generatedCount, createResult } = result;
-    const published = createResult.created;
-    const approved = generatedCount;
-    const rejected = candidatesCount - published;
-    const errors = createResult.errors.map(
-      (e) => `[${e.index}] ${e.title}: ${e.reason}`
-    );
-
-    console.log("[cron/generate-markets] summary", {
-      candidates: candidatesCount,
-      approved,
-      rejected,
-      published,
-      errors: errors.length,
-    });
-
-    const response: GenerateMarketsResponse = {
-      ok: true,
-      candidates: candidatesCount,
-      approved,
-      rejected,
-      published,
-      errors,
-    };
-    return NextResponse.json(response);
+    const { body, status } = await runGenerateMarkets(publishCount);
+    return NextResponse.json(body, { status });
   } catch (error) {
     console.error("[cron/generate-markets] error:", error);
     const message = error instanceof Error ? error.message : String(error);

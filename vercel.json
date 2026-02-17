@@ -1,1 +1,14 @@
-{"buildCommand":"prisma generate && next build","framework":"nextjs","installCommand":"npm install","crons":[{"path":"/api/cron/resolve-events","schedule":"0 0 * * *"},{"path":"/api/cron/auto-resolve","schedule":"*/15 * * * *"},{"path":"/api/cron/generate-events","schedule":"0 8,20 * * *"},{"path":"/api/cron/simulate-activity","schedule":"30 * * * *"},{"path":"/api/cron/aggregate-metrics","schedule":"0 * * * *"}]}
+{
+  "buildCommand": "prisma generate && next build",
+  "framework": "nextjs",
+  "installCommand": "npm install",
+  "crons": [
+    { "path": "/api/cron/resolve-events", "schedule": "0 0 * * *" },
+    { "path": "/api/cron/auto-resolve", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/generate-events", "schedule": "0 8,20 * * *" },
+    { "path": "/api/cron/generate-markets", "schedule": "5 0 * * *" },
+    { "path": "/api/cron/generate-markets", "schedule": "*/30 * * * *" },
+    { "path": "/api/cron/simulate-activity", "schedule": "30 * * * *" },
+    { "path": "/api/cron/aggregate-metrics", "schedule": "0 * * * *" }
+  ]
+}
