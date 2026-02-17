@@ -1,32 +1,32 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-
-export const dynamic = "force-dynamic";
-
 /**
+ * API Route per ottenere il conteggio delle notifiche non lette
  * GET /api/notifications/unread-count
- * Ottiene il numero di notifiche non lette dell'utente
  */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getUserId } from '@/lib/auth';
+
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ count: 0 });
+    const userId = await getUserId();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const count = await prisma.notification.count({
       where: {
-        userId: session.user.id,
-        read: false,
+        userId,
+        readAt: null,
       },
     });
 
     return NextResponse.json({ count });
   } catch (error) {
-    console.error("Error fetching unread count:", error);
-    return NextResponse.json({ count: 0 });
+    console.error('Error fetching unread count:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch unread count' },
+      { status: 500 }
+    );
   }
 }

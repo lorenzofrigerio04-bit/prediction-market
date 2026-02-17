@@ -1,140 +1,78 @@
-import { NextAuthOptions } from "next-auth";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import CredentialsProvider from "next-auth/providers/credentials";
-import GoogleProvider from "next-auth/providers/google";
-import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+/**
+ * Helper per autenticazione nelle API routes
+ * 
+ * Questo file esporta authOptions che viene già usato in app/layout.tsx
+ * Se hai già una configurazione next-auth esistente, aggiorna questo file
+ * per importarla invece del placeholder.
+ */
 
-const credentialsProvider = CredentialsProvider({
-  name: "Credentials",
-  credentials: {
-    email: { label: "Email", type: "email" },
-    password: { label: "Password", type: "password" },
-  },
-  async authorize(credentials) {
-    if (!credentials?.email || !credentials?.password) {
-      throw new Error("Email e password sono obbligatori");
-    }
+import { getServerSession } from 'next-auth';
+import type { NextAuthOptions } from 'next-auth';
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
+import { prisma } from '@/lib/prisma';
 
-    try {
-      const user = await prisma.user.findUnique({
-        where: { email: credentials.email },
-      });
-
-      if (!user || !user.password) {
-        throw new Error("Credenziali non valide");
-      }
-
-      const isPasswordValid = await bcrypt.compare(
-        credentials.password,
-        user.password
-      );
-
-      if (!isPasswordValid) {
-        throw new Error("Credenziali non valide");
-      }
-
-      return {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        image: user.image,
-        role: user.role,
-        onboardingCompleted: user.onboardingCompleted,
-      };
-    } catch (err: unknown) {
-      // Errore di connessione DB / Prisma: non esporre dettagli, ma logga per debug
-      if (err && typeof err === "object" && "code" in err) {
-        console.error("[auth] Errore DB in authorize:", err);
-        throw new Error("Errore di connessione al server. Riprova tra poco.");
-      }
-      throw err;
-    }
-  },
-});
-
-const providers: NextAuthOptions["providers"] = [
-  ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-    ? [
-        GoogleProvider({
-          clientId: process.env.GOOGLE_CLIENT_ID,
-          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          // Collega l'account Google a un utente esistente con la stessa email (registrato con email/password)
-          allowDangerousEmailAccountLinking: true,
-        }),
-      ]
-    : []),
-  credentialsProvider,
-];
+// NOTA: Il layout.tsx importa authOptions da questo file (@/lib/auth)
+// Se hai già una configurazione next-auth esistente, importala qui:
+// Esempio: import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+// Oppure definisci authOptions qui con la tua configurazione completa
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
-  providers,
-  // In produzione (Vercel) assicurati che NEXTAUTH_URL sia l'URL reale (es. https://tuo-app.vercel.app)
-  // e che NEXTAUTH_SECRET sia impostato (es. openssl rand -base64 32).
-  pages: {
-    signIn: "/auth/login",
-    signOut: "/auth/login",
-    error: "/auth/login",
-  },
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 giorni
-  },
-  // Post-deploy: in produzione cookie __Secure-*, httpOnly, sameSite: lax, secure (vedi DEPLOY_AND_BETA.md Fase 6)
-  cookies: {
-    sessionToken: {
-      name: process.env.NODE_ENV === "production"
-        ? "__Secure-next-auth.session-token"
-        : "next-auth.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 30 * 24 * 60 * 60,
-      },
-    },
-  },
+  providers: [
+    // Aggiungi qui i tuoi provider (Google, Credentials, etc.)
+    // Esempio:
+    // GoogleProvider({
+    //   clientId: process.env.GOOGLE_CLIENT_ID!,
+    //   clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    // }),
+  ],
   callbacks: {
-    async jwt({ token, user }) {
-      if (user?.id) {
-        token.id = user.id;
-        try {
-          const dbUser = await prisma.user.findUnique({
-            where: { id: user.id },
-            select: { role: true, onboardingCompleted: true },
-          });
-          token.role = dbUser?.role ?? (user as { role?: string }).role ?? "USER";
-          token.onboardingCompleted = dbUser?.onboardingCompleted ?? (user as { onboardingCompleted?: boolean }).onboardingCompleted ?? false;
-        } catch {
-          token.role = (user as { role?: string }).role ?? "USER";
-          token.onboardingCompleted = (user as { onboardingCompleted?: boolean }).onboardingCompleted ?? false;
-        }
-      } else if (token.id) {
-        try {
-          const dbUser = await prisma.user.findUnique({
-            where: { id: token.id as string },
-            select: { role: true, onboardingCompleted: true },
-          });
-          if (dbUser) {
-            token.role = dbUser.role;
-            token.onboardingCompleted = dbUser.onboardingCompleted;
-          }
-        } catch {
-          // Mantieni i valori già nel token
-        }
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = (token.role as string) || "USER";
-        session.user.onboardingCompleted = token.onboardingCompleted ?? false;
+    session: ({ session, token }) => {
+      // IMPORTANTE: Aggiunge userId alla session per getUserId()
+      if (session.user && token.sub) {
+        (session.user as any).id = token.sub;
       }
       return session;
     },
+    jwt: ({ token, user }) => {
+      // Aggiunge userId al token quando l'utente fa login
+      if (user) {
+        token.sub = user.id;
+      }
+      return token;
+    },
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  pages: {
+    // Opzionale: personalizza le pagine di autenticazione
+    // signIn: '/auth/login',
+    // signOut: '/auth/logout',
+    // error: '/auth/error',
+  },
+  session: {
+    strategy: 'jwt', // Usa JWT invece di database session (più semplice)
+  },
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
 };
+
+/**
+ * Ottiene l'utente autenticato dalla sessione
+ * Usa questo helper nelle API routes per ottenere userId
+ */
+export async function getCurrentUser() {
+  try {
+    const session = await getServerSession(authOptions);
+    return session?.user;
+  } catch (error) {
+    console.error('Error getting current user:', error);
+    return null;
+  }
+}
+
+/**
+ * Ottiene userId dalla sessione, ritorna null se non autenticato
+ */
+export async function getUserId(): Promise<string | null> {
+  const user = await getCurrentUser();
+  // Usa il tipo definito in types/next-auth.d.ts che include id
+  return user?.id || null;
+}

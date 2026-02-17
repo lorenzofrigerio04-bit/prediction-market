@@ -1,99 +1,57 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-
-export const dynamic = "force-dynamic";
-
 /**
- * GET /api/notifications
- * Ottiene le notifiche dell'utente autenticato
+ * API Route per gestire le notifiche
+ * GET /api/notifications - Lista paginata delle notifiche
  */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getUserId } from '@/lib/auth';
+
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Devi essere autenticato" },
-        { status: 401 }
-      );
+    const userId = await getUserId();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get("limit") || "20");
-    const unreadOnly = searchParams.get("unreadOnly") === "true";
+    // Parametri paginazione
+    const searchParams = request.nextUrl.searchParams;
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 100);
+    const skip = (page - 1) * limit;
 
-    const where: any = {
-      userId: session.user.id,
-    };
+    const [notifications, total] = await Promise.all([
+      prisma.notification.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.notification.count({
+        where: { userId },
+      }),
+    ]);
 
-    if (unreadOnly) {
-      where.read = false;
-    }
-
-    const notifications = await prisma.notification.findMany({
-      where,
-      orderBy: {
-        createdAt: "desc",
+    return NextResponse.json({
+      notifications: notifications.map(n => ({
+        id: n.id,
+        userId: n.userId,
+        type: n.type,
+        data: n.data,
+        readAt: n.readAt?.toISOString() || null,
+        createdAt: n.createdAt.toISOString(),
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
       },
-      take: limit,
     });
-
-    return NextResponse.json({ notifications });
   } catch (error) {
-    console.error("Error fetching notifications:", error);
+    console.error('Error fetching notifications:', error);
     return NextResponse.json(
-      { error: "Errore nel caricamento delle notifiche" },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * POST /api/notifications/read-all
- * Segna tutte le notifiche come lette
- */
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Devi essere autenticato" },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
-    const action = body.action;
-
-    if (action === "read-all") {
-      await prisma.notification.updateMany({
-        where: {
-          userId: session.user.id,
-          read: false,
-        },
-        data: {
-          read: true,
-          readAt: new Date(),
-        },
-      });
-
-      return NextResponse.json({
-        success: true,
-        message: "Tutte le notifiche sono state segnate come lette",
-      });
-    }
-
-    return NextResponse.json(
-      { error: "Azione non valida" },
-      { status: 400 }
-    );
-  } catch (error) {
-    console.error("Error marking notifications as read:", error);
-    return NextResponse.json(
-      { error: "Errore nell'aggiornamento delle notifiche" },
+      { error: 'Failed to fetch notifications' },
       { status: 500 }
     );
   }
