@@ -66,9 +66,20 @@ export async function GET() {
     const canSpinToday = !spinToday;
     const hasActiveBoost = false; // boostExpiresAt e boostMultiplier non esistono nello schema
 
+    const totalSpentResult = await prisma.transaction.aggregate({
+      where: {
+        userId,
+        amount: { lt: 0 },
+      },
+      _sum: { amount: true },
+    });
+    const totalSpent = Math.abs(totalSpentResult._sum.amount ?? 0);
+
     return NextResponse.json({
       credits: user.credits,
       totalEarned: user.totalEarned,
+      totalSpent,
+      streak: user.streakCount ?? 0,
       streakCount: user.streakCount,
       canClaimDailyBonus,
       nextBonusAmount,

@@ -142,7 +142,22 @@ export async function executePredictionBuy(
     referenceType: "prediction",
   });
 
-  // Event nello schema non ha q_yes, q_no, probability, yesPredictions, noPredictions (LMSR si deriva dalle Prediction)
+  const newQYes = outcome === "YES" ? qYes + sharesBought : qYes;
+  const newQNo = outcome === "NO" ? qNo + sharesBought : qNo;
+  const sumResult = await tx.prediction.aggregate({
+    where: { eventId: event.id },
+    _sum: { amount: true },
+  });
+  const totalCredits = sumResult._sum.amount ?? 0;
+
+  await tx.event.update({
+    where: { id: event.id },
+    data: {
+      q_yes: newQYes,
+      q_no: newQNo,
+      totalCredits,
+    },
+  });
 
   return {
     prediction: {
