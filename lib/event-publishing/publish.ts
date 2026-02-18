@@ -4,7 +4,7 @@
 
 import type { PrismaClient } from '@prisma/client';
 import type { ScoredCandidate } from './types';
-import { generateDedupKey } from './dedup';
+import { computeDedupKey } from './dedup';
 
 /**
  * Ottiene o crea utente sistema per creazione eventi automatici
@@ -53,21 +53,34 @@ async function getOrCreateSystemUser(prisma: PrismaClient): Promise<string> {
 }
 
 /**
- * Crea un evento nel DB da un candidato
+ * Crea un evento nel DB da un candidato.
+ * Non crea se dedupKey non calcolabile (MISSING_DEDUPKEY_INPUT).
  */
 async function createEventFromCandidate(
   prisma: PrismaClient,
   candidate: ScoredCandidate,
   now: Date,
   systemUserId: string
-) {
-  const dedupKey = generateDedupKey(
-    candidate.title,
-    candidate.closesAt,
-    candidate.resolutionAuthorityHost
-  );
+): Promise<{ created: boolean; reason?: string }> {
+  let dedupKey: string;
+  try {
+    dedupKey = computeDedupKey({
+      title: candidate.title,
+      closesAt: candidate.closesAt,
+      resolutionAuthorityHost: candidate.resolutionAuthorityHost,
+    });
+  } catch {
+    if (process.env.EVENT_GEN_DEBUG === 'true') {
+      console.warn('[Event Publish] Skip candidate (MISSING_DEDUPKEY_INPUT):', candidate.title?.slice(0, 50));
+    }
+    return { created: false, reason: 'MISSING_DEDUPKEY_INPUT' };
+  }
 
-  return prisma.event.create({
+  if (process.env.EVENT_GEN_DEBUG === 'true') {
+    console.log('[Event Publish] Creating event dedupKey=', dedupKey.slice(0, 16) + '...', 'title=', candidate.title?.slice(0, 40));
+  }
+
+  await prisma.event.create({
     data: {
       title: candidate.title,
       description: candidate.description,
@@ -80,15 +93,15 @@ async function createEventFromCandidate(
       resolutionCriteriaNo: candidate.resolutionCriteriaNo,
       sourceStorylineId: candidate.sourceStorylineId,
       templateId: candidate.templateId,
-      dedupKey,
-      // Campi obbligatori legacy
+      dedupKey, // sempre valorizzato
       createdById: systemUserId,
-      b: 100.0, // Default LMSR parameter
+      b: 100.0,
       resolutionBufferHours: 24,
       resolved: false,
       resolutionStatus: 'PENDING',
     },
   });
+  return { created: true };
 }
 
 /**
@@ -114,32 +127,30 @@ export async function publishSelected(
   // Ottieni o crea utente sistema (una volta, fuori dalla transazione)
   const systemUserId = await getOrCreateSystemUser(prisma);
 
-  // Usa transazione per batch insert
   try {
     await prisma.$transaction(async (tx) => {
       for (const candidate of selected) {
         try {
-          await createEventFromCandidate(tx, candidate, now, systemUserId);
-          createdCount++;
+          const { created, reason } = await createEventFromCandidate(tx, candidate, now, systemUserId);
+          if (created) {
+            createdCount++;
+          } else {
+            skippedCount++;
+            if (reason) reasonsCount[reason] = (reasonsCount[reason] || 0) + 1;
+          }
         } catch (error: any) {
           skippedCount++;
-          
-          // Gestisci errori specifici
           if (error.code === 'P2002') {
-            // Unique constraint violation (dedupKey)
-            const reason = 'DUPLICATE_DEDUP_KEY';
-            reasonsCount[reason] = (reasonsCount[reason] || 0) + 1;
-            console.warn(`Skipped duplicate dedupKey for candidate: ${candidate.title}`);
+            reasonsCount['DUPLICATE_DEDUP_KEY'] = (reasonsCount['DUPLICATE_DEDUP_KEY'] || 0) + 1;
+            console.warn(`Skipped duplicate dedupKey for candidate: ${candidate.title?.slice(0, 50)}`);
           } else {
-            const reason = 'CREATE_ERROR';
-            reasonsCount[reason] = (reasonsCount[reason] || 0) + 1;
+            reasonsCount['CREATE_ERROR'] = (reasonsCount['CREATE_ERROR'] || 0) + 1;
             console.error(`Error creating event for candidate: ${candidate.title}`, error);
           }
         }
       }
     });
   } catch (error) {
-    // Se la transazione fallisce completamente, logga ma non crasha
     console.error('Transaction failed:', error);
     reasonsCount['TRANSACTION_ERROR'] = (reasonsCount['TRANSACTION_ERROR'] || 0) + 1;
   }

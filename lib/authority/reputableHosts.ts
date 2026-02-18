@@ -17,5 +17,12 @@ export const reputableHosts: string[] = [
   "corriere.it",
   "repubblica.it",
   "wired.com",
-  "techcrunch.com"
+  "techcrunch.com",
+  "ir.",       // IR/Investor relations (ir.company.com)
+  "investor.", // investor.company.com
+  "microsoft.com",
+  "abc.xyz",   // Alphabet
+  "uefa.com",
+  "lega-serie-a.it",
+  "legaseriea.it",
 ];

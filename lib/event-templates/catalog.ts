@@ -2,12 +2,112 @@
  * Event Template Catalog
  * BLOCCO 4: Template Engine
  * 
- * 35 template totali: 5 per categoria
- * Ogni template è binario e non ambiguo
+ * Template specifici per host (Earnings/IR, Sport, Government) + universal fallback.
+ * Titoli verificabili: "pubblicherà", "annuncerà", "rilascerà", "comunicherà".
+ * VIETATO: "accadrà", "si verificherà", "sarà confermato".
  */
 
-import type { EventTemplate } from './types';
+import type { EventTemplate, Category } from './types';
 import type { TemplateContext } from './context';
+
+// ============================================================================
+// MAPPING HOST -> CATEGORY (deterministico, no LLM)
+// ============================================================================
+
+export function getCategoryFromHost(host: string): Category {
+  const h = host.toLowerCase();
+  if (/uefa|fifa|lega|figc|serie-?a|olympics/.test(h)) return 'Sport';
+  if (/^ir\.|sec\.gov|investor|\.ir\./i.test(h) || h.includes('investor')) return 'Economia';
+  if (h.endsWith('.gov.it') || h === 'governo.it' || h.includes('ministero')) return 'Politica';
+  if (/techcrunch|wired\.com/.test(h)) return 'Tecnologia';
+  return 'News';
+}
+
+// ============================================================================
+// TEMPLATE SPECIFICI (Earnings/IR, Sport, Government) - azione verificabile
+// ============================================================================
+
+const EARNINGS_IR_TEMPLATE: EventTemplate = {
+  id: 'earnings-ir-release',
+  category: 'Economia',
+  horizonDaysMin: 1,
+  horizonDaysMax: 60,
+  requiredAuthority: 'OFFICIAL',
+  question: (ctx) => `${ctx.entityA || 'L\'azienda'} pubblicherà i risultati finanziari su ${ctx.authorityHost} entro ${ctx.closesAt.toLocaleDateString('it-IT')}?`,
+  resolutionCriteria: (ctx) => ({
+    yes: `Risultati/results pubblicati su ${ctx.authorityHost} entro ${ctx.closesAt.toLocaleDateString('it-IT')}`,
+    no: `Nessun comunicato risultati su ${ctx.authorityHost} entro ${ctx.closesAt.toLocaleDateString('it-IT')}`,
+  }),
+  bannedPhrases: ['accadrà', 'si verificherà', 'sarà confermato', 'probabile'],
+};
+
+const SPORT_OFFICIAL_TEMPLATE: EventTemplate = {
+  id: 'sport-official-announcement',
+  category: 'Sport',
+  horizonDaysMin: 1,
+  horizonDaysMax: 30,
+  requiredAuthority: 'OFFICIAL',
+  question: (ctx) => `${ctx.authorityHost} annuncerà o comunicherà ufficialmente riguardo ${ctx.topic || ctx.entityA || 'questo evento'} entro ${ctx.closesAt.toLocaleDateString('it-IT')}?`,
+  resolutionCriteria: (ctx) => ({
+    yes: `Comunicato ufficiale pubblicato su ${ctx.authorityHost} entro ${ctx.closesAt.toLocaleDateString('it-IT')}`,
+    no: `Nessun comunicato ufficiale su ${ctx.authorityHost} entro ${ctx.closesAt.toLocaleDateString('it-IT')}`,
+  }),
+  bannedPhrases: ['accadrà', 'si verificherà', 'sarà confermato', 'probabile'],
+};
+
+const GOV_PRESS_TEMPLATE: EventTemplate = {
+  id: 'gov-press-release',
+  category: 'Politica',
+  horizonDaysMin: 1,
+  horizonDaysMax: 30,
+  requiredAuthority: 'OFFICIAL',
+  question: (ctx) => `Sarà pubblicato un comunicato stampa su ${ctx.authorityHost} riguardo ${ctx.topic || ctx.entityA || 'questo evento'} entro ${ctx.closesAt.toLocaleDateString('it-IT')}?`,
+  resolutionCriteria: (ctx) => ({
+    yes: `Comunicato stampa pubblicato su ${ctx.authorityHost} entro ${ctx.closesAt.toLocaleDateString('it-IT')}`,
+    no: `Nessun comunicato stampa su ${ctx.authorityHost} entro ${ctx.closesAt.toLocaleDateString('it-IT')}`,
+  }),
+  bannedPhrases: ['accadrà', 'si verificherà', 'sarà confermato', 'probabile'],
+};
+
+/** Un solo template universal fallback (no 3 varianti banali) */
+const UNIVERSAL_FALLBACK_TEMPLATE: EventTemplate = {
+  id: 'universal-fallback',
+  category: 'News',
+  horizonDaysMin: 1,
+  horizonDaysMax: 30,
+  requiredAuthority: 'REPUTABLE',
+  question: (ctx) => `Sarà pubblicato o comunicato ufficialmente qualcosa su ${ctx.authorityHost} riguardo ${ctx.topic || ctx.entityA || 'questo evento'} entro ${ctx.closesAt.toLocaleDateString('it-IT')}?`,
+  resolutionCriteria: (ctx) => ({
+    yes: `Contenuto ufficiale pubblicato su ${ctx.authorityHost} entro ${ctx.closesAt.toLocaleDateString('it-IT')}`,
+    no: `Nessuna pubblicazione ufficiale su ${ctx.authorityHost} entro ${ctx.closesAt.toLocaleDateString('it-IT')}`,
+  }),
+  bannedPhrases: ['accadrà', 'si verificherà', 'sarà confermato', 'probabile'],
+};
+
+/**
+ * Restituisce un template specifico per host (se applicabile), altrimenti null.
+ */
+export function getSpecificTemplateForHost(
+  host: string,
+  authorityType: 'OFFICIAL' | 'REPUTABLE'
+): EventTemplate | null {
+  const h = host.toLowerCase();
+  const category = getCategoryFromHost(host);
+  if (category === 'Economia' && (/^ir\.|sec\.gov|investor|\.ir\./i.test(h) || h.includes('investor'))) {
+    return EARNINGS_IR_TEMPLATE; // OFFICIAL o REPUTABLE (IR pages)
+  }
+  if (category === 'Sport' && /uefa|fifa|lega|figc|olympics/.test(h)) {
+    if (authorityType === 'OFFICIAL') return SPORT_OFFICIAL_TEMPLATE;
+  }
+  if (category === 'Politica' && (h.endsWith('.gov.it') || h === 'governo.it')) {
+    if (authorityType === 'OFFICIAL') return GOV_PRESS_TEMPLATE;
+  }
+  return null;
+}
+
+export function getUniversalFallbackTemplate(): EventTemplate {
+  return UNIVERSAL_FALLBACK_TEMPLATE;
+}
 
 // ============================================================================
 // SPORT (5 template)
@@ -629,6 +729,12 @@ const INTRATTENIMENTO_TEMPLATES: EventTemplate[] = [
 ];
 
 // ============================================================================
+// NEWS (solo fallback)
+// ============================================================================
+
+const NEWS_TEMPLATES: EventTemplate[] = [UNIVERSAL_FALLBACK_TEMPLATE];
+
+// ============================================================================
 // EXPORT CATALOG
 // ============================================================================
 
@@ -640,6 +746,7 @@ export const TEMPLATE_CATALOG: EventTemplate[] = [
   ...CULTURA_TEMPLATES,
   ...SCIENZA_TEMPLATES,
   ...INTRATTENIMENTO_TEMPLATES,
+  ...NEWS_TEMPLATES,
 ];
 
 /**

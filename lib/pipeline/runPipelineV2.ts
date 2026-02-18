@@ -17,7 +17,9 @@ import {
   scoreCandidates,
   dedupCandidates,
   selectCandidates,
+  selectCandidatesWithInfo,
   publishSelected,
+  computeDedupKey,
   type PublishResult,
   type ScoredCandidate,
 } from '../event-publishing';
@@ -55,7 +57,20 @@ export interface PipelineDebugInfo {
     authorityHost: string;
     templateId: string;
     storylineId: string;
+    dedupKey?: string;
   }>;
+  clustersLoadedCount?: number;
+  clustersAfterLookbackCount?: number;
+  storylineExclusionReasons?: Record<string, number>;
+  openEventsCount?: number;
+  targetOpenEvents?: number;
+  need?: number;
+  duplicatesInDBCount?: number;
+  duplicatesInRunCount?: number;
+  candidateRejectionReasons?: Record<string, number>;
+  templateIdDistribution?: Record<string, number>;
+  categoryDistribution?: Record<string, number>;
+  zeroSelectedReason?: string;
 }
 
 /**
@@ -103,21 +118,24 @@ export async function runPipelineV2(
     }
 
     // Step 1: Get eligible storylines
-    const eligible = await getEligibleStorylines({
+    const storylineResult = await getEligibleStorylines({
       prisma,
       now,
       lookbackHours: 168, // 7 giorni
     });
+    const eligible = storylineResult.eligible;
     result.eligibleStorylinesCount = eligible.length;
     debugInfo.eligibleStorylinesCount = eligible.length;
+    debugInfo.clustersLoadedCount = storylineResult.clustersLoadedCount;
+    debugInfo.clustersAfterLookbackCount = storylineResult.clustersLoadedCount;
+    debugInfo.storylineExclusionReasons = storylineResult.exclusionReasons;
 
     if (debug && eligible.length > 0) {
-      // Sample eligible storylines (max 5)
       const sample = eligible.slice(0, 5).map(s => ({
         id: s.id,
         signalsCount: s.articleCount,
-        authorityType: s.authority >= 80 ? 'OFFICIAL' : s.authority >= 50 ? 'REPUTABLE' : 'UNKNOWN',
-        authorityHost: 'N/A', // Will be filled from articles if needed
+        authorityType: s.authorityType,
+        authorityHost: s.authorityHost,
         momentum: s.momentum,
         novelty: s.novelty,
       }));
@@ -132,15 +150,26 @@ export async function runPipelineV2(
     }
 
     // Step 2: Generate candidates
-    const candidates = await generateEventsFromEligibleStorylines({
+    const genResult = await generateEventsFromEligibleStorylines({
       prisma,
       now,
       eligible,
     });
+    const candidates = genResult.candidates;
     result.candidatesCount = candidates.length;
-    result.verifiedCandidatesCount = candidates.length; // Assumiamo che siano già verificati da BLOCCO 4
+    result.verifiedCandidatesCount = candidates.length;
     debugInfo.candidatesGeneratedCount = candidates.length;
     debugInfo.verifiedCandidatesCount = candidates.length;
+    debugInfo.candidateRejectionReasons = genResult.rejectionReasons;
+
+    const templateIdDistribution: Record<string, number> = {};
+    const categoryDistribution: Record<string, number> = {};
+    for (const c of candidates) {
+      templateIdDistribution[c.templateId] = (templateIdDistribution[c.templateId] ?? 0) + 1;
+      categoryDistribution[c.category] = (categoryDistribution[c.category] ?? 0) + 1;
+    }
+    debugInfo.templateIdDistribution = templateIdDistribution;
+    debugInfo.categoryDistribution = categoryDistribution;
 
     if (candidates.length === 0) {
       if (debug) {
@@ -177,9 +206,31 @@ export async function runPipelineV2(
 
     const scored = scoreCandidates(candidatesWithStats, storylineStatsMap);
 
-    // Debug: top 10 candidates
+    const top10 = [...scored].sort((a, b) => b.score - a.score).slice(0, 10);
+    debugInfo.sampleCandidates = top10.map(c => {
+      let dedupKey: string | undefined;
+      try {
+        dedupKey = computeDedupKey({
+          title: c.title,
+          closesAt: c.closesAt,
+          resolutionAuthorityHost: c.resolutionAuthorityHost,
+        });
+      } catch {
+        dedupKey = undefined;
+      }
+      return {
+        title: c.title,
+        score: c.score,
+        category: c.category,
+        closesAt: c.closesAt.toISOString(),
+        authorityHost: c.resolutionAuthorityHost,
+        templateId: c.templateId,
+        storylineId: c.sourceStorylineId,
+        dedupKey,
+      };
+    });
+
     if (debug) {
-      const top10 = [...scored].sort((a, b) => b.score - a.score).slice(0, 10);
       console.log('[Pipeline V2] Top 10 candidates:');
       top10.forEach((c, i) => {
         console.log(
@@ -188,36 +239,33 @@ export async function runPipelineV2(
           `A:${c.scoreBreakdown.authority} C:${c.scoreBreakdown.clarity})`
         );
       });
-
-      // Sample candidates (max 5)
-      const sample = top10.slice(0, 5).map(c => ({
-        title: c.title,
-        score: c.score,
-        category: c.category,
-        closesAt: c.closesAt.toISOString(),
-        authorityHost: c.resolutionAuthorityHost,
-        templateId: c.templateId,
-        storylineId: c.sourceStorylineId,
-      }));
-      debugInfo.sampleCandidates = sample;
     }
 
     // Step 4: Dedup candidates
     const { deduped, reasonsCount: dedupReasons } = await dedupCandidates(prisma, scored);
     result.dedupedCandidatesCount = deduped.length;
     debugInfo.dedupedCandidatesCount = deduped.length;
+    debugInfo.duplicatesInDBCount = dedupReasons.DUPLICATE_IN_DB ?? 0;
+    debugInfo.duplicatesInRunCount = dedupReasons.DUPLICATE_IN_RUN ?? 0;
     Object.assign(result.reasonsCount, dedupReasons);
 
-    // Step 5: Select candidates
-    const selected = await selectCandidates(prisma, deduped, now);
+    // Step 5: Select candidates (selection logs open/target and returns need)
+    const selectionInfo = await selectCandidatesWithInfo(prisma, deduped, now);
+    const selected = selectionInfo.selected;
     result.selectedCount = selected.length;
     debugInfo.selectedCount = selected.length;
+    debugInfo.openEventsCount = selectionInfo.openEventsCount;
+    debugInfo.targetOpenEvents = selectionInfo.targetOpenEvents;
+    debugInfo.need = selectionInfo.need;
 
     if (selected.length === 0) {
+      if (selectionInfo.need === 0) debugInfo.zeroSelectedReason = 'need==0 (target already reached)';
+      else if (scored.length === 0) debugInfo.zeroSelectedReason = 'candidates==0';
+      else if (deduped.length === 0) debugInfo.zeroSelectedReason = 'all_deduped';
+      else debugInfo.zeroSelectedReason = 'caps_or_sort';
       if (debug) {
-        console.log('[Pipeline V2] Nessun candidato selezionato (target già raggiunto o caps)');
+        console.log('[Pipeline V2] Nessun candidato selezionato:', debugInfo.zeroSelectedReason);
       }
-      // Collect top rejection reasons
       const topReasons = Object.entries(result.reasonsCount)
         .sort(([, a], [, b]) => (b as number) - (a as number))
         .slice(0, 10)

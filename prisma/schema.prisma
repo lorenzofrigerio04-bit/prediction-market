@@ -106,7 +106,7 @@ model Event {
   resolutionTimeExpected DateTime?
   // Campi per BLOCCO 5 (Event Publishing)
   status                String    @default("OPEN") // OPEN, CLOSED, RESOLVED
-  dedupKey              String?   @unique // Chiave deterministica per deduplicazione
+  dedupKey              String    @unique // Chiave deterministica per deduplicazione (obbligatorio)
   resolutionAuthorityHost String? // Host della fonte di risoluzione (es. "www.governo.it")
   resolutionAuthorityType String? // OFFICIAL | REPUTABLE
   resolutionCriteriaYes  String?  // Criterio formale per risoluzione YES

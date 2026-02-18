@@ -80,18 +80,17 @@ async function main() {
       });
     }
 
-    // Exit code based on results
+    // Exit code: 0 created = warning, non crash
     if (isDryRun) {
       console.log('\n[Pipeline V2 Debug] ✓ Dry-run completed');
       process.exit(0);
     } else {
       if (pipelineResult.createdCount > 0) {
         console.log('\n[Pipeline V2 Debug] ✓ Pipeline completed successfully');
-        process.exit(0);
       } else {
         console.log('\n[Pipeline V2 Debug] ⚠ No events created (check rejection reasons above)');
-        process.exit(1);
       }
+      process.exit(0);
     }
   } catch (error) {
     console.error('[Pipeline V2 Debug] Fatal error:', error);

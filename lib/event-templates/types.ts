@@ -12,7 +12,8 @@ export type Category =
   | "Tecnologia"
   | "Cultura"
   | "Scienza"
-  | "Intrattenimento";
+  | "Intrattenimento"
+  | "News";
 
 export type EventTemplate = {
   id: string;

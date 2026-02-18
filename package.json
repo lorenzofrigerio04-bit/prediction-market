@@ -31,7 +31,10 @@
     "ingest": "tsx scripts/ingest.ts",
     "pipeline:v2": "PIPELINE_DEBUG=true STORYLINE_DEBUG=true EVENT_GEN_DEBUG=true tsx scripts/pipeline-v2-debug.ts",
     "pipeline:v2:dry": "PIPELINE_DEBUG=true STORYLINE_DEBUG=true EVENT_GEN_DEBUG=true tsx scripts/pipeline-v2-debug.ts --dry",
+    "pipeline:audit": "PIPELINE_DEBUG=true STORYLINE_DEBUG=true EVENT_GEN_DEBUG=true tsx scripts/pipeline-audit.ts",
     "db:sanity": "tsx scripts/db-sanity.ts",
+    "db:dedup-audit": "tsx scripts/db-dedup-audit.ts",
+    "db:backfill-dedupkeys": "tsx scripts/backfill-dedupkeys.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

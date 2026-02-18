@@ -9,6 +9,12 @@ import { PrismaClient } from '@prisma/client';
 import type { EligibleStoryline } from '../storyline-engine';
 import { officialHosts, reputableHosts } from '../authority';
 import { computeClosesAt } from './closesAt';
+import {
+  getCategoryFromHost,
+  getSpecificTemplateForHost,
+  getUniversalFallbackTemplate,
+} from '../event-templates/catalog';
+import type { EventTemplate } from '../event-templates/types';
 
 export interface GeneratedEventCandidate {
   title: string;
@@ -32,7 +38,13 @@ export interface GenerateEventsFromEligibleStorylinesParams {
   eligible: EligibleStoryline[];
 }
 
+export interface GenerateEventsFromEligibleStorylinesResult {
+  candidates: GeneratedEventCandidate[];
+  rejectionReasons: Record<string, number>;
+}
+
 const DEBUG = process.env.EVENT_GEN_DEBUG === 'true';
+const MAX_CANDIDATES_PER_STORYLINE = 2; // 1 specifico + 1 universal fallback (mai 3 universal)
 
 /**
  * Estrae host da URL
@@ -61,46 +73,9 @@ function getAuthorityType(host: string): 'OFFICIAL' | 'REPUTABLE' {
   return 'REPUTABLE';
 }
 
-/**
- * Deriva categoria da titoli e host
- */
-function deriveCategory(titles: string[], host: string): string {
-  const allText = titles.join(' ').toLowerCase();
-  const hostLower = host.toLowerCase();
-
-  // Mapping host -> categoria
-  if (hostLower.includes('sport') || hostLower.includes('calcio') || hostLower.includes('football')) {
-    return 'Sport';
-  }
-  if (hostLower.includes('politica') || hostLower.includes('governo') || hostLower.includes('parlamento')) {
-    return 'Politica';
-  }
-  if (hostLower.includes('economia') || hostLower.includes('finanza') || hostLower.includes('borsa')) {
-    return 'Economia';
-  }
-  if (hostLower.includes('tech') || hostLower.includes('tecnologia')) {
-    return 'Tecnologia';
-  }
-  if (hostLower.includes('cultura') || hostLower.includes('cinema') || hostLower.includes('musica')) {
-    return 'Cultura';
-  }
-
-  // Keywords nei titoli
-  if (allText.includes('partita') || allText.includes('calcio') || allText.includes('sport')) {
-    return 'Sport';
-  }
-  if (allText.includes('elezioni') || allText.includes('governo') || allText.includes('politica')) {
-    return 'Politica';
-  }
-  if (allText.includes('borsa') || allText.includes('economia') || allText.includes('pil')) {
-    return 'Economia';
-  }
-  if (allText.includes('tech') || allText.includes('software') || allText.includes('ai')) {
-    return 'Tecnologia';
-  }
-
-  // Default
-  return 'News';
+/** Categoria da host (single source: catalog) */
+function deriveCategory(_titles: string[], host: string): string {
+  return getCategoryFromHost(host);
 }
 
 /**
@@ -120,25 +95,36 @@ function extractMainEntity(title: string): string {
   return words[0] || 'evento';
 }
 
-/**
- * Genera titolo evento da storyline
- */
-function generateEventTitle(mainTitle: string, category: string): string {
-  const entity = extractMainEntity(mainTitle);
-  
-  // Template semplice: "L'entità [azione] entro [tempo]?"
-  // Per ora usiamo un template universale
-  const templates = [
-    `${entity} si verificherà entro fine mese?`,
-    `${entity} accadrà entro fine settimana?`,
-    `${entity} sarà confermato entro fine settimana?`,
-  ];
-  
-  // Scegli template basato su hash del titolo per determinismo
-  const hash = mainTitle.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const template = templates[hash % templates.length];
-  
-  return template;
+/** Crea un candidate da template catalog (titolo verificabile, no "accadrà/si verificherà/sarà confermato") */
+function buildCandidateFromTemplate(
+  template: EventTemplate,
+  ctx: { storylineId: string; authorityType: 'OFFICIAL' | 'REPUTABLE'; authorityHost: string; entityA?: string; topic?: string; closesAt: Date },
+  mainTitle: string,
+  storyline: EligibleStoryline
+): GeneratedEventCandidate {
+  const closesAt = computeClosesAt(
+    template.horizonDaysMin,
+    template.horizonDaysMax,
+    storyline.momentum / 100,
+    new Date()
+  );
+  const ctxWithDate = { ...ctx, closesAt };
+  const question = template.question(ctxWithDate);
+  const criteria = template.resolutionCriteria(ctxWithDate);
+  return {
+    title: question,
+    description: mainTitle,
+    category: template.category,
+    closesAt,
+    resolutionAuthorityHost: ctx.authorityHost,
+    resolutionAuthorityType: ctx.authorityType,
+    resolutionCriteriaYes: criteria.yes,
+    resolutionCriteriaNo: criteria.no,
+    sourceStorylineId: ctx.storylineId,
+    templateId: template.id,
+    momentum: storyline.momentum,
+    novelty: storyline.novelty,
+  };
 }
 
 /**
@@ -177,16 +163,15 @@ function verifyCandidate(candidate: GeneratedEventCandidate): { ok: boolean; rea
 }
 
 /**
- * Genera candidati eventi da storyline elegibili.
- * 
- * @param params Parametri per la generazione
- * @returns Array di candidati eventi verificati
+ * Genera candidati eventi da storyline elegibili (fino a 3 per storyline).
+ * authorityHost è sempre dall'URL dell'articolo, mai placeholder "event".
  */
 export async function generateEventsFromEligibleStorylines(
   params: GenerateEventsFromEligibleStorylinesParams
-): Promise<GeneratedEventCandidate[]> {
+): Promise<GenerateEventsFromEligibleStorylinesResult> {
   const { prisma, now, eligible } = params;
   const candidates: GeneratedEventCandidate[] = [];
+  const rejectionReasons: Record<string, number> = {};
 
   if (DEBUG) {
     console.log(`[Event Generation V2] Processing ${eligible.length} eligible storylines`);
@@ -194,90 +179,74 @@ export async function generateEventsFromEligibleStorylines(
 
   for (const storyline of eligible) {
     try {
-      // Carica cluster con articoli
       const cluster = await prisma.sourceCluster.findUnique({
         where: { id: storyline.clusterId },
         include: {
-          articles: {
-            take: 5, // Prendi i primi 5 articoli
-            orderBy: { fetchedAt: 'desc' },
-          },
+          articles: { take: 10, orderBy: { fetchedAt: 'desc' } },
         },
       });
 
       if (!cluster || cluster.articles.length === 0) {
-        if (DEBUG) {
-          console.log(`[Event Generation V2] Cluster ${storyline.clusterId} has no articles`);
-        }
+        if (DEBUG) console.log(`[Event Generation V2] Cluster ${storyline.clusterId} has no articles`);
         continue;
       }
 
-      // Estrai informazioni dagli articoli
       const titles = cluster.articles.map(a => a.title);
       const mainTitle = titles[0] || '';
-      const mainArticle = cluster.articles[0];
-      const host = extractHost(mainArticle.canonicalUrl);
-      
-      if (!host) {
-        if (DEBUG) {
-          console.log(`[Event Generation V2] Cluster ${storyline.clusterId} has invalid URL`);
+      let host = '';
+      let mainArticle = cluster.articles[0];
+      for (const a of cluster.articles) {
+        const h = extractHost(a.canonicalUrl);
+        if (h && h !== 'event') {
+          host = h;
+          mainArticle = a;
+          break;
         }
+      }
+      if (!host) {
+        if (DEBUG) console.log(`[Event Generation V2] Cluster ${storyline.clusterId} no article with valid host (skip placeholder "event")`);
         continue;
       }
 
-      // Determina authority type
-      const authorityType = getAuthorityType(host);
-      
-      // Deriva categoria
+      const authorityType = storyline.authorityType ?? getAuthorityType(host);
       const category = deriveCategory(titles, host);
-      
-      // Genera titolo evento
-      const eventTitle = generateEventTitle(mainTitle, category);
-      
-      // Calcola closesAt (7 giorni da ora per default)
-      const horizonDays = storyline.momentum > 50 ? 3 : 7; // Momentum alto = closes più vicino
-      const closesAt = computeClosesAt(horizonDays, horizonDays + 3, storyline.momentum / 100, now);
-      
-      // Genera criteria
-      const entity = extractMainEntity(mainTitle);
-      const resolutionCriteriaYes = `L'evento "${entity}" si verifica come descritto nelle fonti ufficiali entro ${closesAt.toLocaleDateString('it-IT')}.`;
-      const resolutionCriteriaNo = `L'evento "${entity}" non si verifica come descritto nelle fonti ufficiali entro ${closesAt.toLocaleDateString('it-IT')}.`;
-
-      // Crea candidato
-      const candidate: GeneratedEventCandidate = {
-        title: eventTitle,
-        description: mainTitle,
-        category,
-        closesAt,
-        resolutionAuthorityHost: host,
-        resolutionAuthorityType: authorityType,
-        resolutionCriteriaYes,
-        resolutionCriteriaNo,
-        sourceStorylineId: storyline.clusterId,
-        templateId: 'universal-v1',
-        momentum: storyline.momentum,
-        novelty: storyline.novelty,
+      const entityA = extractMainEntity(mainTitle);
+      const ctx = {
+        storylineId: storyline.clusterId,
+        authorityType,
+        authorityHost: host,
+        entityA,
+        topic: undefined as string | undefined,
+        closesAt: now,
       };
 
-      // Verifica candidato
-      const verification = verifyCandidate(candidate);
-      if (!verification.ok) {
-        if (DEBUG) {
-          console.log(`[Event Generation V2] Candidate rejected: ${verification.reason}`);
+      let added = 0;
+      const specificTemplate = getSpecificTemplateForHost(host, authorityType);
+      if (specificTemplate && added < MAX_CANDIDATES_PER_STORYLINE) {
+        const candidate = buildCandidateFromTemplate(specificTemplate, ctx, mainTitle, storyline);
+        const verification = verifyCandidate(candidate);
+        if (verification.ok) {
+          candidates.push(candidate);
+          added++;
+          if (DEBUG) console.log(`[Event Generation V2] Generated candidate (specific): ${candidate.title.slice(0, 50)}... template=${candidate.templateId}`);
+        } else {
+          rejectionReasons[verification.reason ?? 'unknown'] = (rejectionReasons[verification.reason ?? 'unknown'] ?? 0) + 1;
         }
-        continue;
       }
-
-      candidates.push(candidate);
-
-      if (DEBUG) {
-        console.log(`[Event Generation V2] Generated candidate: ${eventTitle}`);
+      // Universal SOLO come fallback: se non abbiamo aggiunto un specifico
+      if (added === 0) {
+        const fallback = getUniversalFallbackTemplate();
+        const candidate = buildCandidateFromTemplate(fallback, ctx, mainTitle, storyline);
+        const verification = verifyCandidate(candidate);
+        if (verification.ok) {
+          candidates.push(candidate);
+          if (DEBUG) console.log(`[Event Generation V2] Generated candidate (fallback): ${candidate.title.slice(0, 50)}...`);
+        } else {
+          rejectionReasons[verification.reason ?? 'unknown'] = (rejectionReasons[verification.reason ?? 'unknown'] ?? 0) + 1;
+        }
       }
     } catch (error) {
-      if (DEBUG) {
-        console.error(`[Event Generation V2] Error processing storyline ${storyline.clusterId}:`, error);
-      }
-      continue;
+      if (DEBUG) console.error(`[Event Generation V2] Error processing storyline ${storyline.clusterId}:`, error);
     }
   }
 
@@ -285,5 +254,5 @@ export async function generateEventsFromEligibleStorylines(
     console.log(`[Event Generation V2] Generated ${candidates.length} candidates from ${eligible.length} storylines`);
   }
 
-  return candidates;
+  return { candidates, rejectionReasons };
 }

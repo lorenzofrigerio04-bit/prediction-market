@@ -63,8 +63,8 @@ export function filterStorylines(
       continue;
     }
 
-    // Rule 5: Authority must exist (brutal rule)
-    if (!authority) {
+    // Rule 5: Authority must be OFFICIAL or REPUTABLE (no UNKNOWN/NONE)
+    if (!authority || (authority.type as string) === 'UNKNOWN' || (authority.type as string) === 'NONE') {
       continue;
     }
 

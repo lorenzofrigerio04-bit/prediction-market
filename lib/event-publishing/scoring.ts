@@ -42,13 +42,25 @@ export function scoreCandidate(
   // D) ClarityScore (0..100)
   const clarityScore = calculateClarityScore(candidate);
 
-  // Final score: weighted average
-  const score = Math.round(
+  let score = Math.round(
     0.4 * momentumScore +
     0.2 * noveltyScore +
     0.2 * authorityScore +
     0.2 * clarityScore
   );
+
+  // Penalty template universal (anti-banalità)
+  const universalIds = ['universal-v1', 'universal-v2', 'universal-v3'];
+  if (universalIds.includes(candidate.templateId)) {
+    score -= 20;
+  }
+  // Penalty titoli banali (hard)
+  const banalPhrases = ['accadrà', 'si verificherà', 'sarà confermato'];
+  const titleLower = candidate.title.toLowerCase();
+  if (banalPhrases.some((p) => titleLower.includes(p))) {
+    score -= 40;
+  }
+  score = Math.max(0, Math.min(100, score));
 
   return {
     ...candidate,
