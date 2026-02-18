@@ -104,6 +104,15 @@ model Event {
   p_init                Float?
   realWorldEventTime    DateTime?
   resolutionTimeExpected DateTime?
+  // Campi per BLOCCO 5 (Event Publishing)
+  status                String    @default("OPEN") // OPEN, CLOSED, RESOLVED
+  dedupKey              String?   @unique // Chiave deterministica per deduplicazione
+  resolutionAuthorityHost String? // Host della fonte di risoluzione (es. "www.governo.it")
+  resolutionAuthorityType String? // OFFICIAL | REPUTABLE
+  resolutionCriteriaYes  String?  // Criterio formale per risoluzione YES
+  resolutionCriteriaNo   String?  // Criterio formale per risoluzione NO
+  sourceStorylineId      String?  // ID della storyline sorgente (da BLOCCO 3)
+  templateId             String?   // ID del template usato per generazione
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @default(now()) @updatedAt
 
@@ -117,6 +126,9 @@ model Event {
   @@index([closesAt])
   @@index([resolved])
   @@index([category])
+  @@index([status])
+  @@index([dedupKey])
+  @@index([sourceStorylineId])
   @@map("events")
 }
 
@@ -332,4 +344,58 @@ model Season {
   @@index([startAt])
   @@index([endAt])
   @@map("seasons")
+}
+
+// Ingestion models per Source Mesh Deterministico
+model SourceArticle {
+  id            String   @id @default(cuid())
+  canonicalUrl  String   @unique
+  sourceType    String   // NEWSAPI | RSS_MEDIA | RSS_OFFICIAL | CALENDAR_SPORT | CALENDAR_EARNINGS
+  sourceId      String?  // ID specifico della fonte (feed URL, calendar name, etc.)
+  title         String
+  content       String?  // Testo estratto (opzionale, solo per clustering)
+  publishedAt   DateTime?
+  fetchedAt     DateTime @default(now())
+  rawData       String   // JSON con dati originali
+  clusterId     String?  // ID del cluster Jaccard
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  cluster       SourceCluster? @relation(fields: [clusterId], references: [id])
+  
+  @@index([sourceType])
+  @@index([canonicalUrl])
+  @@index([clusterId])
+  @@index([fetchedAt])
+  @@map("source_articles")
+}
+
+model SourceCluster {
+  id            String   @id @default(cuid())
+  jaccardScore  Float    // Score medio del cluster
+  articleCount  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  articles      SourceArticle[]
+  
+  @@index([jaccardScore])
+  @@map("source_clusters")
+}
+
+model IngestionLog {
+  id              String   @id @default(cuid())
+  sourceType      String
+  articlesFetched Int      @default(0)
+  articlesNew     Int      @default(0)
+  articlesDeduped Int      @default(0)
+  clustersCreated Int      @default(0)
+  durationMs      Int
+  success         Boolean
+  errorMessage    String?
+  createdAt       DateTime @default(now())
+  
+  @@index([sourceType])
+  @@index([createdAt])
+  @@map("ingestion_logs")
 }
