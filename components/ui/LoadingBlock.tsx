@@ -6,7 +6,7 @@ interface LoadingBlockProps {
 }
 
 export default function LoadingBlock({
-  message = "Caricamento...",
+  message = "Caricamento…",
   className = "",
 }: LoadingBlockProps) {
   return (

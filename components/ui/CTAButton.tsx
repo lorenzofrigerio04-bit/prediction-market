@@ -3,7 +3,7 @@
 import { ReactNode, ButtonHTMLAttributes } from "react";
 import Link from "next/link";
 
-type Variant = "primary" | "secondary";
+type Variant = "primary" | "secondary" | "ghost";
 
 interface BaseProps {
   children: ReactNode;
@@ -27,13 +27,15 @@ interface ButtonAsLink extends BaseProps {
 type CTAButtonProps = ButtonAsButton | ButtonAsLink;
 
 const baseClasses =
-  "inline-flex items-center justify-center min-h-[48px] px-6 py-3 rounded-2xl font-semibold text-ds-body-sm transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:ring-primary ds-tap-target ds-btn-hover active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:active:scale-100";
+  "inline-flex items-center justify-center min-h-[44px] px-6 py-3 rounded-xl font-semibold text-ds-body-sm transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:ring-primary ds-tap-target ds-btn-hover active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:active:scale-100";
 
 const variantClasses: Record<Variant, string> = {
   primary:
     "bg-primary text-white hover:bg-primary-hover border border-white/20 shadow-[0_0_24px_-6px_rgba(var(--primary-glow),0.45)] hover:shadow-[0_0_32px_-4px_rgba(var(--primary-glow),0.55)] focus-visible:ring-primary disabled:bg-primary/60 disabled:shadow-none disabled:border-white/10",
   secondary:
-    "glass border border-border dark:border-white/10 text-text-primary hover:border-primary/25 hover:bg-surface/50 hover:shadow-[0_0_16px_-6px_rgba(var(--primary-glow),0.15)] focus-visible:ring-primary disabled:text-text-muted disabled:border-border disabled:hover:bg-transparent disabled:hover:shadow-none",
+    "glass border border-white/10 text-fg hover:border-primary/25 hover:bg-white/5 hover:shadow-[0_0_16px_-6px_rgba(var(--primary-glow),0.15)] focus-visible:ring-primary disabled:text-fg-subtle disabled:border-white/10 disabled:hover:bg-transparent disabled:hover:shadow-none",
+  ghost:
+    "bg-transparent border-transparent text-fg-muted hover:text-fg hover:bg-white/5 focus-visible:ring-primary disabled:text-fg-subtle",
 };
 
 export default function CTAButton({

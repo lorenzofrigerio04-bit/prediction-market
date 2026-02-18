@@ -80,7 +80,7 @@ module.exports = {
         'ds-micro': ['0.75rem', { lineHeight: '1.4', letterSpacing: '0.03em' }],
         'ds-caption': ['0.6875rem', { lineHeight: '1.35', letterSpacing: '0.03em' }],
       },
-      /* Design system: spacing (align with CSS vars) */
+      /* Design system: spacing (4px base; section 24px mobile, 32px desktop) */
       spacing: {
         'page-x': '1rem',
         'page-y': '1.25rem',

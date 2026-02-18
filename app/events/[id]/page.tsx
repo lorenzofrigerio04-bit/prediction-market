@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -87,6 +87,15 @@ export default function EventDetailPage({
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [showStickyCta, setShowStickyCta] = useState(false);
+  const mainRef = useRef<HTMLElement | null>(null);
+
+  const canMakePrediction =
+    !!event &&
+    !event.resolved &&
+    new Date(event.closesAt) > new Date() &&
+    !userPrediction &&
+    !!session;
 
   useEffect(() => {
     if (params?.id) {
@@ -207,14 +216,35 @@ export default function EventDetailPage({
       return "Chiuso";
     }
     if (daysUntilClose > 0) {
-      return `${daysUntilClose} ${daysUntilClose === 1 ? "giorno" : "giorni"}`;
-    } else if (hoursUntilClose > 0) {
-      return `${hoursUntilClose} ${hoursUntilClose === 1 ? "ora" : "ore"}`;
-    } else {
-      const minutesUntilClose = Math.floor(timeUntilClose / (1000 * 60));
-      return `${minutesUntilClose} ${minutesUntilClose === 1 ? "minuto" : "minuti"}`;
+      return `${daysUntilClose}g ${hoursUntilClose % 24}h`;
     }
+    if (hoursUntilClose > 0) {
+      return `${hoursUntilClose} ore`;
+    }
+    const minutesUntilClose = Math.floor(timeUntilClose / (1000 * 60));
+    return minutesUntilClose > 0 ? `${minutesUntilClose} min` : "Presto";
   };
+
+  const stickyCtaObserverRef = useRef<IntersectionObserver | null>(null);
+  useEffect(() => {
+    if (!canMakePrediction) return;
+    const id = requestAnimationFrame(() => {
+      const main = mainRef.current;
+      if (!main) return;
+      const cta = main.querySelector("[data-event-detail-cta]");
+      if (!cta) return;
+      stickyCtaObserverRef.current = new IntersectionObserver(
+        ([e]) => setShowStickyCta(!e.isIntersecting),
+        { threshold: 0, rootMargin: "-80px 0px 0px 0px" }
+      );
+      stickyCtaObserverRef.current.observe(cta);
+    });
+    return () => {
+      cancelAnimationFrame(id);
+      stickyCtaObserverRef.current?.disconnect();
+      stickyCtaObserverRef.current = null;
+    };
+  }, [event?.id, canMakePrediction]);
 
   if (loading) {
     return (
@@ -249,16 +279,10 @@ export default function EventDetailPage({
     );
   }
 
-  const canMakePrediction =
-    !event.resolved &&
-    new Date(event.closesAt) > new Date() &&
-    !userPrediction &&
-    session;
-
   return (
     <div className="min-h-screen bg-bg">
       <Header />
-      <main className="mx-auto px-4 py-5 md:py-8 max-w-2xl pb-8">
+      <main ref={mainRef} className="mx-auto px-4 py-5 md:py-8 max-w-2xl pb-8 md:pb-24">
         <BackLink
           href="/"
           className="inline-flex items-center min-h-[44px] text-text-muted hover:text-fg mb-4 rounded-2xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
@@ -290,9 +314,10 @@ export default function EventDetailPage({
             )}
           </div>
 
-          <h1 className="text-ds-h2 font-bold text-fg mb-3 leading-snug tracking-title">
+          <h1 className="text-ds-h2 font-bold text-fg mb-2 leading-snug tracking-title">
             {getDisplayTitle(event.title, debugMode)}
           </h1>
+          <p className="text-ds-body-sm text-fg-muted mb-4">Scegli SI o NO e la quantità di crediti.</p>
 
           <div className="flex flex-wrap items-center gap-2 mb-4">
             {session && (
@@ -453,10 +478,11 @@ export default function EventDetailPage({
           {canMakePrediction && (
             <button
               type="button"
+              data-event-detail-cta
               onClick={() => setShowPredictionModal(true)}
-              className="w-full min-h-[52px] py-4 rounded-2xl font-semibold text-ds-body text-white bg-primary hover:bg-primary-hover transition-all duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary focus-visible:ring-offset-bg border border-white/20 shadow-[0_0_28px_-6px_rgba(var(--primary-glow),0.5)] hover:shadow-[0_0_36px_-4px_rgba(var(--primary-glow),0.6)] hover:border-white/30"
+              className="w-full min-h-[48px] py-3 rounded-xl font-semibold text-ds-body-sm text-white bg-primary hover:bg-primary-hover transition-all duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary focus-visible:ring-offset-bg border border-white/20 shadow-[0_0_28px_-6px_rgba(var(--primary-glow),0.5)] hover:shadow-[0_0_36px_-4px_rgba(var(--primary-glow),0.6)] hover:border-white/30"
             >
-              Fai una Previsione
+              Prevedi
             </button>
           )}
 
@@ -474,6 +500,21 @@ export default function EventDetailPage({
 
         <CommentsSection eventId={event.id} />
       </main>
+
+      {canMakePrediction && showStickyCta && (
+        <div
+          className="md:hidden fixed left-0 right-0 z-30 px-4 pt-3 pb-[calc(0.75rem+72px+var(--safe-area-inset-bottom))] bg-bg/95 backdrop-blur-md border-t border-white/10"
+          style={{ paddingBottom: "calc(0.75rem + 72px + var(--safe-area-inset-bottom))" }}
+        >
+          <button
+            type="button"
+            onClick={() => setShowPredictionModal(true)}
+            className="w-full min-h-[48px] py-3 rounded-xl font-semibold text-ds-body-sm text-white bg-primary hover:bg-primary-hover border border-white/20 shadow-[0_0_28px_-6px_rgba(var(--primary-glow),0.5)]"
+          >
+            Prevedi
+          </button>
+        </div>
+      )}
 
       {showPredictionModal && (
         <PredictionModal

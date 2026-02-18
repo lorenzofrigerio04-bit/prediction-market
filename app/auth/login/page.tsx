@@ -9,8 +9,8 @@ import Header from "@/components/Header";
 const ERROR_MESSAGES: Record<string, string> = {
   OAuthAccountNotLinked:
     "Questa email è già usata con un altro metodo di accesso. Accedi con email e password oppure usa sempre lo stesso metodo (solo Google o solo email).",
-  CredentialsSignin: "Credenziali non valide",
-  Default: "Si è verificato un errore durante l'accesso. Riprova.",
+  CredentialsSignin: "Email o password non corretti. Riprova.",
+  Default: "Qualcosa è andato storto. Riprova tra poco.",
 };
 
 export default function LoginPage() {
@@ -51,7 +51,7 @@ export default function LoginPage() {
         return;
       }
       if (!result?.ok) {
-        setError("Accesso non riuscito. Riprova.");
+        setError("Email o password non corretti. Riprova.");
         setIsLoading(false);
         return;
       }
@@ -68,7 +68,7 @@ export default function LoginPage() {
       window.location.href = "/auth/success?callbackUrl=/";
     } catch (err: any) {
       console.error('[LoginPage] Errore durante signIn:', err);
-      const errorMsg = err?.message || err?.toString() || "Si è verificato un errore. Riprova.";
+      const errorMsg = err?.message || err?.toString() || "Qualcosa è andato storto. Riprova tra poco.";
       setError(errorMsg);
       setIsLoading(false);
     }
@@ -93,7 +93,7 @@ export default function LoginPage() {
         </p>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-600 dark:text-red-400 text-sm">
+          <div className="mb-4 p-3 bg-danger-bg/50 border border-danger/30 rounded-xl text-danger text-ds-body-sm">
             {error}
             <p className="mt-2 text-xs">
               Se il problema persiste, apri{" "}

@@ -92,13 +92,13 @@
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
 }
 
-/* —— Semantic palette: dark theme (più morbido, meno cupo) —— */
+/* —— Semantic palette: dark theme only (UI spec: lighter, digestible) —— */
 .dark {
-  --background-primary: 22 25 35;
-  --background-secondary: 30 33 45;
+  --background-primary: 24 27 38;
+  --background-secondary: 18 21 30;
   --bg: var(--background-primary);
   --surface: 255 255 255;
-  --surface-o: 0.07;
+  --surface-o: 0.08;
   --surface-elevated: 255 255 255;
   --surface-elevated-o: 0.12;
   --text-primary: 248 250 252;
@@ -127,7 +127,7 @@
   --danger: 248 113 113;
   --danger-bg: 127 29 29;
   --danger-bg-o: 0.45;
-  /* Prediction block SI/NO: gradienti soft (dark) — teal e coral con glow */
+  /* Prediction SI/NO: keep contrast and readability */
   --prediction-si-from: 45 212 191;
   --prediction-si-to: 20 184 166;
   --prediction-si-text: 94 234 212;
@@ -154,6 +154,7 @@ body {
   color: rgb(var(--fg));
   background: rgb(var(--bg));
   font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 1rem; /* min 16px for readability (UI spec) */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   padding-bottom: calc(72px + var(--safe-area-inset-bottom));
@@ -220,6 +221,14 @@ textarea:focus-visible {
 /* —— Numeri: tabular-nums per crediti, percentuali, ranking —— */
 .font-numeric {
   font-variant-numeric: tabular-nums;
+}
+
+/* —— Timer / countdown: tabular-nums + subtle "closing soon" color —— */
+.timer-countdown {
+  font-variant-numeric: tabular-nums;
+}
+.timer-closing-soon {
+  color: rgb(var(--warning));
 }
 
 @layer utilities {

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import ThemeToggle from "./ThemeToggle";
 import SideDrawer from "./SideDrawer";
 import {
   IconChart,
@@ -76,7 +75,6 @@ export default function Header() {
             </nav>
 
             <div className="flex items-center gap-2">
-              <ThemeToggle className="header-icon-btn min-w-[44px] min-h-[44px] text-fg-muted" />
               <button
                 type="button"
                 onClick={() => setDrawerOpen(true)}

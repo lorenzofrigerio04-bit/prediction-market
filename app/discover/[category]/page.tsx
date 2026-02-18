@@ -182,11 +182,7 @@ export default function DiscoverCategoryPage() {
 
         <PageHeader
           title={pageTitle}
-          description={
-            categoryName
-              ? `Eventi nella categoria ${categoryName}. Filtra e ordina come preferisci.`
-              : "Tutti gli eventi. Cerca, filtra e ordina."
-          }
+          description="Prevedi e scala la classifica."
         />
 
         <div className="mb-6 flex flex-col gap-4">
@@ -258,7 +254,7 @@ export default function DiscoverCategoryPage() {
 
         {error ? (
           <EmptyState
-            title="Errore di caricamento"
+            title="Qualcosa è andato storto. Riprova tra poco."
             description={error}
             action={{ label: "Riprova", onClick: () => fetchEvents() }}
           />
@@ -270,16 +266,8 @@ export default function DiscoverCategoryPage() {
           </div>
         ) : isEmptyCatalog ? (
           <EmptyState
-            title={hasFilters ? "Nessun evento trovato" : "Nessun evento in questa categoria"}
-            description={
-              hasFilters ? (
-                <>
-                  <p>Prova a cambiare filtri o ricerca.</p>
-                </>
-              ) : (
-                <p>Non ci sono ancora eventi in questa categoria.</p>
-              )
-            }
+            title="Nessun evento aperto per ora."
+            description="Torna più tardi o esplora le categorie."
             action={
               hasFilters
                 ? {
@@ -293,7 +281,7 @@ export default function DiscoverCategoryPage() {
                       setPage(1);
                     },
                   }
-                : { label: "Torna a Eventi", href: "/discover" }
+                : { label: "Esplora categorie", href: "/discover" }
             }
           />
         ) : (

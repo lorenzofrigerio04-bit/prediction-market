@@ -33,7 +33,7 @@ export default async function RootLayout({
       : process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "dev";
 
   return (
-    <html lang="it" suppressHydrationWarning>
+    <html lang="it" className="dark" suppressHydrationWarning>
       <body className="font-sans antialiased min-h-screen bg-bg text-fg flex flex-col">
         <ThemeScript />
         <SessionProvider session={session}>

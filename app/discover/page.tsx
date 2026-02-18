@@ -40,10 +40,10 @@ export default function DiscoverPage() {
   return (
     <div className="min-h-screen bg-bg">
       <Header />
-      <main className="mx-auto px-4 sm:px-6 py-6 md:py-8 max-w-6xl">
+      <main className="mx-auto px-page-x sm:px-6 py-5 md:py-8 max-w-6xl">
         <PageHeader
           title="Eventi"
-          description="Scegli una categoria per esplorare gli eventi e fare le tue previsioni."
+          description="Scegli una categoria e metti alla prova le tue previsioni."
         />
 
         {error ? (
@@ -54,13 +54,10 @@ export default function DiscoverPage() {
           />
         ) : loading ? (
           <div className="py-12">
-            <LoadingBlock message="Caricamento categorie..." />
+            <LoadingBlock message="Caricamento…" />
           </div>
         ) : (
-          <section aria-label="Categorie eventi" className="space-y-6">
-            <h2 className="text-ds-body font-semibold text-fg-muted">
-              Scegli una categoria
-            </h2>
+          <section aria-label="Categorie eventi" className="space-y-4">
             <CategoryBoxes categories={categories} showTutti />
           </section>
         )}

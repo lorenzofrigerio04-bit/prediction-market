@@ -75,7 +75,7 @@ export default function SignupPage() {
       }
     } catch (err: any) {
       console.error("Errore:", err);
-      setError(err.message || "Si è verificato un errore. Riprova.");
+      setError(err.message || "Qualcosa è andato storto. Riprova tra poco.");
     } finally {
       setIsLoading(false);
     }
@@ -101,11 +101,11 @@ export default function SignupPage() {
           Registrati
         </h1>
         <p className="text-center text-fg-muted mb-8">
-          Crea il tuo account per iniziare
+          Crea account e ricevi 100 crediti per iniziare.
         </p>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-600 dark:text-red-400 text-sm">
+          <div className="mb-4 p-3 bg-danger-bg/50 border border-danger/30 rounded-xl text-danger text-ds-body-sm">
             {error}
           </div>
         )}

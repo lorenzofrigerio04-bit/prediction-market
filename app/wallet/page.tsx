@@ -187,7 +187,7 @@ export default function WalletPage() {
       <div className="min-h-screen bg-bg">
         <Header />
         <main className="mx-auto max-w-2xl px-page-x py-page-y md:py-8">
-          <LoadingBlock message="Caricamento wallet..." />
+          <LoadingBlock message="Caricamento…" />
         </main>
       </div>
     );
@@ -200,7 +200,7 @@ export default function WalletPage() {
       <div className="min-h-screen bg-bg">
         <Header />
         <main className="mx-auto max-w-2xl px-page-x py-page-y md:py-8">
-          <PageHeader title="Il Mio Wallet" />
+          <PageHeader title="Il tuo wallet" />
           <EmptyState description={error} action={{ label: "Riprova", onClick: () => fetchWalletData() }} />
         </main>
       </div>
@@ -213,7 +213,7 @@ export default function WalletPage() {
     <div className="min-h-screen bg-bg">
       <Header />
       <main className="mx-auto max-w-2xl px-page-x py-page-y md:py-8">
-        <PageHeader title="Il Mio Wallet" description="Saldo, bonus e storico crediti" />
+        <PageHeader title="Il tuo wallet" description="Saldo, bonus e storico in un colpo d'occhio." />
 
         {error && (
           <div className="mb-6 rounded-2xl border border-danger/30 bg-danger-bg/90 p-4 text-ds-body-sm text-danger dark:bg-danger-bg/50">
@@ -226,12 +226,8 @@ export default function WalletPage() {
           </div>
         )}
 
-        {/* 1. Crediti giocatore */}
+        {/* 1. Saldo in evidenza + primary CTA */}
         <SectionContainer>
-          <h2 className="mb-2 text-ds-label uppercase tracking-wide text-fg-muted">Crediti giocatore</h2>
-          <p className="mb-4 text-ds-body-sm text-fg-muted">
-            Il tuo saldo totale. Ogni movimento ha una motivazione (previsioni, bonus, missioni).
-          </p>
           <StatCard
             label="Saldo"
             value={formatAmount(stats.credits)}
@@ -240,6 +236,22 @@ export default function WalletPage() {
             neon
             icon={<IconWallet className="w-5 h-5 md:w-6 md:h-6" />}
           />
+          <div className="mt-4 flex flex-col sm:flex-row gap-3">
+            <CTAButton href="/discover" variant="primary" fullWidth className="min-h-[48px]">
+              Prevedi ora
+            </CTAButton>
+            {stats.canClaimDailyBonus && (
+              <CTAButton
+                fullWidth={false}
+                disabled={claimingBonus}
+                onClick={handleClaimDailyBonus}
+                variant="secondary"
+                className="min-h-[48px]"
+              >
+                {claimingBonus ? "Riscatto…" : "Riscatta bonus"}
+              </CTAButton>
+            )}
+          </div>
         </SectionContainer>
 
         {/* 2. Disponibili */}
@@ -384,7 +396,10 @@ export default function WalletPage() {
           </p>
           <Card neon className="p-5 md:p-6">
             {transactions.length === 0 ? (
-              <div className="py-8 text-center text-ds-body-sm text-fg-muted">Nessuna transazione ancora.</div>
+              <div className="py-8 text-center">
+                <p className="text-ds-body-sm text-fg-muted mb-4">Nessuna transazione ancora.</p>
+                <CTAButton href="/discover" variant="secondary">Esplora eventi</CTAButton>
+              </div>
             ) : (
               <>
                 <ul className="space-y-2">

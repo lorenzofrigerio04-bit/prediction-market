@@ -90,24 +90,13 @@ export default function LeaderboardPage() {
     { id: "all-time", label: "Tutti i tempi" },
   ];
 
-  const getPeriodDescription = () => {
-    switch (period) {
-      case "weekly":
-        return "Classifica degli ultimi 7 giorni";
-      case "monthly":
-        return "Classifica dell'ultimo mese";
-      case "all-time":
-        return "Classifica generale di tutti i tempi";
-    }
-  };
-
   return (
     <div className="min-h-screen bg-bg">
       <Header />
       <main className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
         <PageHeader
-          title="🏆 Classifica"
-          description={getPeriodDescription()}
+          title="Classifica"
+          description="Sali in classifica prevedendo bene."
         />
 
         {error && (
@@ -142,7 +131,7 @@ export default function LeaderboardPage() {
         </SectionContainer>
 
         {loading ? (
-          <LoadingBlock message="Caricamento..." />
+          <LoadingBlock message="Caricamento…" />
         ) : leaderboard.length === 0 ? (
           <EmptyState description="Nessun dato per questo periodo." />
         ) : (

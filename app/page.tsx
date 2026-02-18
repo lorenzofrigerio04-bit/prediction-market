@@ -294,43 +294,36 @@ export default function Home() {
       <div className="min-h-screen bg-bg relative overflow-x-hidden">
         <div className="landing-bg" aria-hidden />
         <Header />
-        <main className="relative mx-auto px-4 sm:px-6 py-8 md:py-12 lg:py-16 max-w-2xl">
-          <section className="mb-12 md:mb-16">
-            <div className="landing-hero-card px-6 py-8 md:px-10 md:py-12 text-center">
-              <p className="text-ds-caption font-semibold uppercase tracking-wider text-primary mb-4 md:mb-5">
+        <main className="relative mx-auto px-4 sm:px-6 py-5 md:py-12 lg:py-16 max-w-2xl">
+          {/* Hero: above-the-fold on mobile (eyebrow, headline, subtitle, primary CTA, secondary CTA) */}
+          <section className="mb-10 md:mb-16 min-h-0">
+            <div className="landing-hero-card px-5 py-6 md:px-10 md:py-12 text-center">
+              <p className="text-ds-caption font-semibold uppercase tracking-wider text-primary mb-2 md:mb-4">
                 Mercati di previsione · Solo crediti virtuali
               </p>
-              <h1 className="landing-hero-title text-ds-display font-bold mb-3 md:mb-4 max-w-2xl mx-auto leading-tight tracking-headline">
+              <h1 className="landing-hero-title text-ds-display font-bold mb-2 md:mb-4 max-w-2xl mx-auto leading-tight tracking-headline">
                 Prevedi il futuro. Guadagna crediti. Scala la classifica.
               </h1>
-              <p className="text-ds-body md:text-lg text-fg-muted max-w-xl mx-auto mb-8 md:mb-10 leading-snug">
+              <p className="text-ds-body md:text-lg text-fg-muted max-w-xl mx-auto mb-5 md:mb-8 leading-snug">
                 Partecipa ai mercati sociali su eventi reali. Più sei preciso, più sali. Zero rischio, zero soldi veri.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-8">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4 md:mb-6">
                 <Link
                   href="/auth/signup"
-                  className="landing-cta-primary w-full sm:w-auto min-h-[52px] px-8 py-4 rounded-2xl font-semibold text-ds-body inline-flex items-center justify-center transition-all hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                  className="landing-cta-primary w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body-sm inline-flex items-center justify-center transition-all hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
                 >
-                  Inizia ora — 100 crediti gratis
+                  Prevedi ora — 100 crediti gratis
                 </Link>
                 <Link
                   href="/auth/login"
-                  className="w-full sm:w-auto min-h-[52px] px-6 py-4 rounded-2xl font-semibold text-ds-body border-2 border-primary/50 text-primary bg-primary/5 hover:bg-primary/10 hover:border-primary/70 hover:shadow-[0_0_24px_-8px_rgba(var(--primary-glow),0.3)] transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg inline-flex items-center justify-center"
+                  className="w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-xl font-semibold text-ds-body-sm border-2 border-primary/50 text-primary bg-primary/5 hover:bg-primary/10 hover:border-primary/70 hover:shadow-[0_0_24px_-8px_rgba(var(--primary-glow),0.3)] transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg inline-flex items-center justify-center"
                 >
-                  Accedi
+                  Già account? Accedi
                 </Link>
               </div>
-              <div className="flex flex-wrap justify-center gap-2 md:gap-3">
-                <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-ds-micro font-semibold bg-primary/15 dark:bg-black/50 border border-primary/40 text-fg dark:text-white/95 shadow-[0_0_14px_-4px_rgba(var(--primary-glow),0.3)]">
-                  ⚡ Eventi in tempo reale
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-ds-micro font-semibold bg-primary/15 dark:bg-black/50 border border-primary/40 text-fg dark:text-white/95 shadow-[0_0_14px_-4px_rgba(var(--primary-glow),0.3)]">
-                  🏆 Classifiche settimanali
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-ds-micro font-semibold bg-primary/15 dark:bg-black/50 border border-primary/40 text-fg dark:text-white/95 shadow-[0_0_14px_-4px_rgba(var(--primary-glow),0.3)]">
-                  🛡️ Nessun rischio reale
-                </span>
-              </div>
+              <p className="text-ds-caption text-fg-subtle">
+                Risoluzione trasparente · Zero soldi veri
+              </p>
             </div>
           </section>
 
@@ -339,12 +332,12 @@ export default function Home() {
               Eventi in corso
             </h2>
             {landingEventsLoading ? (
-              <LoadingBlock message="Caricamento eventi..." />
+              <LoadingBlock message="Caricamento…" />
             ) : landingEvents.length === 0 ? (
               <EmptyState
-                title="Nessun evento attivo ora"
-                description="Registrati e ricevi 100 crediti gratis. Quando apriranno nuovi eventi sarai pronto."
-                action={{ label: "Inizia ora — 100 crediti gratis", href: "/auth/signup" }}
+                title="Nessun evento aperto per ora."
+                description="Torna più tardi o esplora le categorie."
+                action={{ label: "Esplora categorie", href: "/discover" }}
               />
             ) : (
               <ul className="flex flex-col gap-4" aria-label="Anteprima eventi">
@@ -393,9 +386,9 @@ export default function Home() {
               <p className="text-ds-body font-semibold text-fg mb-3">Pronto a iniziare?</p>
               <Link
                 href="/auth/signup"
-                className="landing-cta-primary w-full max-w-sm mx-auto min-h-[52px] px-6 py-4 rounded-2xl font-semibold text-ds-body text-white inline-flex items-center justify-center transition-all hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                className="landing-cta-primary w-full max-w-sm mx-auto min-h-[48px] px-6 py-4 rounded-xl font-semibold text-ds-body-sm text-white inline-flex items-center justify-center transition-all hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
               >
-                Inizia ora — 100 crediti gratis
+                Prevedi ora — 100 crediti gratis
               </Link>
             </div>
           </section>
@@ -540,7 +533,7 @@ export default function Home() {
             }
           >
             {loadingClosingSoon ? (
-              <LoadingBlock message="Caricamento eventi..." />
+              <LoadingBlock message="Caricamento…" />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                 {(debugMode ? eventsClosingSoon : eventsClosingSoon.filter((e) => !isDebugTitle(e.title))).map((event) => (
@@ -567,7 +560,7 @@ export default function Home() {
           }
         >
           {loadingTrendingNow ? (
-            <LoadingBlock message="Caricamento eventi..." />
+            <LoadingBlock message="Caricamento…" />
           ) : eventsTrendingNow.length === 0 ? (
             <EmptyState
               title="Nessun evento in tendenza"
