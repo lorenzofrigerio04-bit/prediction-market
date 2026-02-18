@@ -1,0 +1,2 @@
+# Place category images here: politica.jpg, economia.jpg, sport.jpg, etc.
+# See lib/category-slug.ts getCategoryImagePath()

@@ -42,10 +42,10 @@
   --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-/* —— Semantic palette: light theme (WCAG-friendly contrast) —— */
+/* —— Semantic palette: light theme (leggero, target 18-50) —— */
 :root {
-  --background-primary: 248 250 252;
-  --background-secondary: 241 245 249;
+  --background-primary: 250 251 253;
+  --background-secondary: 243 246 250;
   --bg: var(--background-primary);
   --surface: 255 255 255;
   --surface-o: 0.92;
@@ -92,10 +92,10 @@
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
 }
 
-/* —— Semantic palette: dark theme —— */
+/* —— Semantic palette: dark theme (più morbido, meno cupo) —— */
 .dark {
-  --background-primary: 10 10 18;
-  --background-secondary: 18 18 28;
+  --background-primary: 22 25 35;
+  --background-secondary: 30 33 45;
   --bg: var(--background-primary);
   --surface: 255 255 255;
   --surface-o: 0.07;
@@ -1313,16 +1313,16 @@ textarea:focus-visible {
 .dark .card-neon-glass {
   background: linear-gradient(
     145deg,
-    rgb(15 18 28 / 0.95) 0%,
-    rgb(10 12 20 / 0.98) 50%,
-    rgb(8 10 18 / 0.95) 100%
+    rgb(30 33 48 / 0.95) 0%,
+    rgb(25 28 40 / 0.98) 50%,
+    rgb(22 25 35 / 0.95) 100%
   );
-  border-color: rgb(255 255 255 / 0.06);
+  border-color: rgb(255 255 255 / 0.08);
   box-shadow:
     0 0 0 1px rgb(255 255 255 / 0.04) inset,
-    0 0 40px -12px rgb(var(--primary-glow) / 0.25),
-    0 0 80px -24px rgb(139 92 246 / 0.12),
-    0 24px 48px -24px rgb(0 0 0 / 0.5);
+    0 0 28px -10px rgb(var(--primary-glow) / 0.18),
+    0 0 56px -20px rgb(139 92 246 / 0.08),
+    0 20px 40px -20px rgb(0 0 0 / 0.35);
 }
 
 /* Box crediti in gioco: nero + bordo blu neon (sempre) */
@@ -1421,12 +1421,12 @@ textarea:focus-visible {
     0 1px 0 0 rgb(var(--primary) / 0.15);
 }
 .dark .header-neon {
-  background: linear-gradient(180deg, rgb(14 18 28 / 0.94) 0%, rgb(10 14 22 / 0.9) 100%);
-  border-bottom-color: rgb(var(--primary) / 0.25);
+  background: linear-gradient(180deg, rgb(28 31 44 / 0.96) 0%, rgb(22 25 35 / 0.94) 100%);
+  border-bottom-color: rgb(var(--primary) / 0.18);
   box-shadow:
-    0 4px 32px -12px rgb(0 0 0 / 0.45),
-    0 1px 0 0 rgb(var(--primary) / 0.22),
-    0 0 48px -20px rgb(var(--primary-glow) / 0.1);
+    0 4px 24px -8px rgb(0 0 0 / 0.4),
+    0 1px 0 0 rgb(var(--primary) / 0.15),
+    0 0 32px -16px rgb(var(--primary-glow) / 0.06);
 }
 
 .nav-bottom-neon {
