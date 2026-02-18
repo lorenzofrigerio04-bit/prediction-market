@@ -6,6 +6,12 @@ import type { PrismaClient } from '@prisma/client';
 import type { ScoredCandidate } from './types';
 import { computeDedupKey } from './dedup';
 
+/** Client Prisma completo o client di transazione (usato in $transaction) */
+type PrismaClientLike = Omit<
+  PrismaClient,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>;
+
 /**
  * Ottiene o crea utente sistema per creazione eventi automatici
  */
@@ -55,9 +61,10 @@ async function getOrCreateSystemUser(prisma: PrismaClient): Promise<string> {
 /**
  * Crea un evento nel DB da un candidato.
  * Non crea se dedupKey non calcolabile (MISSING_DEDUPKEY_INPUT).
+ * Accetta PrismaClient o client di transazione (tx in $transaction).
  */
 async function createEventFromCandidate(
-  prisma: PrismaClient,
+  prisma: PrismaClientLike,
   candidate: ScoredCandidate,
   now: Date,
   systemUserId: string

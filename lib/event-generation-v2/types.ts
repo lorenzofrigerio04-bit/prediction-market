@@ -3,7 +3,7 @@
  * BLOCCO 4: Generazione eventi da storyline
  */
 
-import type { EligibleStoryline } from '../storyline-engine/types';
+import type { EligibleStoryline, SourceSignalLite } from '../storyline-engine/types';
 
 export type GeneratedEventCandidate = {
   title: string;
@@ -18,11 +18,5 @@ export type GeneratedEventCandidate = {
 };
 
 export type StorylineWithSignals = EligibleStoryline & {
-  signals: Array<{
-    id: string;
-    title: string;
-    snippet?: string | null;
-    publishedAt: Date;
-    host: string;
-  }>;
+  signals: SourceSignalLite[];
 };

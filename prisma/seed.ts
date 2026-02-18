@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { DEFAULT_BADGES } from '../lib/badges';
 import { parseOutcomeDateFromText } from '../lib/event-generation/closes-at';
 import { getClosureRules } from '../lib/event-generation/config';
+import { computeDedupKey } from '../lib/event-publishing/dedup';
 
 const prisma = new PrismaClient();
 
@@ -181,9 +182,15 @@ async function main() {
     },
   ];
 
+  const seedAuthorityHost = 'seed.example.com';
   console.log('📅 Creazione eventi (scadenza coerente con data esito)...');
   for (const def of eventDefs) {
     const closesAt = computeClosesAtFromText(def.title, def.description, def.category);
+    const dedupKey = computeDedupKey({
+      title: def.title,
+      closesAt,
+      resolutionAuthorityHost: seedAuthorityHost,
+    });
     const event = await prisma.event.create({
       data: {
         title: def.title,
@@ -194,6 +201,8 @@ async function main() {
         resolutionSourceUrl: 'https://example.com/source',
         resolutionNotes: 'Risoluzione secondo fonte ufficiale alla data di chiusura.',
         createdById: admin.id,
+        dedupKey,
+        resolutionAuthorityHost: seedAuthorityHost,
       },
     });
     console.log(`✅ Evento creato: "${event.title}" (chiude il ${event.closesAt.toLocaleDateString('it-IT')})`);
