@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import BackLink from '@/components/ui/BackLink';
 import { useNotifications, useMarkAsRead } from '@/hooks/useNotifications';
 import { NotificationType } from '@/lib/notifications/types';
 import type { Notification } from '@/lib/notifications/types';
@@ -69,9 +70,9 @@ export default function NotifichePage() {
         ) : notifications.length === 0 ? (
           <div className="notifiche-empty">
             <p>Nessuna notifica</p>
-            <Link href="/" className="notifiche-empty-link">
-              Torna alla home
-            </Link>
+            <BackLink href="/" className="notifiche-empty-link">
+              Indietro
+            </BackLink>
           </div>
         ) : (
           <>

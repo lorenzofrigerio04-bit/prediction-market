@@ -11,6 +11,7 @@ import CommentsSection from "@/components/CommentsSection";
 import { trackView } from "@/lib/analytics-client";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { IconClock, IconCurrency } from "@/components/ui/Icons";
+import BackLink from "@/components/ui/BackLink";
 import { getEventProbability } from "@/lib/pricing/price-display";
 import { getPrice, cost } from "@/lib/pricing/lmsr";
 
@@ -110,7 +111,11 @@ export default function EventDetailPage({
       const response = await fetch(`/api/events/${params.id}`);
       if (!response.ok) {
         if (response.status === 404) {
-          router.push("/");
+          if (typeof window !== "undefined" && window.history.length > 1) {
+            router.back();
+          } else {
+            router.push("/");
+          }
           return;
         }
         throw new Error("Failed to fetch event");
@@ -232,12 +237,12 @@ export default function EventDetailPage({
         <main className="mx-auto px-4 py-8 max-w-2xl">
           <div className="text-center py-12">
             <p className="text-fg-muted text-lg">Evento non trovato</p>
-            <Link
+            <BackLink
               href="/"
               className="mt-4 text-primary hover:text-primary-hover font-semibold inline-block focus-visible:underline"
             >
-              Torna alla homepage
-            </Link>
+              Indietro
+            </BackLink>
           </div>
         </main>
       </div>
@@ -254,15 +259,15 @@ export default function EventDetailPage({
     <div className="min-h-screen bg-bg">
       <Header />
       <main className="mx-auto px-4 py-5 md:py-8 max-w-2xl pb-8">
-        <Link
+        <BackLink
           href="/"
           className="inline-flex items-center min-h-[44px] text-text-muted hover:text-fg mb-4 rounded-2xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
         >
           <svg className="w-5 h-5 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          <span className="font-medium">Eventi</span>
-        </Link>
+          <span className="font-medium">Indietro</span>
+        </BackLink>
 
         <article className="card-neon-glass transition-all duration-ds-normal p-5 md:p-6 mb-6">
           {/* Header: categoria + scadenza (solo in alto) */}

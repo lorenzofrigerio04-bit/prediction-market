@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import BackLink from "@/components/ui/BackLink";
 
 export default function EditEventPage() {
   const router = useRouter();
@@ -96,9 +97,9 @@ export default function EditEventPage() {
   return (
     <div className="p-6 md:p-8 max-w-3xl">
       <div className="mb-8">
-        <Link href="/admin" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
-          ← Torna alla dashboard
-        </Link>
+        <BackLink href="/admin" className="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 mb-4">
+          ← Indietro
+        </BackLink>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Modifica evento</h1>
       </div>
       <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 space-y-6">

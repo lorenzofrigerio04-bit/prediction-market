@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import Header from "@/components/Header";
-import Link from "next/link";
+import BackLink from "@/components/ui/BackLink";
 import StreakBadge from "@/components/StreakBadge";
 import { trackView } from "@/lib/analytics-client";
 
@@ -71,9 +71,9 @@ export default function PublicProfilePage() {
         <main className="mx-auto px-4 py-8 max-w-2xl">
           <div className="glass rounded-2xl border border-border dark:border-white/10 p-8 text-center">
             <p className="text-fg-muted font-medium">{error || "Profilo non trovato."}</p>
-            <Link href="/leaderboard" className="mt-4 inline-block text-primary font-semibold hover:underline">
-              Torna alla classifica
-            </Link>
+            <BackLink href="/leaderboard" className="mt-4 inline-block text-primary font-semibold hover:underline">
+              Indietro
+            </BackLink>
           </div>
         </main>
       </div>
@@ -117,12 +117,12 @@ export default function PublicProfilePage() {
             </div>
           </div>
           <div className="mt-6 text-center">
-            <Link
+            <BackLink
               href="/leaderboard"
               className="text-primary font-semibold hover:underline text-sm"
             >
-              ← Torna alla classifica
-            </Link>
+              ← Indietro
+            </BackLink>
           </div>
         </div>
       </main>

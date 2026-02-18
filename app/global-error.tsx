@@ -11,12 +11,21 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const handleBack = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = "/";
+    }
+  };
+
   return (
     <html lang="it">
       <body style={{ fontFamily: "system-ui, sans-serif", padding: "2rem", maxWidth: "32rem", margin: "0 auto", background: "#f8fafc", color: "#1e293b" }}>
         <h1 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>Qualcosa è andato storto</h1>
         <p style={{ marginBottom: "1.5rem", color: "#64748b" }}>
-          Si è verificato un errore. Prova a ricaricare la pagina o a tornare alla home.
+          Si è verificato un errore. Prova a ricaricare la pagina o a tornare indietro.
         </p>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
           <button
@@ -36,6 +45,7 @@ export default function GlobalError({
           </button>
           <a
             href="/"
+            onClick={handleBack}
             style={{
               padding: "0.5rem 1rem",
               background: "#e2e8f0",
@@ -45,7 +55,7 @@ export default function GlobalError({
               fontWeight: 500,
             }}
           >
-            Torna alla home
+            Indietro
           </a>
         </div>
         {process.env.NODE_ENV === "development" && (

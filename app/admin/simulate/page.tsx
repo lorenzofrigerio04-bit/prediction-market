@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import BackLink from "@/components/ui/BackLink";
 
 interface SimulateResult {
   ok?: boolean;
@@ -108,9 +108,9 @@ export default function AdminSimulatePage() {
       </div>
 
       <p className="mt-6 text-sm text-gray-500">
-        <Link href="/admin" className="text-blue-600 hover:underline">
-          ← Torna alla dashboard eventi
-        </Link>
+        <BackLink href="/admin" className="text-blue-600 hover:underline dark:text-blue-400">
+          ← Indietro
+        </BackLink>
       </p>
     </div>
   );

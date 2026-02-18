@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import BackLink from "@/components/ui/BackLink";
 
 export default function CreateEventPage() {
   const router = useRouter();
@@ -124,9 +125,9 @@ export default function CreateEventPage() {
     <div className="p-6 md:p-8 max-w-3xl">
         {/* Header */}
         <div className="mb-8">
-          <Link
+          <BackLink
             href="/admin"
-            className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4"
+            className="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 mb-4"
           >
             <svg
               className="w-5 h-5 mr-2"
@@ -141,8 +142,8 @@ export default function CreateEventPage() {
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-            Torna alla dashboard
-          </Link>
+            Indietro
+          </BackLink>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Crea Nuovo Evento
           </h1>

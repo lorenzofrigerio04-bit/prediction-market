@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import BackLink from "@/components/ui/BackLink";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import Header from "@/components/Header";
@@ -22,12 +23,12 @@ export default async function VerifyEmailPage({ searchParams }: { searchParams: 
             <p className="text-fg-muted text-sm mb-6">
               Il link di verifica è scaduto o non è corretto. Richiedi una nuova email di verifica dal tuo profilo.
             </p>
-            <Link
+            <BackLink
               href="/"
               className="inline-block min-h-[48px] px-6 py-3 bg-primary text-white font-semibold rounded-2xl hover:bg-primary-hover"
             >
-              Torna alla home
-            </Link>
+              Indietro
+            </BackLink>
           </div>
         </div>
       </div>
