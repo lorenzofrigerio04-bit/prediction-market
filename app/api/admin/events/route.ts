@@ -1,3 +1,4 @@
+import { createHash, randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
@@ -7,6 +8,7 @@ import { getBParameter } from "@/lib/pricing/initialization";
 import { getBufferHoursForCategory } from "@/lib/markets";
 import { parseOutcomeDateFromText } from "@/lib/event-generation/closes-at";
 import { getClosureRules } from "@/lib/event-generation/config";
+import { computeDedupKey } from "@/lib/event-publishing/dedup";
 
 /**
  * GET /api/admin/events
@@ -217,6 +219,26 @@ export async function POST(request: NextRequest) {
     const b = getBParameter(category as Parameters<typeof getBParameter>[0], "Medium");
     const resolutionBufferHours = getBufferHoursForCategory(category);
 
+    let resolutionAuthorityHost: string | null = null;
+    try {
+      resolutionAuthorityHost = new URL(resolutionSourceUrl.trim()).host;
+    } catch {
+      // URL non valido: host non impostato
+    }
+
+    let dedupKey: string;
+    if (resolutionAuthorityHost && resolutionAuthorityHost.trim() !== "") {
+      dedupKey = computeDedupKey({
+        title,
+        closesAt: closesAtDate,
+        resolutionAuthorityHost,
+      });
+    } else {
+      dedupKey = createHash("sha256")
+        .update(`${title}|${closesAtDate.toISOString()}|${admin.id}|${randomUUID()}`)
+        .digest("hex");
+    }
+
     const event = await prisma.event.create({
       data: {
         title,
@@ -229,6 +251,8 @@ export async function POST(request: NextRequest) {
         resolutionStatus: marketValidation.needsReview ? "NEEDS_REVIEW" : "PENDING",
         b,
         resolutionBufferHours,
+        dedupKey,
+        ...(resolutionAuthorityHost && { resolutionAuthorityHost }),
       },
       include: {
         createdBy: {

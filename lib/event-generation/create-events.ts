@@ -3,11 +3,13 @@
  * Usa utente "sistema" (EVENT_GENERATOR_USER_ID o primo admin) e scrive in AuditLog.
  */
 
+import { createHash, randomUUID } from "crypto";
 import type { PrismaClient } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit";
 import { validateMarket } from "@/lib/validator";
 import { getBParameter } from "@/lib/pricing/initialization";
 import { getBufferHoursForCategory } from "@/lib/markets";
+import { computeDedupKey } from "@/lib/event-publishing/dedup";
 import type { GeneratedEvent } from "./types";
 import { ALLOWED_CATEGORIES } from "./types";
 
@@ -139,6 +141,27 @@ export async function createEventsFromGenerated(
       const closesAtDate = new Date(ev.closesAt);
       const b = getBParameter(ev.category as Parameters<typeof getBParameter>[0], "Medium");
       const resolutionBufferHours = getBufferHoursForCategory(ev.category);
+
+      let resolutionAuthorityHost: string | null = null;
+      try {
+        resolutionAuthorityHost = new URL(ev.resolutionSourceUrl.trim()).host;
+      } catch {
+        // URL non valido
+      }
+
+      let dedupKey: string;
+      if (resolutionAuthorityHost && resolutionAuthorityHost.trim() !== "") {
+        dedupKey = computeDedupKey({
+          title: ev.title,
+          closesAt: closesAtDate,
+          resolutionAuthorityHost,
+        });
+      } else {
+        dedupKey = createHash("sha256")
+          .update(`${ev.title}|${closesAtDate.toISOString()}|${creatorId}|${randomUUID()}`)
+          .digest("hex");
+      }
+
       const event = await prisma.event.create({
         data: {
           title: ev.title.trim(),
@@ -151,6 +174,8 @@ export async function createEventsFromGenerated(
           resolutionStatus: marketValidation.needsReview ? "NEEDS_REVIEW" : "PENDING",
           b,
           resolutionBufferHours,
+          dedupKey,
+          ...(resolutionAuthorityHost && { resolutionAuthorityHost }),
         },
       });
       result.created++;
