@@ -20,7 +20,7 @@ export function getCategoryFromHost(host: string): Category {
   if (/^ir\.|sec\.gov|investor|\.ir\./i.test(h) || h.includes('investor')) return 'Economia';
   if (h.endsWith('.gov.it') || h === 'governo.it' || h.includes('ministero')) return 'Politica';
   if (/techcrunch|wired\.com/.test(h)) return 'Tecnologia';
-  return 'News';
+  return 'Intrattenimento';
 }
 
 // ============================================================================
@@ -72,7 +72,7 @@ const GOV_PRESS_TEMPLATE: EventTemplate = {
 /** Un solo template universal fallback (no 3 varianti banali) */
 const UNIVERSAL_FALLBACK_TEMPLATE: EventTemplate = {
   id: 'universal-fallback',
-  category: 'News',
+  category: 'Intrattenimento',
   horizonDaysMin: 1,
   horizonDaysMax: 30,
   requiredAuthority: 'REPUTABLE',
@@ -732,7 +732,7 @@ const INTRATTENIMENTO_TEMPLATES: EventTemplate[] = [
 // NEWS (solo fallback)
 // ============================================================================
 
-const NEWS_TEMPLATES: EventTemplate[] = [UNIVERSAL_FALLBACK_TEMPLATE];
+const FALLBACK_TEMPLATES: EventTemplate[] = [UNIVERSAL_FALLBACK_TEMPLATE];
 
 // ============================================================================
 // EXPORT CATALOG
@@ -746,7 +746,7 @@ export const TEMPLATE_CATALOG: EventTemplate[] = [
   ...CULTURA_TEMPLATES,
   ...SCIENZA_TEMPLATES,
   ...INTRATTENIMENTO_TEMPLATES,
-  ...NEWS_TEMPLATES,
+  ...FALLBACK_TEMPLATES,
 ];
 
 /**

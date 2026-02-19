@@ -11,7 +11,8 @@ export async function GET() {
       distinct: ["category"],
     });
 
-    const categories = events.map((event) => event.category);
+    let categories = events.map((event) => event.category);
+    categories = [...new Set(categories)].filter((c) => c !== "News");
 
     return NextResponse.json({ categories });
   } catch (error) {

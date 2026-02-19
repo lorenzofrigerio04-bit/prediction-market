@@ -57,8 +57,7 @@ const CATEGORY_KEYWORDS: Record<Category, string[]> = {
   Tecnologia: ['tech', 'tecnologia', 'software', 'app', 'startup', 'ai', 'intelligenza artificiale'],
   Cultura: ['cinema', 'film', 'musica', 'libro', 'arte', 'cultura', 'festival'],
   Scienza: ['scienza', 'ricerca', 'studio', 'scoperta', 'esperimento', 'missione'],
-  Intrattenimento: ['spettacolo', 'serie', 'tv', 'show', 'premio', 'festival'],
-  News: ['notizia', 'news', 'aggiornamento', 'breaking', 'cronaca', 'report', 'comunicato'],
+  Intrattenimento: ['spettacolo', 'serie', 'tv', 'show', 'premio', 'festival', 'notizia', 'news', 'aggiornamento', 'breaking', 'cronaca', 'report', 'comunicato'],
 };
 
 /**
@@ -88,7 +87,6 @@ function deriveCategory(
     Cultura: 0,
     Scienza: 0,
     Intrattenimento: 0,
-    News: 0,
   };
   
   for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
