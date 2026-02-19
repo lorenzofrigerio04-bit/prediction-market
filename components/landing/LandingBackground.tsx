@@ -16,8 +16,6 @@ export default function LandingBackground() {
       <div className="landing-dynamic-bg__orb landing-dynamic-bg__orb--4" />
       <div className="landing-dynamic-bg__orb landing-dynamic-bg__orb--5" />
       <div className="landing-dynamic-bg__orb landing-dynamic-bg__orb--6" />
-      {/* Subtle grid overlay for tech / depth */}
-      <div className="landing-dynamic-bg__grid" />
       {/* Vignette + gradient overlay for readability */}
       <div className="landing-dynamic-bg__overlay" />
     </div>

@@ -297,21 +297,23 @@ export default function Home() {
         <LandingBackground />
         <Header />
         <main id="main-content" className="relative mx-auto px-4 sm:px-6 py-5 md:py-12 lg:py-16 max-w-2xl">
-          {/* Hero: above-the-fold on mobile (eyebrow, headline, subtitle, primary CTA, secondary CTA) */}
-          <section className="landing-hero-section mb-10 md:mb-16 min-h-0 min-h-[90vh] md:min-h-[92vh] flex flex-col justify-center pt-1 md:pt-3">
-            <div className="landing-hero-card px-4 py-5 md:px-12 md:py-12 text-center">
-              <p className="landing-hero-eyebrow text-[0.7rem] sm:text-ds-caption font-semibold uppercase tracking-wider mb-3 md:mb-4 text-white/95 text-center max-w-full break-words leading-snug">
+          {/* Hero: tutto in una pagina, titolo al centro, linee LED sopra/sotto */}
+          <section className="landing-hero-section min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-4.5rem)] flex flex-col justify-center py-4 md:py-6">
+            <div className="landing-hero-card px-4 py-0 md:px-10 md:py-0 text-center flex flex-col justify-center">
+              <p className="landing-hero-eyebrow text-[0.7rem] sm:text-ds-caption font-semibold uppercase tracking-wider mb-1.5 md:mb-2 text-white/95 text-center max-w-full break-words leading-snug -mt-[0.5cm]">
                 Mercati di previsione – Solo crediti virtuali
               </p>
-              <div className="landing-hero-line my-3 md:my-4" aria-hidden />
-              <h1 className="landing-hero-title text-ds-display-landing mb-3 md:mb-4 max-w-2xl mx-auto leading-tight tracking-tight">
+              <div className="landing-hero-line my-2 md:my-2.5" aria-hidden />
+              <h1 className="landing-hero-title text-ds-display-landing my-2 md:my-3 max-w-2xl mx-auto leading-tight tracking-tight">
                 Prevedi il futuro. Guadagna crediti. Scala la classifica.
               </h1>
-              <div className="landing-hero-line landing-hero-line--below my-3 md:my-4" aria-hidden />
-              <p className="text-ds-body-landing font-normal text-white/90 max-w-xl mx-auto mb-5 md:mb-8 leading-snug px-1">
-                Se pensi di saperlo prima degli altri, è il momento di provarlo.
+              <div className="landing-hero-line landing-hero-line--below my-2 md:my-2.5" aria-hidden />
+              <p className="text-ds-body-landing font-normal text-white/90 max-w-md mx-auto mb-4 md:mb-5 leading-snug text-center">
+                Se pensi di saperlo prima degli altri,
+                <br />
+                <span className="landing-hero-subtitle-emphasis">è il momento di provarlo.</span>
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-6 md:mb-7">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4 md:mb-5">
                 <Link
                   href="/auth/signup"
                   className="landing-cta-primary w-full sm:w-auto min-h-[52px] px-6 py-3.5 rounded-xl font-semibold text-ds-body inline-flex items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
@@ -329,7 +331,7 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="mb-12 md:mb-16">
+          <section className="mb-12 md:mb-16 pt-2">
             <h2 className="landing-section-title text-ds-h2 font-bold text-fg mb-6">
               Eventi in corso
             </h2>
