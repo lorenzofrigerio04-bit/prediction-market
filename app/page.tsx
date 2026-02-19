@@ -371,27 +371,27 @@ export default function Home() {
               Perché giocare
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-5">
-              <div className="box-raised p-5 md:p-6 text-center hover-lift transition-shadow">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/15 border border-primary/30 text-2xl mb-3" aria-hidden>🏆</div>
-                <h3 className="text-ds-body font-bold text-fg mb-1">Classifiche settimanali</h3>
-                <p className="text-ds-body-sm text-fg-muted">Sali in classifica ogni settimana e confrontati con la community.</p>
+              <div className="landing-why-box p-5 md:p-6 text-center hover-lift transition-shadow">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 border border-white/30 text-2xl mb-3" aria-hidden>🏆</div>
+                <h3 className="text-ds-body font-bold text-white mb-1">Classifiche settimanali</h3>
+                <p className="text-ds-body-sm text-white/85">Sali in classifica ogni settimana e confrontati con la community.</p>
               </div>
-              <div className="box-raised p-5 md:p-6 text-center hover-lift transition-shadow">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/15 border border-primary/30 text-2xl mb-3" aria-hidden>🎯</div>
-                <h3 className="text-ds-body font-bold text-fg mb-1">Missioni & streak</h3>
-                <p className="text-ds-body-sm text-fg-muted">Completa missioni e mantieni lo streak per crediti extra.</p>
+              <div className="landing-why-box p-5 md:p-6 text-center hover-lift transition-shadow">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 border border-white/30 text-2xl mb-3" aria-hidden>🎯</div>
+                <h3 className="text-ds-body font-bold text-white mb-1">Missioni & streak</h3>
+                <p className="text-ds-body-sm text-white/85">Completa missioni e mantieni lo streak per crediti extra.</p>
               </div>
-              <div className="box-raised p-5 md:p-6 text-center hover-lift transition-shadow">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/15 border border-primary/30 text-2xl mb-3" aria-hidden>📋</div>
-                <h3 className="text-ds-body font-bold text-fg mb-1">Regole trasparenti</h3>
-                <p className="text-ds-body-sm text-fg-muted">Ogni evento ha criteri di risoluzione chiari e verificabili.</p>
+              <div className="landing-why-box p-5 md:p-6 text-center hover-lift transition-shadow">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 border border-white/30 text-2xl mb-3" aria-hidden>📋</div>
+                <h3 className="text-ds-body font-bold text-white mb-1">Regole trasparenti</h3>
+                <p className="text-ds-body-sm text-white/85">Ogni evento ha criteri di risoluzione chiari e verificabili.</p>
               </div>
             </div>
           </section>
 
           <section className="text-center pt-6 pb-10">
-            <div className="landing-hero-card inline-block px-8 py-6 md:px-10 md:py-8">
-              <p className="text-ds-body font-semibold text-fg mb-3">Pronto a iniziare?</p>
+            <div className="landing-hero-card landing-hero-card--cta-bottom inline-block px-8 py-6 md:px-10 md:py-8">
+              <p className="text-ds-body font-semibold text-white mb-3">Pronto a iniziare?</p>
               <Link
                 href="/auth/signup"
                 className="landing-cta-primary w-full max-w-sm mx-auto min-h-[48px] px-6 py-4 rounded-xl font-semibold text-ds-body-sm text-white inline-flex items-center justify-center transition-all hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"

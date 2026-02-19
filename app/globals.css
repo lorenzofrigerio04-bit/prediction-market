@@ -528,6 +528,27 @@ textarea:focus-visible {
 .landing-hero-card::after {
   display: none;
 }
+/* Box "Pronto a iniziare" in fondo: bordo blu per differenziarsi dai blocchi sopra */
+.landing-hero-card--cta-bottom {
+  border: 1px solid rgb(96 165 250 / 0.85);
+  box-shadow: 0 0 18px rgb(96 165 250 / 0.25), inset 0 0 14px rgb(96 165 250 / 0.06);
+  border-radius: var(--radius-lg);
+}
+.landing-hero-card--cta-bottom:hover {
+  border-color: rgb(96 165 250);
+  box-shadow: 0 0 22px rgb(96 165 250 / 0.35), inset 0 0 18px rgb(96 165 250 / 0.08);
+}
+/* Box "Perché giocare": sfondo trasparente, contorno come CTA hero (bianco) */
+.landing-why-box {
+  background: transparent;
+  border: 1px solid rgb(255 255 255 / 0.9);
+  box-shadow: 0 0 14px rgb(255 255 255 / 0.2), inset 0 0 14px rgb(255 255 255 / 0.04);
+  border-radius: var(--radius-lg);
+}
+.landing-why-box:hover {
+  border-color: rgb(255 255 255);
+  box-shadow: 0 0 20px rgb(255 255 255 / 0.3), inset 0 0 18px rgb(255 255 255 / 0.06);
+}
 .landing-hero-eyebrow {
   letter-spacing: 0.08em;
   font-family: var(--font-sans), system-ui, sans-serif;
@@ -909,7 +930,7 @@ textarea:focus-visible {
   background-image: var(--landing-event-row-bg);
   background-size: cover;
   background-position: center;
-  opacity: 0.72;
+  opacity: 0.92;
 }
 .landing-event-row__bg::after {
   content: "";
@@ -918,9 +939,9 @@ textarea:focus-visible {
   border-radius: inherit;
   background: linear-gradient(
     180deg,
-    rgb(0 0 0 / 0.45) 0%,
-    rgb(0 0 0 / 0.55) 50%,
-    rgb(0 0 0 / 0.62) 100%
+    rgb(0 0 0 / 0.35) 0%,
+    rgb(0 0 0 / 0.48) 50%,
+    rgb(0 0 0 / 0.58) 100%
   );
   pointer-events: none;
 }

@@ -27,11 +27,6 @@ export default async function RootLayout({
     // global-error.tsx intercetti solo errori non catturati.
     console.error("getServerSession error:", e);
   }
-  const buildId =
-    typeof process.env.VERCEL_GIT_COMMIT_SHA === "string"
-      ? process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 7)
-      : process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "dev";
-
   return (
     <html lang="it" className="dark" suppressHydrationWarning>
       <body className="font-sans antialiased min-h-screen bg-bg text-fg flex flex-col">
@@ -45,10 +40,12 @@ export default async function RootLayout({
           </a>
           <div className="flex-1">{children}</div>
           <footer
-            className="py-2 text-center text-fg-muted text-ds-micro"
+            className="py-3 text-center text-fg-muted text-ds-micro"
             aria-hidden
           >
-            Build {buildId}
+            <span className="landing-footer-brand font-display font-semibold text-lg tracking-tight bg-gradient-to-r from-primary to-accent-secondary bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">
+              PredictionMaster
+            </span>
           </footer>
         </SessionProvider>
       </body>
