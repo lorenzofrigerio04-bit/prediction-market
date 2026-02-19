@@ -129,13 +129,13 @@ export function IconNavWallet({ className, ...props }: SVGProps<SVGSVGElement>) 
     </NavIcon>
   );
 }
-/* Classifica: podio 1º 2º 3º — immediatamente riconoscibile */
+/* Classifica: podio 1º 2º 3º — altezza in linea con le altre icone nav */
 export function IconNavTrophy({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <NavIcon className={className} {...props}>
-      <path d="M5 22V14h3v8H5z" />
-      <path d="M10 22V10h4v12h-4z" />
-      <path d="M16 22v-6h3v6h-3z" />
+      <path d="M5 22V12h3v10H5z" />
+      <path d="M10 22V6h4v16h-4z" />
+      <path d="M16 22v-8h3v8h-3z" />
       <path d="M4 22h16" />
     </NavIcon>
   );

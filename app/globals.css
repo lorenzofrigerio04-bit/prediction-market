@@ -693,6 +693,18 @@ textarea:focus-visible {
   color: rgb(255 255 255) !important;
 }
 
+/* Sottotitolo hero: respiro sopra e sotto, niente soffocamento */
+.landing-hero-subtitle {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+@media (min-width: 768px) {
+  .landing-hero-subtitle {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+}
+
 /* Sottotitolo hero: sottolineatura fissa, nessuna animazione */
 .landing-hero-subtitle-emphasis {
   display: inline-block;
