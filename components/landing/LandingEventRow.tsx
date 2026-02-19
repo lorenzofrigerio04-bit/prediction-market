@@ -1,75 +1,108 @@
 "use client";
 
 import Link from "next/link";
-import { getCategoryImagePath, getCategoryFallbackGradient } from "@/lib/category-slug";
-import { getCategoryIcon } from "@/lib/category-icons";
+import { getEventProbability } from "@/lib/pricing/price-display";
 
 export interface LandingEventRowEvent {
   id: string;
   title: string;
   category: string;
-  closesAt: string | Date;
+  closesAt: string;
   probability: number;
-  fomo?: { countdownMs: number };
+  // LMSR fields (optional for backward compatibility)
+  q_yes?: number | null;
+  q_no?: number | null;
+  b?: number | null;
 }
 
-function getTimeRemaining(closesAt: string | Date, countdownMs?: number): string {
-  const timeUntilClose = countdownMs !== undefined ? countdownMs : new Date(closesAt).getTime() - Date.now();
+const CATEGORY_ICONS: Record<string, string> = {
+  Sport: "⚽",
+  Tecnologia: "💻",
+  Politica: "🏛️",
+  Economia: "📈",
+  Cultura: "🎭",
+  Altro: "✨",
+};
+
+function getCategoryIcon(category: string): string {
+  return CATEGORY_ICONS[category] ?? "✨";
+}
+
+function getTimeRemaining(closesAt: string): string {
+  const timeUntilClose = new Date(closesAt).getTime() - Date.now();
   if (timeUntilClose <= 0) return "Chiuso";
   const hours = Math.floor(timeUntilClose / (1000 * 60 * 60));
   const days = Math.floor(hours / 24);
-  if (days > 0) return `${days}g ${hours % 24}h`;
-  if (hours > 0) return `${hours} ore`;
-  const minutes = Math.floor(timeUntilClose / (1000 * 60));
-  return minutes > 0 ? `${minutes} min` : "Presto";
+  if (days > 0) return `${days}g`;
+  if (hours > 0) return `${hours}h`;
+  return "Presto";
 }
 
-export default function LandingEventRow({ event }: { event: LandingEventRowEvent }) {
-  const timeLabel = getTimeRemaining(event.closesAt, event.fomo?.countdownMs);
-  const yesPct = Math.round(event.probability ?? 50);
-  const bgImage = getCategoryImagePath(event.category);
-  const fallbackGradient = getCategoryFallbackGradient(event.category);
+interface LandingEventRowProps {
+  event: LandingEventRowEvent;
+}
 
+export default function LandingEventRow({ event }: LandingEventRowProps) {
+  // Use LMSR price if available, otherwise fall back to probability
+  let yesPct: number;
+  if (event.q_yes !== null && event.q_yes !== undefined && 
+      event.q_no !== null && event.q_no !== undefined && 
+      event.b !== null && event.b !== undefined) {
+    // Use LMSR price
+    yesPct = Math.round(getEventProbability(event));
+  } else {
+    // Fallback to probability field
+    yesPct = Math.round(event.probability);
+  }
+  const noPct = 100 - yesPct;
+  const timeLabel = getTimeRemaining(event.closesAt);
+  const icon = getCategoryIcon(event.category);
+  const isPolitica = event.category === "Politica";
+  const isCultura = event.category === "Cultura";
+  const isSport = event.category === "Sport";
+  const isTecnologia = event.category === "Tecnologia";
+  const isIntrattenimento = event.category === "Intrattenimento";
+  const isEconomia = event.category === "Economia";
+  const isScienza = event.category === "Scienza";
   return (
     <Link
       href={`/events/${event.id}`}
-      className="landing-event-row landing-event-row--has-bg relative block min-h-[160px] rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none"
+      className={`block rounded-2xl box-raised hover-lift p-4 md:p-5 transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none group relative overflow-hidden landing-event-row landing-event-row--has-bg ${isPolitica ? "landing-event-row--politica" : ""} ${isCultura ? "landing-event-row--cultura" : ""} ${isSport ? "landing-event-row--sport" : ""} ${isTecnologia ? "landing-event-row--tecnologia" : ""} ${isIntrattenimento ? "landing-event-row--intrattenimento" : ""} ${isEconomia ? "landing-event-row--economia" : ""} ${isScienza ? "landing-event-row--scienza" : ""}`}
     >
-      <div
-        className="landing-event-row__bg absolute inset-0 bg-cover bg-center"
-        style={{
-          background: fallbackGradient,
-          backgroundImage: `url(${bgImage})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-        aria-hidden
-      />
-      <div className="landing-event-row__overlay absolute inset-0 bg-black/50 dark:bg-black/60" aria-hidden />
-      <div className="landing-event-row__content relative z-10 p-5 md:p-6 flex flex-col min-h-[140px] justify-between">
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <span className="inline-flex items-center gap-1.5 shrink-0 min-w-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-semibold bg-white/20 backdrop-blur-sm border border-white/20 text-white">
-            <span className="[&>svg]:w-4 [&>svg]:h-4 shrink-0">{getCategoryIcon(event.category)}</span>
-            <span className="truncate">{event.category}</span>
-          </span>
-          <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold font-numeric bg-black/40 text-white border border-white/20">
-            {timeLabel}
-          </span>
-        </div>
-        <h3 className="text-ds-h3 font-bold text-white mb-3 line-clamp-2 leading-snug drop-shadow-md">
-          {event.title}
-        </h3>
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-2 rounded-full bg-white/30 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-primary transition-all"
-              style={{ width: `${yesPct}%` }}
-            />
-          </div>
-          <span className="text-ds-body-sm font-bold font-numeric text-white tabular-nums shrink-0 drop-shadow-md">
-            Sì {yesPct}%
-          </span>
-        </div>
+      <div className="landing-event-row__bg" aria-hidden />
+      <div className="relative z-10">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg text-ds-micro font-semibold bg-white/5 dark:bg-black/40 border border-white/10 dark:border-primary/30 text-fg shrink-0">
+          <span aria-hidden>{icon}</span>
+          {event.category}
+        </span>
+        <span className="text-ds-micro font-bold font-numeric text-primary shrink-0">
+          {timeLabel}
+        </span>
+      </div>
+      <h3 className="text-ds-body font-bold text-fg line-clamp-2 leading-snug mb-3 group-hover:text-primary/90 transition-colors">
+        {event.title}
+      </h3>
+      <div className="flex items-center gap-2 text-ds-body-sm text-fg-muted mb-3">
+        <span className="font-semibold text-primary">{yesPct}%</span>
+        <span>SÌ</span>
+        <span className="text-fg-subtle">·</span>
+        <span className="font-semibold">{noPct}%</span>
+        <span>NO</span>
+      </div>
+      <div className="prediction-bar-led h-2.5 w-full flex rounded-full overflow-hidden mb-4" role="presentation" aria-hidden>
+        <div
+          className="prediction-bar-fill-si h-full shrink-0 rounded-full transition-all duration-500"
+          style={{ width: `${yesPct}%` }}
+        />
+        <div
+          className="prediction-bar-fill-no h-full shrink-0 rounded-full transition-all duration-500"
+          style={{ width: `${noPct}%` }}
+        />
+      </div>
+      <span className="inline-flex items-center justify-center min-h-[44px] w-full py-2.5 px-4 rounded-xl bg-primary/20 text-primary font-semibold text-ds-body-sm border border-primary/40 shadow-[0_0_16px_-4px_rgba(var(--primary-glow),0.35)] hover:shadow-[0_0_20px_-4px_rgba(var(--primary-glow),0.45)] transition-shadow ds-tap-target">
+        Fai la tua previsione
+      </span>
       </div>
     </Link>
   );
