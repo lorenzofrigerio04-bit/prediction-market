@@ -298,37 +298,33 @@ export default function Home() {
         <Header />
         <main id="main-content" className="relative mx-auto px-4 sm:px-6 py-5 md:py-12 lg:py-16 max-w-2xl">
           {/* Hero: above-the-fold on mobile (eyebrow, headline, subtitle, primary CTA, secondary CTA) */}
-          <section className="landing-hero-section mb-10 md:mb-16 min-h-0 min-h-[85vh] md:min-h-[88vh] flex flex-col justify-center">
-            <div className="landing-hero-card px-6 py-8 md:px-12 md:py-14 text-center">
-              <p className="landing-hero-eyebrow text-ds-label font-semibold uppercase tracking-wider mb-4 md:mb-6 text-white">
-                Mercati di previsione · Solo crediti virtuali
+          <section className="landing-hero-section mb-10 md:mb-16 min-h-0 min-h-[90vh] md:min-h-[92vh] flex flex-col justify-center pt-2 md:pt-4">
+            <div className="landing-hero-card px-5 py-6 md:px-12 md:py-12 text-center">
+              <p className="landing-hero-eyebrow text-ds-label font-semibold uppercase tracking-wider mb-3 md:mb-4 text-white whitespace-nowrap overflow-x-auto max-w-full scrollbar-none">
+                Mercati di previsione – Solo crediti virtuali
               </p>
-              <div className="landing-hero-line my-4 md:my-5" aria-hidden />
-              <h1 className="landing-hero-title text-ds-display-landing mb-4 md:mb-6 max-w-2xl mx-auto leading-tight tracking-tight">
+              <div className="landing-hero-line my-3 md:my-4" aria-hidden />
+              <h1 className="landing-hero-title text-ds-display-landing mb-3 md:mb-4 max-w-2xl mx-auto leading-tight tracking-tight">
                 Prevedi il futuro. Guadagna crediti. Scala la classifica.
               </h1>
-              <div className="landing-hero-line my-4 md:my-5" aria-hidden />
-              <p className="text-ds-body-landing font-normal text-fg-muted max-w-xl mx-auto mb-6 md:mb-10 leading-snug">
-                Partecipa ai mercati sociali su eventi reali. Più sei preciso, più sali. Zero rischio, zero soldi veri.
+              <div className="landing-hero-line landing-hero-line--below my-3 md:my-4" aria-hidden />
+              <p className="text-ds-body-landing font-normal text-fg-muted max-w-xl mx-auto mb-5 md:mb-8 leading-snug px-1">
+                Quante volte hai pensato «l&apos;avrei detto io»? Ora puoi prevederlo—e dimostrarlo.
               </p>
-              <div className="landing-hero-line my-5 md:my-6" aria-hidden />
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6 md:mb-8">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-6 md:mb-7">
                 <Link
                   href="/auth/signup"
-                  className="landing-cta-primary w-full sm:w-auto min-h-[52px] px-8 py-3.5 rounded-xl font-semibold text-ds-body inline-flex items-center justify-center transition-all hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                  className="landing-cta-primary w-full sm:w-auto min-h-[52px] px-6 py-3.5 rounded-xl font-semibold text-ds-body inline-flex items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
                 >
-                  Prevedi ora — 100 crediti gratis
+                  Prevedi ora — 1000 crediti di benvenuto!
                 </Link>
                 <Link
                   href="/auth/login"
-                  className="w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body border-2 border-white/30 text-white bg-white/10 hover:bg-white/15 hover:border-white/50 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg inline-flex items-center justify-center"
+                  className="landing-cta-secondary w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body inline-flex items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
                 >
                   Già account? Accedi
                 </Link>
               </div>
-              <p className="text-ds-caption font-medium text-fg-subtle">
-                Risoluzione trasparente · Zero soldi veri
-              </p>
               <LandingHeroStats />
             </div>
           </section>

@@ -68,29 +68,25 @@ export default function LandingHeroStats() {
 
   return (
     <div
-      className="landing-hero-stats flex flex-wrap justify-center items-center gap-4 md:gap-6 mt-8 pt-8"
+      className="landing-hero-stats flex flex-nowrap justify-center items-center gap-3 sm:gap-5 mt-6 pt-6 min-h-[3.5rem]"
       role="status"
       aria-live="polite"
-      aria-label={`${stats.usersCount} utenti, ${stats.activeEventsCount} eventi attivi`}
+      aria-label={`${stats.usersCount} utenti, ${stats.activeEventsCount} eventi attivi, in tempo reale`}
     >
-      <div className="landing-hero-stats__pill flex items-center gap-2.5 px-5 py-2.5">
+      <div className="landing-hero-stats__pill flex items-center gap-2 sm:gap-2.5 px-3 py-2 sm:px-5 sm:py-2.5 shrink-0">
         <span className="landing-hero-stats__dot" aria-hidden />
-        <span className="text-ds-body font-medium text-white">
-          <span className="font-numeric font-bold text-lg md:text-xl tabular-nums text-white">{usersDisplay}</span>
-          <span className="ml-1.5 opacity-90">utenti</span>
+        <span className="text-white text-ds-body sm:text-ds-body flex items-baseline gap-1.5">
+          <span className="landing-hero-stats__number text-lg sm:text-xl md:text-2xl tabular-nums text-white">{usersDisplay}</span>
+          <span className="opacity-90 text-ds-body-sm">utenti</span>
         </span>
       </div>
-      <div className="landing-hero-stats__pill flex items-center gap-2.5 px-5 py-2.5">
+      <div className="landing-hero-stats__pill flex items-center gap-2 sm:gap-2.5 px-3 py-2 sm:px-5 sm:py-2.5 shrink-0">
         <span className="landing-hero-stats__dot landing-hero-stats__dot--alt" aria-hidden />
-        <span className="text-ds-body font-medium text-white">
-          <span className="font-numeric font-bold text-lg md:text-xl tabular-nums text-white">{eventsDisplay}</span>
-          <span className="ml-1.5 opacity-90">eventi attivi</span>
+        <span className="text-white text-ds-body sm:text-ds-body flex items-baseline gap-1.5">
+          <span className="landing-hero-stats__number text-lg sm:text-xl md:text-2xl tabular-nums text-white">{eventsDisplay}</span>
+          <span className="opacity-90 text-ds-body-sm">eventi attivi</span>
         </span>
       </div>
-      <span className="text-ds-caption font-semibold uppercase tracking-wider text-white/70 flex items-center gap-1.5">
-        <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
-        In diretta
-      </span>
     </div>
   );
 }

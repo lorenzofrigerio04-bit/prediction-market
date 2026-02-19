@@ -12,6 +12,7 @@ module.exports = {
         sans: ['Outfit', 'system-ui', 'sans-serif'],
         display: ['Syne', 'Outfit', 'system-ui', 'sans-serif'],
         numeric: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        stats: ['Orbitron', 'JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       letterSpacing: {
         'headline': '0.02em',
