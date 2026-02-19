@@ -100,6 +100,23 @@ export default function Home() {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [missionsLoading, setMissionsLoading] = useState(false);
   const [canSpinToday, setCanSpinToday] = useState<boolean | null>(null);
+
+  const whySectionRef = useRef<HTMLElement>(null);
+  const [whySectionInView, setWhySectionInView] = useState(false);
+  useEffect(() => {
+    const el = whySectionRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) setWhySectionInView(true);
+        });
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
   const [spinLoading, setSpinLoading] = useState(false);
   const [debugInfo, setDebugInfo] = useState<{ version?: { commit: string; env: string; baseUrl: string }; health?: { dbConnected: boolean; markets_count: number } } | null>(null);
 
@@ -366,11 +383,11 @@ export default function Home() {
             )}
           </section>
 
-          <section className="mb-12 md:mb-16">
+          <section ref={whySectionRef} className="mb-12 md:mb-16">
             <h2 className="landing-section-title text-ds-h2 font-bold text-fg mb-6 text-center">
               Perché giocare
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-5">
+            <div className={`grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-5 landing-why-section ${whySectionInView ? "landing-why-section--in-view" : ""}`}>
               <div className="landing-why-box p-5 md:p-6 text-center hover-lift transition-shadow">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 border border-white/30 text-2xl mb-3" aria-hidden>🏆</div>
                 <h3 className="text-ds-body font-bold text-white mb-1">Classifiche settimanali</h3>

@@ -64,16 +64,12 @@ export default function LandingEventRow({ event }: LandingEventRowProps) {
   const isIntrattenimento = event.category === "Intrattenimento";
   const isEconomia = event.category === "Economia";
   const isScienza = event.category === "Scienza";
-  const hasCategoryBg = isPolitica || isCultura || isSport || isTecnologia || isIntrattenimento || isEconomia || isScienza;
-
   return (
     <Link
       href={`/events/${event.id}`}
-      className={`block rounded-2xl box-raised hover-lift p-4 md:p-5 transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none group relative overflow-hidden ${hasCategoryBg ? "landing-event-row--has-bg" : ""} ${isPolitica ? "landing-event-row--politica" : ""} ${isCultura ? "landing-event-row--cultura" : ""} ${isSport ? "landing-event-row--sport" : ""} ${isTecnologia ? "landing-event-row--tecnologia" : ""} ${isIntrattenimento ? "landing-event-row--intrattenimento" : ""} ${isEconomia ? "landing-event-row--economia" : ""} ${isScienza ? "landing-event-row--scienza" : ""}`}
+      className={`block rounded-2xl box-raised hover-lift p-4 md:p-5 transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none group relative overflow-hidden landing-event-row landing-event-row--has-bg ${isPolitica ? "landing-event-row--politica" : ""} ${isCultura ? "landing-event-row--cultura" : ""} ${isSport ? "landing-event-row--sport" : ""} ${isTecnologia ? "landing-event-row--tecnologia" : ""} ${isIntrattenimento ? "landing-event-row--intrattenimento" : ""} ${isEconomia ? "landing-event-row--economia" : ""} ${isScienza ? "landing-event-row--scienza" : ""}`}
     >
-      {hasCategoryBg && (
-        <div className="landing-event-row__bg" aria-hidden />
-      )}
+      <div className="landing-event-row__bg" aria-hidden />
       <div className="relative z-10">
       <div className="flex items-start justify-between gap-3 mb-3">
         <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg text-ds-micro font-semibold bg-white/5 dark:bg-black/40 border border-white/10 dark:border-primary/30 text-fg shrink-0">
