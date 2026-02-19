@@ -593,11 +593,13 @@ textarea:focus-visible {
   font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
   font-weight: 700;
   color: rgb(255 255 255);
+}
+.landing-section-title:not(.landing-section-title--with-badge) {
   position: relative;
   display: inline-block;
   padding-bottom: 0.4em;
 }
-.landing-section-title::after {
+.landing-section-title:not(.landing-section-title--with-badge)::after {
   content: "";
   position: absolute;
   left: 0;
@@ -606,6 +608,55 @@ textarea:focus-visible {
   height: 2px;
   border-radius: 1px;
   background: rgb(255 255 255 / 0.2);
+}
+.landing-section-title__text {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 0.4em;
+}
+.landing-section-title__text::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: rgb(255 255 255 / 0.2);
+}
+
+/* Badge "° LIVE" accanto a "Eventi in corso": LED leggero, pulse elegante */
+.landing-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: rgb(147 197 253 / 0.95);
+  text-shadow: 0 0 12px rgb(147 197 253 / 0.4);
+  animation: landing-live-pulse 2.4s ease-in-out infinite;
+}
+.landing-live-badge__deg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 1em;
+  opacity: 0.9;
+}
+.landing-live-badge__text {
+  line-height: 1;
+}
+@keyframes landing-live-pulse {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 0 0 12px rgb(147 197 253 / 0.4);
+  }
+  50% {
+    opacity: 0.82;
+    text-shadow: 0 0 18px rgb(147 197 253 / 0.55);
+  }
 }
 
 /* Landing page: header liquid glass — trasparenza leggera */
@@ -819,7 +870,7 @@ textarea:focus-visible {
   background-image: var(--landing-politica-bg);
   background-size: cover;
   background-position: center;
-  opacity: 0.45;
+  opacity: 0.68;
 }
 .landing-event-row__bg::after {
   content: "";
@@ -828,9 +879,9 @@ textarea:focus-visible {
   border-radius: inherit;
   background: linear-gradient(
     180deg,
-    rgb(0 0 0 / 0.55) 0%,
-    rgb(0 0 0 / 0.65) 50%,
-    rgb(0 0 0 / 0.72) 100%
+    rgb(0 0 0 / 0.42) 0%,
+    rgb(0 0 0 / 0.52) 50%,
+    rgb(0 0 0 / 0.58) 100%
   );
   pointer-events: none;
 }
