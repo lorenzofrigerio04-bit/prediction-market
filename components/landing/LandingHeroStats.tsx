@@ -191,7 +191,7 @@ export default function LandingHeroStats() {
           <span className="landing-hero-stats__number text-2xl sm:text-3xl tabular-nums leading-tight">
             {usersDisplay}
           </span>
-          <span className="landing-hero-stats__label mt-0.5">utenti attivi</span>
+          <span className="landing-hero-stats__label mt-0.5">UTENTI ATTIVI</span>
         </div>
       </div>
       <div className="landing-hero-stats__card landing-hero-stats__card--events flex items-center gap-3 flex-1 min-w-0 max-w-[10rem] sm:max-w-[9rem]">
@@ -203,7 +203,7 @@ export default function LandingHeroStats() {
           <span className="landing-hero-stats__number text-2xl sm:text-3xl tabular-nums leading-tight">
             {eventsDisplay}
           </span>
-          <span className="landing-hero-stats__label mt-0.5">eventi attivi</span>
+          <span className="landing-hero-stats__label mt-0.5">EVENTI ATTIVI</span>
         </div>
       </div>
     </div>

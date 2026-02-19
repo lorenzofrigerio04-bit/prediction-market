@@ -840,9 +840,10 @@ textarea:focus-visible {
   text-shadow: 0 0 20px rgb(255 255 255 / 0.15);
 }
 .landing-hero-stats__label {
-  color: rgb(255 255 255 / 0.8);
+  color: rgb(255 255 255 / 0.88);
   font-size: 0.8125rem;
-  font-weight: 500;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 @keyframes landing-stats-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
