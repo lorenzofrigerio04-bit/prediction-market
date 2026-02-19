@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { getCategoryImagePath } from "@/lib/category-slug";
+import { getCategoryImagePath, getCategoryFallbackGradient } from "@/lib/category-slug";
 import { getCategoryIcon } from "@/lib/category-icons";
 
 export interface LandingEventRowEvent {
@@ -27,8 +27,8 @@ function getTimeRemaining(closesAt: string | Date, countdownMs?: number): string
 export default function LandingEventRow({ event }: { event: LandingEventRowEvent }) {
   const timeLabel = getTimeRemaining(event.closesAt, event.fomo?.countdownMs);
   const yesPct = Math.round(event.probability ?? 50);
-  const noPct = 100 - yesPct;
   const bgImage = getCategoryImagePath(event.category);
+  const fallbackGradient = getCategoryFallbackGradient(event.category);
 
   return (
     <Link
@@ -37,7 +37,12 @@ export default function LandingEventRow({ event }: { event: LandingEventRowEvent
     >
       <div
         className="landing-event-row__bg absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${bgImage})` }}
+        style={{
+          background: fallbackGradient,
+          backgroundImage: `url(${bgImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
         aria-hidden
       />
       <div className="landing-event-row__overlay absolute inset-0 bg-black/50 dark:bg-black/60" aria-hidden />

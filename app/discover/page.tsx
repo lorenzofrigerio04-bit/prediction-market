@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useDeferredValue } from "react";
 import Header from "@/components/Header";
 import EventCard from "@/components/EventCard";
 import MarketCardSkeleton from "@/components/discover/MarketCardSkeleton";
+import CategoryBoxes from "@/components/discover/CategoryBoxes";
 import type { EventCardEvent } from "@/components/EventCard";
 import {
   PageHeader,
@@ -155,6 +156,8 @@ export default function DiscoverPage() {
           title="Eventi"
           description="Cerca, filtra e ordina gli eventi. Fai la tua previsione su quelli che preferisci."
         />
+
+        {categories.length > 0 && <CategoryBoxes categories={categories} />}
 
         <form onSubmit={handleSearch} className="mb-6" role="search">
           <label htmlFor="discover-search" className="sr-only">

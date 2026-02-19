@@ -1,0 +1,11 @@
+---
+description: Evita file vuoti che rompono il build (Next.js "is not a module")
+globs: app/**/*.ts, app/**/*.tsx, lib/**/*.ts
+---
+
+# No empty modules
+
+- **app/layout.tsx** e **app/page.tsx** devono esportare sempre un default (layout o page component). Mai lasciarli vuoti.
+- **app/api/**/route.ts**: ogni route deve esportare almeno `GET`, `POST`, ecc. Mai file vuoti (causano "File is not a module" in build).
+- **lib/** file importati da altri moduli (es. `event-templates/catalog.ts`, `event-templates/types.ts`, `personalization/candidate-generation.ts`) devono esportare le funzioni/tipi usati. Se un file è stato svuotato, ripristinare implementazioni minime o stub prima di committare.
+- Dopo modifiche che toccano API o layout, eseguire `npm run build` per verificare che non ci siano "is not a module".
