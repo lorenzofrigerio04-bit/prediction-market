@@ -112,10 +112,10 @@ export default function PredictionModal({
       onClick={handleClose}
     >
       <div
-        className="glass w-full sm:max-w-md sm:rounded-3xl rounded-t-3xl border-t sm:border border-border dark:border-white/10 max-h-[90vh] overflow-y-auto shadow-xl"
+        className="bg-bg w-full sm:max-w-md sm:rounded-3xl rounded-t-3xl border-t sm:border border-border dark:border-white/10 max-h-[90vh] overflow-y-auto shadow-overlay"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 glass border-b border-border dark:border-white/10 px-4 py-3 sm:pt-6 flex items-center justify-between rounded-t-3xl sm:rounded-t-3xl z-10">
+        <div className="sticky top-0 bg-bg border-b border-border dark:border-white/10 px-4 py-3 sm:pt-6 flex items-center justify-between rounded-t-3xl sm:rounded-t-3xl z-10">
           <h2 id="prediction-modal-title" className="text-lg font-bold text-fg">
             Fai una Previsione
           </h2>
@@ -145,8 +145,8 @@ export default function PredictionModal({
                   disabled={loading}
                   className={`min-h-[52px] py-4 rounded-2xl font-bold text-lg transition-all ${
                     selectedOutcome === "YES"
-                      ? "bg-emerald-500 text-white shadow-glow"
-                      : "bg-emerald-50 text-emerald-700 border-2 border-emerald-200 hover:bg-emerald-100"
+                      ? "bg-emerald-500 text-white shadow-card"
+                      : "bg-emerald-50 text-emerald-700 border-2 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-700"
                   }`}
                 >
                   SÌ
@@ -157,8 +157,8 @@ export default function PredictionModal({
                   disabled={loading}
                   className={`min-h-[52px] py-4 rounded-2xl font-bold text-lg transition-all ${
                     selectedOutcome === "NO"
-                      ? "bg-red-500 text-white shadow-glow"
-                      : "bg-red-50 text-red-700 border-2 border-red-200 hover:bg-red-100"
+                      ? "bg-red-500 text-white shadow-card"
+                      : "bg-red-50 text-red-700 border-2 border-red-200 hover:bg-red-100 dark:bg-red-950/50 dark:text-red-300 dark:border-red-700"
                   }`}
                 >
                   NO
@@ -187,7 +187,7 @@ export default function PredictionModal({
                     onClick={() => setCredits(Math.min(amount, userCredits))}
                     disabled={loading || amount > userCredits}
                     className={`min-h-[40px] px-4 rounded-2xl text-sm font-semibold transition-colors ${
-                      credits === amount ? "bg-primary text-white" : "glass text-fg-muted border border-border dark:border-white/10 hover:text-fg"
+                      credits === amount ? "chip-selected" : "box-raised text-fg-muted hover:border-primary/25"
                     } ${amount > userCredits ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     {amount}
@@ -197,9 +197,9 @@ export default function PredictionModal({
                   type="button"
                   onClick={() => setCredits(userCredits)}
                   disabled={loading || userCredits === 0}
-                  className={`min-h-[40px] px-4 rounded-2xl text-sm font-semibold transition-colors ${
-                    credits === userCredits ? "bg-primary text-white" : "glass text-fg-muted border border-border dark:border-white/10 hover:text-fg"
-                  } ${userCredits === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`min-h-[40px] px-4 rounded-2xl text-sm font-semibold transition-colors ${
+                      credits === userCredits ? "chip-selected" : "box-raised text-fg-muted hover:border-primary/25"
+                    } ${userCredits === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   Tutto
                 </button>

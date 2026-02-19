@@ -111,8 +111,8 @@ export default function MissionsPage() {
       <div
         className={`rounded-3xl border p-4 md:p-6 transition-all duration-ds-normal ${
           m.completed
-            ? "box-neon-soft border-success/40 shadow-[0_0_20px_-6px_rgba(74,222,128,0.2)]"
-            : "box-neon-soft hover:shadow-[0_0_24px_-8px_rgba(var(--primary-glow),0.2)]"
+            ? "box-raised border-success/40"
+            : "box-raised hover-lift"
         }`}
       >
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
@@ -174,7 +174,7 @@ export default function MissionsPage() {
     return (
       <div className="min-h-screen bg-bg">
         <Header />
-        <main className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
+        <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
           <LoadingBlock message="Caricamento missioni..." />
         </main>
       </div>
@@ -186,14 +186,14 @@ export default function MissionsPage() {
   return (
     <div className="min-h-screen bg-bg">
       <Header />
-      <main className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
+      <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
         <PageHeader
           title="Missioni"
           description="Un motivo in più per tornare domani: completa le missioni, mantieni la serie e guadagna crediti extra."
         />
 
         <SectionContainer>
-          <Card neon className="p-5 overflow-hidden">
+          <Card className="p-5 overflow-hidden">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <h2 className="text-ds-label uppercase tracking-wide text-fg-muted font-semibold mb-1">
@@ -282,7 +282,7 @@ export default function MissionsPage() {
           </>
         )}
 
-        <Card neon className="p-5">
+        <Card className="p-5">
           <h2 className="text-ds-h2 font-bold text-fg mb-2">Come funziona</h2>
           <ul className="text-fg-muted space-y-2 text-ds-body-sm">
             <li>· <strong className="text-fg">Previsioni:</strong> scommetti sugli eventi per far avanzare le missioni.</li>

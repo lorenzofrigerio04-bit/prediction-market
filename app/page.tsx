@@ -295,7 +295,7 @@ export default function Home() {
       <div className="min-h-screen relative overflow-x-hidden landing-page">
         <LandingBackground />
         <Header />
-        <main className="relative mx-auto px-4 sm:px-6 py-5 md:py-12 lg:py-16 max-w-2xl">
+        <main id="main-content" className="relative mx-auto px-4 sm:px-6 py-5 md:py-12 lg:py-16 max-w-2xl">
           {/* Hero: above-the-fold on mobile (eyebrow, headline, subtitle, primary CTA, secondary CTA) */}
           <section className="mb-10 md:mb-16 min-h-0">
             <div className="landing-hero-card px-5 py-6 md:px-10 md:py-12 text-center">
@@ -364,17 +364,17 @@ export default function Home() {
               Perché giocare
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-5">
-              <div className="box-neon-soft p-5 md:p-6 text-center hover:shadow-[0_0_28px_-8px_rgba(var(--primary-glow),0.22)] transition-shadow">
+              <div className="box-raised p-5 md:p-6 text-center hover-lift transition-shadow">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/15 border border-primary/30 text-2xl mb-3" aria-hidden>🏆</div>
                 <h3 className="text-ds-body font-bold text-fg mb-1">Classifiche settimanali</h3>
                 <p className="text-ds-body-sm text-fg-muted">Sali in classifica ogni settimana e confrontati con la community.</p>
               </div>
-              <div className="box-neon-soft p-5 md:p-6 text-center hover:shadow-[0_0_28px_-8px_rgba(var(--primary-glow),0.22)] transition-shadow">
+              <div className="box-raised p-5 md:p-6 text-center hover-lift transition-shadow">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/15 border border-primary/30 text-2xl mb-3" aria-hidden>🎯</div>
                 <h3 className="text-ds-body font-bold text-fg mb-1">Missioni & streak</h3>
                 <p className="text-ds-body-sm text-fg-muted">Completa missioni e mantieni lo streak per crediti extra.</p>
               </div>
-              <div className="box-neon-soft p-5 md:p-6 text-center hover:shadow-[0_0_28px_-8px_rgba(var(--primary-glow),0.22)] transition-shadow">
+              <div className="box-raised p-5 md:p-6 text-center hover-lift transition-shadow">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/15 border border-primary/30 text-2xl mb-3" aria-hidden>📋</div>
                 <h3 className="text-ds-body font-bold text-fg mb-1">Regole trasparenti</h3>
                 <p className="text-ds-body-sm text-fg-muted">Ogni evento ha criteri di risoluzione chiari e verificabili.</p>
@@ -428,7 +428,7 @@ export default function Home() {
         <OnboardingTour onComplete={handleOnboardingComplete} />
       )}
       <Header />
-      <main className="mx-auto px-page-x py-page-y md:py-8 max-w-6xl">
+      <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-6xl">
         <PageHeader
           title={`Bentornato, ${displayName}.`}
           description="Ecco cosa succede oggi."
@@ -456,7 +456,7 @@ export default function Home() {
         >
           <Link
             href="/spin"
-            className="block card-neon-glass p-4 md:p-5 hover:shadow-[0_0_32px_-8px_rgba(var(--primary-glow),0.25)] transition-all duration-ds-normal group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none"
+            className="block card-raised hover-lift p-4 md:p-5 transition-all duration-ds-normal group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none"
           >
             <div className="flex items-center justify-between gap-2 mb-3">
               <h2 className="text-ds-body font-bold text-fg group-hover:text-primary transition-colors">
@@ -486,7 +486,7 @@ export default function Home() {
         >
           <Link
             href="/missions"
-            className="block card-neon-glass p-4 md:p-5 hover:shadow-[0_0_32px_-8px_rgba(var(--primary-glow),0.25)] transition-all duration-ds-normal group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none"
+            className="block card-raised hover-lift p-4 md:p-5 transition-all duration-ds-normal group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none"
           >
             <div className="flex items-center justify-between gap-2 mb-3">
               <h2 className="text-ds-body font-bold text-fg group-hover:text-primary transition-colors">

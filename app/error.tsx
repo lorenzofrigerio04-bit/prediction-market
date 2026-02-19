@@ -28,7 +28,7 @@ export default function Error({
         </button>
         <BackLink
           href="/"
-          className="px-4 py-2 glass border border-border dark:border-white/10 text-fg rounded-2xl hover:border-primary/20 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg inline-block"
+          className="px-4 py-2 box-raised border border-border dark:border-white/10 text-fg rounded-2xl hover:border-primary/20 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg inline-block"
         >
           Indietro
         </BackLink>

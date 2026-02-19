@@ -137,7 +137,7 @@ export default function NotificationsPage() {
     return (
       <div className="min-h-screen bg-bg">
         <Header />
-        <main className="mx-auto px-4 py-8 max-w-2xl">
+        <main id="main-content" className="mx-auto px-4 py-8 max-w-2xl">
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
             <p className="mt-4 text-fg-muted font-medium">Caricamento notifiche...</p>
@@ -152,8 +152,8 @@ export default function NotificationsPage() {
   return (
     <div className="min-h-screen bg-bg">
       <Header />
-      <main className="mx-auto px-4 py-5 md:py-8 max-w-2xl">
-        <div className="glass rounded-2xl border border-border dark:border-white/10 p-5 md:p-6 mb-6">
+      <main id="main-content" className="mx-auto px-4 py-5 md:py-8 max-w-2xl">
+        <div className="box-raised rounded-2xl p-5 md:p-6 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-fg">Notifiche</h1>
@@ -177,12 +177,12 @@ export default function NotificationsPage() {
         </div>
 
         {notifications.length === 0 ? (
-          <div className="glass rounded-2xl border border-border dark:border-white/10 p-12 text-center">
+          <div className="box-raised rounded-2xl p-12 text-center">
             <div className="text-5xl mb-4" aria-hidden>🔔</div>
             <p className="text-fg-muted font-medium">Nessuna notifica.</p>
           </div>
         ) : (
-          <div className="glass rounded-2xl border border-border dark:border-white/10 overflow-hidden divide-y divide-border dark:divide-white/10">
+          <div className="box-raised rounded-2xl overflow-hidden divide-y divide-border dark:divide-white/10">
             {notifications.map((notification) => {
               const icon = getNotificationIcon(notification.type);
               const link = getNotificationLink(notification);

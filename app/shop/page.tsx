@@ -103,7 +103,7 @@ export default function ShopPage() {
     return (
       <div className="min-h-screen bg-bg">
         <Header />
-        <main className="mx-auto px-4 py-8 max-w-2xl">
+        <main id="main-content" className="mx-auto px-4 py-8 max-w-2xl">
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
             <p className="mt-4 text-fg-muted font-medium">Caricamento shop...</p>
@@ -120,7 +120,7 @@ export default function ShopPage() {
   return (
     <div className="min-h-screen bg-bg">
       <Header />
-      <main className="mx-auto px-4 py-5 md:py-8 max-w-2xl">
+      <main id="main-content" className="mx-auto px-4 py-5 md:py-8 max-w-2xl">
         <div className="mb-6 md:mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-fg mb-1">Credit Shop</h1>
           <p className="text-fg-muted text-sm md:text-base">Acquista con i tuoi crediti virtuali</p>
@@ -152,7 +152,7 @@ export default function ShopPage() {
         )}
 
         {items.length === 0 ? (
-          <div className="glass rounded-2xl border border-border dark:border-white/10 p-8 text-center">
+          <div className="box-raised rounded-2xl p-8 text-center">
             <p className="text-fg-muted">Nessun prodotto disponibile al momento.</p>
           </div>
         ) : (
@@ -163,7 +163,7 @@ export default function ShopPage() {
               return (
                 <div
                   key={item.id}
-                  className="glass rounded-2xl border border-border dark:border-white/10 p-5 md:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                  className="box-raised rounded-2xl p-5 md:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
                 >
                   <div className="min-w-0 flex-1">
                     <h2 className="text-lg font-bold text-fg">{item.name}</h2>

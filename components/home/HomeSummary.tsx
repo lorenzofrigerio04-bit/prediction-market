@@ -22,7 +22,7 @@ export default function HomeSummary({
 }: HomeSummaryProps) {
   return (
     <section
-      className="mb-section md:mb-section-lg card-neon-glass p-4 md:p-5"
+      className="mb-section md:mb-section-lg card-raised hover-lift p-4 md:p-5"
       aria-label="Riepilogo"
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">

@@ -107,7 +107,7 @@ export default function EventCard({ event }: EventCardProps) {
       href={`/events/${event.id}`}
       className="block focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-3xl outline-none"
     >
-      <article className="card-neon-glass transition-all duration-ds-normal ease-ds-ease p-5 md:p-6 h-full flex flex-col group hover:shadow-[0_0_36px_-10px_rgba(var(--primary-glow),0.28)] active:scale-[0.995]">
+      <article className="card-raised hover-lift transition-all duration-ds-normal ease-ds-ease p-5 md:p-6 h-full flex flex-col group active:scale-[0.995]">
         {/* HEADER: badge categoria + scadenza */}
         <div className="flex items-center justify-between gap-2 mb-4">
           <span className="inline-flex items-center gap-1.5 shrink-0 min-w-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-semibold bg-white/5 border border-white/10 text-fg">
@@ -123,7 +123,7 @@ export default function EventCard({ event }: EventCardProps) {
                   ? "bg-white/5 text-fg-muted border border-white/10"
                   : isUrgent
                     ? "bg-warning-bg/90 text-warning border border-warning/30 dark:bg-warning-bg/50 dark:text-warning dark:border-warning/40 dark:shadow-[0_0_14px_-2px_rgba(253,224,71,0.4)]"
-                    : "bg-black/40 dark:bg-black/50 border border-primary/50 text-white shadow-[0_0_12px_-2px_rgba(var(--primary-glow),0.35)]"
+                    : "bg-black/40 dark:bg-black/50 border border-primary/40 text-white"
               }`}
             >
               <IconClock className="w-4 h-4" aria-hidden />
@@ -219,7 +219,7 @@ export default function EventCard({ event }: EventCardProps) {
             ? event.totalCredits
             : (qYes > 0 || qNo > 0 ? Math.round(cost(qYes, qNo, b)) : 0);
           return (
-            <div className="pill-credits-neon flex items-center justify-center gap-2 py-3 px-4 rounded-2xl mb-4">
+            <div className="pill-credits flex items-center justify-center gap-2 py-3 px-4 rounded-2xl mb-4">
               <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
               <span className="text-lg md:text-xl font-bold text-white font-numeric tabular-nums">
                 {creditsLabel.toLocaleString("it-IT")} CREDITI IN GIOCO
@@ -230,7 +230,7 @@ export default function EventCard({ event }: EventCardProps) {
 
         {/* FOOTER: tre stat neon-mini */}
         <div className="grid grid-cols-3 gap-2 mt-auto pt-3 border-t border-white/10">
-          <div className="stat-neon-mini flex flex-col items-center justify-center rounded-xl py-2.5 px-2 text-center">
+          <div className="stat-mini flex flex-col items-center justify-center rounded-xl py-2.5 px-2 text-center">
             <span className="text-base md:text-lg font-bold text-fg font-numeric tabular-nums">
               {fomo?.participantsCount !== undefined ? fomo.participantsCount : event._count.predictions}
             </span>
@@ -238,7 +238,7 @@ export default function EventCard({ event }: EventCardProps) {
               {fomo?.participantsCount !== undefined ? "Partecipanti" : "Previsioni"}
             </span>
           </div>
-          <div className="stat-neon-mini flex flex-col items-center justify-center rounded-xl py-2.5 px-2 text-center">
+          <div className="stat-mini flex flex-col items-center justify-center rounded-xl py-2.5 px-2 text-center">
             <IconChat className="w-4 h-4 text-fg-muted mx-auto mb-0.5" aria-hidden />
             <span className="text-base md:text-lg font-bold text-fg font-numeric tabular-nums">
               {event._count.comments}
@@ -247,7 +247,7 @@ export default function EventCard({ event }: EventCardProps) {
               Commenti
             </span>
           </div>
-          <div className="stat-neon-mini flex flex-col items-center justify-center rounded-xl py-2.5 px-2 text-center">
+          <div className="stat-mini flex flex-col items-center justify-center rounded-xl py-2.5 px-2 text-center">
             <IconTrendUp className="w-4 h-4 text-primary shrink-0 mx-auto mb-0.5" aria-hidden />
             <span className="text-base md:text-lg font-bold text-fg font-numeric tabular-nums">
               {fomo?.votesVelocity !== undefined ? fomo.votesVelocity.toFixed(1) : "—"}

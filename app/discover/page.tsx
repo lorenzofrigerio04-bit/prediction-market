@@ -40,7 +40,7 @@ export default function DiscoverPage() {
   return (
     <div className="min-h-screen bg-bg">
       <Header />
-      <main className="mx-auto px-page-x sm:px-6 py-5 md:py-8 max-w-6xl">
+      <main id="main-content" className="mx-auto px-page-x sm:px-6 py-5 md:py-8 max-w-6xl">
         <PageHeader
           title="Eventi"
           description="Scegli una categoria e metti alla prova le tue previsioni."

@@ -93,7 +93,7 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen bg-bg">
       <Header />
-      <main className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
+      <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
         <PageHeader
           title="Classifica"
           description="Sali in classifica prevedendo bene."
@@ -106,7 +106,7 @@ export default function LeaderboardPage() {
         )}
 
         <SectionContainer>
-          <Card neon className="p-4 mb-6 space-y-4">
+          <Card className="p-4 mb-6 space-y-4">
             <FilterChips
               options={periodButtons.map((b) => ({ id: b.id, label: b.label }))}
               value={period}
@@ -135,9 +135,9 @@ export default function LeaderboardPage() {
         ) : leaderboard.length === 0 ? (
           <EmptyState description="Nessun dato per questo periodo." />
         ) : (
-          <Card neon elevated className="p-4 md:p-6">
+          <Card elevated className="p-4 md:p-6">
             {myRank != null && session?.user && (
-              <div className="mb-4 p-3 rounded-xl pill-credits-neon text-sm text-white/90">
+              <div className="mb-4 p-3 rounded-xl pill-credits text-sm text-white/90">
                 La tua posizione: <strong className="text-white">#{myRank}</strong>
               </div>
             )}

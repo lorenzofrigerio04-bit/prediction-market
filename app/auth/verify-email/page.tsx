@@ -18,7 +18,7 @@ export default async function VerifyEmailPage({ searchParams }: { searchParams: 
       <div className="min-h-screen bg-bg flex flex-col">
         <Header />
         <div className="flex-1 flex items-center justify-center px-4 py-8">
-          <div className="max-w-md w-full glass rounded-3xl border border-border dark:border-white/10 p-6 md:p-8 text-center">
+          <div className="max-w-md w-full card-raised rounded-3xl border border-border dark:border-white/10 p-6 md:p-8 text-center">
             <h1 className="text-xl font-bold text-fg mb-2">Link non valido</h1>
             <p className="text-fg-muted text-sm mb-6">
               Il link di verifica è scaduto o non è corretto. Richiedi una nuova email di verifica dal tuo profilo.
@@ -46,7 +46,7 @@ export default async function VerifyEmailPage({ searchParams }: { searchParams: 
       <div className="min-h-screen bg-bg flex flex-col">
         <Header />
         <div className="flex-1 flex items-center justify-center px-4 py-8">
-          <div className="max-w-md w-full glass rounded-3xl border border-border dark:border-white/10 p-6 md:p-8 text-center">
+          <div className="max-w-md w-full card-raised rounded-3xl border border-border dark:border-white/10 p-6 md:p-8 text-center">
             <h1 className="text-xl font-bold text-fg mb-2">Link scaduto</h1>
             <p className="text-fg-muted text-sm mb-6">
               Il link è scaduto (valido 24 ore). Richiedi una nuova email di verifica dal profilo dopo il login.

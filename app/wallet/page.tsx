@@ -186,7 +186,7 @@ export default function WalletPage() {
     return (
       <div className="min-h-screen bg-bg">
         <Header />
-        <main className="mx-auto max-w-2xl px-page-x py-page-y md:py-8">
+        <main id="main-content" className="mx-auto max-w-2xl px-page-x py-page-y md:py-8">
           <LoadingBlock message="Caricamento…" />
         </main>
       </div>
@@ -199,7 +199,7 @@ export default function WalletPage() {
     return (
       <div className="min-h-screen bg-bg">
         <Header />
-        <main className="mx-auto max-w-2xl px-page-x py-page-y md:py-8">
+        <main id="main-content" className="mx-auto max-w-2xl px-page-x py-page-y md:py-8">
           <PageHeader title="Il tuo wallet" />
           <EmptyState description={error} action={{ label: "Riprova", onClick: () => fetchWalletData() }} />
         </main>
@@ -212,7 +212,7 @@ export default function WalletPage() {
   return (
     <div className="min-h-screen bg-bg">
       <Header />
-      <main className="mx-auto max-w-2xl px-page-x py-page-y md:py-8">
+      <main id="main-content" className="mx-auto max-w-2xl px-page-x py-page-y md:py-8">
         <PageHeader title="Il tuo wallet" description="Saldo, bonus e storico in un colpo d'occhio." />
 
         {error && (
@@ -233,7 +233,6 @@ export default function WalletPage() {
             value={formatAmount(stats.credits)}
             variant="primary"
             elevated
-            neon
             icon={<IconWallet className="w-5 h-5 md:w-6 md:h-6" />}
           />
           <div className="mt-4 flex flex-col sm:flex-row gap-3">
@@ -260,7 +259,7 @@ export default function WalletPage() {
           <p className="mb-3 text-ds-body-sm text-fg-muted">
             Crediti utilizzabili subito per fare previsioni. Nessun blocco.
           </p>
-          <div className="pill-credits-neon rounded-2xl p-4">
+          <div className="pill-credits rounded-2xl p-4">
             <p className="text-2xl font-bold font-numeric text-white md:text-3xl">{formatAmount(stats.credits)}</p>
             <p className="mt-1 text-ds-micro text-white/80">crediti disponibili</p>
           </div>
@@ -275,13 +274,11 @@ export default function WalletPage() {
             label="Totale guadagnato"
             value={`+${formatAmount(stats.totalEarned)}`}
             variant="success"
-            neon
           />
           <StatCard
             label="Totale speso"
             value={`−${formatAmount(stats.totalSpent)}`}
             variant="danger"
-            neon
           />
         </div>
         <p className="mb-8 text-ds-micro text-fg-muted">
@@ -295,7 +292,7 @@ export default function WalletPage() {
             Bonus che puoi riscattare o su cui stai lavorando. Ogni importo è definito dalla configurazione del gioco.
           </p>
 
-          <Card neon className="mb-4 p-5 md:p-6">
+          <Card className="mb-4 p-5 md:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-ds-h3 font-bold text-fg">Bonus giornaliero</h3>
@@ -346,7 +343,7 @@ export default function WalletPage() {
             </div>
           </Card>
 
-          <Card neon className="mb-4 p-5 md:p-6">
+          <Card className="mb-4 p-5 md:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-ds-h3 font-bold text-fg">Spin of the Day</h3>
@@ -374,7 +371,7 @@ export default function WalletPage() {
             </div>
           </Card>
 
-          <Card neon className="border-dashed border-white/15 p-5 md:p-6">
+          <Card className="border-dashed border-white/15 p-5 md:p-6">
             <h3 className="text-ds-h3 font-bold text-fg">Missioni</h3>
             <p className="mt-1 text-ds-body-sm text-fg-muted">
               Completa missioni giornaliere e settimanali per crediti extra. Le ricompense sono definite per ogni missione.
@@ -394,7 +391,7 @@ export default function WalletPage() {
           <p className="mb-4 text-ds-body-sm text-fg-muted">
             Ogni movimento è registrato con tipo, importo e saldo dopo l’operazione.
           </p>
-          <Card neon className="p-5 md:p-6">
+          <Card className="p-5 md:p-6">
             {transactions.length === 0 ? (
               <div className="py-8 text-center">
                 <p className="text-ds-body-sm text-fg-muted mb-4">Nessuna transazione ancora.</p>
@@ -410,7 +407,7 @@ export default function WalletPage() {
                     return (
                       <li
                         key={tx.id}
-                        className="flex items-center justify-between gap-3 rounded-2xl box-neon-soft p-4 transition-colors hover:shadow-[0_0_20px_-6px_rgba(var(--primary-glow),0.12)]"
+                        className="flex items-center justify-between gap-3 rounded-2xl box-raised hover-lift p-4 transition-colors"
                       >
                         <div className="flex min-w-0 items-center gap-3">
                           <span className="shrink-0 text-fg-muted"><TypeIcon className="w-5 h-5" /></span>

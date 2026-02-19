@@ -38,8 +38,8 @@ export default function FilterChips<T extends string>({
               onClick={() => onChange(opt.id)}
               className={`shrink-0 min-h-[44px] px-4 py-2.5 rounded-2xl font-semibold text-ds-body-sm transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg ds-tap-target ${
                 isSelected
-                  ? "chip-neon-selected"
-                  : "glass text-fg-muted border border-border dark:border-white/10 hover:border-primary/25 hover:shadow-[0_0_12px_-4px_rgba(var(--primary-glow),0.15)]"
+                  ? "chip-selected"
+                  : "box-raised text-fg-muted hover:border-primary/25"
               }`}
             >
               {opt.label}

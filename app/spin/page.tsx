@@ -149,7 +149,7 @@ export default function SpinPage() {
     return (
       <div className="min-h-screen dark bg-bg">
         <Header />
-        <main className="mx-auto max-w-lg px-page-x py-page-y md:py-8">
+        <main id="main-content" className="mx-auto max-w-lg px-page-x py-page-y md:py-8">
           <LoadingBlock message="Caricamento..." />
         </main>
       </div>
@@ -161,7 +161,7 @@ export default function SpinPage() {
   return (
     <div className="min-h-screen dark bg-bg">
       <Header />
-      <main className="mx-auto max-w-lg px-page-x py-page-y md:py-8">
+      <main id="main-content" className="mx-auto max-w-lg px-page-x py-page-y md:py-8">
         {error && (
           <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-ds-body-sm text-red-400">
             {error}

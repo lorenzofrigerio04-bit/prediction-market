@@ -18,7 +18,7 @@ export default function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      className={`text-center py-12 md:py-16 rounded-2xl box-neon-soft max-w-lg mx-auto px-6 ${className}`}
+      className={`text-center py-12 md:py-16 rounded-2xl box-raised max-w-lg mx-auto px-6 ${className}`}
     >
       {title && (
         <h3 className="text-ds-h2 font-bold text-fg mb-2">{title}</h3>

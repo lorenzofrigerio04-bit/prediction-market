@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function CreditsDisclaimerPage() {
   return (
-    <article className="glass rounded-2xl border border-border dark:border-white/10 p-6 md:p-8">
+    <article className="box-raised rounded-2xl p-6 md:p-8">
       <h1 className="text-2xl md:text-3xl font-bold text-fg mb-2">
         Disclaimer crediti
       </h1>

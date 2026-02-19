@@ -246,7 +246,7 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-bg">
         <Header />
-        <main className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
+        <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
           <LoadingBlock message="Caricamento profilo..." />
         </main>
       </div>
@@ -267,14 +267,14 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-bg">
       <Header />
-      <main className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
+      <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
         {error && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-600 dark:text-red-400 text-ds-body-sm">
             {error}
           </div>
         )}
 
-        <Card neon className="p-6 md:p-8 mb-6">
+        <Card className="p-6 md:p-8 mb-6">
           <div className="flex flex-col items-center text-center">
             <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-gradient-to-br from-primary to-accent-700 flex items-center justify-center text-white text-3xl md:text-4xl font-bold shrink-0 overflow-hidden">
               {profileData.user.image ? (
@@ -391,7 +391,7 @@ export default function ProfilePage() {
         </SectionContainer>
 
         <SectionContainer title="Impostazioni">
-          <Card neon className="p-5 md:p-6">
+          <Card className="p-5 md:p-6">
             <ul className="space-y-0 divide-y divide-border dark:divide-white/10">
               <li>
                 <Link
@@ -443,7 +443,7 @@ export default function ProfilePage() {
         </SectionContainer>
 
         <SectionContainer title="Badge">
-          <Card neon className="p-5 md:p-6">
+          <Card className="p-5 md:p-6">
             {allBadges.length === 0 ? (
               <p className="text-fg-muted text-sm text-center py-6">
                 Completa missioni e previsioni per sbloccare badge.
@@ -471,7 +471,7 @@ export default function ProfilePage() {
         </SectionContainer>
 
         <SectionContainer title="Eventi seguiti">
-          <Card neon className="p-5 md:p-6">
+          <Card className="p-5 md:p-6">
             {(profileData.followedEventsCount ?? 0) === 0 ? (
               <p className="text-fg-muted text-sm mb-3">Non segui ancora nessun evento.</p>
             ) : (
@@ -497,7 +497,7 @@ export default function ProfilePage() {
         </SectionContainer>
 
         <SectionContainer title="Le Mie Previsioni">
-          <Card neon className="p-5 md:p-6">
+          <Card className="p-5 md:p-6">
             <FilterChips
               options={filterButtons.map((b) => ({
                 id: b.id,
@@ -526,10 +526,10 @@ export default function ProfilePage() {
                       key={prediction.id}
                       className={`p-4 rounded-2xl border transition-colors ${
                         isWon
-                          ? "box-neon-soft bg-success-bg/30 border-success/40 shadow-[0_0_16px_-4px_rgba(74,222,128,0.2)]"
+                          ? "box-raised bg-success-bg/30 border-success/40"
                           : isLost
-                            ? "box-neon-soft bg-danger-bg/30 border-danger/40 shadow-[0_0_16px_-4px_rgba(248,113,113,0.2)]"
-                            : "box-neon-soft hover:shadow-[0_0_20px_-6px_rgba(var(--primary-glow),0.15)]"
+                            ? "box-raised bg-danger-bg/30 border-danger/40"
+                            : "box-raised hover-lift"
                       }`}
                     >
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">

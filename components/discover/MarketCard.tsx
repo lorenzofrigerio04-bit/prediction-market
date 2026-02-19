@@ -62,7 +62,7 @@ function MarketCard({ event, index = 0 }: MarketCardProps) {
       className="group block focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-2xl md:rounded-3xl outline-none"
     >
       <article
-        className="relative overflow-hidden rounded-2xl md:rounded-3xl border border-border dark:border-white/10 glass p-4 md:p-5 h-full flex flex-col transition-all duration-300 ease-out hover:border-primary/30 hover:shadow-[0_0_24px_-4px_rgba(var(--primary-glow),0.2)] animate-feed-in opacity-0"
+        className="relative overflow-hidden rounded-2xl md:rounded-3xl box-raised hover-lift p-4 md:p-5 h-full flex flex-col transition-all duration-300 ease-out animate-feed-in opacity-0"
         style={{ animationDelay: `${Math.min(index * 60, 360)}ms` }}
       >
       <div className="flex items-center justify-between gap-2 mb-3">

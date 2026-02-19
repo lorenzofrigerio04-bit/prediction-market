@@ -96,7 +96,7 @@ export default function SignupPage() {
     <div className="min-h-screen bg-bg flex flex-col">
       <Header />
       <div className="flex-1 flex items-center justify-center px-4 py-8">
-        <div className="max-w-md w-full card-neon-glass p-8">
+        <div className="max-w-md w-full card-raised p-8">
         <h1 className="text-3xl font-bold text-center text-fg mb-2">
           Registrati
         </h1>

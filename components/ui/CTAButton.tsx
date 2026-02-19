@@ -31,9 +31,9 @@ const baseClasses =
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    "bg-primary text-white hover:bg-primary-hover border border-white/20 shadow-[0_0_24px_-6px_rgba(var(--primary-glow),0.45)] hover:shadow-[0_0_32px_-4px_rgba(var(--primary-glow),0.55)] focus-visible:ring-primary disabled:bg-primary/60 disabled:shadow-none disabled:border-white/10",
+    "bg-primary text-white hover:bg-primary-hover border border-white/20 shadow-card hover:shadow-card-hover focus-visible:ring-primary disabled:bg-primary/60 disabled:shadow-none disabled:border-white/10",
   secondary:
-    "glass border border-white/10 text-fg hover:border-primary/25 hover:bg-white/5 hover:shadow-[0_0_16px_-6px_rgba(var(--primary-glow),0.15)] focus-visible:ring-primary disabled:text-fg-subtle disabled:border-white/10 disabled:hover:bg-transparent disabled:hover:shadow-none",
+    "glass border border-border dark:border-white/10 text-fg hover:border-primary/25 hover:bg-white/5 focus-visible:ring-primary disabled:text-fg-subtle disabled:border-white/10 disabled:hover:bg-transparent",
   ghost:
     "bg-transparent border-transparent text-fg-muted hover:text-fg hover:bg-white/5 focus-visible:ring-primary disabled:text-fg-subtle",
 };

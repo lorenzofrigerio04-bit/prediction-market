@@ -10,6 +10,7 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ['Outfit', 'system-ui', 'sans-serif'],
+        numeric: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       letterSpacing: {
         'headline': '0.02em',
@@ -57,12 +58,17 @@ module.exports = {
         '2xl': '1rem',
         '2.5xl': '1.25rem',
         '3xl': '1.5rem',
+        'ds-sm': 'var(--radius-sm)',
+        'ds-md': 'var(--radius-md)',
+        'ds-lg': 'var(--radius-lg)',
+        'ds-xl': 'var(--radius-xl)',
       },
       boxShadow: {
         glow: '0 0 32px -4px rgb(var(--primary-glow) / 0.25)',
         'glow-sm': '0 0 20px -4px rgb(var(--primary-glow) / 0.2)',
-        card: '0 4px 24px -4px rgb(0 0 0 / 0.06), 0 2px 8px -2px rgb(0 0 0 / 0.04)',
-        'card-hover': '0 12px 40px -8px rgb(0 0 0 / 0.08), 0 4px 16px -4px rgb(0 0 0 / 0.04)',
+        card: 'var(--shadow-card)',
+        'card-hover': 'var(--shadow-card-hover)',
+        overlay: 'var(--shadow-overlay)',
       },
       maxWidth: {
         content: 'min(100% - 2rem, 480px)',

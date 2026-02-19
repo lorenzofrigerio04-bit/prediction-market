@@ -54,7 +54,7 @@ export default function PublicProfilePage() {
     return (
       <div className="min-h-screen bg-bg">
         <Header />
-        <main className="mx-auto px-4 py-8 max-w-2xl">
+        <main id="main-content" className="mx-auto px-4 py-8 max-w-2xl">
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
             <p className="mt-4 text-fg-muted font-medium">Caricamento...</p>
@@ -68,8 +68,8 @@ export default function PublicProfilePage() {
     return (
       <div className="min-h-screen bg-bg">
         <Header />
-        <main className="mx-auto px-4 py-8 max-w-2xl">
-          <div className="glass rounded-2xl border border-border dark:border-white/10 p-8 text-center">
+        <main id="main-content" className="mx-auto px-4 py-8 max-w-2xl">
+          <div className="box-raised rounded-2xl p-8 text-center">
             <p className="text-fg-muted font-medium">{error || "Profilo non trovato."}</p>
             <BackLink href="/leaderboard" className="mt-4 inline-block text-primary font-semibold hover:underline">
               Indietro
@@ -85,8 +85,8 @@ export default function PublicProfilePage() {
   return (
     <div className="min-h-screen bg-bg">
       <Header />
-      <main className="mx-auto px-4 py-5 md:py-8 max-w-2xl">
-        <div className="glass rounded-2xl border border-border dark:border-white/10 p-6">
+      <main id="main-content" className="mx-auto px-4 py-5 md:py-8 max-w-2xl">
+        <div className="box-raised rounded-2xl p-6">
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-accent-700 flex items-center justify-center text-white text-2xl font-bold shrink-0 overflow-hidden">
               {profile.image ? (

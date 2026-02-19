@@ -171,7 +171,7 @@ export default function DiscoverCategoryPage() {
   return (
     <div className="min-h-screen bg-bg">
       <Header />
-      <main className="mx-auto px-4 sm:px-6 py-6 md:py-8 max-w-6xl">
+      <main id="main-content" className="mx-auto px-4 sm:px-6 py-6 md:py-8 max-w-6xl">
         <nav className="mb-4 text-ds-body-sm text-fg-muted" aria-label="Breadcrumb">
           <Link href="/discover" className="hover:text-primary transition-colors">
             Eventi

@@ -17,8 +17,8 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-bg">
       <Header />
-      <main className="mx-auto px-4 py-5 md:py-8 max-w-2xl">
-        <div className="glass rounded-2xl border border-border dark:border-white/10 p-5 md:p-6">
+      <main id="main-content" className="mx-auto px-4 py-5 md:py-8 max-w-2xl">
+        <div className="box-raised rounded-2xl p-5 md:p-6">
           <h1 className="text-xl md:text-2xl font-bold text-fg mb-2">Impostazioni</h1>
           <p className="text-fg-muted text-sm mb-6">
             Qui potrai gestire preferenze, notifiche e account. Funzionalità in arrivo.
