@@ -545,6 +545,7 @@ textarea:focus-visible {
     opacity: 1;
   }
 }
+/* Linee sopra/sotto titolo: compaiono insieme e restano (fill-mode: both) */
 .landing-hero-line {
   width: 100%;
   max-width: 18rem;
@@ -554,15 +555,13 @@ textarea:focus-visible {
   transform: scaleX(0);
   background: linear-gradient(90deg, transparent, rgb(96 165 250 / 0.6), rgb(96 165 250), rgb(96 165 250 / 0.6), transparent);
   box-shadow: 0 0 10px rgb(96 165 250 / 0.4), 0 0 20px rgb(255 255 255 / 0.12);
-  animation: landing-line-open 0.9s var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)) forwards;
+  animation: landing-line-open 0.85s var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)) both;
 }
 .landing-hero-line--below {
-  animation-delay: 0.2s;
-  animation-fill-mode: backwards;
+  animation-delay: 0.05s;
 }
 .landing-hero-line--cta {
-  animation-delay: 0.35s;
-  animation-fill-mode: backwards;
+  animation-delay: 0.5s;
 }
 .dark .landing-hero-line {
   box-shadow: 0 0 12px rgb(96 165 250 / 0.35), 0 0 24px rgb(255 255 255 / 0.1);
@@ -694,7 +693,7 @@ textarea:focus-visible {
   color: rgb(255 255 255) !important;
 }
 
-/* Sottotitolo hero: seconda frase in evidenza con sottolineatura discreta */
+/* Sottotitolo hero: sottolineatura fissa, nessuna animazione */
 .landing-hero-subtitle-emphasis {
   display: inline-block;
   position: relative;
@@ -709,6 +708,8 @@ textarea:focus-visible {
   height: 1px;
   background: linear-gradient(90deg, transparent 0%, rgb(255 255 255 / 0.5) 20%, rgb(255 255 255 / 0.7) 50%, rgb(255 255 255 / 0.5) 80%, transparent 100%);
   border-radius: 1px;
+  animation: none;
+  transition: none;
 }
 
 /* Hero stats: immersivi nello sfondo, nessun box — animazione fluida */

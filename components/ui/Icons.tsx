@@ -129,13 +129,14 @@ export function IconNavWallet({ className, ...props }: SVGProps<SVGSVGElement>) 
     </NavIcon>
   );
 }
+/* Classifica: podio 1º 2º 3º — immediatamente riconoscibile */
 export function IconNavTrophy({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <NavIcon className={className} {...props}>
-      <path d="M8 6h8v4a4 4 0 0 1-8 0V6z" />
-      <path d="M6 10h12v6H6z" />
-      <path d="M12 16v2" />
-      <path d="M8 22h8" />
+      <path d="M5 22V14h3v8H5z" />
+      <path d="M10 22V10h4v12h-4z" />
+      <path d="M16 22v-6h3v6h-3z" />
+      <path d="M4 22h16" />
     </NavIcon>
   );
 }
