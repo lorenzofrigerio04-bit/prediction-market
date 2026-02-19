@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import SideDrawer from "./SideDrawer";
+import { PredictionMasterLogo } from "./PredictionMasterMark";
 import {
   IconChart,
   IconSearch,
@@ -46,12 +47,7 @@ export default function Header() {
       >
         <div className="mx-auto px-4 max-w-7xl">
           <div className="flex items-center justify-between h-14 md:h-16">
-            <Link
-              href="/"
-              className="text-ds-h2 font-bold text-fg tracking-headline focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-xl min-h-[44px] flex items-center dark:drop-shadow-[0_0_20px_rgba(var(--primary-glow),0.15)]"
-            >
-              PredictionMaster
-            </Link>
+            <PredictionMasterLogo />
 
             {/* Desktop: 5 voci principali (navigazione core) */}
             <nav className="hidden md:flex items-center gap-1" aria-label="Menu principale">
