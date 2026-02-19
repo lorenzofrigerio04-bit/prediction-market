@@ -334,7 +334,7 @@ export default function Home() {
           <section className="mb-12 md:mb-16 pt-2">
             <h2 className="landing-section-title landing-section-title--with-badge text-ds-h2 font-bold text-fg mb-6 flex flex-wrap items-center gap-2">
               <span className="landing-section-title__text">Eventi in corso</span>
-              <span className="landing-live-badge" aria-label="In diretta">
+              <span className="landing-live-badge text-ds-h2" aria-label="In diretta">
                 <span className="landing-live-badge__deg" aria-hidden>°</span>
                 <span className="landing-live-badge__text">LIVE</span>
               </span>

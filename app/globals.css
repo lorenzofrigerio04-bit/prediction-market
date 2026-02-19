@@ -625,37 +625,57 @@ textarea:focus-visible {
   background: rgb(255 255 255 / 0.2);
 }
 
-/* Badge "° LIVE" accanto a "Eventi in corso": LED leggero, pulse elegante */
+/* Badge "° LIVE" accanto a "Eventi in corso": stessa grandezza, luminoso, dinamico, futuristico */
 .landing-live-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.2em;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: rgb(147 197 253 / 0.95);
-  text-shadow: 0 0 12px rgb(147 197 253 / 0.4);
-  animation: landing-live-pulse 2.4s ease-in-out infinite;
+  gap: 0.28em;
+  font-size: 1em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+  color: rgb(224 242 255);
+  text-shadow:
+    0 0 20px rgb(147 197 253 / 0.7),
+    0 0 40px rgb(96 165 250 / 0.4),
+    0 1px 0 rgb(255 255 255 / 0.9);
+  animation: landing-live-pulse 1.8s ease-in-out infinite;
 }
 .landing-live-badge__deg {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  line-height: 1;
-  font-size: 1em;
-  opacity: 0.9;
+  width: 0.5em;
+  height: 1em;
+  line-height: 0;
+  font-size: 0.72em;
+  font-weight: 700;
+  color: inherit;
+  text-shadow: inherit;
+  position: relative;
+  top: -0.02em;
 }
 .landing-live-badge__text {
-  line-height: 1;
+  line-height: 1.2;
+  letter-spacing: inherit;
 }
 @keyframes landing-live-pulse {
   0%, 100% {
     opacity: 1;
-    text-shadow: 0 0 12px rgb(147 197 253 / 0.4);
+    text-shadow:
+      0 0 20px rgb(147 197 253 / 0.7),
+      0 0 40px rgb(96 165 250 / 0.4),
+      0 1px 0 rgb(255 255 255 / 0.9);
+    filter: brightness(1);
   }
   50% {
-    opacity: 0.82;
-    text-shadow: 0 0 18px rgb(147 197 253 / 0.55);
+    opacity: 0.92;
+    text-shadow:
+      0 0 28px rgb(147 197 253 / 0.9),
+      0 0 56px rgb(96 165 250 / 0.6),
+      0 0 80px rgb(59 130 246 / 0.35),
+      0 1px 0 rgb(255 255 255 / 0.95);
+    filter: brightness(1.08);
   }
 }
 
