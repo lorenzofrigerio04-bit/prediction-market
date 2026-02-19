@@ -5,14 +5,13 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/events/categories
- * Restituisce l'elenco delle categorie distinte dagli eventi (esclusi News e event-generator).
+ * Restituisce l'elenco delle categorie distinte dagli eventi (esclusa solo News).
  */
 export async function GET() {
   try {
     const rows = await prisma.event.findMany({
       where: {
         category: { not: "News" },
-        NOT: { createdBy: { email: "event-generator@system" } },
       },
       select: { category: true },
       distinct: ["category"],

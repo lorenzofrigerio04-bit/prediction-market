@@ -17,7 +17,6 @@ export async function GET(request: NextRequest) {
         resolved: false,
         closesAt: { gt: now },
         category: { not: "News" },
-        NOT: { createdBy: { email: "event-generator@system" } },
       },
       orderBy: { totalCredits: "desc" },
       take: limit,

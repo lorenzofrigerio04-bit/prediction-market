@@ -20,10 +20,7 @@ export async function GET(request: NextRequest) {
     const now = new Date();
 
     const where: Record<string, unknown> = {};
-    // Per la landing mostriamo anche eventi del generatore (per avere sempre 4 eventi da mostrare)
-    if (!forLanding) {
-      where.NOT = { createdBy: { email: "event-generator@system" } };
-    }
+    // Mostriamo tutti gli eventi (inclusi quelli del generatore) così la pagina Eventi e Discover restano piene
     where.category = { not: "News" };
 
     if (status === "open") {

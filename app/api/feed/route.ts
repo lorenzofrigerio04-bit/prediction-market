@@ -25,7 +25,6 @@ export async function GET(request: NextRequest) {
       resolved: false,
       closesAt: { gt: now },
       category: { not: "News" as const },
-      NOT: { createdBy: { email: "event-generator@system" } },
     };
 
     const [items, total] = await Promise.all([
