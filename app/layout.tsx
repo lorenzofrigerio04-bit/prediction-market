@@ -43,8 +43,9 @@ export default async function RootLayout({
             className="py-3 text-center text-fg-muted text-ds-micro"
             aria-hidden
           >
-            <span className="landing-footer-brand font-display font-semibold text-lg tracking-tight bg-gradient-to-r from-primary to-accent-secondary bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">
-              PredictionMaster
+            <span className="brand-logo__text font-display font-extrabold tracking-tight inline-block text-sm md:text-base">
+              <span className="brand-logo__word brand-logo__word--prediction">Prediction</span>
+              <span className="brand-logo__word brand-logo__word--master">Master</span>
             </span>
           </footer>
         </SessionProvider>

@@ -528,16 +528,7 @@ textarea:focus-visible {
 .landing-hero-card::after {
   display: none;
 }
-/* Box "Pronto a iniziare" in fondo: bordo blu per differenziarsi dai blocchi sopra */
-.landing-hero-card--cta-bottom {
-  border: 1px solid rgb(96 165 250 / 0.85);
-  box-shadow: 0 0 18px rgb(96 165 250 / 0.25), inset 0 0 14px rgb(96 165 250 / 0.06);
-  border-radius: var(--radius-lg);
-}
-.landing-hero-card--cta-bottom:hover {
-  border-color: rgb(96 165 250);
-  box-shadow: 0 0 22px rgb(96 165 250 / 0.35), inset 0 0 18px rgb(96 165 250 / 0.08);
-}
+/* Box "Pronto a iniziare": card senza bordo; il bordo blu è solo sul bottone sotto */
 /* Box "Perché giocare": sfondo trasparente, contorno come CTA hero (bianco) */
 .landing-why-box {
   background: transparent;
@@ -609,6 +600,15 @@ textarea:focus-visible {
   border-color: rgb(96 165 250 / 0.85);
   box-shadow: 0 0 18px rgb(96 165 250 / 0.3);
 }
+/* Bottone "Prevedi...gratis" in fondo pagina: bordo blu (stile come secondary ma pieno blu) */
+.landing-cta-primary--blue {
+  border-color: rgb(96 165 250 / 0.85);
+  box-shadow: 0 0 14px rgb(96 165 250 / 0.3), inset 0 0 14px rgb(96 165 250 / 0.06);
+}
+.landing-cta-primary--blue:hover {
+  border-color: rgb(96 165 250);
+  box-shadow: 0 0 20px rgb(96 165 250 / 0.4), inset 0 0 18px rgb(96 165 250 / 0.08);
+}
 
 .landing-section-title {
   font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
@@ -646,7 +646,7 @@ textarea:focus-visible {
   background: rgb(255 255 255 / 0.2);
 }
 
-/* Badge "° LIVE" accanto a "Eventi in corso": stessa grandezza, luminoso, dinamico, futuristico */
+/* Badge "° LIVE": glow leggero, non invasivo */
 .landing-live-badge {
   display: inline-flex;
   align-items: center;
@@ -657,8 +657,8 @@ textarea:focus-visible {
   font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
   color: rgb(224 242 255);
   text-shadow:
-    0 0 20px rgb(147 197 253 / 0.7),
-    0 0 40px rgb(96 165 250 / 0.4),
+    0 0 8px rgb(147 197 253 / 0.35),
+    0 0 14px rgb(96 165 250 / 0.2),
     0 1px 0 rgb(255 255 255 / 0.9);
   animation: landing-live-pulse 1.8s ease-in-out infinite;
 }
@@ -684,19 +684,18 @@ textarea:focus-visible {
   0%, 100% {
     opacity: 1;
     text-shadow:
-      0 0 20px rgb(147 197 253 / 0.7),
-      0 0 40px rgb(96 165 250 / 0.4),
+      0 0 8px rgb(147 197 253 / 0.35),
+      0 0 14px rgb(96 165 250 / 0.2),
       0 1px 0 rgb(255 255 255 / 0.9);
     filter: brightness(1);
   }
   50% {
-    opacity: 0.92;
+    opacity: 0.98;
     text-shadow:
-      0 0 28px rgb(147 197 253 / 0.9),
-      0 0 56px rgb(96 165 250 / 0.6),
-      0 0 80px rgb(59 130 246 / 0.35),
+      0 0 10px rgb(147 197 253 / 0.45),
+      0 0 20px rgb(96 165 250 / 0.25),
       0 1px 0 rgb(255 255 255 / 0.95);
-    filter: brightness(1.08);
+    filter: brightness(1.03);
   }
 }
 
@@ -921,6 +920,12 @@ textarea:focus-visible {
 }
 .landing-event-row--scienza {
   --landing-event-row-bg: url("/categories/scienza.png");
+}
+/* Con sfondo categoria: niente sfondo solido così si vede l'immagine */
+.landing-event-row--has-bg.box-raised {
+  background: transparent;
+  border-color: rgb(255 255 255 / 0.22);
+  box-shadow: 0 4px 24px rgb(0 0 0 / 0.25);
 }
 .landing-event-row__bg {
   position: absolute;

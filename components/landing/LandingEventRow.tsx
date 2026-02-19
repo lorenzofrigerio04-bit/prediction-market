@@ -69,7 +69,7 @@ export default function LandingEventRow({ event }: LandingEventRowProps) {
   return (
     <Link
       href={`/events/${event.id}`}
-      className={`block rounded-2xl box-raised hover-lift p-4 md:p-5 transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none group relative overflow-hidden ${isPolitica ? "landing-event-row--politica" : ""} ${isCultura ? "landing-event-row--cultura" : ""} ${isSport ? "landing-event-row--sport" : ""} ${isTecnologia ? "landing-event-row--tecnologia" : ""} ${isIntrattenimento ? "landing-event-row--intrattenimento" : ""} ${isEconomia ? "landing-event-row--economia" : ""} ${isScienza ? "landing-event-row--scienza" : ""}`}
+      className={`block rounded-2xl box-raised hover-lift p-4 md:p-5 transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none group relative overflow-hidden ${hasCategoryBg ? "landing-event-row--has-bg" : ""} ${isPolitica ? "landing-event-row--politica" : ""} ${isCultura ? "landing-event-row--cultura" : ""} ${isSport ? "landing-event-row--sport" : ""} ${isTecnologia ? "landing-event-row--tecnologia" : ""} ${isIntrattenimento ? "landing-event-row--intrattenimento" : ""} ${isEconomia ? "landing-event-row--economia" : ""} ${isScienza ? "landing-event-row--scienza" : ""}`}
     >
       {hasCategoryBg && (
         <div className="landing-event-row__bg" aria-hidden />
