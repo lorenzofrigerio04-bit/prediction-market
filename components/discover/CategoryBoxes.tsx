@@ -103,16 +103,16 @@ export default function CategoryBoxes({ categories, showTutti = true }: Category
               className="absolute inset-0"
               style={{
                 background: imagePath
-                  ? "linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.7) 100%)"
+                  ? "linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.72) 100%)"
                   : gradient,
               }}
             />
             <div className="relative flex flex-col justify-end p-4 h-full min-h-[120px] sm:min-h-[140px]">
-              <span className="text-lg sm:text-xl font-bold text-white drop-shadow-md tracking-tight">
+              <span className="text-lg sm:text-xl font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] tracking-tight">
                 {category}
               </span>
               {!isTutti && (
-                <span className="text-sm text-white/85 mt-0.5">Esplora eventi</span>
+                <span className="text-sm text-white/90 mt-0.5 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">Esplora eventi</span>
               )}
             </div>
           </Link>

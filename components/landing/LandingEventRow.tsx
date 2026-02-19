@@ -58,13 +58,16 @@ export default function LandingEventRow({ event }: LandingEventRowProps) {
   const timeLabel = getTimeRemaining(event.closesAt);
   const icon = getCategoryIcon(event.category);
   const isPolitica = event.category === "Politica";
+  const isCultura = event.category === "Cultura";
+  const isSport = event.category === "Sport";
+  const hasCategoryBg = isPolitica || isCultura || isSport;
 
   return (
     <Link
       href={`/events/${event.id}`}
-      className={`block rounded-2xl box-raised hover-lift p-4 md:p-5 transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none group relative overflow-hidden ${isPolitica ? "landing-event-row--politica" : ""}`}
+      className={`block rounded-2xl box-raised hover-lift p-4 md:p-5 transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none group relative overflow-hidden ${isPolitica ? "landing-event-row--politica" : ""} ${isCultura ? "landing-event-row--cultura" : ""} ${isSport ? "landing-event-row--sport" : ""}`}
     >
-      {isPolitica && (
+      {hasCategoryBg && (
         <div className="landing-event-row__bg" aria-hidden />
       )}
       <div className="relative z-10">

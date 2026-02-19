@@ -879,12 +879,15 @@ textarea:focus-visible {
   flex-shrink: 0;
 }
 
-/* Event row con sfondo categoria (Politica, Cultura): immagine + overlay per testo super leggibile */
+/* Event row con sfondo categoria (Politica, Cultura, Sport): immagine + overlay per testo super leggibile */
 .landing-event-row--politica {
-  --landing-event-row-bg: url("/images/landing-event-politica-bg.png");
+  --landing-event-row-bg: url("/categories/politica.png");
 }
 .landing-event-row--cultura {
   --landing-event-row-bg: url("/categories/cultura.png");
+}
+.landing-event-row--sport {
+  --landing-event-row-bg: url("/categories/sport.png");
 }
 .landing-event-row__bg {
   position: absolute;
@@ -914,11 +917,15 @@ textarea:focus-visible {
 .landing-event-row--politica .relative.z-10 .text-ds-body-sm,
 .landing-event-row--cultura .relative.z-10 span,
 .landing-event-row--cultura .relative.z-10 h3,
-.landing-event-row--cultura .relative.z-10 .text-ds-body-sm {
+.landing-event-row--cultura .relative.z-10 .text-ds-body-sm,
+.landing-event-row--sport .relative.z-10 span,
+.landing-event-row--sport .relative.z-10 h3,
+.landing-event-row--sport .relative.z-10 .text-ds-body-sm {
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.85), 0 0 1px rgb(0 0 0 / 0.95);
 }
 .landing-event-row--politica .relative.z-10 .text-ds-micro,
-.landing-event-row--cultura .relative.z-10 .text-ds-micro {
+.landing-event-row--cultura .relative.z-10 .text-ds-micro,
+.landing-event-row--sport .relative.z-10 .text-ds-micro {
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
 }
 

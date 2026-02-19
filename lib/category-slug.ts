@@ -20,8 +20,11 @@ export function getCategoryNameFromSlug(slug: string, categories: string[]): str
   return found ?? null;
 }
 
-/** Path immagine categoria (public/categories/{slug}.jpg). Se non esiste, il componente userà un fallback. */
+/** Path immagine categoria (public/categories/{slug}.jpg o .png). Se non esiste, il componente userà un fallback. */
 export function getCategoryImagePath(category: string): string {
   const slug = slugifyCategory(category);
+  if (slug === "cultura") return "/categories/cultura.png";
+  if (slug === "politica") return "/categories/politica.png";
+  if (slug === "sport") return "/categories/sport.png";
   return `/categories/${slug}.jpg`;
 }
