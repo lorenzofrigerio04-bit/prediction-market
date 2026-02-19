@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import EventCard from "@/components/EventCard";
 import OnboardingTour from "@/components/OnboardingTour";
 import LandingEventRow from "@/components/landing/LandingEventRow";
+import LandingBackground from "@/components/landing/LandingBackground";
 import HomeSummary from "@/components/home/HomeSummary";
 import {
   PageHeader,
@@ -291,8 +292,8 @@ export default function Home() {
 
   if (showLanding) {
     return (
-      <div className="min-h-screen bg-bg relative overflow-x-hidden">
-        <div className="landing-bg" aria-hidden />
+      <div className="min-h-screen relative overflow-x-hidden landing-page">
+        <LandingBackground />
         <Header />
         <main className="relative mx-auto px-4 sm:px-6 py-5 md:py-12 lg:py-16 max-w-2xl">
           {/* Hero: above-the-fold on mobile (eyebrow, headline, subtitle, primary CTA, secondary CTA) */}

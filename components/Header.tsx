@@ -50,7 +50,7 @@ export default function Header() {
               href="/"
               className="text-ds-h2 font-bold text-fg tracking-headline focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-xl min-h-[44px] flex items-center dark:drop-shadow-[0_0_20px_rgba(var(--primary-glow),0.15)]"
             >
-              {pathname === "/" ? "Market Prediction" : "Prediction Market"}
+              PredictionMaster
             </Link>
 
             {/* Desktop: 5 voci principali (navigazione core) */}
