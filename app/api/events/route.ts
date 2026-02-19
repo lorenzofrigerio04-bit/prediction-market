@@ -19,10 +19,12 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || "";
     const now = new Date();
 
-    const where: Record<string, unknown> = {
-      NOT: { createdBy: { email: "event-generator@system" } },
-      category: { not: "News" },
-    };
+    const where: Record<string, unknown> = {};
+    // Per la landing mostriamo anche eventi del generatore (per avere sempre 4 eventi da mostrare)
+    if (!forLanding) {
+      where.NOT = { createdBy: { email: "event-generator@system" } };
+    }
+    where.category = { not: "News" };
 
     if (status === "open") {
       where.resolved = false;

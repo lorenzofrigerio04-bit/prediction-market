@@ -102,7 +102,36 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="text-center py-8 border-t border-black/10 dark:border-white/10">
+        <section className="mb-12 md:mb-16" aria-labelledby="perche-giocare">
+          <h2 id="perche-giocare" className="text-ds-h2 font-bold text-fg mb-6 text-center">
+            Perché giocare
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Link
+              href="/leaderboard"
+              className="landing-why-box block p-6 rounded-2xl border border-white/10 bg-white/5 dark:bg-white/5 backdrop-blur-sm text-center hover:bg-white/10 hover:border-primary/30 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+            >
+              <span className="text-ds-h3 font-bold text-fg block mb-2">Classifiche</span>
+              <span className="text-ds-body-sm text-fg-muted">Scala la classifica e competi con gli altri.</span>
+            </Link>
+            <Link
+              href="/missions"
+              className="landing-why-box block p-6 rounded-2xl border border-white/10 bg-white/5 dark:bg-white/5 backdrop-blur-sm text-center hover:bg-white/10 hover:border-primary/30 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+            >
+              <span className="text-ds-h3 font-bold text-fg block mb-2">Missioni</span>
+              <span className="text-ds-body-sm text-fg-muted">Completa missioni e guadagna crediti bonus.</span>
+            </Link>
+            <Link
+              href="/legal/content-rules"
+              className="landing-why-box block p-6 rounded-2xl border border-white/10 bg-white/5 dark:bg-white/5 backdrop-blur-sm text-center hover:bg-white/10 hover:border-primary/30 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+            >
+              <span className="text-ds-h3 font-bold text-fg block mb-2">Regole</span>
+              <span className="text-ds-body-sm text-fg-muted">Contenuti e regole in trasparenza.</span>
+            </Link>
+          </div>
+        </section>
+
+        <section className="text-center py-10 border-t border-black/10 dark:border-white/10">
           <p className="text-ds-body-sm text-fg-muted mb-4">
             PredictionMaster — Prevedi, gioca, scala.
           </p>
