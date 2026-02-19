@@ -4,8 +4,6 @@ import Link from "next/link";
 type IconProps = React.SVGProps<SVGSVGElement> & { title?: string };
 
 export function PredictionMasterIcon({ className, title, ...props }: IconProps) {
-  // Icona: prisma + barre + orbita (back/front) + sfera.
-  // Colori: currentColor + var(--primary) / var(--primary-glow) via CSS (nessun hex hardcoded).
   return (
     <svg
       viewBox="0 0 128 128"
@@ -16,73 +14,115 @@ export function PredictionMasterIcon({ className, title, ...props }: IconProps) 
     >
       {title ? <title>{title}</title> : null}
 
-      {/* Back orbit (dietro al core) */}
-      <path
-        d="M16 74c8-24 33-42 58-42 22 0 36 10 46 22"
-        fill="none"
-        stroke="currentColor"
-        strokeOpacity="0.35"
-        strokeWidth="8"
-        strokeLinecap="round"
-      />
+      <defs>
+        {/* Prism gradient: cyan -> blue -> violet (render-like, not rainbow) */}
+        <linearGradient id="pmPrism" x1="32" y1="96" x2="96" y2="28" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="rgb(var(--primary))" stopOpacity="0.95" />
+          <stop offset="0.55" stopColor="rgb(var(--primary))" stopOpacity="0.70" />
+          <stop offset="1" stopColor="rgb(var(--primary-glow))" stopOpacity="0.95" />
+        </linearGradient>
 
-      {/* Core prism */}
-      <path
-        d="M56 20 34 86h22l10-22 10 22h22L72 20Z"
-        fill="currentColor"
-        fillOpacity="0.92"
-      />
+        {/* Orbit gradient */}
+        <linearGradient id="pmOrbit" x1="18" y1="86" x2="110" y2="40" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="rgb(var(--primary))" stopOpacity="0.55" />
+          <stop offset="0.5" stopColor="currentColor" stopOpacity="0.28" />
+          <stop offset="1" stopColor="rgb(var(--primary-glow))" stopOpacity="0.55" />
+        </linearGradient>
 
-      {/* Prism highlight (subtle) */}
-      <path
-        d="M56 20 44 60l12-6 12 6L56 20Z"
-        fill="currentColor"
-        fillOpacity="0.18"
-      />
+        {/* Orb gradient */}
+        <radialGradient id="pmOrb" cx="35%" cy="35%" r="70%">
+          <stop offset="0" stopColor="currentColor" stopOpacity="0.35" />
+          <stop offset="0.35" stopColor="rgb(var(--primary))" stopOpacity="0.95" />
+          <stop offset="1" stopColor="rgb(var(--primary-glow))" stopOpacity="0.85" />
+        </radialGradient>
 
-      {/* Bars (growth) */}
-      <g fill="currentColor" fillOpacity="0.72">
-        <rect x="40" y="74" width="8" height="16" rx="2" />
-        <rect x="52" y="66" width="8" height="24" rx="2" />
-        <rect x="64" y="58" width="8" height="32" rx="2" />
-        <rect x="76" y="70" width="8" height="20" rx="2" />
+        {/* Subtle glow filter (kept minimal). In light it will be barely visible due to low opacity. */}
+        <filter id="pmGlow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="2.2" result="blur" />
+          <feColorMatrix
+            in="blur"
+            type="matrix"
+            values="
+              1 0 0 0 0
+              0 1 0 0 0
+              0 0 1 0 0
+              0 0 0 0.25 0"
+            result="glow"
+          />
+          <feMerge>
+            <feMergeNode in="glow" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
+        {/* Mask to simulate orbit going behind the prism */}
+        <mask id="pmBehindMask">
+          {/* show everything */}
+          <rect x="0" y="0" width="128" height="128" fill="white" />
+          {/* hide where prism sits (so 'behind' orbit disappears there) */}
+          <path d="M64 18 38 90h24l2-6 2 6h24L64 18Z" fill="black" />
+        </mask>
+      </defs>
+
+      {/* BACK ORBIT (goes behind prism) */}
+      <g mask="url(#pmBehindMask)" opacity="0.9">
+        <path
+          d="M14 74c10-26 38-44 64-44 24 0 39 10 50 24"
+          fill="none"
+          stroke="url(#pmOrbit)"
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeOpacity="0.55"
+        />
       </g>
 
-      {/* Front orbit (davanti al core) */}
+      {/* PRISM CORE (triangular) */}
+      <g filter="url(#pmGlow)">
+        <path
+          d="M64 18 38 90h24l2-6 2 6h24L64 18Z"
+          fill="url(#pmPrism)"
+        />
+        {/* inner facets for 3D hint */}
+        <path
+          d="M64 18 50 60l14-7 14 7L64 18Z"
+          fill="currentColor"
+          opacity="0.10"
+        />
+        <path
+          d="M50 60 38 90h24l2-6-14-24Z"
+          fill="currentColor"
+          opacity="0.08"
+        />
+        <path
+          d="M78 60 90 90H66l-2-6 14-24Z"
+          fill="currentColor"
+          opacity="0.06"
+        />
+
+        {/* Bars (crystalline, slightly rounded) */}
+        <g opacity="0.9">
+          <rect x="46" y="76" width="7" height="14" rx="2.2" fill="currentColor" opacity="0.45" />
+          <rect x="56" y="68" width="7" height="22" rx="2.2" fill="currentColor" opacity="0.55" />
+          <rect x="66" y="60" width="7" height="30" rx="2.2" fill="currentColor" opacity="0.68" />
+          <rect x="76" y="72" width="7" height="18" rx="2.2" fill="currentColor" opacity="0.50" />
+        </g>
+      </g>
+
+      {/* FRONT ORBIT (in front, slightly stronger) */}
       <path
-        d="M14 78c10 18 30 30 55 30 23 0 41-9 51-22"
+        d="M12 78c12 20 35 32 62 32 25 0 44-9 54-24"
         fill="none"
-        stroke="currentColor"
-        strokeOpacity="0.55"
-        strokeWidth="10"
+        stroke="url(#pmOrbit)"
+        strokeWidth="12"
         strokeLinecap="round"
+        strokeOpacity="0.72"
       />
 
-      {/* Orbit accent stroke (primary) */}
-      <path
-        d="M18 79c9 14 28 24 51 24 21 0 37-7 47-17"
-        fill="none"
-        stroke="rgb(var(--primary))"
-        strokeOpacity="0.55"
-        strokeWidth="4"
-        strokeLinecap="round"
-      />
-
-      {/* Orb (sphere) */}
-      <circle
-        cx="104"
-        cy="54"
-        r="8"
-        fill="rgb(var(--primary))"
-        fillOpacity="0.85"
-      />
-      <circle
-        cx="101"
-        cy="51"
-        r="3"
-        fill="currentColor"
-        fillOpacity="0.22"
-      />
+      {/* ORB (satellite sphere) */}
+      <g filter="url(#pmGlow)">
+        <circle cx="104" cy="52" r="8.5" fill="url(#pmOrb)" />
+        <circle cx="101" cy="49" r="2.8" fill="currentColor" opacity="0.22" />
+      </g>
     </svg>
   );
 }
@@ -91,19 +131,19 @@ export function PredictionMasterLogo() {
   return (
     <Link
       href="/"
+      aria-label="PredictionMaster"
       className={[
         "group inline-flex min-h-[44px] items-center gap-2 rounded-xl",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
         "transition duration-ds-normal ease-ds-ease",
       ].join(" ")}
-      aria-label="PredictionMaster"
     >
       <PredictionMasterIcon
         className={[
           "h-9 w-9 shrink-0 md:h-10 md:w-10",
           "text-fg",
           "transition duration-ds-normal ease-ds-ease",
-          "dark:drop-shadow-[0_0_20px_rgba(var(--primary-glow),0.12)]",
+          "dark:drop-shadow-[0_0_18px_rgba(var(--primary-glow),0.12)]",
           "group-hover:dark:drop-shadow-[0_0_22px_rgba(var(--primary-glow),0.18)]",
         ].join(" ")}
       />
@@ -111,7 +151,6 @@ export function PredictionMasterLogo() {
         className={[
           "text-ds-h2 font-bold tracking-headline text-fg",
           "transition duration-ds-normal ease-ds-ease",
-          "group-hover:text-fg",
         ].join(" ")}
       >
         PredictionMaster
