@@ -57,12 +57,17 @@ export default function LandingEventRow({ event }: LandingEventRowProps) {
   const noPct = 100 - yesPct;
   const timeLabel = getTimeRemaining(event.closesAt);
   const icon = getCategoryIcon(event.category);
+  const isPolitica = event.category === "Politica";
 
   return (
     <Link
       href={`/events/${event.id}`}
-      className="block rounded-2xl box-raised hover-lift p-4 md:p-5 transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none group"
+      className={`block rounded-2xl box-raised hover-lift p-4 md:p-5 transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none group relative overflow-hidden ${isPolitica ? "landing-event-row--politica" : ""}`}
     >
+      {isPolitica && (
+        <div className="landing-event-row__bg" aria-hidden />
+      )}
+      <div className="relative z-10">
       <div className="flex items-start justify-between gap-3 mb-3">
         <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg text-ds-micro font-semibold bg-white/5 dark:bg-black/40 border border-white/10 dark:border-primary/30 text-fg shrink-0">
           <span aria-hidden>{icon}</span>
@@ -95,6 +100,7 @@ export default function LandingEventRow({ event }: LandingEventRowProps) {
       <span className="inline-flex items-center justify-center min-h-[44px] w-full py-2.5 px-4 rounded-xl bg-primary/20 text-primary font-semibold text-ds-body-sm border border-primary/40 shadow-[0_0_16px_-4px_rgba(var(--primary-glow),0.35)] hover:shadow-[0_0_20px_-4px_rgba(var(--primary-glow),0.45)] transition-shadow ds-tap-target">
         Fai la tua previsione
       </span>
+      </div>
     </Link>
   );
 }

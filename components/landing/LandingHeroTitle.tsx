@@ -2,8 +2,8 @@
 
 const TITLE_TEXT = "Prevedi il futuro. Guadagna crediti. Scala la classifica.";
 const WORDS = TITLE_TEXT.split(/\s+/);
-const WORD_DURATION_MS = 420;
-const STAGGER_MS = 65;
+const WORD_DURATION_MS = 620;
+const STAGGER_MS = 95;
 
 export default function LandingHeroTitle() {
   return (

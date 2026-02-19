@@ -668,16 +668,16 @@ textarea:focus-visible {
   text-shadow: 0 0 20px rgb(255 255 255 / 0.08), 0 1px 2px rgb(0 0 0 / 0.2);
 }
 
-/* Typewriter: parole che compaiono in sequenza, fluido */
+/* Typewriter: parole che compaiono in sequenza, rilassato e fluido */
 .landing-hero-title--typewriter .landing-hero-title__word {
   opacity: 0;
-  transform: translateY(6px);
-  animation: landing-typeword-in 0.42s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  transform: translateY(8px);
+  animation: landing-typeword-in 0.62s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 @keyframes landing-typeword-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -805,6 +805,42 @@ textarea:focus-visible {
   box-shadow: 0 0 10px rgb(139 92 246 / 0.5);
   animation: landing-stats-pulse 2.2s ease-in-out infinite;
   flex-shrink: 0;
+}
+
+/* Event row Politica: sfondo immagine in dispersione, testo super leggibile */
+.landing-event-row--politica {
+  --landing-politica-bg: url("/images/landing-event-politica-bg.png");
+}
+.landing-event-row__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background-image: var(--landing-politica-bg);
+  background-size: cover;
+  background-position: center;
+  opacity: 0.45;
+}
+.landing-event-row__bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgb(0 0 0 / 0.55) 0%,
+    rgb(0 0 0 / 0.65) 50%,
+    rgb(0 0 0 / 0.72) 100%
+  );
+  pointer-events: none;
+}
+.landing-event-row--politica .relative.z-10 span,
+.landing-event-row--politica .relative.z-10 h3,
+.landing-event-row--politica .relative.z-10 .text-ds-body-sm {
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.8), 0 0 1px rgb(0 0 0 / 0.9);
+}
+.landing-event-row--politica .relative.z-10 .text-ds-micro {
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.7);
 }
 
 /* Horizontal marquee (ticker) */
