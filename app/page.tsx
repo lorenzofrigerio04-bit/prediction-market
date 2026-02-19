@@ -10,6 +10,7 @@ import OnboardingTour from "@/components/OnboardingTour";
 import LandingEventRow from "@/components/landing/LandingEventRow";
 import LandingBackground from "@/components/landing/LandingBackground";
 import LandingHeroStats from "@/components/landing/LandingHeroStats";
+import LandingHeroTitle from "@/components/landing/LandingHeroTitle";
 import HomeSummary from "@/components/home/HomeSummary";
 import {
   PageHeader,
@@ -304,9 +305,7 @@ export default function Home() {
                 Mercati di previsione – Solo crediti virtuali
               </p>
               <div className="landing-hero-line my-2 md:my-3" aria-hidden />
-              <h1 className="landing-hero-title text-ds-display-landing my-3 md:my-4 max-w-2xl mx-auto leading-tight tracking-tight">
-                Prevedi il futuro. Guadagna crediti. Scala la classifica.
-              </h1>
+              <LandingHeroTitle />
               <div className="landing-hero-line landing-hero-line--below my-3 md:my-4" aria-hidden />
               <p className="landing-hero-subtitle text-ds-body-landing font-normal text-white/90 max-w-md mx-auto leading-snug text-center">
                 Se pensi di saperlo prima degli altri,

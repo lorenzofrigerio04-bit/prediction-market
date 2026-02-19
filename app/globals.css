@@ -667,6 +667,24 @@ textarea:focus-visible {
   color: rgb(230 235 245);
   text-shadow: 0 0 20px rgb(255 255 255 / 0.08), 0 1px 2px rgb(0 0 0 / 0.2);
 }
+
+/* Typewriter: parole che compaiono in sequenza, fluido */
+.landing-hero-title--typewriter .landing-hero-title__word {
+  opacity: 0;
+  transform: translateY(6px);
+  animation: landing-typeword-in 0.42s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+@keyframes landing-typeword-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .dark .landing-hero-title {
   color: rgb(238 242 250);
   text-shadow: 0 0 24px rgb(255 255 255 / 0.06), 0 1px 2px rgb(0 0 0 / 0.3);
