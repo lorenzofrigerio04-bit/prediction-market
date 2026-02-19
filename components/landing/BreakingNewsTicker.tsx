@@ -56,7 +56,10 @@ interface BreakingNewsTickerProps {
   items?: NewsItem[];
 }
 
+const NEWS_BOX_HIDDEN = true; // Box News nascosto dalla visualizzazione
+
 export default function BreakingNewsTicker({ items = FALLBACK_NEWS }: BreakingNewsTickerProps) {
+  if (NEWS_BOX_HIDDEN) return null;
   const duplicated = [...items, ...items];
   return (
     <section className="w-full overflow-hidden" aria-label="Ultime notizie ed eventi">

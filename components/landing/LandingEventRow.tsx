@@ -60,12 +60,16 @@ export default function LandingEventRow({ event }: LandingEventRowProps) {
   const isPolitica = event.category === "Politica";
   const isCultura = event.category === "Cultura";
   const isSport = event.category === "Sport";
-  const hasCategoryBg = isPolitica || isCultura || isSport;
+  const isTecnologia = event.category === "Tecnologia";
+  const isIntrattenimento = event.category === "Intrattenimento";
+  const isEconomia = event.category === "Economia";
+  const isScienza = event.category === "Scienza";
+  const hasCategoryBg = isPolitica || isCultura || isSport || isTecnologia || isIntrattenimento || isEconomia || isScienza;
 
   return (
     <Link
       href={`/events/${event.id}`}
-      className={`block rounded-2xl box-raised hover-lift p-4 md:p-5 transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none group relative overflow-hidden ${isPolitica ? "landing-event-row--politica" : ""} ${isCultura ? "landing-event-row--cultura" : ""} ${isSport ? "landing-event-row--sport" : ""}`}
+      className={`block rounded-2xl box-raised hover-lift p-4 md:p-5 transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none group relative overflow-hidden ${isPolitica ? "landing-event-row--politica" : ""} ${isCultura ? "landing-event-row--cultura" : ""} ${isSport ? "landing-event-row--sport" : ""} ${isTecnologia ? "landing-event-row--tecnologia" : ""} ${isIntrattenimento ? "landing-event-row--intrattenimento" : ""} ${isEconomia ? "landing-event-row--economia" : ""} ${isScienza ? "landing-event-row--scienza" : ""}`}
     >
       {hasCategoryBg && (
         <div className="landing-event-row__bg" aria-hidden />

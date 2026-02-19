@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const now = new Date();
     const sixHoursFromNow = new Date(now.getTime() + 6 * 60 * 60 * 1000);
 
-    // Filtra eventi aperti che chiudono entro 6 ore
+    // Filtra eventi aperti che chiudono entro 6 ore (esclusi eventi generati da pipeline)
     const events = await prisma.event.findMany({
       where: {
         resolved: false,
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
           gte: now,
           lte: sixHoursFromNow,
         },
-        // Hide debug-only markets
+        NOT: { createdBy: { email: "event-generator@system" } },
       },
       take: limit,
       orderBy: {

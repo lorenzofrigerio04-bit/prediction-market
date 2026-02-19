@@ -63,6 +63,9 @@ export async function GET(request: NextRequest) {
 
     if (category) where.category = category;
 
+    // Escludi eventi generati dalla pipeline (creatore event-generator@system)
+    where.AND = [...(where.AND || []), { NOT: { createdBy: { email: "event-generator@system" } } }];
+
     // Hide debug-only markets from normal feed (no [DEBUG] titles unless in debug mode elsewhere).
 
     // Ricerca: AND con (title OR description)

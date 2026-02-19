@@ -26,5 +26,9 @@ export function getCategoryImagePath(category: string): string {
   if (slug === "cultura") return "/categories/cultura.png";
   if (slug === "politica") return "/categories/politica.png";
   if (slug === "sport") return "/categories/sport.png";
+  if (slug === "tecnologia") return "/categories/tecnologia.png";
+  if (slug === "intrattenimento") return "/categories/intrattenimento.png";
+  if (slug === "economia") return "/categories/economia.png";
+  if (slug === "scienza") return "/categories/scienza.png";
   return `/categories/${slug}.jpg`;
 }

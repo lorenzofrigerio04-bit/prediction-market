@@ -16,14 +16,14 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const now = new Date();
 
-    // Recupera eventi aperti
+    // Recupera eventi aperti (esclusi eventi generati da pipeline)
     const events = await prisma.event.findMany({
       where: {
         resolved: false,
         closesAt: {
           gt: now,
         },
-        // Hide debug-only markets
+        NOT: { createdBy: { email: "event-generator@system" } },
       },
       take: limit * 2, // Prendi più eventi per poi filtrare/ordinare per votesVelocity
       include: {

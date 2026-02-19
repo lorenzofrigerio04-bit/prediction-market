@@ -65,7 +65,11 @@ async function getOpenMarketsWithMetrics(
   const now = new Date();
   const [events, metricsMap] = await Promise.all([
     prisma.event.findMany({
-      where: { resolved: false, closesAt: { gt: now } },
+      where: {
+        resolved: false,
+        closesAt: { gt: now },
+        NOT: { createdBy: { email: "event-generator@system" } },
+      },
       select: {
         id: true,
         category: true,

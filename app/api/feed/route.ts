@@ -36,13 +36,14 @@ const feedEventSelect = {
  * Fallback: return recent open events (same shape as feed) when personalization fails.
  * Used when MarketMetrics/UserProfile are missing or generateFeedCandidates throws.
  */
-/** Hide [DEBUG] markets from normal feed. */
+/** Hide [DEBUG] markets and eventi generati (pipeline) from normal feed. */
 async function getRecentEventsAsFeed(limit: number): Promise<CachedFeedItem[]> {
   const now = new Date();
   const events = await prisma.event.findMany({
     where: {
       resolved: false,
       closesAt: { gt: now },
+      NOT: { createdBy: { email: "event-generator@system" } },
     },
     select: feedEventSelect,
     take: limit,
@@ -80,6 +81,7 @@ export async function GET(request: NextRequest) {
               id: { in: eventIds },
               resolved: false,
               closesAt: { gt: new Date() },
+              NOT: { createdBy: { email: "event-generator@system" } },
             },
             select: feedEventSelect,
           });
