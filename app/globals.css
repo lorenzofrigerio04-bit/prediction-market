@@ -560,6 +560,10 @@ textarea:focus-visible {
   animation-delay: 0.2s;
   animation-fill-mode: backwards;
 }
+.landing-hero-line--cta {
+  animation-delay: 0.35s;
+  animation-fill-mode: backwards;
+}
 .dark .landing-hero-line {
   box-shadow: 0 0 12px rgb(96 165 250 / 0.35), 0 0 24px rgb(255 255 255 / 0.1);
 }
@@ -1758,14 +1762,13 @@ textarea:focus-visible {
   border-color: rgb(255 255 255 / 0.05);
   box-shadow: 0 -1px 0 0 rgb(255 255 255 / 0.03);
 }
-/* Icone bottom nav: più leggere e futuristiche (tratto sottile) */
-.nav-bottom-neon svg {
-  stroke-width: 1.35;
-  opacity: 0.9;
-}
+/* Icone bottom nav: stile minimal (gestito da NavIcon in Icons.tsx) */
 .nav-bottom-neon a:hover svg,
 .nav-bottom-neon .nav-item-neon-active svg {
   opacity: 1;
+}
+.nav-bottom-neon svg {
+  opacity: 0.88;
 }
 .nav-bottom-neon .text-ds-micro {
   letter-spacing: 0.05em;

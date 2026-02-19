@@ -297,8 +297,8 @@ export default function Home() {
         <LandingBackground />
         <Header />
         <main id="main-content" className="relative mx-auto px-4 sm:px-6 py-5 md:py-12 lg:py-16 max-w-2xl">
-          {/* Hero: tutto in una pagina, titolo al centro, linee LED sopra/sotto */}
-          <section className="landing-hero-section min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-4.5rem)] flex flex-col justify-center py-4 md:py-6">
+          {/* Hero: corpo più in alto, respiro tra contatori e barra inferiore; linee LED incubano titolo e CTA */}
+          <section className="landing-hero-section min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-4.5rem)] flex flex-col justify-center pt-2 pb-24 md:pt-4 md:pb-28">
             <div className="landing-hero-card px-4 py-0 md:px-10 md:py-0 text-center flex flex-col justify-center">
               <p className="landing-hero-eyebrow text-[0.7rem] sm:text-ds-caption font-semibold uppercase tracking-wider mb-1.5 md:mb-2 text-white/95 text-center max-w-full break-words leading-snug -mt-[0.5cm]">
                 Mercati di previsione – Solo crediti virtuali
@@ -308,11 +308,12 @@ export default function Home() {
                 Prevedi il futuro. Guadagna crediti. Scala la classifica.
               </h1>
               <div className="landing-hero-line landing-hero-line--below my-2 md:my-2.5" aria-hidden />
-              <p className="text-ds-body-landing font-normal text-white/90 max-w-md mx-auto mb-4 md:mb-5 leading-snug text-center">
+              <p className="text-ds-body-landing font-normal text-white/90 max-w-md mx-auto mb-3 md:mb-4 leading-snug text-center">
                 Se pensi di saperlo prima degli altri,
                 <br />
                 <span className="landing-hero-subtitle-emphasis">è il momento di provarlo.</span>
               </p>
+              <div className="landing-hero-line landing-hero-line--cta my-3 md:my-4" aria-hidden />
               <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4 md:mb-5">
                 <Link
                   href="/auth/signup"

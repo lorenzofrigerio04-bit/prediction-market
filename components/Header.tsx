@@ -13,16 +13,20 @@ import {
   IconUser,
   IconWallet,
   IconMenu,
+  IconNavHome,
+  IconNavDiscover,
+  IconNavWallet,
+  IconNavTrophy,
+  IconNavProfile,
 } from "@/components/ui/Icons";
 
-// Navigazione principale: sempre a portata (barra desktop + bottom bar mobile)
-// Home, Eventi, Wallet, Classifica, Profilo — uso frequente, mobile-first
+// Navigazione principale: Icon per desktop, NavIcon (minimali) per bottom bar mobile
 const MAIN_NAV_ITEMS = [
-  { href: "/", label: "Home", Icon: IconChart },
-  { href: "/discover", label: "Eventi", Icon: IconSearch },
-  { href: "/wallet", label: "Wallet", Icon: IconWallet },
-  { href: "/leaderboard", label: "Classifica", Icon: IconTrophy },
-  { href: "/profile", label: "Profilo", Icon: IconUser },
+  { href: "/", label: "Home", Icon: IconChart, NavIcon: IconNavHome },
+  { href: "/discover", label: "Eventi", Icon: IconSearch, NavIcon: IconNavDiscover },
+  { href: "/wallet", label: "Wallet", Icon: IconWallet, NavIcon: IconNavWallet },
+  { href: "/leaderboard", label: "Classifica", Icon: IconTrophy, NavIcon: IconNavTrophy },
+  { href: "/profile", label: "Profilo", Icon: IconUser, NavIcon: IconNavProfile },
 ] as const;
 
 const bottomLinkClass =
@@ -92,7 +96,7 @@ export default function Header() {
         aria-label="Navigazione principale"
       >
         <div className="flex items-center justify-around h-16 px-1">
-          {MAIN_NAV_ITEMS.map(({ href, label, Icon }) => {
+          {MAIN_NAV_ITEMS.map(({ href, label, NavIcon }) => {
             const linkHref = href === "/profile" ? profileHref : href === "/wallet" ? walletHref : href;
             const active = isActive(linkHref);
             return (
@@ -103,7 +107,7 @@ export default function Header() {
                   active ? "nav-item-neon-active" : "text-fg-muted hover:text-fg border-transparent hover:bg-white/5 dark:hover:bg-white/5 hover:border-primary/15"
                 }`}
               >
-                <Icon className="w-6 h-6" />
+                <NavIcon className="w-6 h-6" />
                 <span className="text-ds-micro font-semibold uppercase tracking-label">{label}</span>
               </Link>
             );

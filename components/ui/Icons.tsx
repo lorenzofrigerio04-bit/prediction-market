@@ -29,6 +29,30 @@ function Icon({
   );
 }
 
+/** Icone minimali per la barra nav inferiore: tratto sottile, forme essenziali */
+function NavIcon({
+  children,
+  className = "",
+  ...props
+}: SVGProps<SVGSVGElement> & { children: React.ReactNode }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox={viewBox}
+      strokeWidth={1.2}
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`${iconClass} ${className}`}
+      aria-hidden
+      {...props}
+    >
+      {children}
+    </svg>
+  );
+}
+
 export function IconChart({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <Icon className={className} {...props}>
@@ -78,6 +102,49 @@ export function IconUser({ className, ...props }: SVGProps<SVGSVGElement>) {
       <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
       <circle cx="12" cy="7" r="4" />
     </Icon>
+  );
+}
+
+/* —— Icone nav bottom: minimali e futuristiche, immediatamente riconoscibili —— */
+export function IconNavHome({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <NavIcon className={className} {...props}>
+      <path d="M12 3L4 10v11h6v-6h4v6h6V10L12 3z" />
+    </NavIcon>
+  );
+}
+export function IconNavDiscover({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <NavIcon className={className} {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </NavIcon>
+  );
+}
+export function IconNavWallet({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <NavIcon className={className} {...props}>
+      <rect width="20" height="14" x="2" y="6" rx="2" />
+      <path d="M6 12h4" />
+    </NavIcon>
+  );
+}
+export function IconNavTrophy({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <NavIcon className={className} {...props}>
+      <path d="M8 6h8v4a4 4 0 0 1-8 0V6z" />
+      <path d="M6 10h12v6H6z" />
+      <path d="M12 16v2" />
+      <path d="M8 22h8" />
+    </NavIcon>
+  );
+}
+export function IconNavProfile({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <NavIcon className={className} {...props}>
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 20v-2a5 5 0 0 1 14 0v2" />
+    </NavIcon>
   );
 }
 
