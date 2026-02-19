@@ -10,6 +10,7 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ['Outfit', 'system-ui', 'sans-serif'],
+        display: ['Syne', 'Outfit', 'system-ui', 'sans-serif'],
         numeric: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       letterSpacing: {
@@ -77,6 +78,8 @@ module.exports = {
       /* Design system: typography scale (headline → subtitle → body → label → micro) */
       fontSize: {
         'ds-display': ['clamp(2rem, 5vw, 3.5rem)', { lineHeight: '1.1', letterSpacing: '0.02em' }],
+        'ds-display-landing': ['clamp(2.25rem, 6vw, 4rem)', { lineHeight: '1.08', letterSpacing: '0.02em' }],
+        'ds-body-landing': ['1.0625rem', { lineHeight: '1.5' }],
         'ds-h1': ['clamp(1.5rem, 4vw, 2rem)', { lineHeight: '1.2', letterSpacing: '0.02em' }],
         'ds-h2': ['clamp(1.25rem, 3vw, 1.5rem)', { lineHeight: '1.3', letterSpacing: '0.01em' }],
         'ds-h3': ['clamp(1.0625rem, 2.5vw, 1.25rem)', { lineHeight: '1.35', letterSpacing: '0.01em' }],

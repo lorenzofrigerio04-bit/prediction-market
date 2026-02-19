@@ -153,27 +153,14 @@ export function PredictionMasterLogo() {
       href="/"
       aria-label="PredictionMaster"
       className={[
-        "group inline-flex min-h-[44px] items-center gap-2 rounded-xl",
+        "brand-logo group inline-flex min-h-[44px] items-center rounded-xl",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
         "transition duration-ds-normal ease-ds-ease",
       ].join(" ")}
     >
-      <PredictionMasterIcon
-        className={[
-          "h-9 w-9 shrink-0 md:h-10 md:w-10",
-          "text-gray-600 dark:text-gray-300",
-          "transition duration-ds-normal ease-ds-ease",
-          "dark:drop-shadow-[0_0_16px_rgba(var(--primary-glow),0.18)]",
-          "group-hover:dark:drop-shadow-[0_0_22px_rgba(var(--primary-glow),0.25)]",
-        ].join(" ")}
-      />
-      <span
-        className={[
-          "text-ds-h2 font-bold tracking-headline text-fg",
-          "transition duration-ds-normal ease-ds-ease",
-        ].join(" ")}
-      >
-        PredictionMaster
+      <span className="brand-logo__text font-display text-xl md:text-2xl font-extrabold tracking-tight">
+        <span className="brand-logo__word brand-logo__word--prediction">Prediction</span>
+        <span className="brand-logo__word brand-logo__word--master">Master</span>
       </span>
     </Link>
   );

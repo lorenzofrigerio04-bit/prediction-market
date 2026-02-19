@@ -298,32 +298,35 @@ export default function Home() {
         <Header />
         <main id="main-content" className="relative mx-auto px-4 sm:px-6 py-5 md:py-12 lg:py-16 max-w-2xl">
           {/* Hero: above-the-fold on mobile (eyebrow, headline, subtitle, primary CTA, secondary CTA) */}
-          <section className="mb-10 md:mb-16 min-h-0">
-            <div className="landing-hero-card px-5 py-6 md:px-10 md:py-12 text-center">
-              <p className="landing-hero-eyebrow text-ds-caption font-semibold uppercase tracking-wider text-primary mb-3 md:mb-5">
+          <section className="landing-hero-section mb-10 md:mb-16 min-h-0 min-h-[85vh] md:min-h-[88vh] flex flex-col justify-center">
+            <div className="landing-hero-card px-6 py-8 md:px-12 md:py-14 text-center">
+              <p className="landing-hero-eyebrow text-ds-label font-semibold uppercase tracking-wider mb-4 md:mb-6 text-white">
                 Mercati di previsione · Solo crediti virtuali
               </p>
-              <h1 className="landing-hero-title text-ds-display font-bold mb-3 md:mb-5 max-w-2xl mx-auto leading-tight tracking-headline">
+              <div className="landing-hero-line my-4 md:my-5" aria-hidden />
+              <h1 className="landing-hero-title text-ds-display-landing mb-4 md:mb-6 max-w-2xl mx-auto leading-tight tracking-tight">
                 Prevedi il futuro. Guadagna crediti. Scala la classifica.
               </h1>
-              <p className="text-ds-body md:text-lg text-fg-muted max-w-xl mx-auto mb-6 md:mb-10 leading-snug">
+              <div className="landing-hero-line my-4 md:my-5" aria-hidden />
+              <p className="text-ds-body-landing font-normal text-fg-muted max-w-xl mx-auto mb-6 md:mb-10 leading-snug">
                 Partecipa ai mercati sociali su eventi reali. Più sei preciso, più sali. Zero rischio, zero soldi veri.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-5 md:mb-6">
+              <div className="landing-hero-line my-5 md:my-6" aria-hidden />
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6 md:mb-8">
                 <Link
                   href="/auth/signup"
-                  className="landing-cta-primary w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body-sm inline-flex items-center justify-center transition-all hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                  className="landing-cta-primary w-full sm:w-auto min-h-[52px] px-8 py-3.5 rounded-xl font-semibold text-ds-body inline-flex items-center justify-center transition-all hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
                 >
                   Prevedi ora — 100 crediti gratis
                 </Link>
                 <Link
                   href="/auth/login"
-                  className="w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-xl font-semibold text-ds-body-sm border-2 border-primary/50 text-primary bg-primary/5 hover:bg-primary/10 hover:border-primary/70 hover:shadow-[0_0_24px_-8px_rgba(var(--primary-glow),0.3)] transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg inline-flex items-center justify-center"
+                  className="w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body border-2 border-white/30 text-white bg-white/10 hover:bg-white/15 hover:border-white/50 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg inline-flex items-center justify-center"
                 >
                   Già account? Accedi
                 </Link>
               </div>
-              <p className="text-ds-caption text-fg-subtle">
+              <p className="text-ds-caption font-medium text-fg-subtle">
                 Risoluzione trasparente · Zero soldi veri
               </p>
               <LandingHeroStats />
