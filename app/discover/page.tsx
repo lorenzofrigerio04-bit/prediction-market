@@ -58,7 +58,7 @@ export default function DiscoverPage() {
           </div>
         ) : (
           <section aria-label="Categorie eventi" className="space-y-4">
-            <CategoryBoxes categories={categories} showTutti={false} />
+            <CategoryBoxes categories={categories} showTutti />
           </section>
         )}
       </main>
