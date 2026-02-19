@@ -505,25 +505,20 @@ textarea:focus-visible {
   text-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
 }
 
-/* Hero card: surface + border + shadow (no neon) */
+/* Hero: sfondo trasparente, divisione sistematica (titolo, CTA, stats) */
 .landing-hero-card {
   position: relative;
-  background: rgb(var(--surface) / var(--surface-o));
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-radius: var(--radius-xl);
-  border: 1px solid rgb(var(--border) / var(--border-o));
-  box-shadow: var(--shadow-card);
-  overflow: hidden;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
 }
 .landing-hero-card::before,
 .landing-hero-card::after {
   display: none;
 }
-.dark .landing-hero-card {
-  background: rgb(var(--surface) / 0.12);
-  border-color: rgb(255 255 255 / 0.08);
-  box-shadow: var(--shadow-card);
+.landing-hero-eyebrow {
+  letter-spacing: 0.08em;
 }
 
 .landing-cta-primary {
@@ -577,6 +572,24 @@ textarea:focus-visible {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/* Hero stats: contatori live con pallino pulsante */
+@keyframes landing-stats-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+.landing-hero-stats__dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgb(var(--primary));
+  animation: landing-stats-pulse 1.8s ease-in-out infinite;
+}
+.landing-hero-stats__dot--alt {
+  background: rgb(139 92 246);
+  animation-delay: 0.3s;
 }
 
 /* Horizontal marquee (ticker) */

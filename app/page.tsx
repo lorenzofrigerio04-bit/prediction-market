@@ -9,6 +9,7 @@ import EventCard from "@/components/EventCard";
 import OnboardingTour from "@/components/OnboardingTour";
 import LandingEventRow from "@/components/landing/LandingEventRow";
 import LandingBackground from "@/components/landing/LandingBackground";
+import LandingHeroStats from "@/components/landing/LandingHeroStats";
 import HomeSummary from "@/components/home/HomeSummary";
 import {
   PageHeader,
@@ -299,16 +300,16 @@ export default function Home() {
           {/* Hero: above-the-fold on mobile (eyebrow, headline, subtitle, primary CTA, secondary CTA) */}
           <section className="mb-10 md:mb-16 min-h-0">
             <div className="landing-hero-card px-5 py-6 md:px-10 md:py-12 text-center">
-              <p className="text-ds-caption font-semibold uppercase tracking-wider text-primary mb-2 md:mb-4">
+              <p className="landing-hero-eyebrow text-ds-caption font-semibold uppercase tracking-wider text-primary mb-3 md:mb-5">
                 Mercati di previsione · Solo crediti virtuali
               </p>
-              <h1 className="landing-hero-title text-ds-display font-bold mb-2 md:mb-4 max-w-2xl mx-auto leading-tight tracking-headline">
+              <h1 className="landing-hero-title text-ds-display font-bold mb-3 md:mb-5 max-w-2xl mx-auto leading-tight tracking-headline">
                 Prevedi il futuro. Guadagna crediti. Scala la classifica.
               </h1>
-              <p className="text-ds-body md:text-lg text-fg-muted max-w-xl mx-auto mb-5 md:mb-8 leading-snug">
+              <p className="text-ds-body md:text-lg text-fg-muted max-w-xl mx-auto mb-6 md:mb-10 leading-snug">
                 Partecipa ai mercati sociali su eventi reali. Più sei preciso, più sali. Zero rischio, zero soldi veri.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4 md:mb-6">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-5 md:mb-6">
                 <Link
                   href="/auth/signup"
                   className="landing-cta-primary w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body-sm inline-flex items-center justify-center transition-all hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
@@ -325,6 +326,7 @@ export default function Home() {
               <p className="text-ds-caption text-fg-subtle">
                 Risoluzione trasparente · Zero soldi veri
               </p>
+              <LandingHeroStats />
             </div>
           </section>
 
