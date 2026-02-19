@@ -12,6 +12,9 @@ export function categoryToSlug(category: string): string {
   return CATEGORY_TO_SLUG[category] ?? category.toLowerCase().replace(/\s+/g, "-");
 }
 
+/** Alias per compatibilità con componenti che usavano slugifyCategory. */
+export const slugifyCategory = categoryToSlug;
+
 export function getCategoryImagePath(category: string): string {
   const slug = categoryToSlug(category);
   return `/categories/${slug}.png`;
