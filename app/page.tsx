@@ -298,9 +298,9 @@ export default function Home() {
         <Header />
         <main id="main-content" className="relative mx-auto px-4 sm:px-6 py-5 md:py-12 lg:py-16 max-w-2xl">
           {/* Hero: above-the-fold on mobile (eyebrow, headline, subtitle, primary CTA, secondary CTA) */}
-          <section className="landing-hero-section mb-10 md:mb-16 min-h-0 min-h-[90vh] md:min-h-[92vh] flex flex-col justify-center pt-2 md:pt-4">
-            <div className="landing-hero-card px-5 py-6 md:px-12 md:py-12 text-center">
-              <p className="landing-hero-eyebrow text-ds-label font-semibold uppercase tracking-wider mb-3 md:mb-4 text-white whitespace-nowrap overflow-x-auto max-w-full scrollbar-none">
+          <section className="landing-hero-section mb-10 md:mb-16 min-h-0 min-h-[90vh] md:min-h-[92vh] flex flex-col justify-center pt-1 md:pt-3">
+            <div className="landing-hero-card px-4 py-5 md:px-12 md:py-12 text-center">
+              <p className="landing-hero-eyebrow text-[0.7rem] sm:text-ds-caption font-semibold uppercase tracking-wider mb-3 md:mb-4 text-white/95 text-center max-w-full break-words leading-snug">
                 Mercati di previsione – Solo crediti virtuali
               </p>
               <div className="landing-hero-line my-3 md:my-4" aria-hidden />
@@ -308,8 +308,8 @@ export default function Home() {
                 Prevedi il futuro. Guadagna crediti. Scala la classifica.
               </h1>
               <div className="landing-hero-line landing-hero-line--below my-3 md:my-4" aria-hidden />
-              <p className="text-ds-body-landing font-normal text-fg-muted max-w-xl mx-auto mb-5 md:mb-8 leading-snug px-1">
-                Quante volte hai pensato «l&apos;avrei detto io»? Ora puoi prevederlo—e dimostrarlo.
+              <p className="text-ds-body-landing font-normal text-white/90 max-w-xl mx-auto mb-5 md:mb-8 leading-snug px-1">
+                Se pensi di saperlo prima degli altri, è il momento di provarlo.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-6 md:mb-7">
                 <Link

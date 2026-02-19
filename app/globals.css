@@ -356,22 +356,22 @@ textarea:focus-visible {
   100% { transform: translate(-5%, -3%) scale(1.05); }
 }
 
-/* —— Landing: dynamic fluid background (Stripe-style, pre-login only) —— */
+/* —— Landing: sfondo più scuro, gradiente chiaro per luce (lucido, definito) —— */
 .landing-dynamic-bg {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
-  background: rgb(8 10 18);
+  background: rgb(4 6 14);
 }
 
 .landing-dynamic-bg__base {
   position: absolute;
   inset: -30%;
   background:
-    radial-gradient(ellipse 100% 80% at 50% 120%, rgb(30 35 55 / 0.6), transparent 50%),
-    radial-gradient(ellipse 80% 60% at 0% 50%, rgb(20 25 40 / 0.8), transparent 45%),
-    radial-gradient(ellipse 80% 60% at 100% 50%, rgb(18 22 38 / 0.8), transparent 45%);
+    linear-gradient(180deg, rgb(18 24 42 / 0.9) 0%, transparent 40%, transparent 70%, rgb(6 8 16) 100%),
+    radial-gradient(ellipse 120% 60% at 50% -10%, rgb(30 40 70 / 0.35), transparent 50%),
+    radial-gradient(ellipse 80% 50% at 50% 100%, rgb(12 16 28 / 0.8), transparent 55%);
   animation: landing-fluid-base 35s ease-in-out infinite alternate;
 }
 
@@ -379,7 +379,7 @@ textarea:focus-visible {
   position: absolute;
   border-radius: 50%;
   filter: blur(80px);
-  opacity: 0.5;
+  opacity: 0.28;
   will-change: transform;
 }
 
@@ -494,8 +494,8 @@ textarea:focus-visible {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgb(8 10 18 / 0.4) 0%, transparent 25%, transparent 70%, rgb(8 10 18 / 0.6) 100%),
-    radial-gradient(ellipse 100% 100% at 50% 50%, transparent 30%, rgb(8 10 18 / 0.5) 100%);
+    linear-gradient(180deg, rgb(20 28 48 / 0.5) 0%, transparent 28%, transparent 65%, rgb(4 6 14 / 0.85) 100%),
+    radial-gradient(ellipse 100% 80% at 50% -20%, rgb(255 255 255 / 0.04) 0%, transparent 45%);
   pointer-events: none;
 }
 
@@ -551,7 +551,7 @@ textarea:focus-visible {
   font-weight: 600;
 }
 
-/* Linea separazione neon blu (LED): accentuata, animazione apertura dal centro */
+/* Solo le due linee LED attorno al titolo: blu con ombra bianca (illuminano il comparto) */
 @keyframes landing-line-open {
   from {
     transform: scaleX(0);
@@ -565,12 +565,12 @@ textarea:focus-visible {
 .landing-hero-line {
   width: 100%;
   max-width: 18rem;
-  height: 2px;
+  height: 1.5px;
   margin: 0 auto;
   transform-origin: center;
   transform: scaleX(0);
-  background: linear-gradient(90deg, transparent, rgb(96 165 250 / 0.5), rgb(96 165 250), rgb(96 165 250 / 0.5), transparent);
-  box-shadow: 0 0 16px rgb(96 165 250 / 0.6), 0 0 32px rgb(96 165 250 / 0.35);
+  background: linear-gradient(90deg, transparent, rgb(96 165 250 / 0.6), rgb(96 165 250), rgb(96 165 250 / 0.6), transparent);
+  box-shadow: 0 0 10px rgb(96 165 250 / 0.4), 0 0 20px rgb(255 255 255 / 0.12);
   animation: landing-line-open 0.9s var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)) forwards;
 }
 .landing-hero-line--below {
@@ -578,40 +578,39 @@ textarea:focus-visible {
   animation-fill-mode: backwards;
 }
 .dark .landing-hero-line {
-  background: linear-gradient(90deg, transparent, rgb(96 165 250 / 0.4), rgb(96 165 250), rgb(96 165 250 / 0.4), transparent);
-  box-shadow: 0 0 20px rgb(96 165 250 / 0.5), 0 0 40px rgb(96 165 250 / 0.25);
+  box-shadow: 0 0 12px rgb(96 165 250 / 0.35), 0 0 24px rgb(255 255 255 / 0.1);
 }
 
-/* Bottoni hero: sfondo trasparente, ben visibili (bordo + glow) */
+/* Bottoni: lucidi, definiti, senza neon — bordo netto e contrasto */
 .landing-cta-primary {
-  background: rgb(255 255 255 / 0.08);
+  background: rgb(255 255 255 / 0.06);
   color: rgb(255 255 255);
-  border: 2px solid rgb(96 165 250 / 0.8);
-  box-shadow: 0 0 24px -4px rgb(96 165 250 / 0.5), inset 0 1px 0 0 rgb(255 255 255 / 0.1);
+  border: 1px solid rgb(255 255 255 / 0.35);
+  box-shadow: 0 1px 0 0 rgb(255 255 255 / 0.08), 0 2px 8px rgb(0 0 0 / 0.2);
 }
 .landing-cta-primary:hover {
-  background: rgb(255 255 255 / 0.12);
-  border-color: rgb(96 165 250);
-  box-shadow: 0 0 32px -4px rgb(96 165 250 / 0.6), inset 0 1px 0 0 rgb(255 255 255 / 0.15);
-}
-.landing-cta-secondary {
-  background: rgb(255 255 255 / 0.05);
-  color: rgb(255 255 255);
-  border: 2px solid rgb(255 255 255 / 0.35);
-  box-shadow: 0 0 16px -4px rgb(96 165 250 / 0.25);
-}
-.landing-cta-secondary:hover {
   background: rgb(255 255 255 / 0.1);
   border-color: rgb(255 255 255 / 0.5);
-  box-shadow: 0 0 24px -4px rgb(96 165 250 / 0.35);
+  box-shadow: 0 1px 0 0 rgb(255 255 255 / 0.12), 0 4px 12px rgb(0 0 0 / 0.25);
+}
+.landing-cta-secondary {
+  background: transparent;
+  color: rgb(255 255 255);
+  border: 1px solid rgb(255 255 255 / 0.25);
+  box-shadow: 0 1px 0 0 rgb(255 255 255 / 0.05);
+}
+.landing-cta-secondary:hover {
+  background: rgb(255 255 255 / 0.06);
+  border-color: rgb(255 255 255 / 0.4);
 }
 
 .landing-section-title {
-  position: relative;
-  display: inline-block;
-  padding-bottom: 0.35em;
   font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
   font-weight: 700;
+  color: rgb(255 255 255);
+  position: relative;
+  display: inline-block;
+  padding-bottom: 0.4em;
 }
 .landing-section-title::after {
   content: "";
@@ -619,18 +618,17 @@ textarea:focus-visible {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 3px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, rgb(var(--primary) / 0.9), rgb(139 92 246 / 0.6));
+  height: 2px;
+  border-radius: 1px;
+  background: rgb(255 255 255 / 0.2);
 }
 
-/* Landing page: header sfumato in trasparenza (riconoscibile ma integrato) */
+/* Landing page: header sfumato, lucido (niente neon) */
 .landing-page .header-neon {
-  background: linear-gradient(180deg, rgb(0 0 0 / 0.35) 0%, rgb(0 0 0 / 0.12) 50%, transparent 100%);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgb(96 165 250 / 0.2);
-  box-shadow: 0 0 24px -8px rgb(96 165 250 / 0.12);
+  background: linear-gradient(180deg, rgb(4 6 14 / 0.7) 0%, rgb(4 6 14 / 0.2) 50%, transparent 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
 }
 .landing-page .header-neon a,
 .landing-page .header-neon .header-icon-btn {
@@ -658,8 +656,16 @@ textarea:focus-visible {
   color: transparent;
 }
 .dark .landing-page .header-neon {
-  background: linear-gradient(180deg, rgb(0 0 0 / 0.5) 0%, rgb(0 0 0 / 0.2) 50%, transparent 100%);
-  border-bottom-color: rgb(96 165 250 / 0.25);
+  border-bottom-color: rgb(255 255 255 / 0.06);
+}
+
+.landing-page main#main-content {
+  padding-top: 0.75rem;
+}
+@media (min-width: 768px) {
+  .landing-page main#main-content {
+    padding-top: 1.5rem;
+  }
 }
 
 .landing-page .box-neon-soft:hover {
@@ -667,25 +673,16 @@ textarea:focus-visible {
   box-shadow: var(--shadow-card-hover);
 }
 
-/* Titolo hero: sfumatura argentata + “illuminato” dalle linee neon (glow blu) */
+/* Titolo hero: colore chiaro, leggero effetto “illuminato” dalle due linee (nessun neon) */
 .landing-hero-title {
   font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
   font-weight: 800;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 35%, #cbd5e1 65%, #94a3b8 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  background-size: 200% auto;
-  text-shadow: 0 0 24px rgb(96 165 250 / 0.35), 0 0 48px rgb(96 165 250 / 0.2);
-  filter: drop-shadow(0 0 12px rgb(96 165 250 / 0.25));
+  color: rgb(230 235 245);
+  text-shadow: 0 0 20px rgb(255 255 255 / 0.08), 0 1px 2px rgb(0 0 0 / 0.2);
 }
 .dark .landing-hero-title {
-  background: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 40%, #94a3b8 70%, #64748b 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 0 28px rgb(96 165 250 / 0.4), 0 0 56px rgb(96 165 250 / 0.25);
-  filter: drop-shadow(0 0 16px rgb(96 165 250 / 0.3));
+  color: rgb(238 242 250);
+  text-shadow: 0 0 24px rgb(255 255 255 / 0.06), 0 1px 2px rgb(0 0 0 / 0.3);
 }
 
 /* Testo hero: bianco, gerarchia da peso/font */
@@ -709,48 +706,56 @@ textarea:focus-visible {
   color: rgb(255 255 255) !important;
 }
 
-/* Hero stats: una riga orizzontale, font futuristico, solo cue visivi (pallino live) */
+/* Hero stats: card come riferimento — glassmorphism, bordo blu neon definito (lucido) */
 .landing-hero-stats {
-  border-top: 1px solid rgb(96 165 250 / 0.4);
-  box-shadow: 0 -1px 0 0 rgb(96 165 250 / 0.2), 0 0 24px -8px rgb(96 165 250 / 0.15);
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+  padding-top: 1.25rem;
 }
-.landing-hero-stats__pill {
-  font-family: 'Orbitron', 'JetBrains Mono', ui-monospace, monospace;
-  background: linear-gradient(135deg, rgb(255 255 255 / 0.1) 0%, rgb(255 255 255 / 0.04) 100%);
+.landing-hero-stats__card {
+  background: rgb(255 255 255 / 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgb(96 165 250 / 0.5);
-  box-shadow: 0 0 20px -4px rgb(96 165 250 / 0.35), inset 0 1px 0 0 rgb(255 255 255 / 0.08);
-  border-radius: 9999px;
-  padding: 0.5rem 1rem;
-  letter-spacing: 0.04em;
+  box-shadow: 0 0 0 1px rgb(96 165 250 / 0.15), 0 0 16px -4px rgb(96 165 250 / 0.25);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  min-width: 0;
 }
-.dark .landing-hero-stats__pill {
-  background: linear-gradient(135deg, rgb(255 255 255 / 0.08) 0%, rgb(255 255 255 / 0.02) 100%);
-  border-color: rgb(96 165 250 / 0.6);
-  box-shadow: 0 0 24px -4px rgb(96 165 250 / 0.4), inset 0 1px 0 0 rgb(255 255 255 / 0.06);
+.landing-hero-stats__card--events {
+  border-color: rgb(129 140 248 / 0.5);
+  box-shadow: 0 0 0 1px rgb(129 140 248 / 0.15), 0 0 16px -4px rgb(129 140 248 / 0.2);
 }
-@keyframes landing-stats-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px rgb(96 165 250 / 0.6); }
-  50% { opacity: 0.7; transform: scale(1.15); box-shadow: 0 0 14px rgb(96 165 250 / 0.9); }
+.landing-hero-stats__icon {
+  color: rgb(96 165 250);
+  filter: drop-shadow(0 0 6px rgb(96 165 250 / 0.5));
 }
-.landing-hero-stats__dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgb(96 165 250);
-  animation: landing-stats-pulse 1.8s ease-in-out infinite;
-  box-shadow: 0 0 8px rgb(96 165 250 / 0.6);
-  flex-shrink: 0;
-}
-.landing-hero-stats__dot--alt {
-  background: rgb(139 92 246);
-  animation-delay: 0.3s;
-  box-shadow: 0 0 8px rgb(139 92 246 / 0.6);
+.landing-hero-stats__icon--events {
+  color: rgb(129 140 248);
+  filter: drop-shadow(0 0 6px rgb(129 140 248 / 0.5));
 }
 .landing-hero-stats__number {
-  font-family: 'Orbitron', 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  color: rgb(255 255 255);
+  letter-spacing: 0.02em;
+}
+.landing-hero-stats__label {
+  color: rgb(255 255 255 / 0.85);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+@keyframes landing-stats-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.08); }
+}
+.landing-hero-stats__live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgb(139 92 246);
+  box-shadow: 0 0 8px rgb(139 92 246 / 0.6);
+  animation: landing-stats-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
 }
 
 /* Horizontal marquee (ticker) */

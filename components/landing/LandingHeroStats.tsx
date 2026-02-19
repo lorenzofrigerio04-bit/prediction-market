@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { IconUser, IconCalendar } from "@/components/ui/Icons";
 
 const DURATION_MS = 1600;
 const REFRESH_INTERVAL_MS = 60000;
@@ -68,24 +69,31 @@ export default function LandingHeroStats() {
 
   return (
     <div
-      className="landing-hero-stats flex flex-nowrap justify-center items-center gap-3 sm:gap-5 mt-6 pt-6 min-h-[3.5rem]"
+      className="landing-hero-stats flex flex-nowrap justify-center items-stretch gap-3 sm:gap-4"
       role="status"
       aria-live="polite"
-      aria-label={`${stats.usersCount} utenti, ${stats.activeEventsCount} eventi attivi, in tempo reale`}
+      aria-label={`${stats.usersCount} utenti, ${stats.activeEventsCount} eventi attivi`}
     >
-      <div className="landing-hero-stats__pill flex items-center gap-2 sm:gap-2.5 px-3 py-2 sm:px-5 sm:py-2.5 shrink-0">
-        <span className="landing-hero-stats__dot" aria-hidden />
-        <span className="text-white text-ds-body sm:text-ds-body flex items-baseline gap-1.5">
-          <span className="landing-hero-stats__number text-lg sm:text-xl md:text-2xl tabular-nums text-white">{usersDisplay}</span>
-          <span className="opacity-90 text-ds-body-sm">utenti</span>
-        </span>
+      <div className="landing-hero-stats__card flex items-center gap-3 flex-1 min-w-0 max-w-[10rem] sm:max-w-[9rem]">
+        <IconUser className="landing-hero-stats__icon w-7 h-7 shrink-0" aria-hidden />
+        <div className="flex flex-col min-w-0">
+          <span className="landing-hero-stats__number text-2xl sm:text-3xl tabular-nums leading-tight">
+            {usersDisplay}
+          </span>
+          <span className="landing-hero-stats__label mt-0.5">utenti</span>
+        </div>
       </div>
-      <div className="landing-hero-stats__pill flex items-center gap-2 sm:gap-2.5 px-3 py-2 sm:px-5 sm:py-2.5 shrink-0">
-        <span className="landing-hero-stats__dot landing-hero-stats__dot--alt" aria-hidden />
-        <span className="text-white text-ds-body sm:text-ds-body flex items-baseline gap-1.5">
-          <span className="landing-hero-stats__number text-lg sm:text-xl md:text-2xl tabular-nums text-white">{eventsDisplay}</span>
-          <span className="opacity-90 text-ds-body-sm">eventi attivi</span>
-        </span>
+      <div className="landing-hero-stats__card landing-hero-stats__card--events flex items-center gap-3 flex-1 min-w-0 max-w-[10rem] sm:max-w-[9rem]">
+        <div className="relative shrink-0">
+          <IconCalendar className="landing-hero-stats__icon landing-hero-stats__icon--events w-7 h-7" aria-hidden />
+          <span className="landing-hero-stats__live-dot absolute -bottom-1 -right-0.5" aria-hidden />
+        </div>
+        <div className="flex flex-col min-w-0">
+          <span className="landing-hero-stats__number text-2xl sm:text-3xl tabular-nums leading-tight">
+            {eventsDisplay}
+          </span>
+          <span className="landing-hero-stats__label mt-0.5">eventi attivi</span>
+        </div>
       </div>
     </div>
   );
