@@ -8,6 +8,21 @@ import ThemeScript from "./ThemeScript";
 export const metadata: Metadata = {
   title: "Prediction Market",
   description: "Piattaforma italiana di previsioni sociali",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafbfd" },
+    { media: "(prefers-color-scheme: dark)", color: "#181b26" },
+  ],
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "PredictionMaster",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    viewportFit: "cover",
+  },
 };
 
 // Obbliga il layout a essere valutato a ogni richiesta (no cache), così i cookie di sessione vengono letti
