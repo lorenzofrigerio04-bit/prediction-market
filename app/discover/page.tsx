@@ -80,7 +80,7 @@ export default function DiscoverPage() {
 
   useEffect(() => {
     setLoadingTrending(true);
-    fetch("/api/events/trending-now?limit=3")
+    fetch("/api/events/viral-by-category")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => setTrendingEvents(data?.events ?? []))
       .catch(() => setTrendingEvents([]))
@@ -114,47 +114,48 @@ export default function DiscoverPage() {
             heroInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           }`}
         >
-          <h1 className="text-ds-h1 font-bold text-white mb-2 drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
+          <h1 className="text-ds-h1 font-bold text-white mb-3 drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
             Esplora gli Eventi
           </h1>
-          <p className="text-ds-body text-white/80 mb-4 max-w-md mx-auto">
+
+          {/* LED Line under title */}
+          <div className="discover-hero-line mx-auto mb-3" aria-hidden />
+
+          <p className="text-ds-body text-white/80 mb-6 max-w-md mx-auto">
             Scegli una categoria e metti alla prova le tue previsioni
           </p>
 
-          {/* LED Line under title */}
-          <div className="discover-hero-line mx-auto mb-6" aria-hidden />
-
           {/* Stats Row - Landing style */}
-          <div className="flex justify-center items-center gap-4 sm:gap-6">
+          <div className="flex justify-center items-stretch gap-4 sm:gap-6">
             <button
               onClick={scrollToCategories}
-              className="animate-in-fade-up stagger-1 text-center group cursor-pointer hover:scale-105 transition-transform"
+              className="animate-in-fade-up stagger-1 flex flex-col items-center justify-between cursor-pointer hover:scale-105 transition-transform min-w-[70px]"
             >
-              <span className="discover-stat-value block mb-1">
+              <span className="discover-stat-value">
                 {categories.length || 7}
               </span>
-              <span className="discover-stat-label">Categorie</span>
+              <span className="discover-stat-label mt-1">Categorie</span>
             </button>
 
-            <div className="discover-divider-led" aria-hidden />
+            <div className="discover-divider-led self-center" aria-hidden />
 
-            <div className="animate-in-fade-up stagger-2 text-center">
-              <span className="discover-stat-value block mb-1">
+            <div className="animate-in-fade-up stagger-2 flex flex-col items-center justify-between min-w-[70px]">
+              <span className="discover-stat-value">
                 {totalEvents || "—"}
               </span>
-              <span className="discover-stat-label">Eventi attivi</span>
+              <span className="discover-stat-label mt-1">Eventi attivi</span>
             </div>
 
-            <div className="discover-divider-led" aria-hidden />
+            <div className="discover-divider-led self-center" aria-hidden />
 
             <button
               onClick={() => setShowCreateModal(true)}
-              className="animate-in-fade-up stagger-3 text-center group cursor-pointer hover:scale-105 transition-transform"
+              className="animate-in-fade-up stagger-3 flex flex-col items-center justify-between cursor-pointer hover:scale-105 transition-transform min-w-[70px]"
             >
-              <span className="discover-stat-value discover-stat-value--cta block mb-1">
+              <span className="discover-stat-value">
                 +
               </span>
-              <span className="discover-stat-label">Crea evento</span>
+              <span className="discover-stat-label mt-1">Crea evento</span>
             </button>
           </div>
         </section>
