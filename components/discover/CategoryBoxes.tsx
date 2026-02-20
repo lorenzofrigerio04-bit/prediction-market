@@ -82,15 +82,16 @@ export default function CategoryBoxes({ categories, showTutti = true }: Category
           : getCategoryGradient(category);
         const isFocused = focusedIndex === index;
 
+        const staggerClass = `stagger-${Math.min((index % 6) + 1, 6)}`;
+
         return (
           <Link
             key={isTutti ? "tutti" : category}
             href={href}
             data-category-index={index}
-            className="relative block rounded-3xl overflow-hidden border border-white/10 bg-white/5 shadow-card focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none transition-all duration-300 ease-out min-h-[120px] sm:min-h-[140px] active:scale-[0.99] hover:border-primary/20 hover:shadow-glow-sm"
+            className={`relative block rounded-3xl overflow-hidden border border-white/10 bg-white/5 shadow-card focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none transition-all duration-300 ease-out min-h-[120px] sm:min-h-[140px] active:scale-[0.99] hover:border-primary/20 hover:shadow-glow-sm animate-in-fade-up ${staggerClass}`}
             style={{
               transform: isFocused ? "scale(1.02)" : "scale(1)",
-              boxShadow: isFocused ? undefined : undefined,
             }}
           >
             <div

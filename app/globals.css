@@ -2089,3 +2089,57 @@ textarea:focus-visible {
   border-color: rgb(var(--primary) / 0.5);
   color: rgb(var(--primary));
 }
+
+/* —— Discover page: dynamic event exploration —— */
+.discover-page {
+  background: rgb(var(--bg));
+}
+
+.discover-page .landing-dynamic-bg {
+  opacity: 0.85;
+}
+
+.discover-page .landing-section-title {
+  color: rgb(var(--fg));
+}
+
+.discover-page .landing-section-title__text {
+  background: linear-gradient(135deg, rgb(var(--fg)) 0%, rgb(var(--fg-muted)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .discover-page .landing-section-title__text {
+  background: linear-gradient(135deg, rgb(248 250 252) 0%, rgb(203 213 225) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Live pulse indicator */
+@keyframes live-pulse {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 0.4; }
+}
+
+.discover-page .animate-ping {
+  animation: live-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Stats counter animation */
+@keyframes count-up-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.discover-page .font-numeric {
+  animation: count-up-fade 0.6s var(--ease-out) both;
+  font-variant-numeric: tabular-nums;
+}
