@@ -119,11 +119,7 @@ export default function DiscoverPage() {
           </h1>
 
           {/* LED Line under title */}
-          <div className="discover-hero-line mx-auto mb-3" aria-hidden />
-
-          <p className="text-ds-body text-white/80 mb-6 max-w-md mx-auto">
-            Scegli una categoria e metti alla prova le tue previsioni
-          </p>
+          <div className="discover-hero-line mx-auto mb-6" aria-hidden />
 
           {/* Stats Row - Landing style */}
           <div className="flex justify-center items-stretch gap-4 sm:gap-6">
@@ -187,33 +183,24 @@ export default function DiscoverPage() {
 
         {/* Categories Section */}
         <section ref={categoriesRef} className="scroll-mt-20">
-          <SectionContainer
-            title="Categorie"
-            action={
-              <Link
-                href="/discover/tutti"
-                className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
-              >
-                Vedi tutti
-              </Link>
-            }
-          >
-            {error ? (
-              <EmptyState
-                title="Errore"
-                description={error}
-                action={{ label: "Riprova", onClick: () => fetchCategories() }}
-              />
-            ) : loading ? (
-              <div className="py-8">
-                <LoadingBlock message="Caricamento…" />
-              </div>
-            ) : (
-              <div className="animate-in-fade-up">
-                <CategoryBoxes categories={categories} showTutti />
-              </div>
-            )}
-          </SectionContainer>
+          {/* Semi-title */}
+          <h2 className="discover-semititle text-center mb-6">
+            Scegli una categoria e metti alla prova le tue previsioni
+          </h2>
+
+          {error ? (
+            <EmptyState
+              title="Errore"
+              description={error}
+              action={{ label: "Riprova", onClick: () => fetchCategories() }}
+            />
+          ) : loading ? (
+            <div className="py-8">
+              <LoadingBlock message="Caricamento…" />
+            </div>
+          ) : (
+            <CategoryBoxes categories={categories} showTutti />
+          )}
         </section>
 
         {/* CTA Section */}

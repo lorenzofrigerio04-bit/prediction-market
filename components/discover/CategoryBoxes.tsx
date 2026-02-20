@@ -23,50 +23,39 @@ function getCategoryGradient(category: string): string {
 
 interface CategoryBoxesProps {
   categories: string[];
-  /** Se true, aggiunge il box "Tutti" che porta a /discover/tutti */
   showTutti?: boolean;
 }
 
 export default function CategoryBoxes({ categories, showTutti = true }: CategoryBoxesProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+  const [visibleItems, setVisibleItems] = useState<Set<number>>(new Set());
+  const [hasAnimated, setHasAnimated] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
-
-    const boxes = container.querySelectorAll("[data-category-index]");
-    if (boxes.length === 0) return;
+    if (!container || hasAnimated) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          const indexStr = (entry.target as HTMLElement).getAttribute("data-category-index");
-          if (indexStr === null) return;
-          const index = parseInt(indexStr, 10);
-          if (entry.isIntersecting) {
-            setFocusedIndex((prev) => {
-              const rootBounds = entry.rootBounds;
-              const rect = entry.boundingClientRect;
-              if (!rootBounds) return index;
-              const centerY = rect.top + rect.height / 2;
-              const viewCenter = rootBounds.top + rootBounds.height * 0.4;
-              if (centerY <= viewCenter + 80) return index;
-              return prev;
+          if (entry.isIntersecting && !hasAnimated) {
+            setHasAnimated(true);
+            const list = showTutti ? ["Tutti", ...categories] : categories;
+            list.forEach((_, index) => {
+              setTimeout(() => {
+                setVisibleItems((prev) => new Set([...prev, index]));
+              }, index * 120);
             });
+            observer.disconnect();
           }
         });
       },
-      {
-        root: null,
-        rootMargin: "-15% 0px -40% 0px",
-        threshold: [0, 0.2, 0.5, 0.8, 1],
-      }
+      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
     );
 
-    boxes.forEach((el) => observer.observe(el));
+    observer.observe(container);
     return () => observer.disconnect();
-  }, [categories.length, showTutti]);
+  }, [categories, showTutti, hasAnimated]);
 
   const list = showTutti ? ["Tutti", ...categories] : categories;
 
@@ -80,22 +69,24 @@ export default function CategoryBoxes({ categories, showTutti = true }: Category
         const gradient = isTutti
           ? "linear-gradient(135deg, rgba(59,130,246,0.45) 0%, rgba(139,92,246,0.35) 100%)"
           : getCategoryGradient(category);
-        const isFocused = focusedIndex === index;
-
-        const staggerClass = `stagger-${Math.min((index % 6) + 1, 6)}`;
+        const isVisible = visibleItems.has(index);
 
         return (
           <Link
             key={isTutti ? "tutti" : category}
             href={href}
             data-category-index={index}
-            className={`relative block rounded-3xl overflow-hidden border border-white/10 bg-white/5 shadow-card focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none transition-all duration-300 ease-out min-h-[120px] sm:min-h-[140px] active:scale-[0.99] hover:border-primary/20 hover:shadow-glow-sm animate-in-fade-up ${staggerClass}`}
+            className="category-box-item relative block rounded-3xl overflow-hidden border border-white/10 bg-white/5 shadow-card focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none min-h-[120px] sm:min-h-[140px] active:scale-[0.99] hover:border-primary/20 hover:shadow-glow-sm hover:scale-[1.02]"
             style={{
-              transform: isFocused ? "scale(1.02)" : "scale(1)",
+              opacity: isVisible ? 1 : 0,
+              transform: isVisible
+                ? "translateY(0) scale(1)"
+                : "translateY(24px) scale(0.95)",
+              transition: `opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)`,
             }}
           >
             <div
-              className="absolute inset-0 bg-cover bg-center"
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-500 hover:scale-105"
               style={{
                 backgroundImage: imagePath ? `url(${imagePath})` : undefined,
               }}
@@ -113,7 +104,9 @@ export default function CategoryBoxes({ categories, showTutti = true }: Category
                 {category}
               </span>
               {!isTutti && (
-                <span className="text-sm text-white/90 mt-0.5 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">Esplora eventi</span>
+                <span className="text-sm text-white/90 mt-0.5 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+                  Esplora eventi
+                </span>
               )}
             </div>
           </Link>
