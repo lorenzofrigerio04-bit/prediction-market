@@ -100,14 +100,12 @@ export default function CategoryBoxes({ categories, showTutti = true }: Category
               }}
             />
             <div className="relative flex flex-col justify-end p-4 h-full min-h-[120px] sm:min-h-[140px]">
-              <span className="text-lg sm:text-xl font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)] tracking-tight" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.6)" }}>
+              <span
+                className={`text-lg sm:text-xl font-bold text-white tracking-tight ${!isTutti ? "drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]" : ""}`}
+                style={!isTutti ? { textShadow: "0 1px 3px rgba(0,0,0,0.5), 0 1px 6px rgba(0,0,0,0.4)" } : undefined}
+              >
                 {category}
               </span>
-              {!isTutti && (
-                <span className="text-sm text-white/90 mt-0.5" style={{ textShadow: "0 1px 2px rgba(0,0,0,0.95), 0 1px 4px rgba(0,0,0,0.7)" }}>
-                  Esplora eventi
-                </span>
-              )}
             </div>
           </Link>
         );
