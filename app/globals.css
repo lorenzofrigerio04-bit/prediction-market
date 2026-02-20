@@ -2093,10 +2093,25 @@ textarea:focus-visible {
 /* —— Discover page: dynamic event exploration —— */
 .discover-page {
   background: rgb(var(--bg));
+  min-height: 100vh;
 }
 
 .discover-page .landing-dynamic-bg {
   opacity: 0.9;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+/* Hide footer background on discover page */
+.discover-page ~ footer,
+body:has(.discover-page) > footer {
+  background: transparent !important;
+}
+
+/* Ensure body has consistent background for discover */
+body:has(.discover-page) {
+  background: rgb(24 27 38);
 }
 
 /* Hero LED line - thin horizontal neon line */

@@ -55,7 +55,7 @@ export default async function RootLayout({
           </a>
           <div className="flex-1">{children}</div>
           <footer
-            className="py-3 text-center text-fg-muted text-ds-micro"
+            className="py-3 text-center text-fg-muted text-ds-micro bg-transparent"
             aria-hidden
           >
             <span className="brand-logo__text font-display font-extrabold tracking-tight inline-block text-sm md:text-base">
