@@ -372,10 +372,10 @@ textarea:focus-visible {
   inset: 0;
   z-index: 100;
   pointer-events: none;
-  opacity: 0.35;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.4;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-repeat: repeat;
-  background-size: 200px 200px;
+  background-size: 180px 180px;
   mix-blend-mode: overlay;
 }
 
@@ -384,19 +384,19 @@ textarea:focus-visible {
   inset: -30%;
   background:
     linear-gradient(180deg, 
-      rgb(255 255 255 / 0.05) 0%, 
-      rgb(255 255 255 / 0.03) 15%, 
-      rgb(255 255 255 / 0.015) 30%, 
+      rgb(255 255 255 / 0.06) 0%, 
+      rgb(255 255 255 / 0.04) 15%, 
+      rgb(255 255 255 / 0.02) 30%, 
       transparent 50%, 
-      rgb(10 12 22 / 0.4) 75%, 
+      rgb(10 12 22 / 0.5) 75%, 
       rgb(10 12 22) 100%),
     radial-gradient(ellipse 100% 70% at 50% -30%, 
-      rgb(255 255 255 / 0.06) 0%, 
-      rgb(255 255 255 / 0.03) 25%, 
+      rgb(255 255 255 / 0.08) 0%, 
+      rgb(255 255 255 / 0.04) 25%, 
       transparent 50%),
     radial-gradient(ellipse 80% 50% at 50% 120%, 
       rgb(10 12 22) 0%, 
-      rgb(10 12 22 / 0.4) 40%, 
+      rgb(10 12 22 / 0.5) 40%, 
       transparent 70%);
   animation: landing-fluid-base 35s ease-in-out infinite alternate;
 }
@@ -407,6 +407,7 @@ textarea:focus-visible {
   filter: blur(120px);
   opacity: 0.15;
   will-change: transform;
+  /* Previene il banding con rendering più fluido */
   transform: translateZ(0);
   backface-visibility: hidden;
 }
@@ -418,11 +419,11 @@ textarea:focus-visible {
   left: -15%;
   top: -20%;
   background: radial-gradient(circle, 
-    rgb(255 255 255 / 0.16) 0%, 
-    rgb(255 255 255 / 0.10) 20%, 
-    rgb(255 255 255 / 0.05) 45%, 
-    rgb(255 255 255 / 0.015) 65%, 
-    transparent 85%);
+    rgb(255 255 255 / 0.18) 0%, 
+    rgb(255 255 255 / 0.12) 20%, 
+    rgb(255 255 255 / 0.06) 40%, 
+    rgb(255 255 255 / 0.02) 60%, 
+    transparent 80%);
   animation: landing-orb-1 42s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
 }
 
@@ -432,9 +433,9 @@ textarea:focus-visible {
   right: -10%;
   top: 10%;
   background: radial-gradient(circle, 
-    rgb(255 255 255 / 0.10) 0%, 
-    rgb(255 255 255 / 0.06) 25%, 
-    rgb(255 255 255 / 0.025) 50%, 
+    rgb(255 255 255 / 0.12) 0%, 
+    rgb(255 255 255 / 0.08) 25%, 
+    rgb(255 255 255 / 0.03) 50%, 
     transparent 75%);
   animation: landing-orb-2 38s cubic-bezier(0.4, 0, 0.6, 1) infinite alternate;
 }
@@ -445,8 +446,8 @@ textarea:focus-visible {
   left: 5%;
   bottom: 10%;
   background: radial-gradient(circle, 
-    rgb(255 255 255 / 0.08) 0%, 
-    rgb(255 255 255 / 0.05) 30%, 
+    rgb(255 255 255 / 0.10) 0%, 
+    rgb(255 255 255 / 0.06) 30%, 
     rgb(255 255 255 / 0.02) 55%, 
     transparent 80%);
   animation: landing-orb-3 45s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
@@ -458,9 +459,9 @@ textarea:focus-visible {
   right: 15%;
   bottom: -15%;
   background: radial-gradient(circle, 
-    rgb(255 255 255 / 0.06) 0%, 
-    rgb(255 255 255 / 0.035) 30%, 
-    rgb(255 255 255 / 0.015) 55%, 
+    rgb(255 255 255 / 0.08) 0%, 
+    rgb(255 255 255 / 0.05) 30%, 
+    rgb(255 255 255 / 0.02) 55%, 
     transparent 80%);
   animation: landing-orb-4 40s cubic-bezier(0.4, 0, 0.6, 1) infinite alternate;
 }
@@ -471,8 +472,8 @@ textarea:focus-visible {
   left: 30%;
   top: 30%;
   background: radial-gradient(circle, 
-    rgb(255 255 255 / 0.08) 0%, 
-    rgb(255 255 255 / 0.05) 30%, 
+    rgb(255 255 255 / 0.10) 0%, 
+    rgb(255 255 255 / 0.06) 30%, 
     rgb(255 255 255 / 0.02) 60%, 
     transparent 85%);
   animation: landing-orb-5 33s cubic-bezier(0.5, 0, 0.5, 1) infinite alternate;
@@ -484,12 +485,13 @@ textarea:focus-visible {
   right: 25%;
   top: 50%;
   background: radial-gradient(circle, 
-    rgb(255 255 255 / 0.07) 0%, 
-    rgb(255 255 255 / 0.04) 30%, 
-    rgb(255 255 255 / 0.015) 55%, 
+    rgb(255 255 255 / 0.08) 0%, 
+    rgb(255 255 255 / 0.05) 30%, 
+    rgb(255 255 255 / 0.02) 55%, 
     transparent 80%);
   animation: landing-orb-6 36s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
 }
+
 @keyframes landing-fluid-base {
   0% { transform: translate(0, 0) scale(1) rotate(0deg); }
   100% { transform: translate(-4%, -2%) scale(1.08) rotate(2deg); }
@@ -530,20 +532,20 @@ textarea:focus-visible {
   inset: 0;
   background:
     linear-gradient(180deg, 
-      rgb(255 255 255 / 0.025) 0%, 
-      rgb(255 255 255 / 0.012) 15%, 
+      rgb(255 255 255 / 0.03) 0%, 
+      rgb(255 255 255 / 0.015) 15%, 
       transparent 30%, 
       transparent 70%, 
-      rgb(0 0 0 / 0.08) 85%, 
-      rgb(0 0 0 / 0.15) 100%),
+      rgb(0 0 0 / 0.1) 85%, 
+      rgb(0 0 0 / 0.2) 100%),
     radial-gradient(ellipse 100% 80% at 50% -25%, 
-      rgb(255 255 255 / 0.03) 0%, 
-      rgb(255 255 255 / 0.015) 25%, 
+      rgb(255 255 255 / 0.04) 0%, 
+      rgb(255 255 255 / 0.02) 25%, 
       transparent 50%);
   pointer-events: none;
 }
 
-/* Spotlight centrale hero — effetto fluido senza banding */
+/* Spotlight centrale hero — effetto "luce sul palco" ultra-fluido */
 .landing-dynamic-bg__overlay::before {
   content: "";
   position: absolute;
@@ -554,13 +556,12 @@ textarea:focus-visible {
   max-width: 600px;
   height: 55%;
   background: radial-gradient(ellipse at center, 
-    rgb(255 255 255 / 0.04) 0%, 
-    rgb(255 255 255 / 0.025) 25%, 
+    rgb(255 255 255 / 0.05) 0%, 
+    rgb(255 255 255 / 0.03) 25%, 
     rgb(255 255 255 / 0.01) 50%, 
     transparent 75%);
   pointer-events: none;
 }
-
 
 /* —— Brand logo: solo testo PredictionMaster, gradient elegante —— */
 .brand-logo__word--prediction {
@@ -664,7 +665,7 @@ textarea:focus-visible {
   margin: 0 auto;
   transform-origin: center;
   transform: scaleX(0);
-  background: linear-gradient(90deg, transparent, rgb(96 165 250 / 0.6), rgb(96 165 250), rgb(96 165 250 / 0.6), transparent);
+  background: linear-gradient(90deg, transparent, rgb(96 165 250 / 0.65), rgb(96 165 250), rgb(96 165 250 / 0.65), transparent);
   box-shadow: 0 0 14px rgb(96 165 250 / 0.5), 0 0 28px rgb(255 255 255 / 0.16);
   animation: landing-line-open 0.85s var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)) both;
 }

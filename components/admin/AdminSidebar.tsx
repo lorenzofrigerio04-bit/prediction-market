@@ -17,15 +17,15 @@ export default function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-56 min-h-screen bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+    <aside className="w-56 min-h-screen bg-surface/30 border-r border-border dark:border-white/10 flex flex-col">
+      <div className="p-4 border-b border-border dark:border-white/10">
         <Link
           href="/admin"
-          className="text-lg font-bold text-gray-900 dark:text-white"
+          className="text-lg font-bold text-fg"
         >
           Admin
         </Link>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-xs text-fg-subtle mt-1">
           Pannello operativo
         </p>
       </div>
@@ -39,10 +39,10 @@ export default function AdminSidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  ? "bg-primary/10 text-primary"
+                  : "text-fg-muted hover:bg-surface/50 hover:text-fg"
               }`}
             >
               <span className="text-base" aria-hidden>
@@ -53,10 +53,10 @@ export default function AdminSidebar() {
           );
         })}
       </nav>
-      <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+      <div className="p-3 border-t border-border dark:border-white/10">
         <Link
           href="/"
-          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          className="flex items-center gap-2 px-3 py-2 text-sm text-fg-muted hover:text-primary transition-colors"
         >
           ← Torna al sito
         </Link>

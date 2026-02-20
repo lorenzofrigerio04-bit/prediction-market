@@ -37,21 +37,21 @@ export default function AdminSimulatePage() {
   const hasError = result && !result.ok;
 
   return (
-    <div className="p-6 md:p-8">
+    <div className="min-h-screen bg-bg text-fg p-6 md:p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-2xl md:text-3xl font-bold text-fg mb-2">
           Simulazione bot
         </h1>
-        <p className="text-gray-600">
+        <p className="text-fg-muted">
           Esegui una run di attività simulata: i bot creano previsioni, commenti, reazioni e follow sugli eventi aperti. Con cron ogni 30 min la piattaforma resta viva come con 100–200 utenti attivi.
         </p>
       </div>
 
-      <div className="max-w-2xl bg-white rounded-lg shadow overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <p className="text-sm text-gray-600 mb-4">
+      <div className="max-w-2xl card-raised rounded-2xl overflow-hidden">
+        <div className="p-6 border-b border-border dark:border-white/10">
+          <p className="text-sm text-fg-muted mb-4">
             In produzione è richiesta la variabile d&apos;ambiente{" "}
-            <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-xs font-mono">
+            <code className="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono">
               ENABLE_SIMULATED_ACTIVITY=true
             </code>{" "}
             in Vercel.
@@ -59,47 +59,47 @@ export default function AdminSimulatePage() {
           <button
             onClick={run}
             disabled={loading}
-            className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
+            className="bg-primary text-white px-6 py-2.5 rounded-xl hover:bg-primary-hover disabled:opacity-50 font-medium transition-colors"
           >
             {loading ? "Esecuzione in corso..." : "Esegui attività simulata ora"}
           </button>
         </div>
 
         {result && (
-          <div className="p-6 bg-gray-50 border-t border-gray-200">
+          <div className="p-6 bg-surface/30 border-t border-border dark:border-white/10">
             {hasError && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm font-medium text-red-800">{result.error}</p>
+              <div className="mb-4 p-4 bg-danger/10 border border-danger/30 rounded-xl">
+                <p className="text-sm font-medium text-danger">{result.error}</p>
                 {result.hint && (
-                  <p className="text-sm text-red-700 mt-1">{result.hint}</p>
+                  <p className="text-sm text-danger/80 mt-1">{result.hint}</p>
                 )}
               </div>
             )}
             {isSuccess && result.predictions != null && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-                <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-                  <p className="text-2xl font-bold text-gray-900">{result.predictions.created}</p>
-                  <p className="text-xs text-gray-500">Previsioni</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                <div className="box-raised rounded-xl p-3 text-center">
+                  <p className="text-2xl font-bold text-fg font-numeric">{result.predictions.created}</p>
+                  <p className="text-xs text-fg-muted">Previsioni</p>
                 </div>
-                <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-                  <p className="text-2xl font-bold text-gray-900">{result.comments?.created ?? 0}</p>
-                  <p className="text-xs text-gray-500">Commenti</p>
+                <div className="box-raised rounded-xl p-3 text-center">
+                  <p className="text-2xl font-bold text-fg font-numeric">{result.comments?.created ?? 0}</p>
+                  <p className="text-xs text-fg-muted">Commenti</p>
                 </div>
-                <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-                  <p className="text-2xl font-bold text-gray-900">{result.reactions?.created ?? 0}</p>
-                  <p className="text-xs text-gray-500">Reazioni</p>
+                <div className="box-raised rounded-xl p-3 text-center">
+                  <p className="text-2xl font-bold text-fg font-numeric">{result.reactions?.created ?? 0}</p>
+                  <p className="text-xs text-fg-muted">Reazioni</p>
                 </div>
-                <div className="bg-white rounded-lg border border-gray-200 p-3 text-center">
-                  <p className="text-2xl font-bold text-gray-900">{result.follows?.created ?? 0}</p>
-                  <p className="text-xs text-gray-500">Follow</p>
+                <div className="box-raised rounded-xl p-3 text-center">
+                  <p className="text-2xl font-bold text-fg font-numeric">{result.follows?.created ?? 0}</p>
+                  <p className="text-xs text-fg-muted">Follow</p>
                 </div>
               </div>
             )}
             <details className="mt-2">
-              <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">
+              <summary className="text-sm text-fg-subtle cursor-pointer hover:text-fg-muted transition-colors">
                 Dettaglio risposta (JSON)
               </summary>
-              <pre className="mt-2 p-4 bg-white rounded-lg border border-gray-200 text-xs overflow-auto max-h-48">
+              <pre className="mt-2 p-4 bg-white/5 rounded-xl border border-white/10 text-xs overflow-auto max-h-48 font-mono text-fg-muted">
                 {JSON.stringify(result, null, 2)}
               </pre>
             </details>
@@ -107,8 +107,8 @@ export default function AdminSimulatePage() {
         )}
       </div>
 
-      <p className="mt-6 text-sm text-gray-500">
-        <BackLink href="/admin" className="text-blue-600 hover:underline dark:text-blue-400">
+      <p className="mt-6 text-sm">
+        <BackLink href="/admin" className="text-primary hover:underline">
           ← Indietro
         </BackLink>
       </p>

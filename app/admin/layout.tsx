@@ -22,9 +22,9 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+    <div className="min-h-screen bg-bg flex">
       <AdminSidebar />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto animate-[in-fade-up_0.3s_ease-out]">
         {children}
       </main>
     </div>

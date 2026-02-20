@@ -7,8 +7,10 @@
  */
 
 import { getServerSession } from 'next-auth';
-import type { NextAuthOptions } from 'next-auth';
+import type { NextAuthOptions, Account } from 'next-auth';
+import type { AdapterUser } from 'next-auth/adapters';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import GoogleProvider from 'next-auth/providers/google';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
@@ -16,6 +18,11 @@ import { prisma } from '@/lib/prisma';
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+      allowDangerousEmailAccountLinking: true,
+    }),
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
@@ -25,10 +32,9 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         try {
           if (!credentials?.email || !credentials?.password) {
-            return null; // NextAuth gestisce null come "CredentialsSignin"
+            return null;
           }
           
-          // Prova a recuperare l'utente, gestendo il caso in cui la colonna password non esista
           let user;
           try {
             user = await prisma.user.findUnique({
@@ -36,18 +42,15 @@ export const authOptions: NextAuthOptions = {
               select: { id: true, email: true, name: true, password: true, role: true },
             });
           } catch (dbError: any) {
-            // Se la colonna password non esiste (P2022) o la tabella non esiste (P2021)
             if (dbError?.code === 'P2022' || dbError?.code === 'P2021' || 
                 dbError?.message?.includes('does not exist') || 
                 dbError?.message?.includes('password')) {
               console.error('[CredentialsProvider] Database schema non aggiornato:', dbError);
-              // Prova senza password per vedere se l'utente esiste
               user = await prisma.user.findUnique({
                 where: { email: credentials.email },
                 select: { id: true, email: true, name: true, role: true },
               });
               if (user) {
-                // L'utente esiste ma la colonna password non è stata ancora aggiunta
                 throw new Error('Database non configurato: esegui "npx prisma migrate deploy" e "npx prisma db seed"');
               }
             }
@@ -55,32 +58,72 @@ export const authOptions: NextAuthOptions = {
           }
           
           if (!user) {
-            return null; // NextAuth convertirà in "CredentialsSignin"
+            return null;
           }
           
           if (!user.password) {
-            return null; // Account senza password impostata
+            return null;
           }
           
           const ok = await bcrypt.compare(credentials.password, user.password);
           if (!ok) {
-            return null; // Password errata
+            return null;
           }
           
           return { id: user.id, email: user.email ?? '', name: user.name ?? null, image: null };
         } catch (error: any) {
           console.error('[CredentialsProvider] Errore durante authorize:', error);
-          // Se è un errore con messaggio chiaro, rilancialo così NextAuth lo passa al client
           if (error?.message && error.message.includes('Database non configurato')) {
             throw error;
           }
-          // Per altri errori, ritorna null così NextAuth genera "CredentialsSignin"
           return null;
         }
       },
     }),
   ],
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account?.provider === 'google' && user.email) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email },
+          include: { accounts: true },
+        });
+
+        if (existingUser) {
+          const hasGoogleAccount = existingUser.accounts.some(
+            (acc) => acc.provider === 'google'
+          );
+
+          if (!hasGoogleAccount && account) {
+            await prisma.account.create({
+              data: {
+                userId: existingUser.id,
+                type: account.type,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                access_token: account.access_token,
+                refresh_token: account.refresh_token,
+                expires_at: account.expires_at,
+                token_type: account.token_type,
+                scope: account.scope,
+                id_token: account.id_token,
+                session_state: account.session_state as string | undefined,
+              },
+            });
+
+            if (profile && 'picture' in profile && !existingUser.image) {
+              await prisma.user.update({
+                where: { id: existingUser.id },
+                data: { image: profile.picture as string },
+              });
+            }
+          }
+
+          (user as AdapterUser).id = existingUser.id;
+        }
+      }
+      return true;
+    },
     session: async ({ session, token }) => {
       // IMPORTANTE: Aggiunge userId e role alla session
       if (session.user && token.sub) {

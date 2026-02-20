@@ -149,31 +149,31 @@ export default function AdminDashboard() {
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      Sport: "bg-green-100 text-green-800",
-      Politica: "bg-blue-100 text-blue-800",
-      Tecnologia: "bg-purple-100 text-purple-800",
-      Economia: "bg-yellow-100 text-yellow-800",
-      Cultura: "bg-pink-100 text-pink-800",
-      Altro: "bg-gray-100 text-gray-800",
+      Sport: "bg-success/10 text-success",
+      Politica: "bg-primary/10 text-primary",
+      Tecnologia: "bg-accent-secondary/10 text-accent-secondary",
+      Economia: "bg-warning/10 text-warning",
+      Cultura: "bg-pink-500/10 text-pink-400",
+      Altro: "bg-surface text-fg-muted",
     };
     return colors[category] || colors.Altro;
   };
 
   return (
-    <div className="p-6 md:p-8">
+    <div className="min-h-screen bg-bg text-fg p-6 md:p-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl md:text-3xl font-bold text-fg mb-2">
               Admin Dashboard
             </h1>
-            <p className="text-gray-600">
+            <p className="text-fg-muted">
               Gestisci eventi e risolvi previsioni
             </p>
           </div>
           <Link
             href="/admin/events/create"
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            className="inline-flex items-center justify-center bg-primary text-white px-6 py-2.5 rounded-xl hover:bg-primary-hover transition-colors font-medium shadow-[0_0_24px_-6px_rgba(var(--primary-glow),0.45)]"
           >
             + Crea Evento
           </Link>
@@ -181,14 +181,14 @@ export default function AdminDashboard() {
 
         {/* Banner eventi da risolvere */}
         {pendingResolutionCount > 0 && (
-          <div className="mb-6 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-            <p className="text-amber-800 dark:text-amber-200 font-medium">
+          <div className="mb-6 p-4 rounded-xl bg-warning/10 border border-warning/30">
+            <p className="text-warning font-medium">
               Hai {pendingResolutionCount} evento{pendingResolutionCount !== 1 ? "i" : ""} chiusi in attesa di risoluzione.
               Verifica l&apos;esito dalla fonte e imposta SÌ/NO per accreditare i payout.
             </p>
             <Link
               href="/admin/resolve"
-              className="mt-2 inline-block text-amber-700 dark:text-amber-300 hover:underline font-semibold"
+              className="mt-2 inline-block text-warning hover:underline font-semibold"
             >
               Vai alla Risoluzione eventi →
             </Link>
@@ -196,30 +196,30 @@ export default function AdminDashboard() {
         )}
 
         {/* Simulazione bot */}
-        <div className="mb-6 p-4 bg-white rounded-lg shadow border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Simulazione bot</h2>
-          <p className="text-sm text-gray-600 mb-3">
+        <div className="mb-6 p-5 card-raised rounded-2xl">
+          <h2 className="text-lg font-semibold text-fg mb-2">Simulazione bot</h2>
+          <p className="text-sm text-fg-muted mb-3">
             Esegui subito una run di attività simulata (previsioni, commenti, reazioni, follow dai bot).
-            Richiede <code className="bg-gray-100 px-1 rounded text-xs">ENABLE_SIMULATED_ACTIVITY=true</code> in produzione.
+            Richiede <code className="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono">ENABLE_SIMULATED_ACTIVITY=true</code> in produzione.
           </p>
           <button
             onClick={runSimulatedActivity}
             disabled={simulateLoading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
+            className="bg-primary text-white px-4 py-2.5 rounded-xl hover:bg-primary-hover disabled:opacity-50 font-medium transition-colors"
           >
             {simulateLoading ? "Esecuzione..." : "Esegui attività simulata ora"}
           </button>
           {simulateResult && (
-            <pre className="mt-3 p-3 bg-gray-50 rounded border border-gray-200 text-xs overflow-auto max-h-40">
+            <pre className="mt-3 p-3 bg-white/5 rounded-xl border border-white/10 text-xs overflow-auto max-h-40 font-mono text-fg-muted">
               {JSON.stringify(simulateResult, null, 2)}
             </pre>
           )}
         </div>
 
         {/* Generazione eventi (pipeline: notizie → LLM → DB) */}
-        <div className="mb-6 p-4 bg-white rounded-lg shadow border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Generazione eventi</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+        <div className="mb-6 p-5 card-raised rounded-2xl">
+          <h2 className="text-lg font-semibold text-fg mb-2">Generazione eventi</h2>
+          <p className="text-sm text-fg-muted mb-3">
             Esegue la pipeline (notizie → verifica → LLM → creazione in DB). Utile sul sito deployato per creare nuovi eventi senza aspettare il cron. Richiede NEWS_API_KEY e OPENAI/ANTHROPIC in produzione.
           </p>
           <button
@@ -238,12 +238,12 @@ export default function AdminDashboard() {
               }
             }}
             disabled={generateLoading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
+            className="bg-primary text-white px-4 py-2.5 rounded-xl hover:bg-primary-hover disabled:opacity-50 font-medium transition-colors"
           >
             {generateLoading ? "Generazione in corso..." : "Genera eventi ora (max 5)"}
           </button>
           {generateResult && (
-            <pre className="mt-3 p-3 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-xs overflow-auto max-h-40">
+            <pre className="mt-3 p-3 bg-white/5 rounded-xl border border-white/10 text-xs overflow-auto max-h-40 font-mono text-fg-muted">
               {JSON.stringify(generateResult, null, 2)}
             </pre>
           )}
@@ -251,8 +251,8 @@ export default function AdminDashboard() {
 
         {/* Status Filters */}
         <div className="mb-6">
-          <div className="flex flex-wrap items-center gap-4">
-            <span className="text-sm font-medium text-gray-700">Filtri:</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-medium text-fg-muted">Filtri:</span>
             {[
               { id: "all" as StatusFilter, label: "Tutti" },
               { id: "pending" as StatusFilter, label: "Aperti" },
@@ -265,10 +265,10 @@ export default function AdminDashboard() {
                   setStatusFilter(btn.id);
                   setPage(1);
                 }}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`px-4 py-2 rounded-xl font-medium transition-colors ${
                   statusFilter === btn.id
-                    ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+                    ? "bg-primary text-white"
+                    : "bg-surface/50 text-fg-muted hover:bg-surface/80 border border-border dark:border-white/10"
                 }`}
               >
                 {btn.label}
@@ -280,73 +280,73 @@ export default function AdminDashboard() {
         {/* Events List */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600">Caricamento eventi...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
+            <p className="mt-4 text-fg-muted">Caricamento eventi...</p>
           </div>
         ) : events.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg shadow">
-            <p className="text-gray-600 text-lg">
+          <div className="text-center py-12 card-raised rounded-2xl">
+            <p className="text-fg-muted text-lg">
               Nessun evento trovato.
             </p>
             <Link
               href="/admin/events/create"
-              className="mt-4 inline-block text-blue-600 hover:text-blue-700 font-medium"
+              className="mt-4 inline-block text-primary hover:text-primary-hover font-medium"
             >
               Crea il primo evento
             </Link>
           </div>
         ) : (
           <>
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="card-raised rounded-2xl overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-border dark:divide-white/10">
+                  <thead className="bg-surface/50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted uppercase tracking-wider">
                         Evento
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted uppercase tracking-wider">
                         Categoria
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted uppercase tracking-wider">
                         Previsioni
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted uppercase tracking-wider">
                         Crediti
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted uppercase tracking-wider">
                         Stato
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-fg-muted uppercase tracking-wider">
                         Azioni
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="divide-y divide-border dark:divide-white/10">
                     {events.map((event) => (
-                      <tr key={event.id} className="hover:bg-gray-50">
+                      <tr key={event.id} className="hover:bg-surface/30 transition-colors">
                         <td className="px-6 py-4">
                           <div>
                             <Link
                               href={`/events/${event.id}`}
-                              className="text-sm font-medium text-gray-900 hover:text-blue-600"
+                              className="text-sm font-medium text-fg hover:text-primary transition-colors"
                             >
                               {event.title}
                             </Link>
                             {!event.resolved && (
                               <Link
                                 href={`/admin/events/${event.id}/edit`}
-                                className="ml-2 text-xs text-gray-500 hover:text-blue-600"
+                                className="ml-2 text-xs text-fg-subtle hover:text-primary transition-colors"
                               >
                                 Modifica
                               </Link>
                             )}
                             {event.description && (
-                              <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                              <p className="text-sm text-fg-muted mt-1 line-clamp-2">
                                 {event.description}
                               </p>
                             )}
-                            <p className="text-xs text-gray-400 mt-1">
+                            <p className="text-xs text-fg-subtle mt-1">
                               Chiude:{" "}
                               {new Date(event.closesAt).toLocaleDateString(
                                 "it-IT"
@@ -356,32 +356,32 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-6 py-4">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(
+                            className={`px-2.5 py-1 rounded-full text-xs font-medium ${getCategoryColor(
                               event.category
                             )}`}
                           >
                             {event.category}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className="px-6 py-4 text-sm text-fg font-numeric">
                           {event._count.predictions}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className="px-6 py-4 text-sm text-fg font-numeric">
                           {event.totalCredits.toLocaleString()}
                         </td>
                         <td className="px-6 py-4">
                           {event.resolved ? (
                             <span
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              className={`px-2.5 py-1 rounded-full text-xs font-medium ${
                                 event.outcome === "YES"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
+                                  ? "bg-success/10 text-success"
+                                  : "bg-danger/10 text-danger"
                               }`}
                             >
                               Risolto: {event.outcome === "YES" ? "SÌ" : "NO"}
                             </span>
                           ) : (
-                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-warning/10 text-warning">
                               In attesa
                             </span>
                           )}
@@ -391,19 +391,19 @@ export default function AdminDashboard() {
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleResolve(event.id, "YES")}
-                                className="text-green-600 hover:text-green-900 bg-green-50 px-3 py-1 rounded"
+                                className="text-success hover:opacity-80 bg-success/10 px-3 py-1.5 rounded-lg transition-colors"
                               >
                                 Risolvi SÌ
                               </button>
                               <button
                                 onClick={() => handleResolve(event.id, "NO")}
-                                className="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded"
+                                className="text-danger hover:opacity-80 bg-danger/10 px-3 py-1.5 rounded-lg transition-colors"
                               >
                                 Risolvi NO
                               </button>
                             </div>
                           ) : (
-                            <span className="text-gray-400">
+                            <span className="text-fg-subtle font-numeric">
                               {event.resolvedAt &&
                                 new Date(
                                   event.resolvedAt
@@ -420,16 +420,16 @@ export default function AdminDashboard() {
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (
-              <div className="mt-6 flex items-center justify-between">
-                <div className="text-sm text-gray-700">
-                  Pagina {pagination.page} di {pagination.totalPages} (
-                  {pagination.total} eventi totali)
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-sm text-fg-muted">
+                  Pagina <span className="font-numeric">{pagination.page}</span> di <span className="font-numeric">{pagination.totalPages}</span> (
+                  <span className="font-numeric">{pagination.total}</span> eventi totali)
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-surface/50 border border-border dark:border-white/10 rounded-xl hover:bg-surface/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-fg"
                   >
                     Precedente
                   </button>
@@ -438,7 +438,7 @@ export default function AdminDashboard() {
                       setPage((p) => Math.min(pagination.totalPages, p + 1))
                     }
                     disabled={page === pagination.totalPages}
-                    className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-surface/50 border border-border dark:border-white/10 rounded-xl hover:bg-surface/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-fg"
                   >
                     Successivo
                   </button>

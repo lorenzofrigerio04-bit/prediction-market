@@ -85,12 +85,12 @@ export default function AdminResolvePage() {
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl">
+    <div className="min-h-screen bg-bg text-fg p-6 md:p-8 max-w-5xl">
       <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl md:text-3xl font-bold text-fg">
           Risoluzione eventi
         </h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
+        <p className="mt-2 text-fg-muted">
           Gli eventi sotto sono chiusi (scaduti) e in attesa di risoluzione.
           Verifica l&apos;esito dalla fonte ufficiale, poi imposta SÌ o NO.
           I payout vengono calcolati e accreditati in modo atomico.
@@ -99,7 +99,7 @@ export default function AdminResolvePage() {
 
       {error && (
         <div
-          className="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200"
+          className="mb-6 p-4 rounded-xl bg-danger/10 border border-danger/30 text-danger"
           role="alert"
         >
           {error}
@@ -108,23 +108,23 @@ export default function AdminResolvePage() {
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16">
-          <div className="w-10 h-10 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
+          <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="mt-4 text-fg-muted">
             Caricamento eventi da risolvere...
           </p>
         </div>
       ) : events.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-8 text-center">
-          <p className="text-gray-600 dark:text-gray-400 text-lg">
+        <div className="card-raised rounded-2xl p-8 text-center">
+          <p className="text-fg-muted text-lg">
             Nessun evento in attesa di risoluzione.
           </p>
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-500">
+          <p className="mt-2 text-sm text-fg-subtle">
             Quando un evento scade (closesAt passata), comparirà qui. Risolvilo
             dopo aver verificato l&apos;esito dalla fonte indicata.
           </p>
           <Link
             href="/admin"
-            className="mt-6 inline-block text-blue-600 dark:text-blue-400 hover:underline font-medium"
+            className="mt-6 inline-block text-primary hover:underline font-medium"
           >
             ← Torna agli eventi
           </Link>
@@ -134,23 +134,23 @@ export default function AdminResolvePage() {
           {events.map((event) => (
             <li
               key={event.id}
-              className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden"
+              className="card-raised rounded-2xl overflow-hidden"
             >
               <div className="p-5 md:p-6">
                 <div className="flex flex-col gap-4">
                   <div>
                     <Link
                       href={`/events/${event.id}`}
-                      className="text-lg font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+                      className="text-lg font-semibold text-fg hover:text-primary transition-colors"
                     >
                       {event.title}
                     </Link>
                     {event.description && (
-                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                      <p className="mt-1 text-sm text-fg-muted line-clamp-2">
                         {event.description}
                       </p>
                     )}
-                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-500">
+                    <p className="mt-2 text-xs text-fg-subtle font-numeric">
                       Chiuso il{" "}
                       {new Date(event.closesAt).toLocaleString("it-IT")} ·{" "}
                       {event._count.predictions} previsioni ·{" "}
@@ -158,8 +158,8 @@ export default function AdminResolvePage() {
                     </p>
                   </div>
 
-                  <div className="rounded-lg bg-gray-50 dark:bg-gray-900/50 p-4 space-y-2">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <div className="rounded-xl bg-surface/50 p-4 space-y-2">
+                    <p className="text-sm font-medium text-fg-muted">
                       Verifica l&apos;esito dalla fonte
                     </p>
                     {event.resolutionSourceUrl && (
@@ -167,28 +167,28 @@ export default function AdminResolvePage() {
                         href={event.resolutionSourceUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                        className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
                       >
                         Apri fonte di risoluzione
                         <span aria-hidden>↗</span>
                       </a>
                     )}
                     {event.resolutionNotes && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                      <p className="text-sm text-fg-muted whitespace-pre-wrap">
                         {event.resolutionNotes}
                       </p>
                     )}
                   </div>
 
                   <div className="flex flex-wrap items-center gap-3 pt-2">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-sm font-medium text-fg-muted">
                       Esito reale:
                     </span>
                     <button
                       type="button"
                       onClick={() => handleResolve(event.id, "YES")}
                       disabled={resolvingId === event.id}
-                      className="px-5 py-2.5 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-5 py-2.5 rounded-xl font-semibold text-white bg-success hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {resolvingId === event.id ? "..." : "SÌ"}
                     </button>
@@ -196,7 +196,7 @@ export default function AdminResolvePage() {
                       type="button"
                       onClick={() => handleResolve(event.id, "NO")}
                       disabled={resolvingId === event.id}
-                      className="px-5 py-2.5 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="px-5 py-2.5 rounded-xl font-semibold text-white bg-danger hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {resolvingId === event.id ? "..." : "NO"}
                     </button>

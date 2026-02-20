@@ -122,12 +122,12 @@ export default function CreateEventPage() {
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-3xl">
+    <div className="min-h-screen bg-bg text-fg p-6 md:p-8 max-w-3xl">
         {/* Header */}
         <div className="mb-8">
           <BackLink
             href="/admin"
-            className="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 mb-4"
+            className="inline-flex items-center text-fg-muted hover:text-primary transition-colors mb-4"
           >
             <svg
               className="w-5 h-5 mr-2"
@@ -144,21 +144,21 @@ export default function CreateEventPage() {
             </svg>
             Indietro
           </BackLink>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl md:text-3xl font-bold text-fg mb-2">
             Crea Nuovo Evento
           </h1>
-          <p className="text-gray-600">
+          <p className="text-fg-muted">
             Compila il form per creare un nuovo evento di previsione
           </p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-8">
+        <form onSubmit={handleSubmit} className="card-raised rounded-2xl p-6 md:p-8">
           {/* Title */}
           <div className="mb-6">
             <label
               htmlFor="title"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-medium text-fg-muted mb-2"
             >
               Titolo *
             </label>
@@ -168,13 +168,13 @@ export default function CreateEventPage() {
               name="title"
               value={formData.title}
               onChange={handleChange}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.title ? "border-red-500" : "border-gray-300"
+              className={`w-full px-4 py-3 border rounded-xl bg-white/5 text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors ${
+                errors.title ? "border-danger" : "border-border dark:border-white/10"
               }`}
               placeholder="Es: La Juventus vincerà il campionato?"
             />
             {errors.title && (
-              <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+              <p className="mt-1.5 text-sm text-danger">{errors.title}</p>
             )}
           </div>
 
@@ -182,7 +182,7 @@ export default function CreateEventPage() {
           <div className="mb-6">
             <label
               htmlFor="description"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-medium text-fg-muted mb-2"
             >
               Descrizione (opzionale)
             </label>
@@ -192,7 +192,7 @@ export default function CreateEventPage() {
               value={formData.description}
               onChange={handleChange}
               rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-border dark:border-white/10 rounded-xl bg-white/5 text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
               placeholder="Aggiungi dettagli sull'evento..."
             />
           </div>
@@ -201,7 +201,7 @@ export default function CreateEventPage() {
           <div className="mb-6">
             <label
               htmlFor="category"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-medium text-fg-muted mb-2"
             >
               Categoria *
             </label>
@@ -210,8 +210,8 @@ export default function CreateEventPage() {
               name="category"
               value={formData.category}
               onChange={handleChange}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.category ? "border-red-500" : "border-gray-300"
+              className={`w-full px-4 py-3 border rounded-xl bg-white/5 text-fg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none ${
+                errors.category ? "border-danger" : "border-border dark:border-white/10"
               }`}
             >
               <option value="">Seleziona una categoria</option>
@@ -222,10 +222,10 @@ export default function CreateEventPage() {
               ))}
             </select>
             {errors.category && (
-              <p className="mt-1 text-sm text-red-600">{errors.category}</p>
+              <p className="mt-1.5 text-sm text-danger">{errors.category}</p>
             )}
             {categories.length === 0 && (
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-fg-subtle">
                 Nessuna categoria disponibile. Puoi inserire una nuova categoria
                 digitandola nel campo sopra.
               </p>
@@ -236,7 +236,7 @@ export default function CreateEventPage() {
           <div className="mb-6">
             <label
               htmlFor="customCategory"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-medium text-fg-muted mb-2"
             >
               Oppure inserisci una nuova categoria
             </label>
@@ -252,7 +252,7 @@ export default function CreateEventPage() {
                   }));
                 }
               }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-border dark:border-white/10 rounded-xl bg-white/5 text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
               placeholder="Es: Sport, Politica, Tecnologia..."
             />
           </div>
@@ -261,7 +261,7 @@ export default function CreateEventPage() {
           <div className="mb-6">
             <label
               htmlFor="closesAt"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-medium text-fg-muted mb-2"
             >
               Data e ora di chiusura *
             </label>
@@ -271,14 +271,14 @@ export default function CreateEventPage() {
               name="closesAt"
               value={formData.closesAt}
               onChange={handleChange}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.closesAt ? "border-red-500" : "border-gray-300"
+              className={`w-full px-4 py-3 border rounded-xl bg-white/5 text-fg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors ${
+                errors.closesAt ? "border-danger" : "border-border dark:border-white/10"
               }`}
             />
             {errors.closesAt && (
-              <p className="mt-1 text-sm text-red-600">{errors.closesAt}</p>
+              <p className="mt-1.5 text-sm text-danger">{errors.closesAt}</p>
             )}
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-fg-subtle">
               Dopo questa data, gli utenti non potranno più fare previsioni
               sull&apos;evento.
             </p>
@@ -288,7 +288,7 @@ export default function CreateEventPage() {
           <div className="mb-6">
             <label
               htmlFor="resolutionSourceUrl"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-medium text-fg-muted mb-2"
             >
               URL fonte di risoluzione *
             </label>
@@ -298,15 +298,15 @@ export default function CreateEventPage() {
               name="resolutionSourceUrl"
               value={formData.resolutionSourceUrl}
               onChange={handleChange}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.resolutionSourceUrl ? "border-red-500" : "border-gray-300"
+              className={`w-full px-4 py-3 border rounded-xl bg-white/5 text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors ${
+                errors.resolutionSourceUrl ? "border-danger" : "border-border dark:border-white/10"
               }`}
               placeholder="https://..."
             />
             {errors.resolutionSourceUrl && (
-              <p className="mt-1 text-sm text-red-600">{errors.resolutionSourceUrl}</p>
+              <p className="mt-1.5 text-sm text-danger">{errors.resolutionSourceUrl}</p>
             )}
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-fg-subtle">
               Link alla fonte ufficiale che verrà usata per risolvere l&apos;evento.
             </p>
           </div>
@@ -315,7 +315,7 @@ export default function CreateEventPage() {
           <div className="mb-6">
             <label
               htmlFor="resolutionNotes"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-medium text-fg-muted mb-2"
             >
               Note di risoluzione *
             </label>
@@ -325,28 +325,28 @@ export default function CreateEventPage() {
               value={formData.resolutionNotes}
               onChange={handleChange}
               rows={3}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.resolutionNotes ? "border-red-500" : "border-gray-300"
+              className={`w-full px-4 py-3 border rounded-xl bg-white/5 text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors ${
+                errors.resolutionNotes ? "border-danger" : "border-border dark:border-white/10"
               }`}
               placeholder="Criteri e note per determinare l'esito (SÌ/NO)..."
             />
             {errors.resolutionNotes && (
-              <p className="mt-1 text-sm text-red-600">{errors.resolutionNotes}</p>
+              <p className="mt-1.5 text-sm text-danger">{errors.resolutionNotes}</p>
             )}
           </div>
 
           {/* Submit Button */}
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-primary text-white px-6 py-3 rounded-xl hover:bg-primary-hover transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_24px_-6px_rgba(var(--primary-glow),0.45)]"
             >
               {loading ? "Creazione..." : "Crea Evento"}
             </button>
             <Link
               href="/admin"
-              className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-center"
+              className="px-6 py-3 border border-border dark:border-white/10 rounded-xl hover:bg-surface/50 transition-colors font-medium text-center text-fg"
             >
               Annulla
             </Link>

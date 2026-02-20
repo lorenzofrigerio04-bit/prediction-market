@@ -88,99 +88,99 @@ export default function EditEventPage() {
 
   if (loadingData) {
     return (
-      <div className="p-6 md:p-8 flex justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      <div className="min-h-screen bg-bg p-6 md:p-8 flex justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-3xl">
+    <div className="min-h-screen bg-bg text-fg p-6 md:p-8 max-w-3xl">
       <div className="mb-8">
-        <BackLink href="/admin" className="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 mb-4">
+        <BackLink href="/admin" className="inline-flex items-center text-fg-muted hover:text-primary transition-colors mb-4">
           ← Indietro
         </BackLink>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Modifica evento</h1>
+        <h1 className="text-2xl font-bold text-fg">Modifica evento</h1>
       </div>
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 space-y-6">
+      <form onSubmit={handleSubmit} className="card-raised rounded-2xl p-6 md:p-8 space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titolo *</label>
+          <label className="block text-sm font-medium text-fg-muted mb-2">Titolo *</label>
           <input
             type="text"
             name="title"
             value={formData.title}
             onChange={handleChange}
-            className={`w-full px-4 py-2 border rounded-lg ${errors.title ? "border-red-500" : "border-gray-300 dark:border-gray-600"} dark:bg-gray-700`}
+            className={`w-full px-4 py-3 border rounded-xl bg-white/5 text-fg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors ${errors.title ? "border-danger" : "border-border dark:border-white/10"}`}
           />
-          {errors.title && <p className="text-sm text-red-600">{errors.title}</p>}
+          {errors.title && <p className="text-sm text-danger mt-1.5">{errors.title}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descrizione</label>
+          <label className="block text-sm font-medium text-fg-muted mb-2">Descrizione</label>
           <textarea
             name="description"
             value={formData.description}
             onChange={handleChange}
             rows={4}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700"
+            className="w-full px-4 py-3 border border-border dark:border-white/10 rounded-xl bg-white/5 text-fg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoria *</label>
+          <label className="block text-sm font-medium text-fg-muted mb-2">Categoria *</label>
           <select
             name="category"
             value={formData.category}
             onChange={handleChange}
-            className={`w-full px-4 py-2 border rounded-lg ${errors.category ? "border-red-500" : "border-gray-300 dark:border-gray-600"} dark:bg-gray-700`}
+            className={`w-full px-4 py-3 border rounded-xl bg-white/5 text-fg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none ${errors.category ? "border-danger" : "border-border dark:border-white/10"}`}
           >
             <option value="">Seleziona</option>
             {categories.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
-          {errors.category && <p className="text-sm text-red-600">{errors.category}</p>}
+          {errors.category && <p className="text-sm text-danger mt-1.5">{errors.category}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Chiusura *</label>
+          <label className="block text-sm font-medium text-fg-muted mb-2">Chiusura *</label>
           <input
             type="datetime-local"
             name="closesAt"
             value={formData.closesAt}
             onChange={handleChange}
-            className={`w-full px-4 py-2 border rounded-lg ${errors.closesAt ? "border-red-500" : "border-gray-300 dark:border-gray-600"} dark:bg-gray-700`}
+            className={`w-full px-4 py-3 border rounded-xl bg-white/5 text-fg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors ${errors.closesAt ? "border-danger" : "border-border dark:border-white/10"}`}
           />
-          {errors.closesAt && <p className="text-sm text-red-600">{errors.closesAt}</p>}
+          {errors.closesAt && <p className="text-sm text-danger mt-1.5">{errors.closesAt}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL fonte risoluzione *</label>
+          <label className="block text-sm font-medium text-fg-muted mb-2">URL fonte risoluzione *</label>
           <input
             type="url"
             name="resolutionSourceUrl"
             value={formData.resolutionSourceUrl}
             onChange={handleChange}
-            className={`w-full px-4 py-2 border rounded-lg ${errors.resolutionSourceUrl ? "border-red-500" : "border-gray-300 dark:border-gray-600"} dark:bg-gray-700`}
+            className={`w-full px-4 py-3 border rounded-xl bg-white/5 text-fg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors ${errors.resolutionSourceUrl ? "border-danger" : "border-border dark:border-white/10"}`}
           />
-          {errors.resolutionSourceUrl && <p className="text-sm text-red-600">{errors.resolutionSourceUrl}</p>}
+          {errors.resolutionSourceUrl && <p className="text-sm text-danger mt-1.5">{errors.resolutionSourceUrl}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Note di risoluzione *</label>
+          <label className="block text-sm font-medium text-fg-muted mb-2">Note di risoluzione *</label>
           <textarea
             name="resolutionNotes"
             value={formData.resolutionNotes}
             onChange={handleChange}
             rows={3}
-            className={`w-full px-4 py-2 border rounded-lg ${errors.resolutionNotes ? "border-red-500" : "border-gray-300 dark:border-gray-600"} dark:bg-gray-700`}
+            className={`w-full px-4 py-3 border rounded-xl bg-white/5 text-fg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors ${errors.resolutionNotes ? "border-danger" : "border-border dark:border-white/10"}`}
           />
-          {errors.resolutionNotes && <p className="text-sm text-red-600">{errors.resolutionNotes}</p>}
+          {errors.resolutionNotes && <p className="text-sm text-danger mt-1.5">{errors.resolutionNotes}</p>}
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-3">
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="flex-1 bg-primary text-white px-6 py-3 rounded-xl hover:bg-primary-hover disabled:opacity-50 font-medium transition-colors shadow-[0_0_24px_-6px_rgba(var(--primary-glow),0.45)]"
           >
             {loading ? "Salvataggio..." : "Salva"}
           </button>
-          <Link href="/admin" className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-center">
+          <Link href="/admin" className="px-6 py-3 border border-border dark:border-white/10 rounded-xl text-center text-fg hover:bg-surface/50 transition-colors">
             Annulla
           </Link>
         </div>

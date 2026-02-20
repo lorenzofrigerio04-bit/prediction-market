@@ -65,11 +65,11 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="p-6 md:p-8">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+    <div className="min-h-screen bg-bg text-fg p-6 md:p-8">
+      <h1 className="text-2xl font-bold text-fg mb-2">
         Utenti
       </h1>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">
+      <p className="text-fg-muted mb-6">
         Elenco utenti registrati (email, nome, ruolo, crediti).
       </p>
 
@@ -79,11 +79,11 @@ export default function AdminUsersPage() {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Cerca per email o nome..."
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-w-[200px] max-w-xs"
+          className="px-4 py-2.5 border border-border dark:border-white/10 rounded-xl bg-white/5 text-fg placeholder:text-fg-subtle min-w-[200px] max-w-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
         />
         <button
           type="submit"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+          className="px-4 py-2.5 bg-primary text-white rounded-xl hover:bg-primary-hover font-medium transition-colors"
         >
           Cerca
         </button>
@@ -95,7 +95,7 @@ export default function AdminUsersPage() {
               setSearch("");
               setPage(1);
             }}
-            className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:underline"
+            className="px-4 py-2.5 text-fg-muted hover:text-primary transition-colors"
           >
             Cancella filtro
           </button>
@@ -104,62 +104,62 @@ export default function AdminUsersPage() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-800">
+          <div className="overflow-x-auto card-raised rounded-2xl">
+            <table className="min-w-full divide-y divide-border dark:divide-white/10">
+              <thead className="bg-surface/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase tracking-wider">
                     Email
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase tracking-wider">
                     Nome
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase tracking-wider">
                     Ruolo
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase tracking-wider">
                     Crediti
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-fg-muted uppercase tracking-wider">
                     Registrato il
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="divide-y divide-border dark:divide-white/10">
                 {users.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan={5} className="px-4 py-8 text-center text-fg-muted">
                       Nessun utente trovato.
                     </td>
                   </tr>
                 ) : (
                   users.map((u) => (
-                    <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
+                    <tr key={u.id} className="hover:bg-surface/30 transition-colors">
+                      <td className="px-4 py-3 text-sm text-fg font-medium">
                         {u.email}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                      <td className="px-4 py-3 text-sm text-fg-muted">
                         {u.name ?? "—"}
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`inline-flex px-2 py-0.5 text-xs font-medium rounded ${
+                          className={`inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full ${
                             u.role === "ADMIN"
-                              ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-                              : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                              ? "bg-warning/10 text-warning"
+                              : "bg-surface text-fg-muted"
                           }`}
                         >
                           {u.role}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                      <td className="px-4 py-3 text-sm text-fg font-numeric">
                         {u.credits}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                      <td className="px-4 py-3 text-sm text-fg-subtle font-numeric">
                         {new Date(u.createdAt).toLocaleDateString("it-IT", {
                           day: "2-digit",
                           month: "2-digit",
@@ -176,16 +176,16 @@ export default function AdminUsersPage() {
           </div>
 
           {pagination.totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Pagina {pagination.page} di {pagination.totalPages} · {pagination.total} utenti
+            <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-sm text-fg-muted">
+                Pagina <span className="font-numeric">{pagination.page}</span> di <span className="font-numeric">{pagination.totalPages}</span> · <span className="font-numeric">{pagination.total}</span> utenti
               </p>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  className="px-4 py-2 border border-border dark:border-white/10 rounded-xl text-sm font-medium disabled:opacity-50 hover:bg-surface/80 transition-colors text-fg"
                 >
                   Indietro
                 </button>
@@ -193,7 +193,7 @@ export default function AdminUsersPage() {
                   type="button"
                   onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
                   disabled={page >= pagination.totalPages}
-                  className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  className="px-4 py-2 border border-border dark:border-white/10 rounded-xl text-sm font-medium disabled:opacity-50 hover:bg-surface/80 transition-colors text-fg"
                 >
                   Avanti
                 </button>
