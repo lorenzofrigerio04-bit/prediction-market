@@ -396,7 +396,7 @@ textarea:focus-visible {
   isolation: isolate;
 }
 
-/* Mesh: conic gradient solo blu/slate/cyan (tech, uomo), visibile in rotazione ai bordi */
+/* Mesh: conic gradient blu/slate/cyan — più definito e fluido, premium */
 .landing-dynamic-bg__mesh {
   position: absolute;
   width: 200vmax;
@@ -407,15 +407,15 @@ textarea:focus-visible {
   will-change: transform;
   background: conic-gradient(
     from 0deg at 50% 50%,
-    rgb(59 130 246 / 0.12) 0deg,
-    rgb(14 165 233 / 0.1) 45deg,
-    rgb(30 58 95 / 0.11) 90deg,
-    rgb(100 116 139 / 0.09) 135deg,
-    rgb(59 130 246 / 0.11) 180deg,
-    rgb(14 165 233 / 0.1) 225deg,
-    rgb(30 58 95 / 0.12) 270deg,
-    rgb(100 116 139 / 0.08) 315deg,
-    rgb(59 130 246 / 0.12) 360deg
+    rgb(59 130 246 / 0.16) 0deg,
+    rgb(14 165 233 / 0.14) 45deg,
+    rgb(30 58 95 / 0.13) 90deg,
+    rgb(100 116 139 / 0.11) 135deg,
+    rgb(59 130 246 / 0.15) 180deg,
+    rgb(14 165 233 / 0.14) 225deg,
+    rgb(30 58 95 / 0.14) 270deg,
+    rgb(100 116 139 / 0.1) 315deg,
+    rgb(59 130 246 / 0.16) 360deg
   );
   animation: landing-mesh-rotate 48s linear infinite;
   backface-visibility: hidden;
@@ -432,7 +432,7 @@ textarea:focus-visible {
   to { transform: translate(-50%, -50%) translateZ(0) rotate(360deg); }
 }
 
-/* Centro schermo: tinta unita, zero sfumature visibili — qualità premium */
+/* Centro schermo: tinta unita nitida — zero sfumature, massima definizione */
 .landing-dynamic-bg__center-mask {
   position: absolute;
   inset: 0;
@@ -440,48 +440,48 @@ textarea:focus-visible {
   background: radial-gradient(
     ellipse 100% 100% at 50% 50%,
     rgb(var(--bg)) 0%,
-    rgb(var(--bg)) 42%,
-    transparent 62%
+    rgb(var(--bg)) 45%,
+    transparent 65%
   );
 }
 
-/* Vignette leggera ai bordi */
+/* Vignette definita ai bordi — transizione fluida */
 .landing-dynamic-bg__vignette {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background: radial-gradient(
-    ellipse 95% 95% at 50% 50%,
-    transparent 60%,
-    rgb(0 0 0 / 0.06) 85%,
-    rgb(0 0 0 / 0.12) 100%
+    ellipse 85% 85% at 50% 50%,
+    transparent 55%,
+    rgb(0 0 0 / 0.04) 75%,
+    rgb(0 0 0 / 0.1) 100%
   );
 }
 
-/* —— Brand logo: solo testo PredictionMaster, gradient elegante —— */
+/* —— Brand logo: Prediction neutro, Master in tinta palette (premium, tech) —— */
 .brand-logo__word--prediction {
-  background: linear-gradient(135deg, rgb(var(--primary)) 0%, rgb(99 102 241) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: rgb(15 23 42);
 }
 .brand-logo__word--master {
-  background: linear-gradient(135deg, rgb(148 163 184) 0%, rgb(226 232 240) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: rgb(37 99 235);
 }
 .dark .brand-logo__word--prediction {
-  background: linear-gradient(135deg, rgb(96 165 250) 0%, rgb(129 140 248) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: rgb(248 250 252);
 }
 .dark .brand-logo__word--master {
-  background: linear-gradient(135deg, rgb(203 213 225) 0%, rgb(248 250 252) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: rgb(59 130 246);
+}
+.landing-page .header-neon .brand-logo__word--prediction,
+.landing-page .header-neon .brand-logo__word--master {
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+}
+.landing-page .header-neon .brand-logo__word--prediction {
+  color: rgb(255 255 255);
+}
+.landing-page .header-neon .brand-logo__word--master {
+  color: rgb(59 130 246);
 }
 
 /* Landing pre-login: professionalità, gerarchia da font non da colore */
@@ -718,14 +718,6 @@ textarea:focus-visible {
   background: rgb(255 255 255 / 0.1);
   border-color: rgb(255 255 255 / 0.18);
 }
-/* Logo premium: tinta unita (no gradient) */
-.landing-page .header-neon .brand-logo__word--prediction,
-.landing-page .header-neon .brand-logo__word--master {
-  background: none;
-  -webkit-background-clip: unset;
-  background-clip: unset;
-  color: rgb(255 255 255);
-}
 .dark .landing-page .header-neon {
   background: rgb(255 255 255 / 0.06);
   border-bottom-color: rgb(255 255 255 / 0.04);
@@ -854,14 +846,18 @@ textarea:focus-visible {
   }
 }
 .landing-hero-stats__icon {
-  color: rgb(255 255 255 / 0.9);
+  color: rgb(59 130 246 / 0.95);
   transition: opacity 0.4s ease, transform 0.4s ease;
 }
 .landing-hero-stats__card:hover .landing-hero-stats__icon {
   opacity: 1;
+  color: rgb(59 130 246);
 }
 .landing-hero-stats__icon--events {
-  color: rgb(255 255 255 / 0.88);
+  color: rgb(14 165 233 / 0.95);
+}
+.landing-hero-stats__card:hover .landing-hero-stats__icon--events {
+  color: rgb(14 165 233);
 }
 .landing-hero-stats__number {
   font-family: var(--font-sans), system-ui, sans-serif;
@@ -884,12 +880,7 @@ textarea:focus-visible {
   50% { opacity: 0.85; transform: scale(1.05); }
 }
 .landing-hero-stats__live-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgb(139 92 246);
-  box-shadow: 0 0 10px rgb(139 92 246 / 0.5);
-  animation: landing-stats-pulse 2.2s ease-in-out infinite;
+  display: none;
   flex-shrink: 0;
 }
 
@@ -1961,13 +1952,15 @@ textarea:focus-visible {
 }
 
 .nav-item-neon-active {
-  background: rgb(var(--primary) / 0.12);
-  color: rgb(var(--primary));
-  border: 1px solid rgb(var(--primary) / 0.25);
-  box-shadow: 0 0 0 1px rgb(var(--primary) / 0.1);
+  background: rgb(255 255 255 / 0.08);
+  color: rgb(255 255 255);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  box-shadow: none;
 }
 .dark .nav-item-neon-active {
-  box-shadow: 0 0 0 1px rgb(var(--primary) / 0.15);
+  color: rgb(248 250 252);
+  background: rgb(255 255 255 / 0.08);
+  border-color: rgb(255 255 255 / 0.12);
 }
 
 .header-icon-btn {

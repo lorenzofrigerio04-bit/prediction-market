@@ -183,7 +183,7 @@ export default function LandingHeroStats() {
       className="landing-hero-stats flex flex-nowrap justify-center items-stretch gap-3 sm:gap-4"
       role="status"
       aria-live="polite"
-      aria-label={`${usersDisplay} utenti attivi, ${stats.activeEventsCount} eventi attivi`}
+      aria-label={`${usersDisplay} predictor attivi, ${stats.activeEventsCount} eventi attivi`}
     >
       <div className="landing-hero-stats__card flex items-center gap-3 flex-1 min-w-0 max-w-[10rem] sm:max-w-[9rem]">
         <IconUser className="landing-hero-stats__icon w-7 h-7 shrink-0" aria-hidden />
@@ -191,14 +191,11 @@ export default function LandingHeroStats() {
           <span className="landing-hero-stats__number text-2xl sm:text-3xl tabular-nums leading-tight">
             {usersDisplay}
           </span>
-          <span className="landing-hero-stats__label mt-0.5">UTENTI ATTIVI</span>
+          <span className="landing-hero-stats__label mt-0.5">PREDICTOR ATTIVI</span>
         </div>
       </div>
       <div className="landing-hero-stats__card landing-hero-stats__card--events flex items-center gap-3 flex-1 min-w-0 max-w-[10rem] sm:max-w-[9rem]">
-        <div className="relative shrink-0">
-          <IconCalendar className="landing-hero-stats__icon landing-hero-stats__icon--events w-7 h-7" aria-hidden />
-          <span className="landing-hero-stats__live-dot absolute -bottom-1 -right-0.5" aria-hidden />
-        </div>
+        <IconCalendar className="landing-hero-stats__icon landing-hero-stats__icon--events w-7 h-7 shrink-0" aria-hidden />
         <div className="flex flex-col min-w-0">
           <span className="landing-hero-stats__number text-2xl sm:text-3xl tabular-nums leading-tight">
             {eventsDisplay}
