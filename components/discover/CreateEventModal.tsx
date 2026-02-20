@@ -2,13 +2,22 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 
 interface CreateEventModalProps {
   categories: string[];
   onClose: () => void;
 }
 
-type SubmitStatus = "idle" | "loading" | "success" | "error";
+type SubmitStatus = "idle" | "loading" | "approved" | "rejected";
+
+interface SubmitResult {
+  approved: boolean;
+  eventId?: string;
+  errors?: string[];
+  warnings?: string[];
+  message?: string;
+}
 
 export default function CreateEventModal({
   categories,
@@ -21,6 +30,7 @@ export default function CreateEventModal({
   const [closesAt, setClosesAt] = useState("");
   const [resolutionSource, setResolutionSource] = useState("");
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>("idle");
+  const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
 
   const minDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
@@ -32,13 +42,11 @@ export default function CreateEventModal({
 
     if (status !== "authenticated") {
       setErrorMsg("Devi effettuare il login per creare un evento.");
-      setSubmitStatus("error");
       return;
     }
 
     if (!title.trim() || !category || !closesAt) {
       setErrorMsg("Compila tutti i campi obbligatori.");
-      setSubmitStatus("error");
       return;
     }
 
@@ -58,16 +66,18 @@ export default function CreateEventModal({
         }),
       });
 
-      if (res.ok) {
-        setSubmitStatus("success");
+      const data = await res.json();
+
+      if (data.approved) {
+        setSubmitResult(data);
+        setSubmitStatus("approved");
       } else {
-        const data = await res.json();
-        setErrorMsg(data.error || "Errore durante l'invio.");
-        setSubmitStatus("error");
+        setSubmitResult(data);
+        setSubmitStatus("rejected");
       }
     } catch {
       setErrorMsg("Errore di rete. Riprova.");
-      setSubmitStatus("error");
+      setSubmitStatus("idle");
     }
   };
 
@@ -77,16 +87,27 @@ export default function CreateEventModal({
     }
   };
 
-  if (submitStatus === "success") {
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setCategory(categories[0] || "");
+    setClosesAt("");
+    setResolutionSource("");
+    setSubmitStatus("idle");
+    setSubmitResult(null);
+    setErrorMsg("");
+  };
+
+  if (submitStatus === "approved" && submitResult) {
     return (
       <div
         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
         onClick={handleBackdropClick}
       >
         <div className="create-event-modal w-full max-w-md p-6 rounded-2xl text-center animate-in-fade-up">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/20 flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
             <svg
-              className="w-8 h-8 text-primary"
+              className="w-8 h-8 text-green-400"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -100,19 +121,99 @@ export default function CreateEventModal({
             </svg>
           </div>
           <h2 className="text-ds-h2 font-bold text-white mb-2">
-            Evento in revisione
+            Evento pubblicato!
           </h2>
           <p className="text-ds-body text-white/80 mb-6">
-            Il tuo evento è stato inviato e sarà revisionato dal nostro team.
-            Riceverai una notifica quando sarà approvato o se saranno necessarie
-            modifiche.
+            Il tuo evento è stato approvato automaticamente e pubblicato sulla
+            piattaforma. Ora la community può fare previsioni!
           </p>
-          <button
-            onClick={onClose}
-            className="landing-cta-primary min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body-sm w-full"
-          >
-            Chiudi
-          </button>
+          {submitResult.warnings && submitResult.warnings.length > 0 && (
+            <div className="mb-4 p-3 rounded-lg bg-yellow-500/20 border border-yellow-500/30 text-yellow-200 text-ds-body-sm text-left">
+              <p className="font-semibold mb-1">Suggerimenti:</p>
+              <ul className="list-disc list-inside space-y-1">
+                {submitResult.warnings.map((w, i) => (
+                  <li key={i}>{w}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <div className="flex flex-col gap-3">
+            <Link
+              href={`/events/${submitResult.eventId}`}
+              className="landing-cta-primary min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body-sm w-full inline-flex items-center justify-center"
+              onClick={onClose}
+            >
+              Vai all&apos;evento →
+            </Link>
+            <button
+              onClick={onClose}
+              className="min-h-[44px] px-6 py-2.5 rounded-xl font-semibold text-ds-body-sm w-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+            >
+              Chiudi
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (submitStatus === "rejected" && submitResult) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
+        onClick={handleBackdropClick}
+      >
+        <div className="create-event-modal w-full max-w-md p-6 rounded-2xl text-center animate-in-fade-up">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
+            <svg
+              className="w-8 h-8 text-red-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </div>
+          <h2 className="text-ds-h2 font-bold text-white mb-2">
+            Evento non approvato
+          </h2>
+          <p className="text-ds-body text-white/80 mb-4">
+            L&apos;evento non rispetta i criteri della piattaforma. Ecco cosa correggere:
+          </p>
+          {submitResult.errors && submitResult.errors.length > 0 && (
+            <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-left">
+              <ul className="space-y-2">
+                {submitResult.errors.map((err, i) => (
+                  <li
+                    key={i}
+                    className="flex items-start gap-2 text-ds-body-sm text-red-200"
+                  >
+                    <span className="text-red-400 mt-0.5">•</span>
+                    <span>{err}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={resetForm}
+              className="landing-cta-primary min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body-sm w-full"
+            >
+              Riprova
+            </button>
+            <button
+              onClick={onClose}
+              className="min-h-[44px] px-6 py-2.5 rounded-xl font-semibold text-ds-body-sm w-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+            >
+              Chiudi
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -235,7 +336,7 @@ export default function CreateEventModal({
             </p>
           </div>
 
-          {submitStatus === "error" && errorMsg && (
+          {submitStatus === "idle" && errorMsg && (
             <div className="p-3 rounded-lg bg-danger/20 border border-danger/30 text-danger text-ds-body-sm">
               {errorMsg}
             </div>

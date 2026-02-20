@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
+import {
+  validateEventSubmission,
+  createEventFromSubmission,
+} from "@/lib/event-submission/validate";
 
 export async function POST(request: Request) {
   try {
@@ -24,20 +28,6 @@ export async function POST(request: Request) {
       );
     }
 
-    if (title.trim().length < 10) {
-      return NextResponse.json(
-        { error: "Il titolo deve essere di almeno 10 caratteri." },
-        { status: 400 }
-      );
-    }
-
-    if (title.trim().length > 200) {
-      return NextResponse.json(
-        { error: "Il titolo non può superare i 200 caratteri." },
-        { status: 400 }
-      );
-    }
-
     if (!category?.trim()) {
       return NextResponse.json(
         { error: "La categoria è obbligatoria." },
@@ -53,41 +43,109 @@ export async function POST(request: Request) {
     }
 
     const closesAtDate = new Date(closesAt);
-    const minCloseDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    if (closesAtDate < minCloseDate) {
+    const validation = await validateEventSubmission({
+      title: title.trim(),
+      description: description?.trim() || null,
+      category: category.trim(),
+      closesAt: closesAtDate,
+      resolutionSource: resolutionSource?.trim() || null,
+    });
+
+    if (!validation.valid) {
+      await prisma.eventSubmission.create({
+        data: {
+          title: title.trim(),
+          description: description?.trim() || null,
+          category: category.trim(),
+          closesAt: closesAtDate,
+          resolutionSource: resolutionSource?.trim() || null,
+          submittedById: session.user.id,
+          status: "REJECTED",
+          reviewNotes: validation.errors.join(" | "),
+          reviewedAt: new Date(),
+        },
+      });
+
+      await prisma.notification.create({
+        data: {
+          userId: session.user.id,
+          type: "EVENT_SUBMISSION_REJECTED",
+          data: JSON.stringify({
+            title: title.trim(),
+            reasons: validation.errors,
+          }),
+        },
+      });
+
       return NextResponse.json(
-        { error: "La data di chiusura deve essere almeno 24 ore nel futuro." },
+        {
+          success: false,
+          approved: false,
+          errors: validation.errors,
+          warnings: validation.warnings,
+          message: "L'evento non rispetta i criteri della piattaforma.",
+        },
         { status: 400 }
       );
     }
 
-    const submission = await prisma.eventSubmission.create({
-      data: {
+    const eventResult = await createEventFromSubmission(
+      {
         title: title.trim(),
         description: description?.trim() || null,
         category: category.trim(),
         closesAt: closesAtDate,
         resolutionSource: resolutionSource?.trim() || null,
+      },
+      session.user.id,
+      validation.dedupKey!,
+      validation.normalizedCategory!
+    );
+
+    if (!eventResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          approved: false,
+          errors: [eventResult.error],
+          message: eventResult.error,
+        },
+        { status: 400 }
+      );
+    }
+
+    await prisma.eventSubmission.create({
+      data: {
+        title: title.trim(),
+        description: description?.trim() || null,
+        category: validation.normalizedCategory!,
+        closesAt: closesAtDate,
+        resolutionSource: resolutionSource?.trim() || null,
         submittedById: session.user.id,
+        status: "APPROVED",
+        eventId: eventResult.eventId,
+        reviewedAt: new Date(),
       },
     });
 
     await prisma.notification.create({
       data: {
         userId: session.user.id,
-        type: "EVENT_SUBMISSION_RECEIVED",
+        type: "EVENT_SUBMISSION_APPROVED",
         data: JSON.stringify({
-          submissionId: submission.id,
-          title: submission.title,
+          eventId: eventResult.eventId,
+          title: title.trim(),
         }),
       },
     });
 
     return NextResponse.json({
       success: true,
-      submissionId: submission.id,
-      message: "Evento inviato per revisione.",
+      approved: true,
+      eventId: eventResult.eventId,
+      warnings: validation.warnings,
+      message: "Evento approvato e pubblicato!",
     });
   } catch (error) {
     console.error("Error submitting event:", error);
@@ -103,10 +161,7 @@ export async function GET(request: Request) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Non autorizzato." },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Non autorizzato." }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
