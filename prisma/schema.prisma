@@ -98,6 +98,28 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+model EventSubmission {
+  id               String    @id @default(cuid())
+  title            String
+  description      String?
+  category         String
+  closesAt         DateTime
+  resolutionSource String?
+  submittedById    String
+  status           String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewedAt       DateTime?
+  reviewedById     String?
+  reviewNotes      String?
+  eventId          String?   // ID dell'evento creato se approvato
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([submittedById])
+  @@index([status])
+  @@index([createdAt])
+  @@map("event_submissions")
+}
+
 model Event {
   id                    String    @id @default(cuid())
   title                 String

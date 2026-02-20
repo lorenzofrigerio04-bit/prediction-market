@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import CategoryBoxes from "@/components/discover/CategoryBoxes";
 import LandingBackground from "@/components/landing/LandingBackground";
 import LandingEventRow from "@/components/landing/LandingEventRow";
+import CreateEventModal from "@/components/discover/CreateEventModal";
 import { SectionContainer, EmptyState, LoadingBlock } from "@/components/ui";
 
 interface Event {
@@ -20,11 +21,6 @@ interface Event {
   _count?: { predictions: number };
 }
 
-interface LiveActivity {
-  count: number;
-  recentVotes: number;
-}
-
 export default function DiscoverPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,17 +29,16 @@ export default function DiscoverPage() {
   const [trendingEvents, setTrendingEvents] = useState<Event[]>([]);
   const [loadingTrending, setLoadingTrending] = useState(true);
 
-  const [closingSoonEvents, setClosingSoonEvents] = useState<Event[]>([]);
-  const [loadingClosingSoon, setLoadingClosingSoon] = useState(true);
-
   const [totalEvents, setTotalEvents] = useState<number>(0);
-  const [liveActivity, setLiveActivity] = useState<LiveActivity>({
-    count: 0,
-    recentVotes: 0,
-  });
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const heroRef = useRef<HTMLElement>(null);
+  const categoriesRef = useRef<HTMLElement>(null);
   const [heroInView, setHeroInView] = useState(false);
+
+  const scrollToCategories = () => {
+    categoriesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   useEffect(() => {
     const el = heroRef.current;
@@ -93,15 +88,6 @@ export default function DiscoverPage() {
   }, []);
 
   useEffect(() => {
-    setLoadingClosingSoon(true);
-    fetch("/api/events/closing-soon?limit=3")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setClosingSoonEvents(data?.events ?? []))
-      .catch(() => setClosingSoonEvents([]))
-      .finally(() => setLoadingClosingSoon(false));
-  }, []);
-
-  useEffect(() => {
     fetch("/api/events?status=open&limit=1")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -110,23 +96,6 @@ export default function DiscoverPage() {
         }
       })
       .catch(() => {});
-
-    fetch("/api/stats/live")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data) {
-          setLiveActivity({
-            count: data.activeUsers ?? Math.floor(Math.random() * 50) + 20,
-            recentVotes: data.recentVotes ?? Math.floor(Math.random() * 100) + 50,
-          });
-        }
-      })
-      .catch(() => {
-        setLiveActivity({
-          count: Math.floor(Math.random() * 50) + 20,
-          recentVotes: Math.floor(Math.random() * 100) + 50,
-        });
-      });
   }, []);
 
   return (
@@ -145,62 +114,58 @@ export default function DiscoverPage() {
             heroInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           }`}
         >
-          <h1 className="text-ds-h1 font-bold text-fg mb-2">Esplora gli Eventi</h1>
-          <p className="text-ds-body text-fg-muted mb-6 max-w-md mx-auto">
+          <h1 className="text-ds-h1 font-bold text-white mb-2 drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
+            Esplora gli Eventi
+          </h1>
+          <p className="text-ds-body text-white/80 mb-4 max-w-md mx-auto">
             Scegli una categoria e metti alla prova le tue previsioni
           </p>
 
-          {/* Live Stats Row */}
-          <div className="flex justify-center items-center gap-6 sm:gap-8">
-            <div className="animate-in-fade-up stagger-1 text-center">
-              <div className="flex items-center justify-center gap-1.5 mb-1">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
-                </span>
-                <span className="text-2xl font-bold text-primary font-numeric">
-                  {liveActivity.count}
-                </span>
-              </div>
-              <span className="text-ds-micro text-fg-muted">Online ora</span>
-            </div>
+          {/* LED Line under title */}
+          <div className="discover-hero-line mx-auto mb-6" aria-hidden />
 
-            <div className="w-px h-8 bg-white/10" />
+          {/* Stats Row - Landing style */}
+          <div className="flex justify-center items-center gap-4 sm:gap-6">
+            <button
+              onClick={scrollToCategories}
+              className="animate-in-fade-up stagger-1 text-center group cursor-pointer hover:scale-105 transition-transform"
+            >
+              <span className="discover-stat-value block mb-1">
+                {categories.length || 7}
+              </span>
+              <span className="discover-stat-label">Categorie</span>
+            </button>
+
+            <div className="discover-divider-led" aria-hidden />
 
             <div className="animate-in-fade-up stagger-2 text-center">
-              <span className="text-2xl font-bold text-primary font-numeric block mb-1">
+              <span className="discover-stat-value block mb-1">
                 {totalEvents || "—"}
               </span>
-              <span className="text-ds-micro text-fg-muted">Eventi attivi</span>
+              <span className="discover-stat-label">Eventi attivi</span>
             </div>
 
-            <div className="w-px h-8 bg-white/10" />
+            <div className="discover-divider-led" aria-hidden />
 
-            <div className="animate-in-fade-up stagger-3 text-center">
-              <span className="text-2xl font-bold text-primary font-numeric block mb-1">
-                {liveActivity.recentVotes}+
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="animate-in-fade-up stagger-3 text-center group cursor-pointer hover:scale-105 transition-transform"
+            >
+              <span className="discover-stat-value discover-stat-value--cta block mb-1">
+                +
               </span>
-              <span className="text-ds-micro text-fg-muted">Voti oggi</span>
-            </div>
+              <span className="discover-stat-label">Crea evento</span>
+            </button>
           </div>
         </section>
 
-        {/* Trending Section */}
+        {/* Eventi Virali Section */}
         {!loadingTrending && trendingEvents.length > 0 && (
           <section className="mb-10 md:mb-12">
-            <h2 className="landing-section-title landing-section-title--with-badge text-ds-h2 font-bold text-fg mb-4 flex flex-wrap items-baseline gap-2">
-              <span className="landing-section-title__text">Trending</span>
-              <span
-                className="landing-live-badge text-ds-body"
-                aria-label="In diretta"
-              >
-                <span className="landing-live-badge__deg" aria-hidden>
-                  °
-                </span>
-                <span className="landing-live-badge__text">LIVE</span>
-              </span>
+            <h2 className="discover-viral-title text-ds-h2 font-bold text-white mb-4">
+              Eventi virali
             </h2>
-            <ul className="flex flex-col gap-4" aria-label="Eventi in tendenza">
+            <ul className="flex flex-col gap-4" aria-label="Eventi virali">
               {trendingEvents.map((event, idx) => (
                 <li
                   key={event.id}
@@ -215,74 +180,40 @@ export default function DiscoverPage() {
 
         {loadingTrending && (
           <section className="mb-10 md:mb-12">
-            <LoadingBlock message="Caricamento trending…" />
+            <LoadingBlock message="Caricamento eventi virali…" />
           </section>
         )}
 
         {/* Categories Section */}
-        <SectionContainer
-          title="Categorie"
-          action={
-            <Link
-              href="/discover/tutti"
-              className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
-            >
-              Vedi tutti
-            </Link>
-          }
-        >
-          {error ? (
-            <EmptyState
-              title="Errore"
-              description={error}
-              action={{ label: "Riprova", onClick: () => fetchCategories() }}
-            />
-          ) : loading ? (
-            <div className="py-8">
-              <LoadingBlock message="Caricamento…" />
-            </div>
-          ) : (
-            <div className="animate-in-fade-up">
-              <CategoryBoxes categories={categories} showTutti />
-            </div>
-          )}
-        </SectionContainer>
-
-        {/* Closing Soon Section */}
-        {!loadingClosingSoon && closingSoonEvents.length > 0 && (
-          <section className="mt-10 md:mt-12">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-ds-h2 font-bold text-fg flex items-center gap-2">
-                <span className="text-xl" aria-hidden>
-                  ⏰
-                </span>
-                In scadenza
-              </h2>
+        <section ref={categoriesRef} className="scroll-mt-20">
+          <SectionContainer
+            title="Categorie"
+            action={
               <Link
-                href="/discover/tutti?deadline=24h"
-                className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover"
+                href="/discover/tutti"
+                className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
               >
                 Vedi tutti
               </Link>
-            </div>
-            <ul className="flex flex-col gap-4" aria-label="Eventi in scadenza">
-              {closingSoonEvents.map((event, idx) => (
-                <li
-                  key={event.id}
-                  className={`animate-in-fade-up stagger-${Math.min(idx + 1, 6)}`}
-                >
-                  <LandingEventRow event={event} />
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {loadingClosingSoon && closingSoonEvents.length === 0 && (
-          <section className="mt-10">
-            <LoadingBlock message="Caricamento in scadenza…" />
-          </section>
-        )}
+            }
+          >
+            {error ? (
+              <EmptyState
+                title="Errore"
+                description={error}
+                action={{ label: "Riprova", onClick: () => fetchCategories() }}
+              />
+            ) : loading ? (
+              <div className="py-8">
+                <LoadingBlock message="Caricamento…" />
+              </div>
+            ) : (
+              <div className="animate-in-fade-up">
+                <CategoryBoxes categories={categories} showTutti />
+              </div>
+            )}
+          </SectionContainer>
+        </section>
 
         {/* CTA Section */}
         <section className="text-center pt-10 pb-8">
@@ -299,6 +230,14 @@ export default function DiscoverPage() {
           </div>
         </section>
       </main>
+
+      {/* Create Event Modal */}
+      {showCreateModal && (
+        <CreateEventModal
+          categories={categories}
+          onClose={() => setShowCreateModal(false)}
+        />
+      )}
     </div>
   );
 }
