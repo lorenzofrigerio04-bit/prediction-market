@@ -121,7 +121,7 @@ export default function DiscoverPage() {
           {/* LED Line under title */}
           <div className="discover-hero-line mx-auto mb-6" aria-hidden />
 
-          {/* Stats Row - Landing style */}
+          {/* Stats Row - Landing style: Categorie | Crea eventi | Eventi attivi */}
           <div className="flex justify-center items-stretch gap-4 sm:gap-6">
             <button
               onClick={scrollToCategories}
@@ -135,24 +135,24 @@ export default function DiscoverPage() {
 
             <div className="discover-divider-led self-center" aria-hidden />
 
-            <div className="animate-in-fade-up stagger-2 flex flex-col items-center justify-between min-w-[70px]">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="animate-in-fade-up stagger-2 flex flex-col items-center justify-between cursor-pointer hover:scale-105 transition-transform min-w-[70px]"
+            >
+              <span className="discover-stat-value">
+                +
+              </span>
+              <span className="discover-stat-label mt-1">Crea eventi</span>
+            </button>
+
+            <div className="discover-divider-led self-center" aria-hidden />
+
+            <div className="animate-in-fade-up stagger-3 flex flex-col items-center justify-between min-w-[70px]">
               <span className="discover-stat-value">
                 {totalEvents || "—"}
               </span>
               <span className="discover-stat-label mt-1">Eventi attivi</span>
             </div>
-
-            <div className="discover-divider-led self-center" aria-hidden />
-
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="animate-in-fade-up stagger-3 flex flex-col items-center justify-between cursor-pointer hover:scale-105 transition-transform min-w-[70px]"
-            >
-              <span className="discover-stat-value">
-                +
-              </span>
-              <span className="discover-stat-label mt-1">Crea evento</span>
-            </button>
           </div>
         </section>
 
