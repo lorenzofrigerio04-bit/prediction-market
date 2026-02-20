@@ -102,10 +102,10 @@
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
 }
 
-/* —— Semantic palette: dark theme only (UI spec: lighter, digestible) —— */
+/* —— Semantic palette: dark theme only (semi-dark, luminous, easy on the eyes) —— */
 .dark {
-  --background-primary: 24 27 38;
-  --background-secondary: 18 21 30;
+  --background-primary: 28 32 46;
+  --background-secondary: 24 28 40;
   --bg: var(--background-primary);
   --surface: 255 255 255;
   --surface-o: 0.08;
@@ -356,211 +356,20 @@ textarea:focus-visible {
   100% { transform: translate(-5%, -3%) scale(1.05); }
 }
 
-/* —— Landing: base scura premium con anti-banding noise (stile Linear/Vercel) —— */
+/* —— Platform background: solid semi-dark, luminous, easy on the eyes (no gradients) —— */
 .landing-dynamic-bg {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
-  background: rgb(10 12 22);
+  background: rgb(var(--bg));
 }
 
-/* Noise overlay per eliminare il banding dei gradienti - tecnica premium */
-.landing-dynamic-bg::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 100;
-  pointer-events: none;
-  opacity: 0.4;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 180px 180px;
-  mix-blend-mode: overlay;
-}
-
-.landing-dynamic-bg__base {
-  position: absolute;
-  inset: -30%;
-  background:
-    linear-gradient(180deg, 
-      rgb(255 255 255 / 0.06) 0%, 
-      rgb(255 255 255 / 0.04) 15%, 
-      rgb(255 255 255 / 0.02) 30%, 
-      transparent 50%, 
-      rgb(10 12 22 / 0.5) 75%, 
-      rgb(10 12 22) 100%),
-    radial-gradient(ellipse 100% 70% at 50% -30%, 
-      rgb(255 255 255 / 0.08) 0%, 
-      rgb(255 255 255 / 0.04) 25%, 
-      transparent 50%),
-    radial-gradient(ellipse 80% 50% at 50% 120%, 
-      rgb(10 12 22) 0%, 
-      rgb(10 12 22 / 0.5) 40%, 
-      transparent 70%);
-  animation: landing-fluid-base 35s ease-in-out infinite alternate;
-}
-
-.landing-dynamic-bg__orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.15;
-  will-change: transform;
-  /* Previene il banding con rendering più fluido */
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-/* Luci bianche fluide — gradienti multi-stop per transizioni smooth */
-.landing-dynamic-bg__orb--1 {
-  width: min(90vw, 720px);
-  height: min(90vw, 720px);
-  left: -15%;
-  top: -20%;
-  background: radial-gradient(circle, 
-    rgb(255 255 255 / 0.18) 0%, 
-    rgb(255 255 255 / 0.12) 20%, 
-    rgb(255 255 255 / 0.06) 40%, 
-    rgb(255 255 255 / 0.02) 60%, 
-    transparent 80%);
-  animation: landing-orb-1 42s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
-}
-
-.landing-dynamic-bg__orb--2 {
-  width: min(70vw, 560px);
-  height: min(70vw, 560px);
-  right: -10%;
-  top: 10%;
-  background: radial-gradient(circle, 
-    rgb(255 255 255 / 0.12) 0%, 
-    rgb(255 255 255 / 0.08) 25%, 
-    rgb(255 255 255 / 0.03) 50%, 
-    transparent 75%);
-  animation: landing-orb-2 38s cubic-bezier(0.4, 0, 0.6, 1) infinite alternate;
-}
-
-.landing-dynamic-bg__orb--3 {
-  width: min(60vw, 480px);
-  height: min(60vw, 480px);
-  left: 5%;
-  bottom: 10%;
-  background: radial-gradient(circle, 
-    rgb(255 255 255 / 0.10) 0%, 
-    rgb(255 255 255 / 0.06) 30%, 
-    rgb(255 255 255 / 0.02) 55%, 
-    transparent 80%);
-  animation: landing-orb-3 45s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
-}
-
-.landing-dynamic-bg__orb--4 {
-  width: min(55vw, 440px);
-  height: min(55vw, 440px);
-  right: 15%;
-  bottom: -15%;
-  background: radial-gradient(circle, 
-    rgb(255 255 255 / 0.08) 0%, 
-    rgb(255 255 255 / 0.05) 30%, 
-    rgb(255 255 255 / 0.02) 55%, 
-    transparent 80%);
-  animation: landing-orb-4 40s cubic-bezier(0.4, 0, 0.6, 1) infinite alternate;
-}
-
-.landing-dynamic-bg__orb--5 {
-  width: min(40vw, 320px);
-  height: min(40vw, 320px);
-  left: 30%;
-  top: 30%;
-  background: radial-gradient(circle, 
-    rgb(255 255 255 / 0.10) 0%, 
-    rgb(255 255 255 / 0.06) 30%, 
-    rgb(255 255 255 / 0.02) 60%, 
-    transparent 85%);
-  animation: landing-orb-5 33s cubic-bezier(0.5, 0, 0.5, 1) infinite alternate;
-}
-
-.landing-dynamic-bg__orb--6 {
-  width: min(50vw, 400px);
-  height: min(50vw, 400px);
-  right: 25%;
-  top: 50%;
-  background: radial-gradient(circle, 
-    rgb(255 255 255 / 0.08) 0%, 
-    rgb(255 255 255 / 0.05) 30%, 
-    rgb(255 255 255 / 0.02) 55%, 
-    transparent 80%);
-  animation: landing-orb-6 36s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
-}
-
-@keyframes landing-fluid-base {
-  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  100% { transform: translate(-4%, -2%) scale(1.08) rotate(2deg); }
-}
-
-@keyframes landing-orb-1 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(8%, 6%) scale(1.15); }
-}
-
-@keyframes landing-orb-2 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-6%, -8%) scale(1.12); }
-}
-
-@keyframes landing-orb-3 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(5%, -5%) scale(1.18); }
-}
-
-@keyframes landing-orb-4 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-7%, 4%) scale(1.1); }
-}
-
-@keyframes landing-orb-5 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-4%, 7%) scale(1.2); }
-}
-
-@keyframes landing-orb-6 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(5%, -4%) scale(1.14); }
-}
-
-.landing-dynamic-bg__overlay {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, 
-      rgb(255 255 255 / 0.03) 0%, 
-      rgb(255 255 255 / 0.015) 15%, 
-      transparent 30%, 
-      transparent 70%, 
-      rgb(0 0 0 / 0.1) 85%, 
-      rgb(0 0 0 / 0.2) 100%),
-    radial-gradient(ellipse 100% 80% at 50% -25%, 
-      rgb(255 255 255 / 0.04) 0%, 
-      rgb(255 255 255 / 0.02) 25%, 
-      transparent 50%);
-  pointer-events: none;
-}
-
-/* Spotlight centrale hero — effetto "luce sul palco" ultra-fluido */
-.landing-dynamic-bg__overlay::before {
-  content: "";
-  position: absolute;
-  top: 8%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  max-width: 600px;
-  height: 55%;
-  background: radial-gradient(ellipse at center, 
-    rgb(255 255 255 / 0.05) 0%, 
-    rgb(255 255 255 / 0.03) 25%, 
-    rgb(255 255 255 / 0.01) 50%, 
-    transparent 75%);
-  pointer-events: none;
+/* Hide decorative orbs/overlays — solid background only */
+.landing-dynamic-bg .landing-dynamic-bg__base,
+.landing-dynamic-bg .landing-dynamic-bg__orb,
+.landing-dynamic-bg .landing-dynamic-bg__overlay {
+  display: none !important;
 }
 
 /* —— Brand logo: solo testo PredictionMaster, gradient elegante —— */
@@ -2096,13 +1905,6 @@ textarea:focus-visible {
   min-height: 100vh;
 }
 
-.discover-page .landing-dynamic-bg {
-  opacity: 0.9;
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-}
-
 /* Hide footer background on discover page */
 .discover-page ~ footer,
 body:has(.discover-page) > footer {
@@ -2111,7 +1913,7 @@ body:has(.discover-page) > footer {
 
 /* Ensure body has consistent background for discover */
 body:has(.discover-page) {
-  background: rgb(24 27 38);
+  background: rgb(var(--bg));
 }
 
 /* Hero LED line - thin horizontal neon line */
