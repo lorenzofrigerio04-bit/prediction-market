@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: "Piattaforma italiana di previsioni sociali",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#fafbfd" },
-    { media: "(prefers-color-scheme: dark)", color: "#1c2032" },
+    { media: "(prefers-color-scheme: dark)", color: "#161a26" },
   ],
   appleWebApp: {
     capable: true,
