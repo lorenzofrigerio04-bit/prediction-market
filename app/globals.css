@@ -356,22 +356,22 @@ textarea:focus-visible {
   100% { transform: translate(-5%, -3%) scale(1.05); }
 }
 
-/* —— Landing: base nera, luce bianca (stile Vibotech) —— */
+/* —— Landing: base scura con più luminosità (stile Vibotech evoluto) —— */
 .landing-dynamic-bg {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
-  background: rgb(0 0 0);
+  background: rgb(10 12 22);
 }
 
 .landing-dynamic-bg__base {
   position: absolute;
   inset: -30%;
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.06) 0%, rgb(255 255 255 / 0.02) 25%, transparent 50%, rgb(0 0 0) 100%),
-    radial-gradient(ellipse 100% 70% at 50% -30%, rgb(255 255 255 / 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse 80% 50% at 50% 120%, rgb(0 0 0), transparent 60%);
+    linear-gradient(180deg, rgb(255 255 255 / 0.08) 0%, rgb(255 255 255 / 0.03) 25%, transparent 50%, rgb(10 12 22) 100%),
+    radial-gradient(ellipse 100% 70% at 50% -30%, rgb(255 255 255 / 0.14) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 50% at 50% 120%, rgb(10 12 22), transparent 60%);
   animation: landing-fluid-base 35s ease-in-out infinite alternate;
 }
 
@@ -383,13 +383,13 @@ textarea:focus-visible {
   will-change: transform;
 }
 
-/* Luci bianche sottili — solo dove serve luce */
+/* Luci bianche più intense — luminosità aumentata */
 .landing-dynamic-bg__orb--1 {
   width: min(90vw, 720px);
   height: min(90vw, 720px);
   left: -15%;
   top: -20%;
-  background: radial-gradient(circle, rgb(255 255 255 / 0.15) 0%, rgb(255 255 255 / 0.04) 40%, transparent 70%);
+  background: radial-gradient(circle, rgb(255 255 255 / 0.22) 0%, rgb(255 255 255 / 0.08) 40%, transparent 70%);
   animation: landing-orb-1 42s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
 }
 
@@ -398,7 +398,7 @@ textarea:focus-visible {
   height: min(70vw, 560px);
   right: -10%;
   top: 10%;
-  background: radial-gradient(circle, rgb(255 255 255 / 0.08) 0%, transparent 50%);
+  background: radial-gradient(circle, rgb(255 255 255 / 0.14) 0%, transparent 50%);
   animation: landing-orb-2 38s cubic-bezier(0.4, 0, 0.6, 1) infinite alternate;
 }
 
@@ -407,7 +407,7 @@ textarea:focus-visible {
   height: min(60vw, 480px);
   left: 5%;
   bottom: 10%;
-  background: radial-gradient(circle, rgb(255 255 255 / 0.05) 0%, transparent 60%);
+  background: radial-gradient(circle, rgb(255 255 255 / 0.10) 0%, transparent 60%);
   animation: landing-orb-3 45s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
 }
 
@@ -416,7 +416,7 @@ textarea:focus-visible {
   height: min(55vw, 440px);
   right: 15%;
   bottom: -15%;
-  background: radial-gradient(circle, rgb(255 255 255 / 0.04) 0%, transparent 55%);
+  background: radial-gradient(circle, rgb(255 255 255 / 0.08) 0%, transparent 55%);
   animation: landing-orb-4 40s cubic-bezier(0.4, 0, 0.6, 1) infinite alternate;
 }
 
@@ -425,7 +425,7 @@ textarea:focus-visible {
   height: min(40vw, 320px);
   left: 30%;
   top: 30%;
-  background: radial-gradient(circle, rgb(255 255 255 / 0.06) 0%, transparent 65%);
+  background: radial-gradient(circle, rgb(255 255 255 / 0.12) 0%, transparent 65%);
   animation: landing-orb-5 33s cubic-bezier(0.5, 0, 0.5, 1) infinite alternate;
 }
 
@@ -434,7 +434,7 @@ textarea:focus-visible {
   height: min(50vw, 400px);
   right: 25%;
   top: 50%;
-  background: radial-gradient(circle, rgb(255 255 255 / 0.05) 0%, transparent 60%);
+  background: radial-gradient(circle, rgb(255 255 255 / 0.10) 0%, transparent 60%);
   animation: landing-orb-6 36s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
 }
 
@@ -477,8 +477,22 @@ textarea:focus-visible {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.02) 0%, transparent 30%, transparent 70%, rgb(0 0 0 / 0.4) 100%),
-    radial-gradient(ellipse 100% 80% at 50% -25%, rgb(255 255 255 / 0.03) 0%, transparent 45%);
+    linear-gradient(180deg, rgb(255 255 255 / 0.04) 0%, transparent 25%, transparent 75%, rgb(0 0 0 / 0.25) 100%),
+    radial-gradient(ellipse 100% 80% at 50% -25%, rgb(255 255 255 / 0.05) 0%, transparent 45%);
+  pointer-events: none;
+}
+
+/* Spotlight centrale hero — effetto "luce sul palco" */
+.landing-dynamic-bg__overlay::before {
+  content: "";
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 600px;
+  height: 55%;
+  background: radial-gradient(ellipse at center, rgb(255 255 255 / 0.07) 0%, rgb(255 255 255 / 0.02) 40%, transparent 70%);
   pointer-events: none;
 }
 
@@ -585,7 +599,7 @@ textarea:focus-visible {
   transform-origin: center;
   transform: scaleX(0);
   background: linear-gradient(90deg, transparent, rgb(96 165 250 / 0.6), rgb(96 165 250), rgb(96 165 250 / 0.6), transparent);
-  box-shadow: 0 0 10px rgb(96 165 250 / 0.4), 0 0 20px rgb(255 255 255 / 0.12);
+  box-shadow: 0 0 14px rgb(96 165 250 / 0.5), 0 0 28px rgb(255 255 255 / 0.16);
   animation: landing-line-open 0.85s var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)) both;
 }
 .landing-hero-line--below {
@@ -595,7 +609,7 @@ textarea:focus-visible {
   animation-delay: 0.5s;
 }
 .dark .landing-hero-line {
-  box-shadow: 0 0 12px rgb(96 165 250 / 0.35), 0 0 24px rgb(255 255 255 / 0.1);
+  box-shadow: 0 0 16px rgb(96 165 250 / 0.45), 0 0 30px rgb(255 255 255 / 0.14);
 }
 
 /* Bottoni: sfondo trasparente — primary bordo bianco LED, secondary bordo blu LED leggero */
