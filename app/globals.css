@@ -958,7 +958,7 @@ textarea:focus-visible {
   background-image: var(--landing-event-row-bg);
   background-size: cover;
   background-position: center;
-  opacity: 0.92;
+  opacity: 0.65;
 }
 .landing-event-row__bg::after {
   content: "";
@@ -967,9 +967,9 @@ textarea:focus-visible {
   border-radius: inherit;
   background: linear-gradient(
     180deg,
-    rgb(0 0 0 / 0.35) 0%,
-    rgb(0 0 0 / 0.48) 50%,
-    rgb(0 0 0 / 0.58) 100%
+    rgb(0 0 0 / 0.50) 0%,
+    rgb(0 0 0 / 0.62) 50%,
+    rgb(0 0 0 / 0.72) 100%
   );
   pointer-events: none;
 }
