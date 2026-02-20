@@ -39,7 +39,7 @@ export async function GET() {
             b: true,
             _count: {
               select: {
-                predictions: true,
+                Prediction: true,
               },
             },
           },
@@ -53,8 +53,8 @@ export async function GET() {
     );
 
     events.sort((a, b) => {
-      const predictionsA = a._count?.predictions || 0;
-      const predictionsB = b._count?.predictions || 0;
+      const predictionsA = a._count?.Prediction || 0;
+      const predictionsB = b._count?.Prediction || 0;
       return predictionsB - predictionsA;
     });
 
