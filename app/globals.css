@@ -386,20 +386,66 @@ textarea:focus-visible {
   100% { transform: translate(-5%, -3%) scale(1.05); }
 }
 
-/* —— Platform background: solid semi-dark, luminous, easy on the eyes (no gradients) —— */
+/* —— Platform background: luxury mesh gradient (vector, no pixelation) —— */
 .landing-dynamic-bg {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
   background: rgb(var(--bg));
+  isolation: isolate;
 }
 
-/* Hide decorative orbs/overlays — solid background only */
-.landing-dynamic-bg .landing-dynamic-bg__base,
-.landing-dynamic-bg .landing-dynamic-bg__orb,
-.landing-dynamic-bg .landing-dynamic-bg__overlay {
-  display: none !important;
+/* Mesh: single conic gradient, smooth rotation — high quality, no banding */
+.landing-dynamic-bg__mesh {
+  position: absolute;
+  width: 200vmax;
+  height: 200vmax;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) translateZ(0);
+  will-change: transform;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    rgb(99 102 241 / 0.16) 0deg,
+    rgb(139 92 246 / 0.12) 30deg,
+    rgb(59 130 246 / 0.1) 60deg,
+    rgb(99 102 241 / 0.14) 90deg,
+    rgb(129 140 248 / 0.13) 120deg,
+    rgb(139 92 246 / 0.11) 150deg,
+    rgb(99 102 241 / 0.15) 180deg,
+    rgb(59 130 246 / 0.09) 210deg,
+    rgb(129 140 248 / 0.12) 240deg,
+    rgb(139 92 246 / 0.13) 270deg,
+    rgb(99 102 241 / 0.14) 300deg,
+    rgb(99 102 241 / 0.16) 360deg
+  );
+  animation: landing-mesh-rotate 100s linear infinite;
+  backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-dynamic-bg__mesh {
+    animation: none;
+  }
+}
+
+@keyframes landing-mesh-rotate {
+  from { transform: translate(-50%, -50%) translateZ(0) rotate(0deg); }
+  to { transform: translate(-50%, -50%) translateZ(0) rotate(360deg); }
+}
+
+/* Subtle vignette for depth — gradient only, no texture */
+.landing-dynamic-bg__vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 95% 95% at 50% 50%,
+    transparent 50%,
+    rgb(0 0 0 / 0.08) 85%,
+    rgb(0 0 0 / 0.14) 100%
+  );
 }
 
 /* —— Brand logo: solo testo PredictionMaster, gradient elegante —— */
