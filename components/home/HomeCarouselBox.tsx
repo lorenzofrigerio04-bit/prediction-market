@@ -78,7 +78,7 @@ export default function HomeCarouselBox({
       ) : events.length === 0 ? (
         <p className="py-4 text-ds-body-sm text-fg-muted">Nessun evento al momento.</p>
       ) : (
-        <div ref={containerRef} className="grid grid-cols-2 gap-3 sm:gap-4">
+        <div ref={containerRef} className="grid grid-cols-2 gap-1.5 sm:gap-2">
           {events.map((event, index) => {
             const isVisible = visibleIndices.has(index);
             return (

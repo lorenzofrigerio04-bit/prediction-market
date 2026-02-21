@@ -54,9 +54,9 @@ export default function HomeHeaderPostLogin({
 
   return (
     <header className="mb-5 md:mb-6">
-      <div className="flex flex-row items-center justify-between gap-3 sm:gap-4">
+      <div className="flex flex-row items-center justify-between gap-2 sm:gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-white/20 bg-white/5 ring-2 ring-white/10 sm:h-14 sm:w-14">
+          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-white/25 bg-white/5 sm:h-14 sm:w-14">
             {userImage ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -75,39 +75,46 @@ export default function HomeHeaderPostLogin({
               Bentornato, {displayName}
             </h1>
             {showSpinHook && (
-              <p className="mt-0.5 text-sm text-white/90 sm:text-ds-body-sm">
+              <p className="mt-0.5 min-w-0">
                 <Link
                   href="/spin"
-                  className="font-medium text-primary hover:text-primary-hover focus-visible:underline"
+                  className="inline-block max-w-full truncate align-baseline text-sm font-medium text-white/95 hover:text-primary focus-visible:underline sm:text-ds-body-sm"
+                  title="Ricordati di riscattare la tua ricompensa quotidiana!"
                 >
                   Ricordati di riscattare la tua ricompensa quotidiana!
                 </Link>
               </p>
             )}
             {showMissionHook && closestMission && (
-              <p className="mt-0.5 text-sm text-white/90 sm:text-ds-body-sm">
+              <p className="mt-0.5 min-w-0">
                 <Link
                   href="/missions"
-                  className="font-medium text-primary hover:text-primary-hover focus-visible:underline"
+                  className="inline-block max-w-full truncate align-baseline text-sm font-medium text-white/95 hover:text-primary focus-visible:underline sm:text-ds-body-sm"
+                  title={remainingSteps === 1 ? `Sei a un passo dal completare la missione «${closestMission.name}»!` : `Sei a ${remainingSteps} passi dal completare la missione «${closestMission.name}»!`}
                 >
                   {remainingSteps === 1
-                    ? `Sei a un passo dal completare la missione «${closestMission.name}»!`
-                    : `Sei a ${remainingSteps} passi dal completare la missione «${closestMission.name}»!`}
-                  <span className="ml-0.5" aria-hidden>🔥</span>
+                    ? `Sei a un passo dal completare «${closestMission.name}»!`
+                    : `Sei a ${remainingSteps} passi dal completare «${closestMission.name}»!`}
+                  <span className="ml-0.5 inline-block shrink-0" aria-hidden>🔥</span>
                 </Link>
               </p>
             )}
           </div>
         </div>
         <div className="shrink-0">
-          <div className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 shadow-[0_0_0_1px_rgba(255,255,255,0.06)] sm:px-4 sm:py-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary sm:h-9 sm:w-9">
-              <span className="text-base font-bold sm:text-lg" aria-label="crediti">$</span>
+          <div
+            className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-black/30 px-2 py-1.5 sm:px-2.5 sm:py-2"
+            style={{
+              boxShadow: "0 0 0 1px rgba(255,255,255,0.12), 0 0 14px -2px rgba(59,130,246,0.45), 0 0 24px -8px rgba(59,130,246,0.25)",
+            }}
+          >
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/30 text-primary sm:h-7 sm:w-7" style={{ boxShadow: "0 0 10px -2px rgba(59,130,246,0.5)" }}>
+              <span className="text-sm font-bold sm:text-base" aria-label="crediti">$</span>
             </div>
             {creditsLoading ? (
-              <span className="min-w-[3ch] tabular-nums text-lg font-bold text-white animate-pulse sm:text-xl">—</span>
+              <span className="min-w-[2.5ch] tabular-nums text-base font-bold text-white animate-pulse sm:text-lg">—</span>
             ) : (
-              <span className="min-w-[3ch] tabular-nums text-lg font-bold text-white sm:text-xl">
+              <span className="min-w-[2.5ch] tabular-nums text-base font-bold text-white sm:text-lg">
                 {credits != null ? credits.toLocaleString("it-IT") : "—"}
               </span>
             )}
