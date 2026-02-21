@@ -5,18 +5,13 @@ import { useSession } from "next-auth/react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
-import EventCard from "@/components/EventCard";
 import OnboardingTour from "@/components/OnboardingTour";
 import LandingEventRow from "@/components/landing/LandingEventRow";
 import LandingHeroStats from "@/components/landing/LandingHeroStats";
 import LandingHeroTitle from "@/components/landing/LandingHeroTitle";
-import HomeSummary from "@/components/home/HomeSummary";
-import {
-  PageHeader,
-  SectionContainer,
-  EmptyState,
-  LoadingBlock,
-} from "@/components/ui";
+import HomeHeaderPostLogin from "@/components/home/HomeHeaderPostLogin";
+import HomeCarouselBox, { type HomeEventTileData } from "@/components/home/HomeCarouselBox";
+import { EmptyState, LoadingBlock } from "@/components/ui";
 import { getDisplayTitle, isDebugTitle } from "@/lib/debug-display";
 import type { EventFomoStats } from "@/lib/fomo/event-stats";
 import { generateNotificationsOnDemand } from "@/lib/notifications/client";
@@ -82,10 +77,12 @@ export default function Home() {
 
   const [credits, setCredits] = useState<number | null>(null);
   const [creditsLoading, setCreditsLoading] = useState(true);
-  const [streak, setStreak] = useState<number | null>(null);
-  const [streakLoading, setStreakLoading] = useState(true);
 
-  const [forYouEvents, setForYouEvents] = useState<Event[]>([]);
+  const [mostPredicted, setMostPredicted] = useState<HomeEventTileData[]>([]);
+  const [loadingMostPredicted, setLoadingMostPredicted] = useState(true);
+  const [closingSoon, setClosingSoon] = useState<HomeEventTileData[]>([]);
+  const [loadingClosingSoon, setLoadingClosingSoon] = useState(true);
+  const [forYouEvents, setForYouEvents] = useState<HomeEventTileData[]>([]);
   const [loadingForYou, setLoadingForYou] = useState(true);
 
   const [missions, setMissions] = useState<Mission[]>([]);
@@ -168,23 +165,62 @@ export default function Home() {
       .finally(() => setCreditsLoading(false));
   }, [status]);
 
+  // Più previsti ora (8 eventi, sort=popular)
   useEffect(() => {
     if (status !== "authenticated") return;
-    setStreakLoading(true);
-    fetch("/api/profile/stats")
+    setLoadingMostPredicted(true);
+    fetch("/api/events?sort=popular&limit=8&status=open")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => data?.stats?.streak != null && setStreak(data.stats.streak))
-      .catch(() => {})
-      .finally(() => setStreakLoading(false));
+      .then((data) => {
+        const list = (data?.events ?? []).map((e: Event) => ({
+          id: e.id,
+          title: e.title,
+          category: e.category,
+          closesAt: e.closesAt,
+          probability: e.probability,
+        }));
+        setMostPredicted(list);
+      })
+      .catch(() => setMostPredicted([]))
+      .finally(() => setLoadingMostPredicted(false));
   }, [status]);
 
-  // Feed "Potrebbero piacerti" (personalizzato o cold start)
+  // Eventi in scadenza (8)
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    setLoadingClosingSoon(true);
+    fetch("/api/events/closing-soon?limit=8")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        const list = (data?.events ?? []).map((e: Event) => ({
+          id: e.id,
+          title: e.title,
+          category: e.category,
+          closesAt: e.closesAt,
+          probability: e.probability,
+        }));
+        setClosingSoon(list);
+      })
+      .catch(() => setClosingSoon([]))
+      .finally(() => setLoadingClosingSoon(false));
+  }, [status]);
+
+  // Potrebbe piacerti (16, personalizzato o trend)
   useEffect(() => {
     if (status !== "authenticated") return;
     setLoadingForYou(true);
-    fetch("/api/feed/for-you?limit=12")
+    fetch("/api/feed/for-you?limit=16")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setForYouEvents(data?.events ?? []))
+      .then((data) => {
+        const list = (data?.events ?? []).map((e: Event) => ({
+          id: e.id,
+          title: e.title,
+          category: e.category,
+          closesAt: e.closesAt,
+          probability: e.probability,
+        }));
+        setForYouEvents(list);
+      })
       .catch(() => setForYouEvents([]))
       .finally(() => setLoadingForYou(false));
   }, [status]);
@@ -194,7 +230,7 @@ export default function Home() {
     setMissionsLoading(true);
     fetch("/api/missions")
       .then((r) => r.ok && r.json())
-      .then((data) => setMissions((data?.daily ?? []).slice(0, 3)))
+      .then((data) => setMissions(data?.daily ?? []))
       .catch(() => setMissions([]))
       .finally(() => setMissionsLoading(false));
   }, [status]);
@@ -366,150 +402,50 @@ export default function Home() {
       )}
       <Header />
       <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-6xl">
-        <PageHeader
-          title={`Bentornato, ${displayName}.`}
-          description="Ecco cosa succede oggi."
-        />
         {/* Debug panel: only when ?debug=1 or NEXT_PUBLIC_DEBUG_MODE=true. */}
         {debugMode && (
           <div className="text-ds-micro text-fg-muted mb-2 p-2 rounded bg-white/5" aria-hidden>
             <p>debug: commit={debugInfo?.version?.commit ?? "—"} env={debugInfo?.version?.env ?? "—"} baseUrl={debugInfo?.version?.baseUrl ? `${debugInfo.version.baseUrl.slice(0, 40)}…` : "—"}</p>
-            <p>dbConnected={String(debugInfo?.health?.dbConnected ?? "—")} markets_count={debugInfo?.health?.markets_count ?? forYouEvents.length} (UI for-you: {forYouEvents.length}) endpoint: /api/feed/for-you</p>
+            <p>dbConnected={String(debugInfo?.health?.dbConnected ?? "—")} forYou={forYouEvents.length} closingSoon={closingSoon.length} mostPredicted={mostPredicted.length}</p>
           </div>
         )}
 
-        <HomeSummary
+        <HomeHeaderPostLogin
+          displayName={displayName}
           credits={credits}
-          streak={streak}
           creditsLoading={creditsLoading}
-          streakLoading={streakLoading}
+          canSpinToday={canSpinToday}
+          spinLoading={spinLoading}
+          missions={missions}
+          missionsLoading={missionsLoading}
         />
 
-        <section
-          className="mb-section md:mb-section-lg"
-          aria-label="Spin of the Day"
-        >
-          <Link
-            href="/spin"
-            className="block card-raised hover-lift p-4 md:p-5 transition-all duration-ds-normal group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none"
-          >
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <h2 className="text-ds-body font-bold text-fg group-hover:text-primary transition-colors">
-                🎡 Spin of the Day
-              </h2>
-              <span className="text-ds-micro font-semibold text-primary">
-                Gira →
-              </span>
-            </div>
-            {spinLoading ? (
-              <p className="text-ds-body-sm text-fg-muted animate-pulse">Caricamento...</p>
-            ) : canSpinToday ? (
-              <p className="text-ds-body-sm text-fg">
-                Un giro al giorno. Vinci fino a <strong className="text-primary">500 crediti</strong>.
-              </p>
-            ) : (
-              <p className="text-ds-body-sm text-fg-muted">
-                Spin di oggi usato. Torna domani.
-              </p>
-            )}
-          </Link>
-        </section>
+        <HomeCarouselBox
+          title="Più previsti ora"
+          viewAllHref="/discover?status=open&sort=popular"
+          viewAllLabel="Vedi tutti"
+          events={debugMode ? mostPredicted : mostPredicted.filter((e) => !isDebugTitle(e.title))}
+          loading={loadingMostPredicted}
+          borderClass="border-primary/20"
+        />
 
-        <section
-          className="mb-section md:mb-section-lg"
-          aria-label="Missioni"
-        >
-          <Link
-            href="/missions"
-            className="block card-raised hover-lift p-4 md:p-5 transition-all duration-ds-normal group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none"
-          >
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <h2 className="text-ds-body font-bold text-fg group-hover:text-primary transition-colors">
-                Missioni
-              </h2>
-              <span className="text-ds-micro font-semibold text-primary">
-                Vedi tutte →
-              </span>
-            </div>
-            {missionsLoading ? (
-              <p className="text-ds-body-sm text-fg-muted animate-pulse">Caricamento...</p>
-            ) : missions.length === 0 ? (
-              <p className="text-ds-body-sm text-fg-muted">
-                Completa le missioni per guadagnare crediti.
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {missions.slice(0, 3).map((m) => (
-                  <li
-                    key={m.id}
-                    className="flex items-center justify-between gap-2 text-ds-body-sm"
-                  >
-                    <span className="text-fg truncate">{m.name}</span>
-                    <span className="shrink-0 font-semibold text-primary">
-                      {m.completed ? "✓" : `${m.progress}/${m.target}`} · +{m.reward} cr
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Link>
-        </section>
+        <HomeCarouselBox
+          title="Eventi in scadenza"
+          viewAllHref="/discover?status=open&sort=expiring"
+          viewAllLabel="Vedi tutti"
+          events={debugMode ? closingSoon : closingSoon.filter((e) => !isDebugTitle(e.title))}
+          loading={loadingClosingSoon}
+          borderClass="border-amber-500/25"
+        />
 
-        {/* Sezione: Potrebbero piacerti (feed personalizzato / cold start) */}
-        <section
-          id="potrebbero-piacerti"
-          className="mb-section md:mb-section-lg scroll-mt-24"
-          aria-label="Potrebbero piacerti"
-        >
-          <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-            <h2 className="text-ds-h2 font-bold text-fg">
-              Potrebbero piacerti
-            </h2>
-            <Link
-              href="/discover?status=open"
-              className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline transition-colors"
-            >
-              Esplora tutti
-            </Link>
-          </div>
-          {loadingForYou ? (
-            <LoadingBlock message="Caricamento…" />
-          ) : forYouEvents.length === 0 ? (
-            <EmptyState
-              title="Nessun evento al momento"
-              description="Presto nuovi eventi. Nel frattempo completa le missioni o esplora le categorie."
-              action={{ label: "Esplora eventi", href: "/discover/tutti" }}
-            />
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-              {(debugMode ? forYouEvents : forYouEvents.filter((e) => !isDebugTitle(e.title))).map((event, idx) => (
-                <div
-                  key={event.id}
-                  className={`animate-in-fade-up stagger-${Math.min(idx + 1, 6)}`}
-                >
-                  <EventCard
-                    event={{ ...event, title: getDisplayTitle(event.title, debugMode) }}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* CTA: Non sai da dove iniziare? → tutti gli eventi (come in discover) */}
-          <div className="mt-10 md:mt-12 text-center">
-            <div className="landing-hero-card inline-block px-6 py-5 sm:px-8 sm:py-6 rounded-2xl">
-              <p className="text-ds-body font-semibold text-white mb-3">
-                Non sai da dove iniziare?
-              </p>
-              <Link
-                href="/discover/tutti"
-                className="landing-cta-primary w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body-sm inline-flex items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-              >
-                Esplora tutti gli eventi →
-              </Link>
-            </div>
-          </div>
-        </section>
+        <HomeCarouselBox
+          title="Potrebbe piacerti"
+          viewAllHref="/discover/tutti"
+          viewAllLabel="Esplora tutti"
+          events={debugMode ? forYouEvents : forYouEvents.filter((e) => !isDebugTitle(e.title))}
+          loading={loadingForYou}
+          borderClass="border-white/15"
+        />
       </main>
     </div>
   );
