@@ -24,7 +24,7 @@ interface HomeCarouselBoxProps {
   onEventNavigate?: () => void;
 }
 
-const STAGGER_MS = 100;
+const STAGGER_MS = 80;
 
 export default function HomeCarouselBox({
   title,
@@ -37,29 +37,25 @@ export default function HomeCarouselBox({
 }: HomeCarouselBoxProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleIndices, setVisibleIndices] = useState<Set<number>>(new Set());
-  const [hasAnimated, setHasAnimated] = useState(false);
+  const prevEventsLenRef = useRef(0);
 
+  // Quando abbiamo eventi e non stiamo caricando, anima sempre la comparsa (così al ritorno in home si vedono)
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el || hasAnimated || events.length === 0) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting || hasAnimated) return;
-          setHasAnimated(true);
-          events.forEach((_, index) => {
-            setTimeout(() => {
-              setVisibleIndices((prev) => new Set([...prev, index]));
-            }, index * STAGGER_MS);
-          });
-          observer.disconnect();
-        });
-      },
-      { threshold: 0.08, rootMargin: "0px 0px -30px 0px" }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [events.length, hasAnimated]);
+    if (loading || events.length === 0) return;
+    const count = events.length;
+    const isNewData = count !== prevEventsLenRef.current;
+    prevEventsLenRef.current = count;
+    if (isNewData) setVisibleIndices(new Set());
+
+    const t = setTimeout(() => {
+      events.forEach((_, index) => {
+        setTimeout(() => {
+          setVisibleIndices((prev) => new Set([...prev, index]));
+        }, index * STAGGER_MS);
+      });
+    }, 50);
+    return () => clearTimeout(t);
+  }, [loading, events, events.length]);
 
   return (
     <section className="py-4 sm:py-5" aria-label={title}>
@@ -86,7 +82,7 @@ export default function HomeCarouselBox({
                 style={{
                   opacity: isVisible ? 1 : 0,
                   transform: isVisible ? "translateY(0) scale(1)" : "translateY(20px) scale(0.97)",
-                  transition: `opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)`,
+                  transition: `opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1), transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)`,
                 }}
               >
                 <HomeEventTile

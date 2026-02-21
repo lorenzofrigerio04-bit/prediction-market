@@ -64,30 +64,30 @@ export default function HomeEventTile({
           onError={() => setImageFailed(true)}
         />
       )}
-      {/* Overlay solo in basso per leggibilità testo, resto della foto visibile */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+      {/* Overlay per leggibilità: più scuro in basso, testo sempre leggibile */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/50 to-black/20" />
       <div className="relative z-10 flex h-full min-h-[175px] flex-col justify-between p-3 sm:min-h-[195px] sm:p-4">
         <div className="flex items-start justify-between gap-2">
-          <span className="inline-flex rounded-md border border-white/30 bg-black/50 px-2 py-0.5 text-xs font-semibold text-white shadow-[0_1px_4px_rgba(0,0,0,0.8)] backdrop-blur-sm sm:text-ds-micro">
+          <span className="inline-flex rounded-md border border-white/30 bg-black/70 px-2 py-0.5 text-xs font-semibold text-white shadow-[0_2px_6px_rgba(0,0,0,0.9)] backdrop-blur-sm sm:text-ds-micro">
             {category}
           </span>
           {variant === "closing" && (
-            <span className="shrink-0 rounded-lg border border-amber-400/50 bg-amber-500/30 px-2 py-1 text-xs font-bold text-amber-200 shadow-[0_0_12px_-2px_rgba(251,191,36,0.5)] sm:text-ds-micro">
+            <span className="shrink-0 rounded-lg border border-amber-400/50 bg-amber-500/40 px-2 py-1 text-xs font-bold text-amber-100 shadow-[0_0_12px_-2px_rgba(251,191,36,0.5),0_1px_3px_rgba(0,0,0,0.8)] sm:text-ds-micro">
               {formatTimeLeftShort(closesAt)}
             </span>
           )}
         </div>
         <div>
-          <h3 className="mb-2 line-clamp-2 text-sm font-semibold leading-snug text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.95),0_0_2px_rgba(0,0,0,0.9)] sm:text-ds-body-sm">
+          <h3 className="mb-2 line-clamp-2 text-sm font-semibold leading-snug text-white sm:text-ds-body-sm" style={{ textShadow: "0 2px 8px rgba(0,0,0,1), 0 0 1px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9)" }}>
             {title}
           </h3>
           {variant === "popular" && predictionsCount != null && (
-            <p className="mb-1.5 text-xs font-medium text-white/95 drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)] sm:text-ds-micro">
+            <p className="mb-1.5 text-xs font-medium text-white sm:text-ds-micro" style={{ textShadow: "0 1px 4px rgba(0,0,0,1), 0 0 1px rgba(0,0,0,0.8)" }}>
               {predictionsCount} previsioni
             </p>
           )}
           <div
-            className="flex h-1.5 w-full overflow-hidden rounded-full bg-black/50 shadow-inner backdrop-blur-[1px]"
+            className="flex h-1.5 w-full overflow-hidden rounded-full bg-black/60 shadow-inner backdrop-blur-[1px]"
             role="presentation"
           >
             <div

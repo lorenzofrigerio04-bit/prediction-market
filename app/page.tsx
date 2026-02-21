@@ -107,6 +107,7 @@ export default function Home() {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [missionsLoading, setMissionsLoading] = useState(false);
   const [canSpinToday, setCanSpinToday] = useState<boolean | null>(null);
+  const [weeklyRank, setWeeklyRank] = useState<number | undefined>(undefined);
 
   const whySectionRef = useRef<HTMLElement>(null);
   const [whySectionInView, setWhySectionInView] = useState(false);
@@ -287,6 +288,14 @@ export default function Home() {
       .finally(() => setSpinLoading(false));
   }, [status]);
 
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    fetch("/api/leaderboard?period=weekly")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => (data?.myRank != null ? setWeeklyRank(data.myRank) : setWeeklyRank(undefined)))
+      .catch(() => setWeeklyRank(undefined));
+  }, [status]);
+
   // Genera notifiche on-demand quando utente apre Home (best-effort)
   useEffect(() => {
     if (status === "authenticated") {
@@ -457,6 +466,7 @@ export default function Home() {
           userImage={session?.user?.image ?? null}
           credits={credits}
           creditsLoading={creditsLoading}
+          weeklyRank={weeklyRank}
           canSpinToday={canSpinToday}
           spinLoading={spinLoading}
           missions={missions}
