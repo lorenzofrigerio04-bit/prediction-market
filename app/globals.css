@@ -386,6 +386,11 @@ textarea:focus-visible {
   100% { transform: translate(-5%, -3%) scale(1.05); }
 }
 
+/* Contenuto pagine trasparente per far vedere il background mesh su tutta la piattaforma */
+.platform-content > * {
+  background: transparent !important;
+}
+
 /* —— Platform background: Silicon Valley tech — centro pulito, mesh ai bordi, palette blu/slate —— */
 .landing-dynamic-bg {
   position: fixed;
@@ -1982,7 +1987,6 @@ textarea:focus-visible {
 
 /* —— Discover page: dynamic event exploration —— */
 .discover-page {
-  background: rgb(var(--bg));
   min-height: 100vh;
 }
 
@@ -1990,11 +1994,6 @@ textarea:focus-visible {
 .discover-page ~ footer,
 body:has(.discover-page) > footer {
   background: transparent !important;
-}
-
-/* Ensure body has consistent background for discover */
-body:has(.discover-page) {
-  background: rgb(var(--bg));
 }
 
 /* Discover: category boxes premium — bordi sottili, superficie più definita */

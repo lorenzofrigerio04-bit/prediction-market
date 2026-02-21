@@ -4,6 +4,7 @@ import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
 import { authOptions } from "@/lib/auth";
 import ThemeScript from "./ThemeScript";
+import PlatformBackground from "@/components/landing/LandingBackground";
 
 export const metadata: Metadata = {
   title: "Prediction Market",
@@ -44,8 +45,9 @@ export default async function RootLayout({
   }
   return (
     <html lang="it" className="dark" suppressHydrationWarning>
-      <body className="font-sans antialiased min-h-screen bg-bg text-fg flex flex-col">
+      <body className="font-sans antialiased min-h-screen bg-transparent text-fg flex flex-col">
         <ThemeScript />
+        <PlatformBackground />
         <SessionProvider session={session}>
           <a
             href="#main-content"
@@ -53,7 +55,7 @@ export default async function RootLayout({
           >
             Vai al contenuto
           </a>
-          <div className="flex-1">{children}</div>
+          <div className="flex-1 platform-content">{children}</div>
           <footer
             className="py-3 text-center text-fg-muted text-ds-micro bg-transparent relative z-10"
             aria-hidden

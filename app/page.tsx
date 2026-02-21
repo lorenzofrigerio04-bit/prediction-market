@@ -8,7 +8,6 @@ import Header from "@/components/Header";
 import EventCard from "@/components/EventCard";
 import OnboardingTour from "@/components/OnboardingTour";
 import LandingEventRow from "@/components/landing/LandingEventRow";
-import LandingBackground from "@/components/landing/LandingBackground";
 import LandingHeroStats from "@/components/landing/LandingHeroStats";
 import LandingHeroTitle from "@/components/landing/LandingHeroTitle";
 import HomeSummary from "@/components/home/HomeSummary";
@@ -312,7 +311,6 @@ export default function Home() {
   if (showLanding) {
     return (
       <div className="min-h-screen relative overflow-x-hidden landing-page">
-        <LandingBackground />
         <Header />
         <main id="main-content" className="relative mx-auto px-4 sm:px-6 py-5 md:py-12 lg:py-16 max-w-2xl">
           {/* Hero: corpo più in alto, respiro tra contatori e barra inferiore; linee LED incubano titolo e CTA */}

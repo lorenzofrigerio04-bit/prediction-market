@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import CategoryBoxes from "@/components/discover/CategoryBoxes";
-import LandingBackground from "@/components/landing/LandingBackground";
 import LandingEventRow from "@/components/landing/LandingEventRow";
 import CreateEventModal from "@/components/discover/CreateEventModal";
 import { SectionContainer, EmptyState, LoadingBlock } from "@/components/ui";
@@ -100,7 +99,6 @@ export default function DiscoverPage() {
 
   return (
     <div className="min-h-screen relative overflow-x-hidden discover-page">
-      <LandingBackground />
       <Header />
 
       <main
