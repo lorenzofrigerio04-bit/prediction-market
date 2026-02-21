@@ -184,9 +184,7 @@ export default function Home() {
       .finally(() => setCreditsLoading(false));
   }, [status]);
 
-  // Più previsti ora (8 eventi, sort=popular)
-  useEffect(() => {
-    if (status !== "authenticated") return;
+  const fetchMostPredicted = useCallback(() => {
     setLoadingMostPredicted(true);
     fetch("/api/events?sort=popular&limit=8&status=open")
       .then((r) => (r.ok ? r.json() : null))
@@ -196,11 +194,9 @@ export default function Home() {
       })
       .catch(() => setMostPredicted([]))
       .finally(() => setLoadingMostPredicted(false));
-  }, [status]);
+  }, []);
 
-  // Eventi in scadenza (8)
-  useEffect(() => {
-    if (status !== "authenticated") return;
+  const fetchClosingSoon = useCallback(() => {
     setLoadingClosingSoon(true);
     fetch("/api/events/closing-soon?limit=8")
       .then((r) => (r.ok ? r.json() : null))
@@ -210,11 +206,9 @@ export default function Home() {
       })
       .catch(() => setClosingSoon([]))
       .finally(() => setLoadingClosingSoon(false));
-  }, [status]);
+  }, []);
 
-  // Potrebbe piacerti (16, personalizzato o trend)
-  useEffect(() => {
-    if (status !== "authenticated") return;
+  const fetchForYou = useCallback(() => {
     setLoadingForYou(true);
     fetch("/api/feed/for-you?limit=16")
       .then((r) => (r.ok ? r.json() : null))
@@ -224,7 +218,54 @@ export default function Home() {
       })
       .catch(() => setForYouEvents([]))
       .finally(() => setLoadingForYou(false));
-  }, [status]);
+  }, []);
+
+  const refetchHomeFeeds = useCallback(() => {
+    fetchMostPredicted();
+    fetchClosingSoon();
+    fetchForYou();
+  }, [fetchMostPredicted, fetchClosingSoon, fetchForYou]);
+
+  // Carica feed alla mount e quando si torna sulla home (visibility o pathname)
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    refetchHomeFeeds();
+  }, [status, refetchHomeFeeds]);
+
+  useEffect(() => {
+    if (status !== "authenticated" || pathname !== "/") return;
+    const onVisible = () => refetchHomeFeeds();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [status, pathname, refetchHomeFeeds]);
+
+  // Ripristino scroll quando si torna indietro da un evento (solo se salvataggio recente)
+  useEffect(() => {
+    if (pathname !== "/" || typeof window === "undefined") return;
+    try {
+      const raw = sessionStorage.getItem("homeScroll");
+      if (!raw) return;
+      const data = JSON.parse(raw) as { y: number; t: number };
+      sessionStorage.removeItem("homeScroll");
+      const maxAge = 60 * 1000; // 1 minuto
+      if (Number.isFinite(data.y) && Date.now() - (data.t || 0) < maxAge) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => window.scrollTo(0, data.y));
+        });
+      }
+    } catch {
+      sessionStorage.removeItem("homeScroll");
+    }
+  }, [pathname]);
+
+  const handleEventClick = useCallback(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(
+        "homeScroll",
+        JSON.stringify({ y: window.scrollY, t: Date.now() })
+      );
+    }
+  }, []);
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -422,32 +463,41 @@ export default function Home() {
           missionsLoading={missionsLoading}
         />
 
-        <HomeCarouselBox
-          title="Più previsti ora"
-          viewAllHref="/discover/tutti?status=open&sort=popular"
-          viewAllLabel="Vedi tutti"
-          events={debugMode ? mostPredicted : mostPredicted.filter((e) => !isDebugTitle(e.title))}
-          loading={loadingMostPredicted}
-          variant="popular"
-        />
+        <div className="pt-4 sm:pt-5">
+          <HomeCarouselBox
+            title="Più previsti ora"
+            viewAllHref="/discover/tutti?status=open&sort=popular"
+            viewAllLabel="Vedi tutti"
+            events={debugMode ? mostPredicted : mostPredicted.filter((e) => !isDebugTitle(e.title))}
+            loading={loadingMostPredicted}
+            variant="popular"
+            onEventNavigate={handleEventClick}
+          />
+        </div>
 
-        <HomeCarouselBox
-          title="Eventi in scadenza"
-          viewAllHref="/discover/tutti?status=open&sort=expiring"
-          viewAllLabel="Vedi tutti"
-          events={debugMode ? closingSoon : closingSoon.filter((e) => !isDebugTitle(e.title))}
-          loading={loadingClosingSoon}
-          variant="closing"
-        />
+        <div className="border-t border-white/10 pt-4 sm:pt-5">
+          <HomeCarouselBox
+            title="Eventi in scadenza"
+            viewAllHref="/discover/tutti?status=open&sort=expiring"
+            viewAllLabel="Vedi tutti"
+            events={debugMode ? closingSoon : closingSoon.filter((e) => !isDebugTitle(e.title))}
+            loading={loadingClosingSoon}
+            variant="closing"
+            onEventNavigate={handleEventClick}
+          />
+        </div>
 
-        <HomeCarouselBox
-          title="Potrebbe piacerti"
-          viewAllHref="/discover/tutti"
-          viewAllLabel="Esplora tutti"
-          events={debugMode ? forYouEvents : forYouEvents.filter((e) => !isDebugTitle(e.title))}
-          loading={loadingForYou}
-          variant="foryou"
-        />
+        <div className="border-t border-white/10 pt-4 sm:pt-5">
+          <HomeCarouselBox
+            title="Potrebbe piacerti"
+            viewAllHref="/discover/tutti"
+            viewAllLabel="Esplora tutti"
+            events={debugMode ? forYouEvents : forYouEvents.filter((e) => !isDebugTitle(e.title))}
+            loading={loadingForYou}
+            variant="foryou"
+            onEventNavigate={handleEventClick}
+          />
+        </div>
 
         <section className="text-center pt-8 pb-6" aria-label="Invito a esplorare">
           <div className="landing-hero-card inline-block rounded-2xl px-6 py-5 sm:px-8 sm:py-6">

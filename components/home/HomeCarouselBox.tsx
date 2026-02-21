@@ -21,6 +21,7 @@ interface HomeCarouselBoxProps {
   events: HomeEventTileData[];
   loading: boolean;
   variant: HomeEventTileVariant;
+  onEventNavigate?: () => void;
 }
 
 const STAGGER_MS = 100;
@@ -32,6 +33,7 @@ export default function HomeCarouselBox({
   events,
   loading,
   variant,
+  onEventNavigate,
 }: HomeCarouselBoxProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleIndices, setVisibleIndices] = useState<Set<number>>(new Set());
@@ -60,11 +62,8 @@ export default function HomeCarouselBox({
   }, [events.length, hasAnimated]);
 
   return (
-    <section
-      className="mb-5 md:mb-6 rounded-2xl border border-white/20 bg-transparent p-4 sm:p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_0_20px_-8px_rgba(255,255,255,0.08)]"
-      aria-label={title}
-    >
-      <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
+    <section className="py-4 sm:py-5" aria-label={title}>
+      <div className="mb-3 flex items-center justify-between gap-3 flex-wrap sm:mb-4">
         <h2 className="text-ds-h2 font-bold text-fg">{title}</h2>
         <Link
           href={viewAllHref}
@@ -78,7 +77,7 @@ export default function HomeCarouselBox({
       ) : events.length === 0 ? (
         <p className="py-4 text-ds-body-sm text-fg-muted">Nessun evento al momento.</p>
       ) : (
-        <div ref={containerRef} className="grid grid-cols-2 gap-1.5 sm:gap-2">
+        <div ref={containerRef} className="grid grid-cols-2 gap-1 sm:gap-1.5">
           {events.map((event, index) => {
             const isVisible = visibleIndices.has(index);
             return (
@@ -98,6 +97,7 @@ export default function HomeCarouselBox({
                   yesPct={event.yesPct}
                   predictionsCount={event.predictionsCount}
                   variant={variant}
+                  onNavigate={onEventNavigate}
                 />
               </div>
             );
