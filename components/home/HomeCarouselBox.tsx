@@ -1,7 +1,8 @@
 "use client";
 
+import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
-import HomeEventTile from "./HomeEventTile";
+import HomeEventTile, { type HomeEventTileVariant } from "./HomeEventTile";
 import { LoadingBlock } from "@/components/ui";
 
 export interface HomeEventTileData {
@@ -9,7 +10,8 @@ export interface HomeEventTileData {
   title: string;
   category: string;
   closesAt: string;
-  probability?: number;
+  yesPct: number;
+  predictionsCount?: number;
 }
 
 interface HomeCarouselBoxProps {
@@ -18,9 +20,10 @@ interface HomeCarouselBoxProps {
   viewAllLabel?: string;
   events: HomeEventTileData[];
   loading: boolean;
-  /** Colori bordo per distinguere la sezione (es. border-primary/20) */
-  borderClass?: string;
+  variant: HomeEventTileVariant;
 }
+
+const STAGGER_MS = 100;
 
 export default function HomeCarouselBox({
   title,
@@ -28,14 +31,40 @@ export default function HomeCarouselBox({
   viewAllLabel = "Vedi tutti",
   events,
   loading,
-  borderClass = "border-white/15",
+  variant,
 }: HomeCarouselBoxProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [visibleIndices, setVisibleIndices] = useState<Set<number>>(new Set());
+  const [hasAnimated, setHasAnimated] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || hasAnimated || events.length === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting || hasAnimated) return;
+          setHasAnimated(true);
+          events.forEach((_, index) => {
+            setTimeout(() => {
+              setVisibleIndices((prev) => new Set([...prev, index]));
+            }, index * STAGGER_MS);
+          });
+          observer.disconnect();
+        });
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -30px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [events.length, hasAnimated]);
+
   return (
     <section
-      className={`rounded-2xl border bg-transparent p-4 sm:p-5 mb-5 md:mb-6 ${borderClass}`}
+      className="mb-5 md:mb-6 rounded-2xl border border-white/20 bg-transparent p-4 sm:p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_0_20px_-8px_rgba(255,255,255,0.08)]"
       aria-label={title}
     >
-      <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+      <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
         <h2 className="text-ds-h2 font-bold text-fg">{title}</h2>
         <Link
           href={viewAllHref}
@@ -47,19 +76,32 @@ export default function HomeCarouselBox({
       {loading ? (
         <LoadingBlock message="Caricamento…" />
       ) : events.length === 0 ? (
-        <p className="text-ds-body-sm text-fg-muted py-4">Nessun evento al momento.</p>
+        <p className="py-4 text-ds-body-sm text-fg-muted">Nessun evento al momento.</p>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          {events.map((event) => (
-            <HomeEventTile
-              key={event.id}
-              id={event.id}
-              title={event.title}
-              category={event.category}
-              closesAt={event.closesAt}
-              probability={event.probability}
-            />
-          ))}
+        <div ref={containerRef} className="grid grid-cols-2 gap-3 sm:gap-4">
+          {events.map((event, index) => {
+            const isVisible = visibleIndices.has(index);
+            return (
+              <div
+                key={event.id}
+                style={{
+                  opacity: isVisible ? 1 : 0,
+                  transform: isVisible ? "translateY(0) scale(1)" : "translateY(20px) scale(0.97)",
+                  transition: `opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)`,
+                }}
+              >
+                <HomeEventTile
+                  id={event.id}
+                  title={event.title}
+                  category={event.category}
+                  closesAt={event.closesAt}
+                  yesPct={event.yesPct}
+                  predictionsCount={event.predictionsCount}
+                  variant={variant}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
     </section>

@@ -14,7 +14,23 @@ import HomeCarouselBox, { type HomeEventTileData } from "@/components/home/HomeC
 import { EmptyState, LoadingBlock } from "@/components/ui";
 import { getDisplayTitle, isDebugTitle } from "@/lib/debug-display";
 import type { EventFomoStats } from "@/lib/fomo/event-stats";
+import { getEventProbability } from "@/lib/pricing/price-display";
 import { generateNotificationsOnDemand } from "@/lib/notifications/client";
+
+function eventToTileData(e: Event): HomeEventTileData {
+  const yesPct =
+    e.q_yes != null && e.q_no != null && e.b != null
+      ? Math.round(getEventProbability({ q_yes: e.q_yes, q_no: e.q_no, b: e.b }))
+      : Math.round(e.probability ?? 50);
+  return {
+    id: e.id,
+    title: e.title,
+    category: e.category,
+    closesAt: e.closesAt,
+    yesPct,
+    predictionsCount: e._count?.predictions,
+  };
+}
 
 const ONBOARDING_STORAGE_KEY = "prediction-market-onboarding-completed";
 
@@ -28,6 +44,9 @@ interface Event {
   resolved: boolean;
   probability: number;
   totalCredits: number;
+  q_yes?: number | null;
+  q_no?: number | null;
+  b?: number | null;
   createdBy: {
     id: string;
     name: string | null;
@@ -172,13 +191,7 @@ export default function Home() {
     fetch("/api/events?sort=popular&limit=8&status=open")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        const list = (data?.events ?? []).map((e: Event) => ({
-          id: e.id,
-          title: e.title,
-          category: e.category,
-          closesAt: e.closesAt,
-          probability: e.probability,
-        }));
+        const list = (data?.events ?? []).map((e: Event) => eventToTileData(e));
         setMostPredicted(list);
       })
       .catch(() => setMostPredicted([]))
@@ -192,13 +205,7 @@ export default function Home() {
     fetch("/api/events/closing-soon?limit=8")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        const list = (data?.events ?? []).map((e: Event) => ({
-          id: e.id,
-          title: e.title,
-          category: e.category,
-          closesAt: e.closesAt,
-          probability: e.probability,
-        }));
+        const list = (data?.events ?? []).map((e: Event) => eventToTileData(e));
         setClosingSoon(list);
       })
       .catch(() => setClosingSoon([]))
@@ -212,13 +219,7 @@ export default function Home() {
     fetch("/api/feed/for-you?limit=16")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        const list = (data?.events ?? []).map((e: Event) => ({
-          id: e.id,
-          title: e.title,
-          category: e.category,
-          closesAt: e.closesAt,
-          probability: e.probability,
-        }));
+        const list = (data?.events ?? []).map((e: Event) => eventToTileData(e));
         setForYouEvents(list);
       })
       .catch(() => setForYouEvents([]))
@@ -412,6 +413,7 @@ export default function Home() {
 
         <HomeHeaderPostLogin
           displayName={displayName}
+          userImage={session?.user?.image ?? null}
           credits={credits}
           creditsLoading={creditsLoading}
           canSpinToday={canSpinToday}
@@ -422,20 +424,20 @@ export default function Home() {
 
         <HomeCarouselBox
           title="Più previsti ora"
-          viewAllHref="/discover?status=open&sort=popular"
+          viewAllHref="/discover/tutti?status=open&sort=popular"
           viewAllLabel="Vedi tutti"
           events={debugMode ? mostPredicted : mostPredicted.filter((e) => !isDebugTitle(e.title))}
           loading={loadingMostPredicted}
-          borderClass="border-primary/20"
+          variant="popular"
         />
 
         <HomeCarouselBox
           title="Eventi in scadenza"
-          viewAllHref="/discover?status=open&sort=expiring"
+          viewAllHref="/discover/tutti?status=open&sort=expiring"
           viewAllLabel="Vedi tutti"
           events={debugMode ? closingSoon : closingSoon.filter((e) => !isDebugTitle(e.title))}
           loading={loadingClosingSoon}
-          borderClass="border-amber-500/25"
+          variant="closing"
         />
 
         <HomeCarouselBox
@@ -444,8 +446,22 @@ export default function Home() {
           viewAllLabel="Esplora tutti"
           events={debugMode ? forYouEvents : forYouEvents.filter((e) => !isDebugTitle(e.title))}
           loading={loadingForYou}
-          borderClass="border-white/15"
+          variant="foryou"
         />
+
+        <section className="text-center pt-8 pb-6" aria-label="Invito a esplorare">
+          <div className="landing-hero-card inline-block rounded-2xl px-6 py-5 sm:px-8 sm:py-6">
+            <p className="text-ds-body font-semibold text-white mb-3">
+              Non sai da dove iniziare?
+            </p>
+            <Link
+              href="/discover/tutti"
+              className="landing-cta-primary w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body-sm inline-flex items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+            >
+              Esplora tutti gli eventi →
+            </Link>
+          </div>
+        </section>
       </main>
     </div>
   );
