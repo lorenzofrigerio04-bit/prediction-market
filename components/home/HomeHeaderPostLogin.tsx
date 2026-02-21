@@ -1,6 +1,14 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+
+const HOME_SEEN_KEY = "pm_home_seen";
+
+function capitalizeName(name: string): string {
+  if (!name.trim()) return name;
+  return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+}
 
 interface Mission {
   id: string;
@@ -59,8 +67,17 @@ export default function HomeHeaderPostLogin({
   missions,
   missionsLoading,
 }: HomeHeaderPostLoginProps) {
+  const [welcomeWord, setWelcomeWord] = useState<"Benvenuto" | "Bentornato">("Benvenuto");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const seen = localStorage.getItem(HOME_SEEN_KEY);
+    if (seen) setWelcomeWord("Bentornato");
+    else localStorage.setItem(HOME_SEEN_KEY, "1");
+  }, []);
+
   const closestMission = missionsLoading ? null : pickClosestMission(missions);
   const remainingSteps = closestMission ? closestMission.target - closestMission.progress : 0;
+  const nameCapitalized = capitalizeName(displayName);
 
   const showSpinHook = !spinLoading && canSpinToday === true;
   const showMissionHook = !showSpinHook && !missionsLoading && closestMission && remainingSteps >= 1;
@@ -68,7 +85,6 @@ export default function HomeHeaderPostLogin({
 
   return (
     <header className="mb-5 md:mb-6 text-center">
-      {/* Nome centrato */}
       <div className="flex justify-center mb-2">
         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border border-white/25 bg-white/5 sm:h-16 sm:w-16">
           {userImage ? (
@@ -80,16 +96,15 @@ export default function HomeHeaderPostLogin({
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-white/80 sm:text-3xl">
-              {displayName.charAt(0).toUpperCase()}
+              {nameCapitalized.charAt(0)}
             </div>
           )}
         </div>
       </div>
       <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
-        Bentornato, {displayName}!
+        {welcomeWord} {nameCapitalized}
       </h1>
 
-      {/* Hook spin / missione centrato */}
       {(showSpinHook || showMissionHook) && (
         <div className="mt-2 flex justify-center">
           {showSpinHook && (
@@ -98,7 +113,11 @@ export default function HomeHeaderPostLogin({
               className="text-sm font-medium text-white/95 hover:text-primary focus-visible:underline sm:text-ds-body-sm"
               title="Ricordati di riscattare la tua ricompensa quotidiana!"
             >
-              Ricordati di riscattare la tua ricompensa quotidiana!
+              Ricordati di{" "}
+              <span className="home-spin-cta-word underline decoration-2 underline-offset-2">
+                riscattare
+              </span>{" "}
+              la tua ricompensa quotidiana!
             </Link>
           )}
           {showMissionHook && closestMission && (
@@ -116,41 +135,37 @@ export default function HomeHeaderPostLogin({
         </div>
       )}
 
-      {/* Summary box: due riquadri orizzontali (crediti + classifica) */}
-      <div
-        className="mx-auto mt-4 flex max-w-md overflow-hidden rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm"
-        style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.08)" }}
-      >
-        <div className="flex flex-1 items-center justify-center gap-2 border-r border-white/15 px-4 py-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/25 text-primary" style={{ boxShadow: "0 0 10px -2px rgba(59,130,246,0.4)" }}>
-            <span className="text-sm font-bold" aria-label="crediti">$</span>
-          </div>
+      {/* Summary: CREDITI | CLASSIFICA, no border, LED/neon leggero */}
+      <div className="home-summary-box mx-auto mt-4 flex max-w-md overflow-hidden rounded-xl bg-white/[0.06] backdrop-blur-sm">
+        <div className="flex flex-1 flex-col items-center justify-center px-4 py-3">
+          <span className="text-ds-micro font-semibold uppercase tracking-wider text-white/70">Crediti</span>
           {creditsLoading ? (
-            <span className="tabular-nums text-base font-bold text-white animate-pulse">—</span>
+            <span className="mt-1 tabular-nums text-lg font-bold text-white animate-pulse">—</span>
           ) : (
-            <span className="tabular-nums text-base font-bold text-white">
+            <span className="home-summary-value mt-1 tabular-nums text-lg font-bold text-white">
               {credits != null ? credits.toLocaleString("it-IT") : "—"}
             </span>
           )}
-          <span className="text-ds-micro text-white/80">crediti</span>
         </div>
+        <div
+          className="w-px shrink-0 bg-gradient-to-b from-transparent via-white/30 to-transparent"
+          style={{ boxShadow: "0 0 8px rgb(255 255 255 / 0.25)" }}
+          aria-hidden
+        />
         <div className="flex flex-1 flex-col items-center justify-center px-4 py-3">
+          <span className="text-ds-micro font-semibold uppercase tracking-wider text-white/70">Classifica</span>
           {weeklyRank != null ? (
             weeklyRank <= 100 ? (
-              <>
-                <span className="text-ds-micro text-white/80">Classifica</span>
-                <span className="tabular-nums text-base font-bold text-white">#{weeklyRank}</span>
-              </>
+              <span className="home-summary-value mt-1 tabular-nums text-lg font-bold text-white">
+                #{weeklyRank}
+              </span>
             ) : (
-              <p className="text-center text-ds-body-sm font-medium leading-snug text-white/95">
+              <p className="mt-1 text-center text-ds-body-sm font-medium leading-snug text-white/95">
                 {rankPhrase}
               </p>
             )
           ) : (
-            <>
-              <span className="text-ds-micro text-white/80">Classifica</span>
-              <span className="tabular-nums text-base font-bold text-white/70">—</span>
-            </>
+            <span className="mt-1 tabular-nums text-lg font-bold text-white/70">—</span>
           )}
         </div>
       </div>

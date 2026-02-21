@@ -64,8 +64,8 @@ export default function HomeEventTile({
           onError={() => setImageFailed(true)}
         />
       )}
-      {/* Overlay per leggibilità: più scuro in basso, testo sempre leggibile */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/50 to-black/20" />
+      {/* Overlay scuro per massima leggibilità del testo */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-black/40" />
       <div className="relative z-10 flex h-full min-h-[175px] flex-col justify-between p-3 sm:min-h-[195px] sm:p-4">
         <div className="flex items-start justify-between gap-2">
           <span className="inline-flex rounded-md border border-white/30 bg-black/70 px-2 py-0.5 text-xs font-semibold text-white shadow-[0_2px_6px_rgba(0,0,0,0.9)] backdrop-blur-sm sm:text-ds-micro">

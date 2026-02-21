@@ -2129,3 +2129,30 @@ body:has(.discover-page) > footer {
   animation: count-up-fade 0.6s var(--ease-out) both;
   font-variant-numeric: tabular-nums;
 }
+
+/* —— Home header: CTA "riscattare" (underline + glow) e summary box crediti/classifica —— */
+.home-spin-cta-word {
+  color: rgb(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 2px;
+  animation: home-spin-cta-glow 2s ease-in-out infinite;
+}
+@keyframes home-spin-cta-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px rgb(var(--primary-glow) / 0.4));
+    text-shadow: 0 0 8px rgb(var(--primary-glow) / 0.35);
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgb(var(--primary-glow) / 0.65));
+    text-shadow: 0 0 14px rgb(var(--primary-glow) / 0.5);
+  }
+}
+
+.home-summary-box {
+  border: none;
+  box-shadow: none;
+}
+.dark .home-summary-value {
+  text-shadow: 0 0 12px rgb(var(--primary-glow) / 0.2);
+}
