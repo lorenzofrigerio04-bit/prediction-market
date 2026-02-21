@@ -82,19 +82,11 @@ export default function Home() {
 
   const [credits, setCredits] = useState<number | null>(null);
   const [creditsLoading, setCreditsLoading] = useState(true);
-  const [weeklyRank, setWeeklyRank] = useState<number | undefined>(undefined);
-  const [rankLoading, setRankLoading] = useState(true);
   const [streak, setStreak] = useState<number | null>(null);
   const [streakLoading, setStreakLoading] = useState(true);
 
-  const [eventsTrending, setEventsTrending] = useState<Event[]>([]);
-  const [loadingTrending, setLoadingTrending] = useState(true);
-  const [eventsError, setEventsError] = useState<string | null>(null);
-
-  const [eventsClosingSoon, setEventsClosingSoon] = useState<Event[]>([]);
-  const [loadingClosingSoon, setLoadingClosingSoon] = useState(true);
-  const [eventsTrendingNow, setEventsTrendingNow] = useState<Event[]>([]);
-  const [loadingTrendingNow, setLoadingTrendingNow] = useState(true);
+  const [forYouEvents, setForYouEvents] = useState<Event[]>([]);
+  const [loadingForYou, setLoadingForYou] = useState(true);
 
   const [missions, setMissions] = useState<Mission[]>([]);
   const [missionsLoading, setMissionsLoading] = useState(false);
@@ -178,16 +170,6 @@ export default function Home() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
-    setRankLoading(true);
-    fetch("/api/leaderboard?period=weekly")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => data?.myRank != null && setWeeklyRank(data.myRank))
-      .catch(() => {})
-      .finally(() => setRankLoading(false));
-  }, [status]);
-
-  useEffect(() => {
-    if (status !== "authenticated") return;
     setStreakLoading(true);
     fetch("/api/profile/stats")
       .then((r) => (r.ok ? r.json() : null))
@@ -196,56 +178,15 @@ export default function Home() {
       .finally(() => setStreakLoading(false));
   }, [status]);
 
+  // Feed "Potrebbero piacerti" (personalizzato o cold start)
   useEffect(() => {
     if (status !== "authenticated") return;
-    setLoadingTrending(true);
-    setEventsError(null);
-    const fallbackToEvents = () =>
-      fetch("/api/events?sort=recent&status=open&limit=8")
-        .then((r) => (r.ok ? r.json() : null))
-        .then((data) => setEventsTrending(data?.events ?? []));
-    // Feed personalizzato (trending + per te + esplorazione); fallback a lista eventi se fallisce o vuoto
-    fetch("/api/feed?limit=8")
-      .then((r) => {
-        if (!r.ok) return null;
-        return r.json();
-      })
-      .then((data) => {
-        const items = data?.items ?? [];
-        if (items.length > 0) {
-          setEventsTrending(items);
-        } else {
-          fallbackToEvents();
-        }
-      })
-      .catch(() => fallbackToEvents())
-      .catch(() => {
-        setEventsError("Impossibile caricare gli eventi.");
-        setEventsTrending([]);
-      })
-      .finally(() => setLoadingTrending(false));
-  }, [status]);
-
-  // Fetch eventi in scadenza (< 6h)
-  useEffect(() => {
-    if (status !== "authenticated") return;
-    setLoadingClosingSoon(true);
-    fetch("/api/events/closing-soon?limit=6")
+    setLoadingForYou(true);
+    fetch("/api/feed/for-you?limit=12")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setEventsClosingSoon(data?.events ?? []))
-      .catch(() => setEventsClosingSoon([]))
-      .finally(() => setLoadingClosingSoon(false));
-  }, [status]);
-
-  // Fetch eventi trending (votesVelocity desc)
-  useEffect(() => {
-    if (status !== "authenticated") return;
-    setLoadingTrendingNow(true);
-    fetch("/api/events/trending-now?limit=6")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setEventsTrendingNow(data?.events ?? []))
-      .catch(() => setEventsTrendingNow([]))
-      .finally(() => setLoadingTrendingNow(false));
+      .then((data) => setForYouEvents(data?.events ?? []))
+      .catch(() => setForYouEvents([]))
+      .finally(() => setLoadingForYou(false));
   }, [status]);
 
   useEffect(() => {
@@ -418,28 +359,6 @@ export default function Home() {
 
   const displayName = session?.user?.name || session?.user?.email || "utente";
 
-  const refetchTrending = () => {
-    setLoadingTrending(true);
-    setEventsError(null);
-    const fallbackToEvents = () =>
-      fetch("/api/events?sort=recent&status=open&limit=8")
-        .then((r) => (r.ok ? r.json() : null))
-        .then((data) => setEventsTrending(data?.events ?? []));
-    fetch("/api/feed?limit=8")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        const items = data?.items ?? [];
-        if (items.length > 0) setEventsTrending(items);
-        else fallbackToEvents();
-      })
-      .catch(() => fallbackToEvents())
-      .catch(() => {
-        setEventsError("Impossibile caricare gli eventi.");
-        setEventsTrending([]);
-      })
-      .finally(() => setLoadingTrending(false));
-  };
-
   return (
     <div className="min-h-screen bg-bg">
       {showOnboarding && (
@@ -455,16 +374,14 @@ export default function Home() {
         {debugMode && (
           <div className="text-ds-micro text-fg-muted mb-2 p-2 rounded bg-white/5" aria-hidden>
             <p>debug: commit={debugInfo?.version?.commit ?? "—"} env={debugInfo?.version?.env ?? "—"} baseUrl={debugInfo?.version?.baseUrl ? `${debugInfo.version.baseUrl.slice(0, 40)}…` : "—"}</p>
-            <p>dbConnected={String(debugInfo?.health?.dbConnected ?? "—")} markets_count={debugInfo?.health?.markets_count ?? eventsTrending.length} (UI: {eventsTrending.length}) endpoint: {status === "authenticated" ? "/api/feed → fallback /api/events" : "/api/events"}</p>
+            <p>dbConnected={String(debugInfo?.health?.dbConnected ?? "—")} markets_count={debugInfo?.health?.markets_count ?? forYouEvents.length} (UI for-you: {forYouEvents.length}) endpoint: /api/feed/for-you</p>
           </div>
         )}
 
         <HomeSummary
           credits={credits}
-          weeklyRank={weeklyRank}
           streak={streak}
           creditsLoading={creditsLoading}
-          rankLoading={rankLoading}
           streakLoading={streakLoading}
         />
 
@@ -538,69 +455,61 @@ export default function Home() {
           </Link>
         </section>
 
-        {/* Sezione: In scadenza (< 6h) */}
-        {eventsClosingSoon.length > 0 && (
-          <SectionContainer
-            title="In scadenza"
-            action={
-              <Link
-                href="/discover?status=open&deadline=24h"
-                className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
-              >
-                Vedi tutti
-              </Link>
-            }
-          >
-            {loadingClosingSoon ? (
-              <LoadingBlock message="Caricamento…" />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                {(debugMode ? eventsClosingSoon : eventsClosingSoon.filter((e) => !isDebugTitle(e.title))).map((event) => (
-                  <EventCard
-                    key={event.id}
-                    event={{ ...event, title: getDisplayTitle(event.title, debugMode) }}
-                  />
-                ))}
-              </div>
-            )}
-          </SectionContainer>
-        )}
-
-        {/* Sezione: In tendenza (votesVelocity desc) */}
-        <SectionContainer
-          title="In tendenza"
-          action={
-            <Link
-              href="/discover?sort=popular"
-              className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
-            >
-              Vedi tutti gli eventi
-            </Link>
-          }
+        {/* Sezione: Potrebbero piacerti (feed personalizzato / cold start) */}
+        <section
+          id="potrebbero-piacerti"
+          className="mb-section md:mb-section-lg scroll-mt-24"
+          aria-label="Potrebbero piacerti"
         >
-          {loadingTrendingNow ? (
+          <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+            <h2 className="text-ds-h2 font-bold text-fg">
+              Potrebbero piacerti
+            </h2>
+            <Link
+              href="/discover?status=open"
+              className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline transition-colors"
+            >
+              Esplora tutti
+            </Link>
+          </div>
+          {loadingForYou ? (
             <LoadingBlock message="Caricamento…" />
-          ) : eventsTrendingNow.length === 0 ? (
+          ) : forYouEvents.length === 0 ? (
             <EmptyState
-              title="Nessun evento in tendenza"
-              description={
-                <>
-                  <p className="mb-2">Non ci sono ancora eventi attivi. Completa le missioni per guadagnare crediti e torna quando apriranno nuovi mercati.</p>
-                </>
-              }
-              action={{ label: "Vai alle missioni", href: "/missions" }}
+              title="Nessun evento al momento"
+              description="Presto nuovi eventi. Nel frattempo completa le missioni o esplora le categorie."
+              action={{ label: "Esplora eventi", href: "/discover/tutti" }}
             />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-              {(debugMode ? eventsTrendingNow : eventsTrendingNow.filter((e) => !isDebugTitle(e.title))).map((event) => (
-                <EventCard
+              {(debugMode ? forYouEvents : forYouEvents.filter((e) => !isDebugTitle(e.title))).map((event, idx) => (
+                <div
                   key={event.id}
-                  event={{ ...event, title: getDisplayTitle(event.title, debugMode) }}
-                />
+                  className={`animate-in-fade-up stagger-${Math.min(idx + 1, 6)}`}
+                >
+                  <EventCard
+                    event={{ ...event, title: getDisplayTitle(event.title, debugMode) }}
+                  />
+                </div>
               ))}
             </div>
           )}
-        </SectionContainer>
+
+          {/* CTA: Non sai da dove iniziare? → tutti gli eventi (come in discover) */}
+          <div className="mt-10 md:mt-12 text-center">
+            <div className="landing-hero-card inline-block px-6 py-5 sm:px-8 sm:py-6 rounded-2xl">
+              <p className="text-ds-body font-semibold text-white mb-3">
+                Non sai da dove iniziare?
+              </p>
+              <Link
+                href="/discover/tutti"
+                className="landing-cta-primary w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body-sm inline-flex items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+              >
+                Esplora tutti gli eventi →
+              </Link>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   );
