@@ -56,6 +56,28 @@ function getRankMotivationalPhrase(rank: number): string {
   return "La classifica si conquista prevedendo: inizia ora e sali di posizione.";
 }
 
+/** Frasi sotto CREDITI: stimolano raccolta tramite previsioni e missioni (brevi, ottimizzate per spazio). */
+function getCreditsHook(credits: number | null): string {
+  if (credits == null) return "";
+  if (credits < 300) return "Prevedi e accumula crediti.";
+  if (credits < 800) return "Missioni = bonus crediti.";
+  if (credits < 1500) return "Ogni previsione ti ripaga.";
+  if (credits < 3000) return "Completa missioni per salire.";
+  return "Sei in forma. Continua così.";
+}
+
+/** Frasi sotto CLASSIFICA: complimenti se forte, incoraggiamento se indietro (brevi). */
+function getRankHook(rank: number | undefined): string {
+  if (rank == null) return "Prevedi per entrare in classifica.";
+  if (rank <= 0) return "";
+  if (rank === 1) return "Sei il migliore. Restaci.";
+  if (rank <= 3) return "Podio d'élite. Difendilo.";
+  if (rank <= 10) return "Top 10. Tutti ti guardano.";
+  if (rank <= 30) return "La top 10 è vicina.";
+  if (rank <= 100) return "Stai scalando. Continua così.";
+  return "Prevedi per salire di posizione.";
+}
+
 export default function HomeHeaderPostLogin({
   displayName,
   userImage,
@@ -82,6 +104,8 @@ export default function HomeHeaderPostLogin({
   const showSpinHook = !spinLoading && canSpinToday === true;
   const showMissionHook = !showSpinHook && !missionsLoading && closestMission && remainingSteps >= 1;
   const rankPhrase = weeklyRank != null && weeklyRank > 100 ? getRankMotivationalPhrase(weeklyRank) : "";
+  const creditsHook = getCreditsHook(credits);
+  const rankHook = getRankHook(weeklyRank);
 
   return (
     <header className="mb-5 md:mb-6 text-center">
@@ -135,8 +159,8 @@ export default function HomeHeaderPostLogin({
         </div>
       )}
 
-      {/* Summary: CREDITI | CLASSIFICA, no border, LED/neon leggero */}
-      <div className="home-summary-box mx-auto mt-4 flex max-w-md overflow-hidden rounded-xl bg-white/[0.06] backdrop-blur-sm">
+      {/* Summary: CREDITI | CLASSIFICA, sfondo trasparente, bordo LED/neon dinamico, frasi sotto */}
+      <div className="home-summary-box home-summary-box-neon mx-auto mt-4 flex max-w-md overflow-hidden rounded-xl backdrop-blur-sm">
         <div className="flex flex-1 flex-col items-center justify-center px-4 py-3">
           <span className="text-ds-micro font-semibold uppercase tracking-wider text-white/70">Crediti</span>
           {creditsLoading ? (
@@ -146,6 +170,11 @@ export default function HomeHeaderPostLogin({
               {credits != null ? credits.toLocaleString("it-IT") : "—"}
             </span>
           )}
+          {creditsHook ? (
+            <p className="mt-1 text-center text-xs leading-tight text-white/80 sm:text-ds-micro">
+              {creditsHook}
+            </p>
+          ) : null}
         </div>
         <div
           className="w-px shrink-0 bg-gradient-to-b from-transparent via-white/30 to-transparent"
@@ -156,16 +185,37 @@ export default function HomeHeaderPostLogin({
           <span className="text-ds-micro font-semibold uppercase tracking-wider text-white/70">Classifica</span>
           {weeklyRank != null ? (
             weeklyRank <= 100 ? (
-              <span className="home-summary-value mt-1 tabular-nums text-lg font-bold text-white">
-                #{weeklyRank}
-              </span>
+              <>
+                <span className="home-summary-value mt-1 tabular-nums text-lg font-bold text-white">
+                  #{weeklyRank}
+                </span>
+                {rankHook ? (
+                  <p className="mt-1 text-center text-xs leading-tight text-white/80 sm:text-ds-micro">
+                    {rankHook}
+                  </p>
+                ) : null}
+              </>
             ) : (
-              <p className="mt-1 text-center text-ds-body-sm font-medium leading-snug text-white/95">
-                {rankPhrase}
-              </p>
+              <>
+                <p className="mt-1 text-center text-ds-body-sm font-medium leading-snug text-white/95">
+                  {rankPhrase}
+                </p>
+                {rankHook ? (
+                  <p className="mt-1 text-center text-xs leading-tight text-white/80 sm:text-ds-micro">
+                    {rankHook}
+                  </p>
+                ) : null}
+              </>
             )
           ) : (
-            <span className="mt-1 tabular-nums text-lg font-bold text-white/70">—</span>
+            <>
+              <span className="mt-1 tabular-nums text-lg font-bold text-white/70">—</span>
+              {rankHook ? (
+                <p className="mt-1 text-center text-xs leading-tight text-white/80 sm:text-ds-micro">
+                  {rankHook}
+                </p>
+              ) : null}
+            </>
           )}
         </div>
       </div>

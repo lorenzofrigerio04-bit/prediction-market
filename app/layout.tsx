@@ -9,9 +9,10 @@ import PlatformBackground from "@/components/landing/LandingBackground";
 export const metadata: Metadata = {
   title: "Prediction Market",
   description: "Piattaforma italiana di previsioni sociali",
+  /* Colore UI browser mobile (status bar, notch, barra inferiore) = sfondo piattaforma */
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fafbfd" },
     { media: "(prefers-color-scheme: dark)", color: "#161a26" },
+    { media: "(prefers-color-scheme: light)", color: "#161a26" },
   ],
   appleWebApp: {
     capable: true,

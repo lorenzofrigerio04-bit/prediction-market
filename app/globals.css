@@ -2149,9 +2149,30 @@ body:has(.discover-page) > footer {
   }
 }
 
+/* Summary box: sfondo trasparente, bordo LED/neon dinamico */
 .home-summary-box {
   border: none;
+  background: transparent;
   box-shadow: none;
+}
+.home-summary-box-neon {
+  border: 1px solid rgb(255 255 255 / 0.12);
+  animation: home-summary-neon-border 3s ease-in-out infinite;
+}
+@keyframes home-summary-neon-border {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgb(var(--primary-glow) / 0.25),
+      0 0 12px -2px rgb(var(--primary-glow) / 0.2),
+      inset 0 0 20px -8px rgb(var(--primary-glow) / 0.06);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgb(var(--primary-glow) / 0.5),
+      0 0 20px -2px rgb(var(--primary-glow) / 0.35),
+      0 0 28px -6px rgb(var(--primary-glow) / 0.15),
+      inset 0 0 24px -6px rgb(var(--primary-glow) / 0.08);
+  }
 }
 .dark .home-summary-value {
   text-shadow: 0 0 12px rgb(var(--primary-glow) / 0.2);
