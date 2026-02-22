@@ -137,7 +137,7 @@ export default function EventProbabilityChart({
       <h3 className="text-ds-body-sm font-semibold text-fg mb-3">
         Andamento SÌ/NO nel tempo
       </h3>
-      <div className="h-[200px] w-full relative">
+      <div className="event-probability-chart-area h-[200px] w-full relative">
         {isEmpty && (
           <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
             <p className="font-display text-xl md:text-2xl font-bold text-fg-muted text-center tracking-tight px-4">

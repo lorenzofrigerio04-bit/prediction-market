@@ -252,78 +252,83 @@ export default function EventDetailPage({
     );
   }
 
+  const backdropClass =
+    event.category === "Economia"
+      ? "event-detail-page-backdrop event-detail-page-backdrop--economia"
+      : "event-detail-page-backdrop event-detail-page-backdrop--default";
+
   return (
     <div className="event-detail-page-immersive">
-      <div className="event-detail-page-backdrop" aria-hidden />
+      <div className={backdropClass} aria-hidden />
       <Header />
-      <main id="main-content" ref={mainRef} className="event-detail-page-main mx-auto px-4 py-5 md:py-8 max-w-2xl pb-8 md:pb-24">
+      <main id="main-content" ref={mainRef} className="event-detail-page-main mx-auto px-3 py-4 md:px-4 md:py-8 max-w-2xl pb-8 md:pb-24">
         {/* Top line: Indietro (left) | Segui + Condividi (right) - outside box */}
-        <div className="event-detail-toolbar flex items-center justify-between gap-3 mb-4 flex-wrap text-slate-200">
+        <div className="event-detail-toolbar flex items-center justify-between gap-2 mb-3 flex-wrap text-slate-200">
           <BackLink
             href="/"
-            className="inline-flex items-center min-h-[44px] text-slate-200 hover:text-white rounded-2xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+            className="inline-flex items-center min-h-[40px] text-slate-200 hover:text-white rounded-xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
           >
-            <svg className="w-5 h-5 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 mr-1.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="font-medium">Indietro</span>
+            <span className="font-medium text-sm">Indietro</span>
           </BackLink>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {session && (
               <button
                 type="button"
                 onClick={handleFollowToggle}
                 disabled={followLoading}
-                className={`min-h-[44px] px-4 py-2 rounded-2xl text-ds-body-sm font-semibold transition-colors border focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
+                className={`event-toolbar-btn min-h-[32px] px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-colors border border-white/20 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
                   isFollowing
                     ? "bg-primary/20 text-primary border-primary/40 hover:bg-primary/30"
-                    : "bg-white/10 text-slate-200 border-white/20 hover:text-white hover:bg-white/15"
+                    : "bg-transparent text-slate-200 hover:text-white"
                 }`}
               >
-                {followLoading ? "..." : isFollowing ? "Non seguire più" : "Segui evento"}
+                {followLoading ? "..." : isFollowing ? "Non seguire" : "Segui"}
               </button>
             )}
             <button
               type="button"
               onClick={handleShare}
-              className="min-h-[44px] px-4 py-2 rounded-2xl text-ds-body-sm font-semibold bg-white/10 text-slate-200 border border-white/20 hover:text-white hover:bg-white/15 transition-colors inline-flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+              className="event-toolbar-btn min-h-[32px] px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-transparent text-slate-200 border border-white/20 hover:text-white transition-colors inline-flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
               aria-label="Condividi"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
               </svg>
-              {shareCopied ? "Link copiato!" : "Condividi"}
+              {shareCopied ? "Copiato!" : "Condividi"}
             </button>
           </div>
         </div>
 
-        <article className="event-detail-box event-detail-box-neon transition-all duration-ds-normal p-5 md:p-6 mb-6">
+        <article className="event-detail-box event-detail-box-neon event-detail-box-compact transition-all duration-ds-normal p-3 md:p-5 mb-4">
           {/* Header: categoria (sinistra) + solo numero crediti / Risolto (destra) */}
-          <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 shrink-0 min-w-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-semibold bg-white/5 border border-white/10 text-fg backdrop-blur-sm">
-              <span className="text-primary shrink-0 [&>svg]:w-4 [&>svg]:h-4">
+          <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+            <span className="inline-flex items-center gap-1 shrink-0 min-w-0 px-2 py-1 rounded-lg text-ds-caption font-semibold bg-white/5 border border-white/10 text-fg backdrop-blur-sm">
+              <span className="text-primary shrink-0 [&>svg]:w-3.5 [&>svg]:h-3.5">
                 {getCategoryIcon(event.category)}
               </span>
               <span className="truncate">{event.category}</span>
             </span>
             {event.resolved ? (
-              <span className={`shrink-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-semibold border ${event.outcome === "YES" ? "bg-success-bg/90 text-success border-success/30 dark:bg-success-bg/50 dark:border-success/40" : "bg-danger-bg/90 text-danger border-danger/30 dark:bg-danger-bg/50 dark:border-danger/40"}`}>
+              <span className={`shrink-0 px-2 py-1 rounded-lg text-ds-caption font-semibold border ${event.outcome === "YES" ? "bg-success-bg/90 text-success border-success/30 dark:bg-success-bg/50 dark:border-success/40" : "bg-danger-bg/90 text-danger border-danger/30 dark:bg-danger-bg/50 dark:border-danger/40"}`}>
                 Risolto: {event.outcome === "YES" ? "SÌ" : "NO"}
               </span>
             ) : session ? (
-              <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold font-numeric text-fg bg-black/40 border border-white/20 text-white">
-                <IconCurrency className="w-4 h-4 text-primary" aria-hidden />
+              <span className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-lg text-ds-caption font-bold font-numeric text-fg bg-black/40 border border-white/20 text-white">
+                <IconCurrency className="w-3.5 h-3.5 text-primary" aria-hidden />
                 {userCredits.toLocaleString("it-IT")}
               </span>
             ) : null}
           </div>
 
-          <h1 className="text-ds-h2 font-bold text-fg mb-2 leading-snug tracking-title">
+          <h1 className="text-ds-h2 font-bold text-fg mb-1 leading-snug tracking-title text-lg md:text-xl">
             {getDisplayTitle(event.title, debugMode)}
           </h1>
 
           {event.description && (
-            <p className="text-ds-body-sm text-fg-muted mb-4 leading-relaxed">{event.description}</p>
+            <p className="event-detail-description text-ds-body-sm text-fg-muted mb-2 leading-snug line-clamp-2 md:line-clamp-none md:mb-3">{event.description}</p>
           )}
 
           {/* Tabella 1x2: SI | NO (click per prevedere) */}
@@ -335,7 +340,7 @@ export default function EventDetailPage({
             const yesPct = getPrice(qYes, qNo, b, "YES") * 100;
             return (
               <>
-                <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="grid grid-cols-2 gap-2 mb-2">
                   <button
                     type="button"
                     onClick={() => {
@@ -345,7 +350,7 @@ export default function EventDetailPage({
                       }
                     }}
                     disabled={!canMakePrediction}
-                    className="min-h-[56px] py-4 rounded-2xl font-bold text-lg transition-all flex flex-col items-center justify-center gap-0.5 prediction-bar-fill-si border-2 border-transparent hover:border-primary/50 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                    className="min-h-[44px] py-3 rounded-xl font-bold text-base transition-all flex flex-col items-center justify-center gap-0.5 prediction-bar-fill-si border-2 border-transparent hover:border-primary/50 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
                     aria-label="Prevedi SÌ"
                   >
                     <span className="text-white drop-shadow-sm">SÌ</span>
@@ -360,7 +365,7 @@ export default function EventDetailPage({
                       }
                     }}
                     disabled={!canMakePrediction}
-                    className="min-h-[56px] py-4 rounded-2xl font-bold text-lg transition-all flex flex-col items-center justify-center gap-0.5 prediction-bar-fill-no border-2 border-transparent hover:border-primary/50 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                    className="min-h-[44px] py-3 rounded-xl font-bold text-base transition-all flex flex-col items-center justify-center gap-0.5 prediction-bar-fill-no border-2 border-transparent hover:border-primary/50 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
                     aria-label="Prevedi NO"
                   >
                     <span className="text-white drop-shadow-sm">NO</span>
@@ -369,13 +374,13 @@ export default function EventDetailPage({
                 </div>
 
                 {/* Barra indicatore SI/NO */}
-                <div className="mb-4">
-                  <div className="flex justify-between text-ds-caption font-medium text-fg-muted mb-2">
+                <div className="mb-2">
+                  <div className="flex justify-between text-ds-caption font-medium text-fg-muted mb-1">
                     <span>SÌ {(event.q_yes ?? 0).toLocaleString()} ({event.yesPredictions})</span>
                     <span>NO {(event.q_no ?? 0).toLocaleString()} ({event.noPredictions})</span>
                   </div>
                   <div
-                    className="prediction-bar-led h-3 w-full flex animate-bar-pulse"
+                    className="prediction-bar-led h-2.5 w-full flex animate-bar-pulse"
                     role="presentation"
                     aria-hidden
                   >
@@ -391,7 +396,7 @@ export default function EventDetailPage({
                 </div>
 
                 {/* Hai previsto per X crediti (sempre) */}
-                <div className="flex items-center justify-center gap-2 py-3 mb-6">
+                <div className="flex items-center justify-center gap-2 py-2 mb-3">
                   <span className="text-ds-body-sm text-fg-muted">Hai previsto per</span>
                   <span className="font-bold text-fg font-numeric tabular-nums">{(userPrediction?.credits ?? 0).toLocaleString("it-IT")}</span>
                   <span className="text-ds-body-sm text-fg-muted">crediti</span>
@@ -401,12 +406,12 @@ export default function EventDetailPage({
             );
           })()}
 
-          <div className="mb-6">
+          <div className="mb-3 event-detail-chart-wrap">
             <EventProbabilityChart eventId={event.id} range="7d" refetchTrigger={event._count.predictions} />
           </div>
 
           {event.resolved && (
-            <div className="box-raised p-4 mb-6">
+            <div className="box-raised p-3 mb-3">
               <p className="text-ds-body font-semibold text-fg">
                 Previsioni chiuse. Risultato: {event.outcome === "YES" ? "SÌ" : "NO"}.
               </p>
@@ -427,13 +432,13 @@ export default function EventDetailPage({
           )}
 
           {!event.resolved && new Date(event.closesAt) <= new Date() && (
-            <div className="p-4 rounded-2xl mb-6 border border-warning/30 bg-warning-bg/90 text-warning dark:bg-warning-bg/50 dark:text-warning text-ds-body-sm font-medium">
+            <div className="p-3 rounded-xl mb-3 border border-warning/30 bg-warning-bg/90 text-warning dark:bg-warning-bg/50 dark:text-warning text-ds-body-sm font-medium">
               Previsioni chiuse. Risultato: in attesa.
             </div>
           )}
 
           {!session && !event.resolved && new Date(event.closesAt) > new Date() && (
-            <div className="p-4 bg-warning-bg/90 border border-warning/30 rounded-2xl text-ds-body-sm text-warning dark:bg-warning-bg/50 dark:text-warning mb-6">
+            <div className="p-3 bg-warning-bg/90 border border-warning/30 rounded-xl text-ds-body-sm text-warning dark:bg-warning-bg/50 dark:text-warning mb-3">
               <Link href="/auth/login" className="font-semibold underline">Accedi</Link> per scommettere
             </div>
           )}
@@ -441,13 +446,13 @@ export default function EventDetailPage({
           <CommentsSection eventId={event.id} variant="embedded" />
 
           {/* Criterio di risoluzione e scadenza: in fondo, prima riga + Vedi tutto -> popup */}
-          <div className="pt-6 mt-6 border-t border-white/10">
+          <div className="pt-4 mt-4 border-t border-white/10">
             <button
               type="button"
               onClick={() => setShowResolutionPopup(true)}
-              className="text-left w-full rounded-xl border border-white/10 bg-white/5 p-4 transition-all duration-ds-normal hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+              className="text-left w-full rounded-xl border border-white/10 bg-white/5 p-3 transition-all duration-ds-normal hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
             >
-              <h3 className="text-ds-body-sm font-semibold text-fg mb-1">Criterio di risoluzione e scadenza</h3>
+              <h3 className="text-ds-body-sm font-semibold text-fg mb-0.5">Criterio di risoluzione e scadenza</h3>
               {event.resolutionNotes ? (
                 <p className="text-ds-body-sm text-fg-muted line-clamp-1">{event.resolutionNotes.split("\n")[0]}</p>
               ) : (

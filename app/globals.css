@@ -2232,12 +2232,20 @@ body:has(.discover-page) > footer {
   position: fixed;
   inset: 0;
   z-index: -2;
-  background-image: url("/images/event-cinema-bg.png");
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
-  /* Mobile-first: scroll evita jank e consuma meno memoria */
   background-attachment: scroll;
+}
+.event-detail-page-backdrop--default {
+  background-image: url("/images/event-cinema-bg.png");
+}
+.event-detail-page-backdrop--economia {
+  background-image: url("/images/event-economia-bg.png");
+}
+/* Senza modifier (loading): cinema */
+.event-detail-page-backdrop:not([class*="--"]) {
+  background-image: url("/images/event-cinema-bg.png");
 }
 @media (min-width: 769px) {
   .event-detail-page-backdrop {
@@ -2262,12 +2270,12 @@ body:has(.discover-page) > footer {
   z-index: 1;
 }
 .event-detail-page-main .event-detail-box {
-  --event-box-bg: rgba(0, 0, 0, 0.72);
-  --event-box-bg-light: rgba(15, 23, 42, 0.88);
+  --event-box-bg: rgba(0, 0, 0, 0.5);
+  --event-box-bg-light: rgba(15, 23, 42, 0.72);
 }
 .dark .event-detail-page-main .event-detail-box {
-  --event-box-bg: rgba(0, 0, 0, 0.82);
-  --event-box-bg-light: rgba(15, 23, 42, 0.92);
+  --event-box-bg: rgba(0, 0, 0, 0.58);
+  --event-box-bg-light: rgba(15, 23, 42, 0.78);
 }
 
 /* Event detail page: box leggibile su sfondo cinema (glass + contrast) */
@@ -2281,7 +2289,36 @@ body:has(.discover-page) > footer {
   transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
 }
 .event-detail-page-immersive .event-detail-box {
-  background: var(--event-box-bg, rgba(0, 0, 0, 0.72));
+  background: var(--event-box-bg, rgba(0, 0, 0, 0.5));
+}
+/* Mobile-first: box compatto per vedere evento + commenti in una schermata */
+.event-detail-box-compact .event-detail-chart-wrap {
+  min-height: 0;
+}
+.event-detail-box-compact .event-probability-chart-area {
+  height: 140px;
+}
+@media (min-width: 768px) {
+  .event-detail-box-compact .event-probability-chart-area {
+    height: 200px;
+  }
+}
+.event-detail-box-compact .event-detail-description {
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+/* Commenti embedded: più compatti */
+.comments-embedded h3,
+.comments-embedded .text-ds-body-sm.font-semibold {
+  font-size: 0.8125rem;
+  margin-bottom: 0.5rem;
+}
+.comments-embedded .min-h-\[44px\] {
+  min-height: 36px;
+}
+.comments-embedded .py-2 {
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
 }
 .event-detail-box-neon {
   border: 1px solid rgb(255 255 255 / 0.22);

@@ -49,10 +49,10 @@ const REACTION_TYPES = {
 export default function CommentsSection({ eventId, variant = "default" }: CommentsSectionProps) {
   const isEmbedded = variant === "embedded";
   const wrapperClass = isEmbedded
-    ? "pt-6 mt-6 border-t border-white/10"
+    ? "pt-4 mt-4 border-t border-white/10 comments-embedded"
     : "card-raised p-5 md:p-6 transition-all duration-200";
   const loadingWrapperClass = isEmbedded
-    ? "pt-6 mt-6 border-t border-white/10"
+    ? "pt-4 mt-4 border-t border-white/10 comments-embedded"
     : "card-raised p-5 md:p-6";
   const { data: session } = useSession();
   const [comments, setComments] = useState<Comment[]>([]);

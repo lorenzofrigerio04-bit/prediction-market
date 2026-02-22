@@ -5,11 +5,8 @@ export default function EventIdLayout({
 }) {
   return (
     <>
-      <link
-        rel="preload"
-        href="/images/event-cinema-bg.png"
-        as="image"
-      />
+      <link rel="preload" href="/images/event-cinema-bg.png" as="image" />
+      <link rel="preload" href="/images/event-economia-bg.png" as="image" />
       {children}
     </>
   );
