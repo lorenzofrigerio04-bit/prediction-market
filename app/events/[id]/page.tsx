@@ -88,8 +88,8 @@ export default function EventDetailPage({
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
-  const [showStickyCta, setShowStickyCta] = useState(false);
-  const [expandedResolution, setExpandedResolution] = useState(false);
+  const [showResolutionPopup, setShowResolutionPopup] = useState(false);
+  const [predictionOutcome, setPredictionOutcome] = useState<"YES" | "NO" | null>(null);
   const mainRef = useRef<HTMLElement | null>(null);
 
   const canMakePrediction =
@@ -115,6 +115,15 @@ export default function EventDetailPage({
       trackView("EVENT_RESOLVED_VIEWED", { eventId: event.id });
     }
   }, [event?.id, event?.resolved, event?.category]);
+
+  useEffect(() => {
+    if (!showResolutionPopup) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowResolutionPopup(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showResolutionPopup]);
 
   const fetchEvent = async () => {
     if (!params?.id) return;
@@ -208,27 +217,6 @@ export default function EventDetailPage({
     }
   };
 
-  const stickyCtaObserverRef = useRef<IntersectionObserver | null>(null);
-  useEffect(() => {
-    if (!canMakePrediction) return;
-    const id = requestAnimationFrame(() => {
-      const main = mainRef.current;
-      if (!main) return;
-      const cta = main.querySelector("[data-event-detail-cta]");
-      if (!cta) return;
-      stickyCtaObserverRef.current = new IntersectionObserver(
-        ([e]) => setShowStickyCta(!e.isIntersecting),
-        { threshold: 0, rootMargin: "-80px 0px 0px 0px" }
-      );
-      stickyCtaObserverRef.current.observe(cta);
-    });
-    return () => {
-      cancelAnimationFrame(id);
-      stickyCtaObserverRef.current?.disconnect();
-      stickyCtaObserverRef.current = null;
-    };
-  }, [event?.id, canMakePrediction]);
-
   if (loading) {
     return (
       <div className="min-h-screen bg-bg">
@@ -266,43 +254,18 @@ export default function EventDetailPage({
     <div className="min-h-screen bg-bg">
       <Header />
       <main id="main-content" ref={mainRef} className="mx-auto px-4 py-5 md:py-8 max-w-2xl pb-8 md:pb-24">
-        <BackLink
-          href="/"
-          className="inline-flex items-center min-h-[44px] text-text-muted hover:text-fg mb-4 rounded-2xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-        >
-          <svg className="w-5 h-5 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          <span className="font-medium">Indietro</span>
-        </BackLink>
-
-        <article className="event-detail-box event-detail-box-neon transition-all duration-ds-normal p-5 md:p-6 mb-6">
-          {/* Header: categoria (sinistra) + crediti disponibili / Risolto (destra) */}
-          <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 shrink-0 min-w-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-semibold bg-white/5 border border-white/10 text-fg backdrop-blur-sm">
-              <span className="text-primary shrink-0 [&>svg]:w-4 [&>svg]:h-4">
-                {getCategoryIcon(event.category)}
-              </span>
-              <span className="truncate">{event.category}</span>
-            </span>
-            {event.resolved ? (
-              <span className={`shrink-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-semibold border ${event.outcome === "YES" ? "bg-success-bg/90 text-success border-success/30 dark:bg-success-bg/50 dark:border-success/40" : "bg-danger-bg/90 text-danger border-danger/30 dark:bg-danger-bg/50 dark:border-danger/40"}`}>
-                Risolto: {event.outcome === "YES" ? "SÌ" : "NO"}
-              </span>
-            ) : session ? (
-              <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold font-numeric text-fg bg-black/40 border border-white/20 text-white">
-                <IconCurrency className="w-4 h-4 text-primary" aria-hidden />
-                {userCredits.toLocaleString("it-IT")} crediti disponibili
-              </span>
-            ) : null}
-          </div>
-
-          <h1 className="text-ds-h2 font-bold text-fg mb-2 leading-snug tracking-title">
-            {getDisplayTitle(event.title, debugMode)}
-          </h1>
-          <p className="text-ds-body-sm text-fg-muted mb-4">Scegli SI o NO e la quantità di crediti.</p>
-
-          <div className="flex flex-wrap items-center gap-2 mb-4">
+        {/* Top line: Indietro (left) | Segui + Condividi (right) - outside box */}
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <BackLink
+            href="/"
+            className="inline-flex items-center min-h-[44px] text-text-muted hover:text-fg rounded-2xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+          >
+            <svg className="w-5 h-5 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="font-medium">Indietro</span>
+          </BackLink>
+          <div className="flex items-center gap-2">
             {session && (
               <button
                 type="button"
@@ -329,78 +292,81 @@ export default function EventDetailPage({
               {shareCopied ? "Link copiato!" : "Condividi"}
             </button>
           </div>
+        </div>
+
+        <article className="event-detail-box event-detail-box-neon transition-all duration-ds-normal p-5 md:p-6 mb-6">
+          {/* Header: categoria (sinistra) + solo numero crediti / Risolto (destra) */}
+          <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 shrink-0 min-w-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-semibold bg-white/5 border border-white/10 text-fg backdrop-blur-sm">
+              <span className="text-primary shrink-0 [&>svg]:w-4 [&>svg]:h-4">
+                {getCategoryIcon(event.category)}
+              </span>
+              <span className="truncate">{event.category}</span>
+            </span>
+            {event.resolved ? (
+              <span className={`shrink-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-semibold border ${event.outcome === "YES" ? "bg-success-bg/90 text-success border-success/30 dark:bg-success-bg/50 dark:border-success/40" : "bg-danger-bg/90 text-danger border-danger/30 dark:bg-danger-bg/50 dark:border-danger/40"}`}>
+                Risolto: {event.outcome === "YES" ? "SÌ" : "NO"}
+              </span>
+            ) : session ? (
+              <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold font-numeric text-fg bg-black/40 border border-white/20 text-white">
+                <IconCurrency className="w-4 h-4 text-primary" aria-hidden />
+                {userCredits.toLocaleString("it-IT")}
+              </span>
+            ) : null}
+          </div>
+
+          <h1 className="text-ds-h2 font-bold text-fg mb-2 leading-snug tracking-title">
+            {getDisplayTitle(event.title, debugMode)}
+          </h1>
 
           {event.description && (
-            <p className="text-ds-body-sm text-fg-muted mb-6 leading-relaxed">{event.description}</p>
+            <p className="text-ds-body-sm text-fg-muted mb-4 leading-relaxed">{event.description}</p>
           )}
 
-          {/* Criteri di risoluzione: prima riga + "Vedi tutto" */}
-          {(event.resolutionNotes || event.resolutionSourceUrl) && (
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4 mb-6 transition-all duration-ds-normal">
-              <h3 className="text-ds-body-sm font-semibold text-fg mb-2">Criteri di risoluzione</h3>
-              {event.resolutionNotes && (
-                <p className="text-ds-body-sm text-fg-muted whitespace-pre-wrap">
-                  {expandedResolution
-                    ? event.resolutionNotes
-                    : event.resolutionNotes.split("\n")[0]}
-                </p>
-              )}
-              {!expandedResolution && event.resolutionNotes && event.resolutionNotes.includes("\n") && (
-                <button
-                  type="button"
-                  onClick={() => setExpandedResolution(true)}
-                  className="mt-2 text-ds-body-sm text-primary hover:text-primary-hover font-medium underline"
-                >
-                  Vedi tutto
-                </button>
-              )}
-              {(expandedResolution || !event.resolutionNotes?.includes("\n")) && event.resolutionSourceUrl && (
-                <p className="text-ds-body-sm text-fg mt-2">
-                  Fonte di risoluzione:{" "}
-                  <a
-                    href={event.resolutionSourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:text-primary-hover underline font-medium"
-                  >
-                    {event.resolutionSourceUrl.replace(/^https?:\/\//, "").split("/")[0]}
-                  </a>
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Statistiche: sempre LMSR (q_yes, q_no, b) */}
+          {/* Tabella 1x2: SI | NO (click per prevedere) */}
           {(() => {
             const qYes = event.q_yes ?? 0;
             const qNo = event.q_no ?? 0;
             const b = event.b ?? 100;
             const displayProbability = getEventProbability(event);
             const yesPct = getPrice(qYes, qNo, b, "YES") * 100;
-            const creditsInPlay = event.totalCredits > 0
-              ? event.totalCredits
-              : (qYes > 0 || qNo > 0 ? Math.round(cost(qYes, qNo, b)) : 0);
             return (
               <>
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  <div className="stat-mini flex flex-col items-center justify-center py-4 px-3 text-center">
-                    <span className="text-xl md:text-2xl font-bold text-primary font-numeric tabular-nums">{displayProbability.toFixed(1)}%</span>
-                    <span className="text-ds-caption text-fg-muted font-semibold uppercase tracking-label mt-0.5">prevede SÌ</span>
-                  </div>
-                  <div className="stat-mini flex flex-col items-center justify-center py-4 px-3 text-center">
-                    <span className="text-xl md:text-2xl font-bold text-fg font-numeric tabular-nums">{event._count.predictions}</span>
-                    <span className="text-ds-caption text-fg-muted font-semibold uppercase tracking-label mt-0.5">previsioni</span>
-                  </div>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (canMakePrediction) {
+                        setPredictionOutcome("YES");
+                        setShowPredictionModal(true);
+                      }
+                    }}
+                    disabled={!canMakePrediction}
+                    className="min-h-[56px] py-4 rounded-2xl font-bold text-lg transition-all flex flex-col items-center justify-center gap-0.5 prediction-bar-fill-si border-2 border-transparent hover:border-primary/50 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                    aria-label="Prevedi SÌ"
+                  >
+                    <span className="text-white drop-shadow-sm">SÌ</span>
+                    <span className="text-ds-caption text-white/90 font-numeric tabular-nums">{displayProbability.toFixed(1)}%</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (canMakePrediction) {
+                        setPredictionOutcome("NO");
+                        setShowPredictionModal(true);
+                      }
+                    }}
+                    disabled={!canMakePrediction}
+                    className="min-h-[56px] py-4 rounded-2xl font-bold text-lg transition-all flex flex-col items-center justify-center gap-0.5 prediction-bar-fill-no border-2 border-transparent hover:border-primary/50 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                    aria-label="Prevedi NO"
+                  >
+                    <span className="text-white drop-shadow-sm">NO</span>
+                    <span className="text-ds-caption text-white/90 font-numeric tabular-nums">{(100 - displayProbability).toFixed(1)}%</span>
+                  </button>
                 </div>
 
-                <div className="pill-credits flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl mb-6">
-                  <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
-                  <span className="text-lg md:text-xl font-bold text-white font-numeric tabular-nums">
-                    {creditsInPlay.toLocaleString("it-IT")} CREDITI IN GIOCO
-                  </span>
-                </div>
-
-                <div className="mb-6">
+                {/* Barra indicatore SI/NO */}
+                <div className="mb-4">
                   <div className="flex justify-between text-ds-caption font-medium text-fg-muted mb-2">
                     <span>SÌ {(event.q_yes ?? 0).toLocaleString()} ({event.yesPredictions})</span>
                     <span>NO {(event.q_no ?? 0).toLocaleString()} ({event.noPredictions})</span>
@@ -420,6 +386,22 @@ export default function EventDetailPage({
                     />
                   </div>
                 </div>
+
+                {/* Hai previsto per X [icon] oppure X crediti in gioco */}
+                {userPrediction ? (
+                  <div className="flex items-center justify-center gap-2 py-3 mb-6">
+                    <span className="text-ds-body-sm text-fg-muted">Hai previsto per</span>
+                    <span className="font-bold text-fg font-numeric tabular-nums">{userPrediction.credits.toLocaleString("it-IT")}</span>
+                    <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
+                  </div>
+                ) : (
+                  <div className="pill-credits flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl mb-6">
+                    <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
+                    <span className="text-lg md:text-xl font-bold text-white font-numeric tabular-nums">
+                      {(event.totalCredits > 0 ? event.totalCredits : (qYes > 0 || qNo > 0 ? Math.round(cost(qYes, qNo, b)) : 0)).toLocaleString("it-IT")} CREDITI IN GIOCO
+                    </span>
+                  </div>
+                )}
               </>
             );
           })()}
@@ -427,26 +409,6 @@ export default function EventDetailPage({
           <div className="mb-6">
             <EventProbabilityChart eventId={event.id} range="7d" />
           </div>
-
-          {userPrediction && (
-            <div className={`box-raised p-4 mb-6 ${
-              userPrediction.resolved
-                ? userPrediction.won ? "border-success/40" : "border-danger/40"
-                : "border-primary/30"
-            }`}>
-              <h3 className="text-ds-body-sm font-semibold text-fg mb-1">La tua previsione</h3>
-              <p className="text-ds-body-sm text-fg-muted">
-                <span className="font-semibold text-primary">{userPrediction.outcome === "YES" ? "SÌ" : "NO"}</span>
-                {" — "}
-                <span className="font-semibold text-fg">{userPrediction.credits.toLocaleString()} crediti</span>
-              </p>
-              {userPrediction.resolved && (
-                <p className={`text-ds-body-sm font-semibold mt-1 ${userPrediction.won ? "text-success" : "text-danger"}`}>
-                  {userPrediction.won ? `✓ Vittoria: +${userPrediction.payout?.toLocaleString()} crediti` : "✗ Persa"}
-                </p>
-              )}
-            </div>
-          )}
 
           {event.resolved && (
             <div className="box-raised p-4 mb-6">
@@ -475,44 +437,80 @@ export default function EventDetailPage({
             </div>
           )}
 
-          {canMakePrediction && (
-            <button
-              type="button"
-              data-event-detail-cta
-              onClick={() => setShowPredictionModal(true)}
-              className="w-full min-h-[48px] py-3 rounded-xl font-semibold text-ds-body-sm text-white bg-primary hover:bg-primary-hover transition-all duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary focus-visible:ring-offset-bg border border-white/20 shadow-card hover:shadow-card-hover"
-            >
-              Prevedi
-            </button>
-          )}
-
           {!session && !event.resolved && new Date(event.closesAt) > new Date() && (
-            <div className="p-4 bg-warning-bg/90 border border-warning/30 rounded-2xl text-ds-body-sm text-warning dark:bg-warning-bg/50 dark:text-warning">
+            <div className="p-4 bg-warning-bg/90 border border-warning/30 rounded-2xl text-ds-body-sm text-warning dark:bg-warning-bg/50 dark:text-warning mb-6">
               <Link href="/auth/login" className="font-semibold underline">Accedi</Link> per scommettere
             </div>
           )}
 
-          <div className="text-ds-body-sm text-fg-muted mt-6 pt-4 border-t border-white/10 space-y-1">
-            <p>Creato da {event.createdBy.name || "Utente"} · {new Date(event.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}</p>
-            <p>Chiusura: {new Date(event.closesAt).toLocaleDateString("it-IT", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</p>
-          </div>
-
           <CommentsSection eventId={event.id} variant="embedded" />
+
+          {/* Criterio di risoluzione e scadenza: in fondo, prima riga + Vedi tutto -> popup */}
+          <div className="pt-6 mt-6 border-t border-white/10">
+            <button
+              type="button"
+              onClick={() => setShowResolutionPopup(true)}
+              className="text-left w-full rounded-xl border border-white/10 bg-white/5 p-4 transition-all duration-ds-normal hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+            >
+              <h3 className="text-ds-body-sm font-semibold text-fg mb-1">Criterio di risoluzione e scadenza</h3>
+              {event.resolutionNotes ? (
+                <p className="text-ds-body-sm text-fg-muted line-clamp-1">{event.resolutionNotes.split("\n")[0]}</p>
+              ) : (
+                <p className="text-ds-body-sm text-fg-muted">Clicca per dettagli e scadenza</p>
+              )}
+              <span className="mt-2 inline-block text-ds-body-sm text-primary font-medium">Vedi tutto</span>
+            </button>
+          </div>
         </article>
       </main>
 
-      {canMakePrediction && showStickyCta && (
+      {/* Popup Criterio di risoluzione e scadenza */}
+      {showResolutionPopup && (
         <div
-          className="md:hidden fixed left-0 right-0 z-30 px-4 pt-3 pb-[calc(0.75rem+72px+var(--safe-area-inset-bottom))] bg-bg/95 backdrop-blur-md border-t border-white/10"
-          style={{ paddingBottom: "calc(0.75rem + 72px + var(--safe-area-inset-bottom))" }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="resolution-popup-title"
+          onClick={() => setShowResolutionPopup(false)}
         >
-          <button
-            type="button"
-            onClick={() => setShowPredictionModal(true)}
-            className="w-full min-h-[48px] py-3 rounded-xl font-semibold text-ds-body-sm text-white bg-primary hover:bg-primary-hover border border-white/20 shadow-card"
+          <div
+            className="bg-bg border border-white/20 rounded-2xl shadow-overlay max-w-lg w-full max-h-[85vh] overflow-y-auto p-6"
+            onClick={(e) => e.stopPropagation()}
           >
-            Prevedi
-          </button>
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h2 id="resolution-popup-title" className="text-ds-h3 font-bold text-fg">Criterio di risoluzione e scadenza</h2>
+              <button
+                type="button"
+                onClick={() => setShowResolutionPopup(false)}
+                className="p-2.5 rounded-xl text-fg-muted hover:text-fg hover:bg-surface/50 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                aria-label="Chiudi"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {event.resolutionNotes && (
+              <p className="text-ds-body-sm text-fg-muted whitespace-pre-wrap mb-4">{event.resolutionNotes}</p>
+            )}
+            {event.resolutionSourceUrl && (
+              <p className="text-ds-body-sm text-fg mb-4">
+                Fonte di risoluzione:{" "}
+                <a
+                  href={event.resolutionSourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:text-primary-hover underline font-medium"
+                >
+                  {event.resolutionSourceUrl.replace(/^https?:\/\//, "").split("/")[0]}
+                </a>
+              </p>
+            )}
+            <div className="text-ds-body-sm text-fg-muted pt-4 border-t border-white/10 space-y-1">
+              <p>Creato da {event.createdBy.name || "Utente"} · {new Date(event.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}</p>
+              <p>Chiusura: {new Date(event.closesAt).toLocaleDateString("it-IT", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -521,9 +519,13 @@ export default function EventDetailPage({
           eventId={event.id}
           eventTitle={getDisplayTitle(event.title, debugMode)}
           isOpen={showPredictionModal}
-          onClose={() => setShowPredictionModal(false)}
+          onClose={() => {
+            setShowPredictionModal(false);
+            setPredictionOutcome(null);
+          }}
           onSuccess={handlePredictionSuccess}
           userCredits={userCredits}
+          initialOutcome={predictionOutcome}
         />
       )}
     </div>

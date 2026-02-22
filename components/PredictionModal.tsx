@@ -11,6 +11,8 @@ interface PredictionModalProps {
   onClose: () => void;
   onSuccess?: () => void;
   userCredits?: number;
+  /** Pre-select SÌ or NO when opening from event page SI/NO boxes */
+  initialOutcome?: "YES" | "NO" | null;
 }
 
 export default function PredictionModal({
@@ -20,6 +22,7 @@ export default function PredictionModal({
   onClose,
   onSuccess,
   userCredits = 0,
+  initialOutcome = null,
 }: PredictionModalProps) {
   const { data: session } = useSession();
   const router = useRouter();
@@ -37,8 +40,10 @@ export default function PredictionModal({
       setSelectedOutcome(null);
       setCredits(10);
       setError(null);
+    } else {
+      setSelectedOutcome(initialOutcome ?? null);
     }
-  }, [isOpen]);
+  }, [isOpen, initialOutcome]);
 
   useEffect(() => {
     if (!isOpen) return;

@@ -109,23 +109,25 @@ export default function EventProbabilityChart({
     );
   }
 
-  if (data.length === 0) {
-    return (
-      <div className="rounded-xl border border-white/10 bg-white/5 p-4 h-[180px] flex items-center justify-center text-ds-body-sm text-fg-muted">
-        Non ci sono ancora dati per questo periodo.
-      </div>
-    );
-  }
+  const isEmpty = data.length === 0;
+  const chartData = isEmpty ? [{ t: new Date().toISOString(), yesPct: 50, noPct: 50, label: "" }] : data;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+    <div className="rounded-xl border border-white/10 bg-white/5 p-4 relative">
       <h3 className="text-ds-body-sm font-semibold text-fg mb-3">
         Andamento SÌ/NO nel tempo
       </h3>
-      <div className="h-[200px] w-full">
+      <div className="h-[200px] w-full relative">
+        {isEmpty && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+            <p className="text-ds-body-sm font-semibold text-fg-muted text-center px-4">
+              Diventa il primo a prevedere!
+            </p>
+          </div>
+        )}
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
-            data={data}
+            data={chartData}
             margin={{ top: 4, right: 4, left: -8, bottom: 0 }}
           >
             <CartesianGrid

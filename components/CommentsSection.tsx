@@ -57,10 +57,18 @@ export default function CommentsSection({ eventId, variant = "default" }: Commen
   const { data: session } = useSession();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedComments, setExpandedComments] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const sortedByNewest = [...comments].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  const lastThreeComments = sortedByNewest.slice(0, 3);
+  const displayedComments = isEmbedded && !expandedComments ? lastThreeComments : sortedByNewest;
+  const hasMoreComments = isEmbedded && comments.length > 3 && !expandedComments;
 
   useEffect(() => {
     fetchComments();
@@ -321,19 +329,16 @@ export default function CommentsSection({ eventId, variant = "default" }: Commen
 
   return (
     <div className={wrapperClass}>
-      <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
+      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/15 border border-primary/30">
-            <IconChat className="w-5 h-5 text-primary" aria-hidden />
-          </div>
-          <h2 className="text-ds-h2 font-bold text-fg">Commenti</h2>
+          <IconChat className="w-5 h-5 text-primary shrink-0" aria-hidden />
+          <span className="text-ds-body font-semibold text-fg">
+            {comments.length} {comments.length === 1 ? "commento" : "commenti"}
+          </span>
         </div>
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold font-numeric pill-credits">
-          {comments.length}
-        </span>
       </div>
 
-      {session ? (
+      {(session && (!isEmbedded || expandedComments)) ? (
         <form onSubmit={handleSubmitComment} className="mb-6">
           <div className="flex gap-3">
             <div className="w-10 h-10 rounded-full bg-surface/60 border border-border dark:border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-transparent dark:ring-white/5">
@@ -367,26 +372,40 @@ export default function CommentsSection({ eventId, variant = "default" }: Commen
             </div>
           </div>
         </form>
-      ) : (
+      ) : (!isEmbedded || expandedComments) ? (
         <div className="mb-6 p-4 bg-warning-bg/90 border border-warning/30 rounded-2xl text-ds-body-sm text-warning dark:bg-warning-bg/50 dark:text-warning">
           <Link href="/auth/login" className="font-semibold underline">Accedi</Link> per commentare
         </div>
-      )}
+      ) : null}
 
       {comments.length === 0 ? (
-        <div className="text-center py-12 rounded-2xl border border-dashed border-white/10 bg-white/5">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 border border-white/10 mb-3">
-            <IconChat className="w-6 h-6 text-fg-muted" aria-hidden />
-          </div>
+        <div className="text-center py-8 rounded-2xl border border-dashed border-white/10 bg-white/5">
           <p className="text-ds-body-sm text-fg-muted font-medium">Nessun commento.</p>
-          <p className="text-ds-caption text-fg-subtle mt-1">Inizia tu la discussione.</p>
+          <button
+            type="button"
+            onClick={() => setExpandedComments(true)}
+            className="mt-3 min-h-[44px] px-5 py-2 bg-primary text-white rounded-2xl font-semibold text-ds-body-sm hover:bg-primary-hover transition-colors"
+          >
+            Dimostra di sapere il perchè!
+          </button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {comments.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} />
-          ))}
-        </div>
+        <>
+          <div className="space-y-3">
+            {displayedComments.map((comment) => (
+              <CommentItem key={comment.id} comment={comment} />
+            ))}
+          </div>
+          {hasMoreComments && (
+            <button
+              type="button"
+              onClick={() => setExpandedComments(true)}
+              className="mt-4 w-full min-h-[48px] py-3 rounded-xl font-semibold text-ds-body-sm text-white bg-primary hover:bg-primary-hover transition-colors border border-white/20"
+            >
+              Dimostra di sapere il perchè!
+            </button>
+          )}
+        </>
       )}
     </div>
   );
