@@ -166,6 +166,7 @@ model Event {
   comments   Comment[]
   Prediction Prediction[]
   followers  EventFollower[]
+  probabilitySnapshots EventProbabilitySnapshot[]
 
   @@index([createdById])
   @@index([closesAt])
@@ -175,6 +176,18 @@ model Event {
   @@index([dedupKey])
   @@index([sourceStorylineId])
   @@map("events")
+}
+
+model EventProbabilitySnapshot {
+  id        String   @id @default(cuid())
+  eventId   String   @map("event_id")
+  yesPct    Float    @map("yes_pct") // 0–100
+  createdAt DateTime @default(now()) @map("created_at")
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, createdAt])
+  @@map("event_probability_snapshots")
 }
 
 model Comment {

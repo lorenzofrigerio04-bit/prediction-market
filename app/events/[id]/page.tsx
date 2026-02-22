@@ -8,9 +8,10 @@ import { getDisplayTitle } from "@/lib/debug-display";
 import Header from "@/components/Header";
 import PredictionModal from "@/components/PredictionModal";
 import CommentsSection from "@/components/CommentsSection";
+import EventProbabilityChart from "@/components/events/EventProbabilityChart";
 import { trackView } from "@/lib/analytics-client";
 import { getCategoryIcon } from "@/lib/category-icons";
-import { IconClock, IconCurrency } from "@/components/ui/Icons";
+import { IconCurrency } from "@/components/ui/Icons";
 import BackLink from "@/components/ui/BackLink";
 import { getEventProbability } from "@/lib/pricing/price-display";
 import { getPrice, cost } from "@/lib/pricing/lmsr";
@@ -88,6 +89,7 @@ export default function EventDetailPage({
   const [followLoading, setFollowLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [showStickyCta, setShowStickyCta] = useState(false);
+  const [expandedResolution, setExpandedResolution] = useState(false);
   const mainRef = useRef<HTMLElement | null>(null);
 
   const canMakePrediction =
@@ -206,25 +208,6 @@ export default function EventDetailPage({
     }
   };
 
-  const getTimeRemaining = () => {
-    if (!event) return "";
-    const timeUntilClose = new Date(event.closesAt).getTime() - Date.now();
-    const hoursUntilClose = Math.floor(timeUntilClose / (1000 * 60 * 60));
-    const daysUntilClose = Math.floor(hoursUntilClose / 24);
-
-    if (timeUntilClose <= 0) {
-      return "Chiuso";
-    }
-    if (daysUntilClose > 0) {
-      return `${daysUntilClose}g ${hoursUntilClose % 24}h`;
-    }
-    if (hoursUntilClose > 0) {
-      return `${hoursUntilClose} ore`;
-    }
-    const minutesUntilClose = Math.floor(timeUntilClose / (1000 * 60));
-    return minutesUntilClose > 0 ? `${minutesUntilClose} min` : "Presto";
-  };
-
   const stickyCtaObserverRef = useRef<IntersectionObserver | null>(null);
   useEffect(() => {
     if (!canMakePrediction) return;
@@ -293,8 +276,8 @@ export default function EventDetailPage({
           <span className="font-medium">Indietro</span>
         </BackLink>
 
-        <article className="card-raised transition-all duration-ds-normal p-5 md:p-6 mb-6">
-          {/* Header: categoria + scadenza (solo in alto) */}
+        <article className="event-detail-box event-detail-box-neon transition-all duration-ds-normal p-5 md:p-6 mb-6">
+          {/* Header: categoria (sinistra) + crediti disponibili / Risolto (destra) */}
           <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
             <span className="inline-flex items-center gap-1.5 shrink-0 min-w-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-semibold bg-white/5 border border-white/10 text-fg backdrop-blur-sm">
               <span className="text-primary shrink-0 [&>svg]:w-4 [&>svg]:h-4">
@@ -306,12 +289,12 @@ export default function EventDetailPage({
               <span className={`shrink-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-semibold border ${event.outcome === "YES" ? "bg-success-bg/90 text-success border-success/30 dark:bg-success-bg/50 dark:border-success/40" : "bg-danger-bg/90 text-danger border-danger/30 dark:bg-danger-bg/50 dark:border-danger/40"}`}>
                 Risolto: {event.outcome === "YES" ? "SÌ" : "NO"}
               </span>
-            ) : (
-              <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold font-numeric text-fg bg-black/40 border border-primary/50 text-white ">
-                <IconClock className="w-4 h-4 text-primary" aria-hidden />
-                {new Date(event.closesAt) <= new Date() ? "Chiuso" : `Chiude tra ${getTimeRemaining()}`}
+            ) : session ? (
+              <span className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold font-numeric text-fg bg-black/40 border border-white/20 text-white">
+                <IconCurrency className="w-4 h-4 text-primary" aria-hidden />
+                {userCredits.toLocaleString("it-IT")} crediti disponibili
               </span>
-            )}
+            ) : null}
           </div>
 
           <h1 className="text-ds-h2 font-bold text-fg mb-2 leading-snug tracking-title">
@@ -351,15 +334,28 @@ export default function EventDetailPage({
             <p className="text-ds-body-sm text-fg-muted mb-6 leading-relaxed">{event.description}</p>
           )}
 
-          {/* Criteri di risoluzione */}
+          {/* Criteri di risoluzione: prima riga + "Vedi tutto" */}
           {(event.resolutionNotes || event.resolutionSourceUrl) && (
-            <div className="box-raised p-4 mb-6">
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4 mb-6 transition-all duration-ds-normal">
               <h3 className="text-ds-body-sm font-semibold text-fg mb-2">Criteri di risoluzione</h3>
               {event.resolutionNotes && (
-                <p className="text-ds-body-sm text-fg-muted whitespace-pre-wrap mb-2">{event.resolutionNotes}</p>
+                <p className="text-ds-body-sm text-fg-muted whitespace-pre-wrap">
+                  {expandedResolution
+                    ? event.resolutionNotes
+                    : event.resolutionNotes.split("\n")[0]}
+                </p>
               )}
-              {event.resolutionSourceUrl && (
-                <p className="text-ds-body-sm text-fg">
+              {!expandedResolution && event.resolutionNotes && event.resolutionNotes.includes("\n") && (
+                <button
+                  type="button"
+                  onClick={() => setExpandedResolution(true)}
+                  className="mt-2 text-ds-body-sm text-primary hover:text-primary-hover font-medium underline"
+                >
+                  Vedi tutto
+                </button>
+              )}
+              {(expandedResolution || !event.resolutionNotes?.includes("\n")) && event.resolutionSourceUrl && (
+                <p className="text-ds-body-sm text-fg mt-2">
                   Fonte di risoluzione:{" "}
                   <a
                     href={event.resolutionSourceUrl}
@@ -427,6 +423,10 @@ export default function EventDetailPage({
               </>
             );
           })()}
+
+          <div className="mb-6">
+            <EventProbabilityChart eventId={event.id} range="7d" />
+          </div>
 
           {userPrediction && (
             <div className={`box-raised p-4 mb-6 ${
@@ -496,9 +496,9 @@ export default function EventDetailPage({
             <p>Creato da {event.createdBy.name || "Utente"} · {new Date(event.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}</p>
             <p>Chiusura: {new Date(event.closesAt).toLocaleDateString("it-IT", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</p>
           </div>
-        </article>
 
-        <CommentsSection eventId={event.id} />
+          <CommentsSection eventId={event.id} variant="embedded" />
+        </article>
       </main>
 
       {canMakePrediction && showStickyCta && (

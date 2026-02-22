@@ -4,12 +4,12 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { buyShares } from "./lmsr";
+import { buyShares, getPrice } from "./lmsr";
 import { applyCreditTransaction } from "@/lib/apply-credit-transaction";
 
 type PrismaTx = Pick<
   PrismaClient,
-  "user" | "transaction" | "event" | "prediction"
+  "user" | "transaction" | "event" | "prediction" | "eventProbabilitySnapshot"
 >;
 
 export class TradeError extends Error {
@@ -156,6 +156,14 @@ export async function executePredictionBuy(
       q_yes: newQYes,
       q_no: newQNo,
       totalCredits,
+    },
+  });
+
+  const yesPct = getPrice(newQYes, newQNo, b, "YES") * 100;
+  await tx.eventProbabilitySnapshot.create({
+    data: {
+      eventId: event.id,
+      yesPct,
     },
   });
 

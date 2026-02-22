@@ -36,6 +36,8 @@ interface Comment {
 
 interface CommentsSectionProps {
   eventId: string;
+  /** When "embedded", no card wrapper; uses border-t and same visual context as parent (e.g. inside event detail box) */
+  variant?: "default" | "embedded";
 }
 
 const REACTION_TYPES = {
@@ -44,7 +46,14 @@ const REACTION_TYPES = {
   HEART: { emoji: "❤️", label: "Cuore" },
 } as const;
 
-export default function CommentsSection({ eventId }: CommentsSectionProps) {
+export default function CommentsSection({ eventId, variant = "default" }: CommentsSectionProps) {
+  const isEmbedded = variant === "embedded";
+  const wrapperClass = isEmbedded
+    ? "pt-6 mt-6 border-t border-white/10"
+    : "card-raised p-5 md:p-6 transition-all duration-200";
+  const loadingWrapperClass = isEmbedded
+    ? "pt-6 mt-6 border-t border-white/10"
+    : "card-raised p-5 md:p-6";
   const { data: session } = useSession();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -297,7 +306,7 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
 
   if (loading) {
     return (
-      <div className="card-raised p-5 md:p-6">
+      <div className={loadingWrapperClass}>
         <div className="flex items-center gap-2 mb-4">
           <IconChat className="w-5 h-5 text-primary" aria-hidden />
           <h2 className="text-ds-h2 font-bold text-fg">Commenti</h2>
@@ -311,7 +320,7 @@ export default function CommentsSection({ eventId }: CommentsSectionProps) {
   }
 
   return (
-    <div className="card-raised p-5 md:p-6 transition-all duration-200">
+    <div className={wrapperClass}>
       <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
         <div className="flex items-center gap-2">
           <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/15 border border-primary/30">

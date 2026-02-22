@@ -2220,3 +2220,16 @@ body:has(.discover-page) > footer {
 .dark .home-summary-value {
   text-shadow: 0 0 12px rgb(var(--primary-glow) / 0.2);
 }
+
+/* Event detail page: box trasparente, bordo LED/neon bianco (coerente con home summary) */
+.event-detail-box {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: var(--radius-lg);
+  transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
+}
+.event-detail-box-neon {
+  border: 1px solid rgb(255 255 255 / 0.15);
+  animation: home-summary-neon-border 2.8s linear infinite;
+}
