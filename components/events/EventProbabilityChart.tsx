@@ -23,6 +23,8 @@ interface EventProbabilityChartProps {
   range?: "24h" | "7d" | "30d";
   /** Quando cambia (es. dopo una previsione), il grafico si aggiorna */
   refetchTrigger?: number;
+  /** Layout standalone: titolo centrato, grafico centrato nella pagina con assi bilanciati */
+  layout?: "default" | "standalone";
 }
 
 function formatAxisTime(iso: string, range: string): string {
@@ -46,7 +48,9 @@ export default function EventProbabilityChart({
   eventId,
   range = "7d",
   refetchTrigger,
+  layout = "default",
 }: EventProbabilityChartProps) {
+  const isStandalone = layout === "standalone";
   const [points, setPoints] = useState<Point[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -97,7 +101,7 @@ export default function EventProbabilityChart({
 
   if (loading) {
     return (
-      <div className="h-[220px] flex items-center justify-center">
+      <div className={`flex items-center justify-center ${isStandalone ? "h-[260px] md:h-[300px]" : "h-[220px]"}`}>
         <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         <span className="sr-only">Caricamento grafico...</span>
       </div>
@@ -106,7 +110,7 @@ export default function EventProbabilityChart({
 
   if (error) {
     return (
-      <div className="h-[180px] flex flex-col items-center justify-center gap-2 text-ds-body-sm text-fg-muted">
+      <div className={`flex flex-col items-center justify-center gap-2 text-ds-body-sm text-fg-muted ${isStandalone ? "h-[260px] md:h-[300px] text-center" : "h-[180px]"}`}>
         <p>Non è stato possibile caricare lo storico.</p>
         <button
           type="button"
@@ -133,11 +137,14 @@ export default function EventProbabilityChart({
     : data;
 
   return (
-    <div className="py-2">
-      <h3 className="text-ds-body-sm font-semibold text-fg mb-3">
+    <div className={isStandalone ? "event-chart-standalone py-4" : "py-2"}>
+      <h2
+        id="chart-heading"
+        className={`text-ds-body-sm font-semibold text-fg mb-4 ${isStandalone ? "text-center" : ""}`}
+      >
         Andamento SÌ/NO nel tempo
-      </h3>
-      <div className="event-probability-chart-area h-[200px] w-full relative">
+      </h2>
+      <div className={`event-probability-chart-area w-full relative ${isStandalone ? "h-[240px] md:h-[280px] mx-auto event-chart-area-centered" : "h-[200px]"}`}>
         {isEmpty && (
           <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
             <p className="font-display text-xl md:text-2xl font-bold text-fg-muted text-center tracking-tight px-4">
@@ -148,7 +155,7 @@ export default function EventProbabilityChart({
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={chartData}
-            margin={{ top: 4, right: 4, left: -8, bottom: 0 }}
+            margin={isStandalone ? { top: 12, right: 24, left: 24, bottom: 8 } : { top: 4, right: 4, left: -8, bottom: 0 }}
           >
             <CartesianGrid
               strokeDasharray="3 3"

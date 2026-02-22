@@ -2243,6 +2243,9 @@ body:has(.discover-page) > footer {
 .event-detail-page-backdrop--economia {
   background-image: url("/images/event-economia-bg.png");
 }
+.event-detail-page-backdrop--cultura {
+  background-image: url("/images/event-cultura-bg.png");
+}
 /* Senza modifier (loading): cinema */
 .event-detail-page-backdrop:not([class*="--"]) {
   background-image: url("/images/event-cinema-bg.png");
@@ -2291,21 +2294,31 @@ body:has(.discover-page) > footer {
 .event-detail-page-immersive .event-detail-box {
   background: var(--event-box-bg, rgba(0, 0, 0, 0.5));
 }
-/* Mobile-first: box compatto per vedere evento + commenti in una schermata */
-.event-detail-box-compact .event-detail-chart-wrap {
-  min-height: 0;
-}
-.event-detail-box-compact .event-probability-chart-area {
-  height: 140px;
-}
-@media (min-width: 768px) {
-  .event-detail-box-compact .event-probability-chart-area {
-    height: 200px;
-  }
-}
-.event-detail-box-compact .event-detail-description {
+/* Box Evento + Commenti: piccolo, ben spaziato, super leggibile */
+.event-detail-box-event-comments .event-detail-description {
   -webkit-line-clamp: 2;
   line-clamp: 2;
+}
+@media (min-width: 768px) {
+  .event-detail-box-event-comments .event-detail-description {
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+  }
+}
+
+/* Box Grafico: centrato nella pagina, titolo e assi bilanciati */
+.event-detail-box-chart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.event-detail-box-chart .event-chart-standalone {
+  width: 100%;
+  max-width: 100%;
+}
+.event-detail-box-chart .event-chart-area-centered {
+  max-width: 520px;
 }
 /* Commenti embedded: più compatti */
 .comments-embedded h3,

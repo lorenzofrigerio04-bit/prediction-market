@@ -255,7 +255,9 @@ export default function EventDetailPage({
   const backdropClass =
     event.category === "Economia"
       ? "event-detail-page-backdrop event-detail-page-backdrop--economia"
-      : "event-detail-page-backdrop event-detail-page-backdrop--default";
+      : event.category === "Cultura"
+        ? "event-detail-page-backdrop event-detail-page-backdrop--cultura"
+        : "event-detail-page-backdrop event-detail-page-backdrop--default";
 
   return (
     <div className="event-detail-page-immersive">
@@ -302,9 +304,10 @@ export default function EventDetailPage({
           </div>
         </div>
 
-        <article className="event-detail-box event-detail-box-neon event-detail-box-compact transition-all duration-ds-normal p-3 md:p-5 mb-4">
+        {/* Box 1: Evento + Commenti — compatto, spaziato, super leggibile */}
+        <article className="event-detail-box event-detail-box-neon event-detail-box-event-comments transition-all duration-ds-normal p-4 md:p-5 mb-4">
           {/* Header: categoria (sinistra) + solo numero crediti / Risolto (destra) */}
-          <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+          <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
             <span className="inline-flex items-center gap-1 shrink-0 min-w-0 px-2 py-1 rounded-lg text-ds-caption font-semibold bg-white/5 border border-white/10 text-fg backdrop-blur-sm">
               <span className="text-primary shrink-0 [&>svg]:w-3.5 [&>svg]:h-3.5">
                 {getCategoryIcon(event.category)}
@@ -323,12 +326,12 @@ export default function EventDetailPage({
             ) : null}
           </div>
 
-          <h1 className="text-ds-h2 font-bold text-fg mb-1 leading-snug tracking-title text-lg md:text-xl">
+          <h1 className="text-ds-h2 font-bold text-fg mb-2 leading-snug tracking-title text-base md:text-lg">
             {getDisplayTitle(event.title, debugMode)}
           </h1>
 
           {event.description && (
-            <p className="event-detail-description text-ds-body-sm text-fg-muted mb-2 leading-snug line-clamp-2 md:line-clamp-none md:mb-3">{event.description}</p>
+            <p className="event-detail-description text-ds-body-sm text-fg-muted mb-3 leading-relaxed line-clamp-2 md:line-clamp-none">{event.description}</p>
           )}
 
           {/* Tabella 1x2: SI | NO (click per prevedere) */}
@@ -340,7 +343,7 @@ export default function EventDetailPage({
             const yesPct = getPrice(qYes, qNo, b, "YES") * 100;
             return (
               <>
-                <div className="grid grid-cols-2 gap-2 mb-2">
+                <div className="grid grid-cols-2 gap-3 mb-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -374,8 +377,8 @@ export default function EventDetailPage({
                 </div>
 
                 {/* Barra indicatore SI/NO */}
-                <div className="mb-2">
-                  <div className="flex justify-between text-ds-caption font-medium text-fg-muted mb-1">
+                <div className="mb-3">
+                  <div className="flex justify-between text-ds-caption font-medium text-fg-muted mb-1.5">
                     <span>SÌ {(event.q_yes ?? 0).toLocaleString()} ({event.yesPredictions})</span>
                     <span>NO {(event.q_no ?? 0).toLocaleString()} ({event.noPredictions})</span>
                   </div>
@@ -396,7 +399,7 @@ export default function EventDetailPage({
                 </div>
 
                 {/* Hai previsto per X crediti (sempre) */}
-                <div className="flex items-center justify-center gap-2 py-2 mb-3">
+                <div className="flex items-center justify-center gap-2 py-3 mb-4">
                   <span className="text-ds-body-sm text-fg-muted">Hai previsto per</span>
                   <span className="font-bold text-fg font-numeric tabular-nums">{(userPrediction?.credits ?? 0).toLocaleString("it-IT")}</span>
                   <span className="text-ds-body-sm text-fg-muted">crediti</span>
@@ -405,10 +408,6 @@ export default function EventDetailPage({
               </>
             );
           })()}
-
-          <div className="mb-3 event-detail-chart-wrap">
-            <EventProbabilityChart eventId={event.id} range="7d" refetchTrigger={event._count.predictions} />
-          </div>
 
           {event.resolved && (
             <div className="box-raised p-3 mb-3">
@@ -445,14 +444,14 @@ export default function EventDetailPage({
 
           <CommentsSection eventId={event.id} variant="embedded" />
 
-          {/* Criterio di risoluzione e scadenza: in fondo, prima riga + Vedi tutto -> popup */}
-          <div className="pt-4 mt-4 border-t border-white/10">
+          {/* Criterio di risoluzione e scadenza: in fondo al box evento+commenti */}
+          <div className="pt-5 mt-5 border-t border-white/10">
             <button
               type="button"
               onClick={() => setShowResolutionPopup(true)}
-              className="text-left w-full rounded-xl border border-white/10 bg-white/5 p-3 transition-all duration-ds-normal hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+              className="text-left w-full rounded-xl border border-white/10 bg-white/5 p-3.5 transition-all duration-ds-normal hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
             >
-              <h3 className="text-ds-body-sm font-semibold text-fg mb-0.5">Criterio di risoluzione e scadenza</h3>
+              <h3 className="text-ds-body-sm font-semibold text-fg mb-1">Criterio di risoluzione e scadenza</h3>
               {event.resolutionNotes ? (
                 <p className="text-ds-body-sm text-fg-muted line-clamp-1">{event.resolutionNotes.split("\n")[0]}</p>
               ) : (
@@ -462,6 +461,11 @@ export default function EventDetailPage({
             </button>
           </div>
         </article>
+
+        {/* Box 2: Grafico — centrato nella pagina, titolo e assi bilanciati */}
+        <section className="event-detail-box event-detail-box-neon event-detail-box-chart transition-all duration-ds-normal p-4 md:p-6 mb-4" aria-labelledby="chart-heading">
+          <EventProbabilityChart eventId={event.id} range="7d" refetchTrigger={event._count.predictions} layout="standalone" />
+        </section>
       </main>
 
       {/* Popup Criterio di risoluzione e scadenza */}
