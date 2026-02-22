@@ -387,21 +387,13 @@ export default function EventDetailPage({
                   </div>
                 </div>
 
-                {/* Hai previsto per X [icon] oppure X crediti in gioco */}
-                {userPrediction ? (
-                  <div className="flex items-center justify-center gap-2 py-3 mb-6">
-                    <span className="text-ds-body-sm text-fg-muted">Hai previsto per</span>
-                    <span className="font-bold text-fg font-numeric tabular-nums">{userPrediction.credits.toLocaleString("it-IT")}</span>
-                    <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
-                  </div>
-                ) : (
-                  <div className="pill-credits flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl mb-6">
-                    <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
-                    <span className="text-lg md:text-xl font-bold text-white font-numeric tabular-nums">
-                      {(event.totalCredits > 0 ? event.totalCredits : (qYes > 0 || qNo > 0 ? Math.round(cost(qYes, qNo, b)) : 0)).toLocaleString("it-IT")} CREDITI IN GIOCO
-                    </span>
-                  </div>
-                )}
+                {/* Hai previsto per X crediti (sempre) */}
+                <div className="flex items-center justify-center gap-2 py-3 mb-6">
+                  <span className="text-ds-body-sm text-fg-muted">Hai previsto per</span>
+                  <span className="font-bold text-fg font-numeric tabular-nums">{(userPrediction?.credits ?? 0).toLocaleString("it-IT")}</span>
+                  <span className="text-ds-body-sm text-fg-muted">crediti</span>
+                  <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
+                </div>
               </>
             );
           })()}

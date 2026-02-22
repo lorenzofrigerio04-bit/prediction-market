@@ -79,7 +79,7 @@ export default function EventProbabilityChart({
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-white/10 bg-white/5 p-4 h-[220px] flex items-center justify-center">
+      <div className="h-[220px] flex items-center justify-center">
         <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         <span className="sr-only">Caricamento grafico...</span>
       </div>
@@ -88,7 +88,7 @@ export default function EventProbabilityChart({
 
   if (error) {
     return (
-      <div className="rounded-xl border border-white/10 bg-white/5 p-4 h-[180px] flex flex-col items-center justify-center gap-2 text-ds-body-sm text-fg-muted">
+      <div className="h-[180px] flex flex-col items-center justify-center gap-2 text-ds-body-sm text-fg-muted">
         <p>Non è stato possibile caricare lo storico.</p>
         <button
           type="button"
@@ -110,24 +110,31 @@ export default function EventProbabilityChart({
   }
 
   const isEmpty = data.length === 0;
-  const chartData = isEmpty ? [{ t: new Date().toISOString(), yesPct: 50, noPct: 50, label: "" }] : data;
+
+  if (isEmpty) {
+    return (
+      <div className="py-6">
+        <h3 className="text-ds-body-sm font-semibold text-fg mb-3">
+          Andamento SÌ/NO nel tempo
+        </h3>
+        <div className="h-[200px] w-full flex items-center justify-center">
+          <p className="font-display text-xl md:text-2xl font-bold text-fg-muted text-center tracking-tight">
+            Diventa il primo a prevedere!
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4 relative">
+    <div className="py-2">
       <h3 className="text-ds-body-sm font-semibold text-fg mb-3">
         Andamento SÌ/NO nel tempo
       </h3>
-      <div className="h-[200px] w-full relative">
-        {isEmpty && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-            <p className="text-ds-body-sm font-semibold text-fg-muted text-center px-4">
-              Diventa il primo a prevedere!
-            </p>
-          </div>
-        )}
+      <div className="h-[200px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
-            data={chartData}
+            data={data}
             margin={{ top: 4, right: 4, left: -8, bottom: 0 }}
           >
             <CartesianGrid
