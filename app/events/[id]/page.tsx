@@ -219,9 +219,10 @@ export default function EventDetailPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-bg">
+      <div className="event-detail-page-immersive">
+        <div className="event-detail-page-backdrop" aria-hidden />
         <Header />
-        <main id="main-content" className="mx-auto px-4 py-8 max-w-2xl">
+        <main id="main-content" className="event-detail-page-main mx-auto px-4 py-8 max-w-2xl">
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
             <p className="mt-4 text-fg-muted font-medium">Caricamento evento...</p>
@@ -233,9 +234,10 @@ export default function EventDetailPage({
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-bg">
+      <div className="event-detail-page-immersive">
+        <div className="event-detail-page-backdrop" aria-hidden />
         <Header />
-        <main id="main-content" className="mx-auto px-4 py-8 max-w-2xl">
+        <main id="main-content" className="event-detail-page-main mx-auto px-4 py-8 max-w-2xl">
           <div className="text-center py-12">
             <p className="text-fg-muted text-lg">Evento non trovato</p>
             <BackLink
@@ -251,14 +253,15 @@ export default function EventDetailPage({
   }
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="event-detail-page-immersive">
+      <div className="event-detail-page-backdrop" aria-hidden />
       <Header />
-      <main id="main-content" ref={mainRef} className="mx-auto px-4 py-5 md:py-8 max-w-2xl pb-8 md:pb-24">
+      <main id="main-content" ref={mainRef} className="event-detail-page-main mx-auto px-4 py-5 md:py-8 max-w-2xl pb-8 md:pb-24">
         {/* Top line: Indietro (left) | Segui + Condividi (right) - outside box */}
-        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <div className="event-detail-toolbar flex items-center justify-between gap-3 mb-4 flex-wrap text-slate-200">
           <BackLink
             href="/"
-            className="inline-flex items-center min-h-[44px] text-text-muted hover:text-fg rounded-2xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+            className="inline-flex items-center min-h-[44px] text-slate-200 hover:text-white rounded-2xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
           >
             <svg className="w-5 h-5 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -274,7 +277,7 @@ export default function EventDetailPage({
                 className={`min-h-[44px] px-4 py-2 rounded-2xl text-ds-body-sm font-semibold transition-colors border focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
                   isFollowing
                     ? "bg-primary/20 text-primary border-primary/40 hover:bg-primary/30"
-                    : "glass text-fg-muted border-border dark:border-white/10 hover:text-fg hover:bg-surface/50"
+                    : "bg-white/10 text-slate-200 border-white/20 hover:text-white hover:bg-white/15"
                 }`}
               >
                 {followLoading ? "..." : isFollowing ? "Non seguire più" : "Segui evento"}
@@ -283,7 +286,7 @@ export default function EventDetailPage({
             <button
               type="button"
               onClick={handleShare}
-              className="min-h-[44px] px-4 py-2 rounded-2xl text-ds-body-sm font-semibold glass text-fg-muted border border-border dark:border-white/10 hover:text-fg hover:bg-surface/50 transition-colors inline-flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+              className="min-h-[44px] px-4 py-2 rounded-2xl text-ds-body-sm font-semibold bg-white/10 text-slate-200 border border-white/20 hover:text-white hover:bg-white/15 transition-colors inline-flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
               aria-label="Condividi"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -399,7 +402,7 @@ export default function EventDetailPage({
           })()}
 
           <div className="mb-6">
-            <EventProbabilityChart eventId={event.id} range="7d" />
+            <EventProbabilityChart eventId={event.id} range="7d" refetchTrigger={event._count.predictions} />
           </div>
 
           {event.resolved && (

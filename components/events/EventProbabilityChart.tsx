@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   LineChart,
   Line,
@@ -21,6 +21,8 @@ interface Point {
 interface EventProbabilityChartProps {
   eventId: string;
   range?: "24h" | "7d" | "30d";
+  /** Quando cambia (es. dopo una previsione), il grafico si aggiorna */
+  refetchTrigger?: number;
 }
 
 function formatAxisTime(iso: string, range: string): string {
@@ -43,22 +45,28 @@ function formatAxisTime(iso: string, range: string): string {
 export default function EventProbabilityChart({
   eventId,
   range = "7d",
+  refetchTrigger,
 }: EventProbabilityChartProps) {
   const [points, setPoints] = useState<Point[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    fetch(`/api/events/${eventId}/probability-history?range=${range}`)
+  const fetchHistory = useCallback(() => {
+    return fetch(`/api/events/${eventId}/probability-history?range=${range}`)
       .then((res) => {
         if (!res.ok) throw new Error("Errore caricamento");
         return res.json();
       })
-      .then((data: { points: Point[] }) => {
-        if (!cancelled) setPoints(data.points ?? []);
+      .then((data: { points: Point[] }) => data.points ?? []);
+  }, [eventId, range]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    fetchHistory()
+      .then((pts) => {
+        if (!cancelled) setPoints(pts);
       })
       .catch((e) => {
         if (!cancelled) setError(e.message ?? "Errore");
@@ -69,7 +77,17 @@ export default function EventProbabilityChart({
     return () => {
       cancelled = true;
     };
-  }, [eventId, range]);
+  }, [eventId, range, refetchTrigger, fetchHistory]);
+
+  useEffect(() => {
+    if (!eventId) return;
+    const interval = setInterval(() => {
+      fetchHistory()
+        .then((pts) => setPoints(pts))
+        .catch(() => {});
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [eventId, fetchHistory]);
 
   const data = points.map((p) => ({
     ...p,
@@ -110,31 +128,26 @@ export default function EventProbabilityChart({
   }
 
   const isEmpty = data.length === 0;
-
-  if (isEmpty) {
-    return (
-      <div className="py-6">
-        <h3 className="text-ds-body-sm font-semibold text-fg mb-3">
-          Andamento SÌ/NO nel tempo
-        </h3>
-        <div className="h-[200px] w-full flex items-center justify-center">
-          <p className="font-display text-xl md:text-2xl font-bold text-fg-muted text-center tracking-tight">
-            Diventa il primo a prevedere!
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const chartData = isEmpty
+    ? [{ t: new Date().toISOString(), yesPct: 50, noPct: 50, label: "" }]
+    : data;
 
   return (
     <div className="py-2">
       <h3 className="text-ds-body-sm font-semibold text-fg mb-3">
         Andamento SÌ/NO nel tempo
       </h3>
-      <div className="h-[200px] w-full">
+      <div className="h-[200px] w-full relative">
+        {isEmpty && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+            <p className="font-display text-xl md:text-2xl font-bold text-fg-muted text-center tracking-tight px-4">
+              Diventa il primo a prevedere!
+            </p>
+          </div>
+        )}
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
-            data={data}
+            data={chartData}
             margin={{ top: 4, right: 4, left: -8, bottom: 0 }}
           >
             <CartesianGrid
@@ -158,36 +171,40 @@ export default function EventProbabilityChart({
               axisLine={false}
               tickFormatter={(v) => `${v}%`}
             />
-            <Tooltip
-              contentStyle={{
-                background: "rgb(var(--surface) / 0.98)",
-                border: "1px solid rgb(255 255 255 / 0.15)",
-                borderRadius: "var(--radius-md)",
-                fontSize: "12px",
-              }}
-              labelFormatter={(label, payload) => {
-                const t = payload?.[0]?.payload?.t;
-                return t
-                  ? new Date(t).toLocaleString("it-IT", {
-                      day: "numeric",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : label;
-              }}
-              formatter={(value) => [`${value != null ? Number(value).toFixed(1) : "—"}%`, "SÌ"]}
-            />
-            <Area
-              type="monotone"
-              dataKey="yesPct"
-              stroke="rgb(var(--prediction-si-from))"
-              fill="rgb(var(--prediction-si-from) / 0.2)"
-              strokeWidth={2}
-              dot={false}
-              isAnimationActive
-              animationDuration={400}
-            />
+            {!isEmpty && (
+              <>
+                <Tooltip
+                  contentStyle={{
+                    background: "rgb(var(--surface) / 0.98)",
+                    border: "1px solid rgb(255 255 255 / 0.15)",
+                    borderRadius: "var(--radius-md)",
+                    fontSize: "12px",
+                  }}
+                  labelFormatter={(label, payload) => {
+                    const t = payload?.[0]?.payload?.t;
+                    return t
+                      ? new Date(t).toLocaleString("it-IT", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : label;
+                  }}
+                  formatter={(value) => [`${value != null ? Number(value).toFixed(1) : "—"}%`, "SÌ"]}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="yesPct"
+                  stroke="rgb(var(--prediction-si-from))"
+                  fill="rgb(var(--prediction-si-from) / 0.2)"
+                  strokeWidth={2}
+                  dot={false}
+                  isAnimationActive
+                  animationDuration={400}
+                />
+              </>
+            )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
