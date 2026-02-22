@@ -142,16 +142,9 @@ export default function EventProbabilityChart({
         id="chart-heading"
         className={`text-ds-body-sm font-semibold text-fg mb-4 ${isStandalone ? "text-center" : ""}`}
       >
-        Andamento SÌ/NO nel tempo
+        Andamento dell'evento nel tempo
       </h2>
       <div className={`event-probability-chart-area w-full relative ${isStandalone ? "h-[240px] md:h-[280px] mx-auto event-chart-area-centered" : "h-[200px]"}`}>
-        {isEmpty && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-            <p className="font-display text-xl md:text-2xl font-bold text-fg-muted text-center tracking-tight px-4">
-              Diventa il primo a prevedere!
-            </p>
-          </div>
-        )}
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={chartData}

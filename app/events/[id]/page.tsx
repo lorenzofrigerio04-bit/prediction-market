@@ -89,6 +89,7 @@ export default function EventDetailPage({
   const [followLoading, setFollowLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [showResolutionPopup, setShowResolutionPopup] = useState(false);
+  const [showDescriptionPopup, setShowDescriptionPopup] = useState(false);
   const [predictionOutcome, setPredictionOutcome] = useState<"YES" | "NO" | null>(null);
   const mainRef = useRef<HTMLElement | null>(null);
 
@@ -117,13 +118,16 @@ export default function EventDetailPage({
   }, [event?.id, event?.resolved, event?.category]);
 
   useEffect(() => {
-    if (!showResolutionPopup) return;
+    if (!showResolutionPopup && !showDescriptionPopup) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowResolutionPopup(false);
+      if (e.key === "Escape") {
+        setShowResolutionPopup(false);
+        setShowDescriptionPopup(false);
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [showResolutionPopup]);
+  }, [showResolutionPopup, showDescriptionPopup]);
 
   const fetchEvent = async () => {
     if (!params?.id) return;
@@ -252,12 +256,18 @@ export default function EventDetailPage({
     );
   }
 
+  const categoryToBackdrop: Record<string, string> = {
+    Cultura: "event-detail-page-backdrop event-detail-page-backdrop--cultura",
+    Economia: "event-detail-page-backdrop event-detail-page-backdrop--economia",
+    Intrattenimento: "event-detail-page-backdrop event-detail-page-backdrop--intrattenimento",
+    Sport: "event-detail-page-backdrop event-detail-page-backdrop--sport",
+    Tecnologia: "event-detail-page-backdrop event-detail-page-backdrop--tecnologia",
+    Scienza: "event-detail-page-backdrop event-detail-page-backdrop--scienza",
+    Politica: "event-detail-page-backdrop event-detail-page-backdrop--politica",
+  };
   const backdropClass =
-    event.category === "Economia"
-      ? "event-detail-page-backdrop event-detail-page-backdrop--economia"
-      : event.category === "Cultura"
-        ? "event-detail-page-backdrop event-detail-page-backdrop--cultura"
-        : "event-detail-page-backdrop event-detail-page-backdrop--default";
+    categoryToBackdrop[event.category] ??
+    "event-detail-page-backdrop event-detail-page-backdrop--default";
 
   return (
     <div className="event-detail-page-immersive">
@@ -326,13 +336,26 @@ export default function EventDetailPage({
             ) : null}
           </div>
 
-          <h1 className="text-ds-h2 font-bold text-fg mb-2 leading-snug tracking-title text-base md:text-lg">
-            {getDisplayTitle(event.title, debugMode)}
-          </h1>
+          <div className="flex items-start gap-2 mb-3">
+            <h1 className="text-ds-h2 font-bold text-fg leading-snug tracking-title text-base md:text-lg flex-1 min-w-0">
+              {getDisplayTitle(event.title, debugMode)}
+            </h1>
+            <button
+              type="button"
+              onClick={() => setShowDescriptionPopup(true)}
+              className="shrink-0 w-8 h-8 rounded-full border border-white/20 bg-white/10 text-slate-300 hover:text-white hover:bg-white/15 flex items-center justify-center text-sm font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+              aria-label="Leggi descrizione evento"
+            >
+              i
+            </button>
+          </div>
 
-          {event.description && (
-            <p className="event-detail-description text-ds-body-sm text-fg-muted mb-3 leading-relaxed line-clamp-2 md:line-clamp-none">{event.description}</p>
-          )}
+          {/* Hai previsto (solo numero + simbolo credito), dove c’era la descrizione */}
+          <div className="flex items-center justify-center gap-1.5 py-2 mb-3">
+            <span className="text-ds-body-sm text-fg-muted">Hai previsto</span>
+            <span className="font-bold text-fg font-numeric tabular-nums">{(userPrediction?.credits ?? 0).toLocaleString("it-IT")}</span>
+            <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
+          </div>
 
           {/* Tabella 1x2: SI | NO (click per prevedere) */}
           {(() => {
@@ -397,14 +420,6 @@ export default function EventDetailPage({
                     />
                   </div>
                 </div>
-
-                {/* Hai previsto per X crediti (sempre) */}
-                <div className="flex items-center justify-center gap-2 py-3 mb-4">
-                  <span className="text-ds-body-sm text-fg-muted">Hai previsto per</span>
-                  <span className="font-bold text-fg font-numeric tabular-nums">{(userPrediction?.credits ?? 0).toLocaleString("it-IT")}</span>
-                  <span className="text-ds-body-sm text-fg-muted">crediti</span>
-                  <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
-                </div>
               </>
             );
           })()}
@@ -444,20 +459,15 @@ export default function EventDetailPage({
 
           <CommentsSection eventId={event.id} variant="embedded" />
 
-          {/* Criterio di risoluzione e scadenza: in fondo al box evento+commenti */}
-          <div className="pt-5 mt-5 border-t border-white/10">
+          {/* Criterio di risoluzione e scadenza: solo "i" che apre popup */}
+          <div className="pt-4 mt-4 border-t border-white/10 flex justify-end">
             <button
               type="button"
               onClick={() => setShowResolutionPopup(true)}
-              className="text-left w-full rounded-xl border border-white/10 bg-white/5 p-3.5 transition-all duration-ds-normal hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+              className="w-8 h-8 rounded-full border border-white/20 bg-white/10 text-slate-300 hover:text-white hover:bg-white/15 flex items-center justify-center text-sm font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+              aria-label="Criterio di risoluzione e scadenza"
             >
-              <h3 className="text-ds-body-sm font-semibold text-fg mb-1">Criterio di risoluzione e scadenza</h3>
-              {event.resolutionNotes ? (
-                <p className="text-ds-body-sm text-fg-muted line-clamp-1">{event.resolutionNotes.split("\n")[0]}</p>
-              ) : (
-                <p className="text-ds-body-sm text-fg-muted">Clicca per dettagli e scadenza</p>
-              )}
-              <span className="mt-2 inline-block text-ds-body-sm text-primary font-medium">Vedi tutto</span>
+              i
             </button>
           </div>
         </article>
@@ -467,6 +477,41 @@ export default function EventDetailPage({
           <EventProbabilityChart eventId={event.id} range="7d" refetchTrigger={event._count.predictions} layout="standalone" />
         </section>
       </main>
+
+      {/* Popup Descrizione evento */}
+      {showDescriptionPopup && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="description-popup-title"
+          onClick={() => setShowDescriptionPopup(false)}
+        >
+          <div
+            className="bg-bg border border-white/20 rounded-2xl shadow-overlay max-w-lg w-full max-h-[85vh] overflow-y-auto p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h2 id="description-popup-title" className="text-ds-h3 font-bold text-fg">Descrizione evento</h2>
+              <button
+                type="button"
+                onClick={() => setShowDescriptionPopup(false)}
+                className="p-2.5 rounded-xl text-fg-muted hover:text-fg hover:bg-surface/50 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                aria-label="Chiudi"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {event.description ? (
+              <p className="text-ds-body-sm text-fg-muted whitespace-pre-wrap leading-relaxed">{event.description}</p>
+            ) : (
+              <p className="text-ds-body-sm text-fg-muted">Nessuna descrizione disponibile.</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Popup Criterio di risoluzione e scadenza */}
       {showResolutionPopup && (

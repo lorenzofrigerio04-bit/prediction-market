@@ -2238,17 +2238,32 @@ body:has(.discover-page) > footer {
   background-attachment: scroll;
 }
 .event-detail-page-backdrop--default {
-  background-image: url("/images/event-cinema-bg.png");
-}
-.event-detail-page-backdrop--economia {
-  background-image: url("/images/event-economia-bg.png");
+  background-image: url("/images/event-intrattenimento-bg.png");
 }
 .event-detail-page-backdrop--cultura {
   background-image: url("/images/event-cultura-bg.png");
 }
-/* Senza modifier (loading): cinema */
+.event-detail-page-backdrop--economia {
+  background-image: url("/images/event-economia-bg.png");
+}
+.event-detail-page-backdrop--intrattenimento {
+  background-image: url("/images/event-intrattenimento-bg.png");
+}
+.event-detail-page-backdrop--sport {
+  background-image: url("/images/event-sport-bg.png");
+}
+.event-detail-page-backdrop--tecnologia {
+  background-image: url("/images/event-tecnologia-bg.png");
+}
+.event-detail-page-backdrop--scienza {
+  background-image: url("/images/event-scienza-bg.png");
+}
+.event-detail-page-backdrop--politica {
+  background-image: url("/images/event-politica-bg.png");
+}
+/* Senza modifier (loading): intrattenimento */
 .event-detail-page-backdrop:not([class*="--"]) {
-  background-image: url("/images/event-cinema-bg.png");
+  background-image: url("/images/event-intrattenimento-bg.png");
 }
 @media (min-width: 769px) {
   .event-detail-page-backdrop {
@@ -2273,12 +2288,12 @@ body:has(.discover-page) > footer {
   z-index: 1;
 }
 .event-detail-page-main .event-detail-box {
-  --event-box-bg: rgba(0, 0, 0, 0.5);
-  --event-box-bg-light: rgba(15, 23, 42, 0.72);
+  --event-box-bg: rgba(0, 0, 0, 0.38);
+  --event-box-bg-light: rgba(15, 23, 42, 0.58);
 }
 .dark .event-detail-page-main .event-detail-box {
-  --event-box-bg: rgba(0, 0, 0, 0.58);
-  --event-box-bg-light: rgba(15, 23, 42, 0.78);
+  --event-box-bg: rgba(0, 0, 0, 0.46);
+  --event-box-bg-light: rgba(15, 23, 42, 0.64);
 }
 
 /* Event detail page: box leggibile su sfondo cinema (glass + contrast) */
@@ -2292,19 +2307,9 @@ body:has(.discover-page) > footer {
   transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
 }
 .event-detail-page-immersive .event-detail-box {
-  background: var(--event-box-bg, rgba(0, 0, 0, 0.5));
+  background: var(--event-box-bg, rgba(0, 0, 0, 0.38));
 }
-/* Box Evento + Commenti: piccolo, ben spaziato, super leggibile */
-.event-detail-box-event-comments .event-detail-description {
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-}
-@media (min-width: 768px) {
-  .event-detail-box-event-comments .event-detail-description {
-    -webkit-line-clamp: unset;
-    line-clamp: unset;
-  }
-}
+/* Box Evento + Commenti: compatto, respira */
 
 /* Box Grafico: centrato nella pagina, titolo e assi bilanciati */
 .event-detail-box-chart {
