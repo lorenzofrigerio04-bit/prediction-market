@@ -167,7 +167,7 @@ export default function EventProbabilityChart({
                     })
                   : label;
               }}
-              formatter={(value: number) => [`${Number(value).toFixed(1)}%`, "SÌ"]}
+              formatter={(value) => [`${value != null ? Number(value).toFixed(1) : "—"}%`, "SÌ"]}
             />
             <Area
               type="monotone"
