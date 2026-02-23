@@ -9,40 +9,85 @@ import CommentsSection from "@/components/CommentsSection";
 
 const LIKES_STORAGE_KEY = "consigliati-likes";
 
-/** Autori display per far sembrare eventi da utenti diversi (nickname + iniziale) */
+/** Nomi profilo realistici (nomi e nickname) per autori evento */
 const DISPLAY_AUTHORS: { name: string; initial: string }[] = [
-  { name: "Marco_Trading", initial: "M" },
-  { name: "ChiaraMercati", initial: "C" },
-  { name: "Luca_Pro", initial: "L" },
-  { name: "SofiaInvest", initial: "S" },
-  { name: "AlexPrediction", initial: "A" },
-  { name: "GioMarket", initial: "G" },
-  { name: "ElenaForecast", initial: "E" },
-  { name: "Davide_97", initial: "D" },
-  { name: "Francesca_Fin", initial: "F" },
-  { name: "MatteoBorsa", initial: "M" },
-  { name: "Laura_Eventi", initial: "L" },
-  { name: "Stefano_IT", initial: "S" },
-  { name: "Valentina_V", initial: "V" },
-  { name: "Andrea_Analisi", initial: "A" },
-  { name: "GiuliaG", initial: "G" },
+  { name: "Marco R.", initial: "M" },
+  { name: "Chiara", initial: "C" },
+  { name: "Luca", initial: "L" },
+  { name: "Sofia", initial: "S" },
+  { name: "Alessandro", initial: "A" },
+  { name: "Giovanni", initial: "G" },
+  { name: "Elena", initial: "E" },
+  { name: "Davide", initial: "D" },
+  { name: "Francesca", initial: "F" },
+  { name: "Matteo", initial: "M" },
+  { name: "Laura", initial: "L" },
+  { name: "Stefano", initial: "S" },
+  { name: "Valentina", initial: "V" },
+  { name: "Andrea", initial: "A" },
+  { name: "Giulia", initial: "G" },
+  { name: "Federico", initial: "F" },
+  { name: "Martina", initial: "M" },
+  { name: "Lorenzo", initial: "L" },
 ];
+
+const SYSTEM_AUTHOR_PATTERN = /event\s*generator|sistema|bot|admin/i;
 
 function getDisplayAuthor(eventId: string, createdBy: { name: string | null } | null) {
   let n = 0;
   for (let i = 0; i < eventId.length; i++) n = (n * 31 + eventId.charCodeAt(i)) >>> 0;
   const idx = n % DISPLAY_AUTHORS.length;
-  return DISPLAY_AUTHORS[idx];
+  const author = DISPLAY_AUTHORS[idx];
+  const realName = createdBy?.name?.trim();
+  if (realName && !SYSTEM_AUTHOR_PATTERN.test(realName)) {
+    return { name: realName, initial: realName.charAt(0).toUpperCase() || author.initial };
+  }
+  return author;
 }
 
-function formatCountdown(ms: number): string {
-  if (ms <= 0) return "Chiuso";
-  const d = Math.floor(ms / (24 * 60 * 60 * 1000));
-  const h = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-  const m = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
-  if (d > 0) return `${d}g ${h}h`;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m} min`;
+const TAP_MOVE_THRESHOLD_PX = 18;
+const TAP_MAX_DURATION_MS = 400;
+
+/** Area centrale della slide: tap apre evento, scroll non attiva il link */
+function ConsigliatiSlideCenterTap({ eventId }: { eventId: string }) {
+  const touchStart = useRef<{ x: number; y: number; t: number } | null>(null);
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const t = e.targetTouches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY, t: Date.now() };
+  }, []);
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (!touchStart.current) return;
+      e.preventDefault();
+      const t = e.changedTouches[0];
+      const dx = t.clientX - touchStart.current.x;
+      const dy = t.clientY - touchStart.current.y;
+      const duration = Date.now() - touchStart.current.t;
+      touchStart.current = null;
+      if (duration <= TAP_MAX_DURATION_MS && Math.hypot(dx, dy) <= TAP_MOVE_THRESHOLD_PX) {
+        window.location.href = `/events/${eventId}`;
+      }
+    },
+    [eventId]
+  );
+  return (
+    <Link
+      href={`/events/${eventId}`}
+      className="consigliati-slide-center-tap absolute left-1/2 top-1/2 z-[1] flex h-[50%] w-[70%] max-w-[320px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-3xl md:pointer-events-auto"
+      style={{ pointerEvents: "auto" }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={() => { touchStart.current = null; }}
+      aria-label="Apri evento"
+    />
+  );
+}
+
+/** Percentuali SÌ/NO: 50/50 se nessuna previsione */
+function getYesNoPct(probability: number | undefined | null, predictionsCount: number): { yes: number; no: number } {
+  if (predictionsCount === 0) return { yes: 50, no: 50 };
+  const p = typeof probability === "number" && Number.isFinite(probability) ? probability : 50;
+  return { yes: Math.round(p), no: Math.round(100 - p) };
 }
 
 export interface ConsigliatiEvent {
@@ -124,7 +169,7 @@ function IconHeart({ filled, className }: { filled: boolean; className?: string 
       viewBox="0 0 24 24"
       fill={filled ? "currentColor" : "none"}
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
@@ -144,7 +189,7 @@ function IconUserPlus({ className }: { className?: string }) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
@@ -167,7 +212,7 @@ function IconShare({ className }: { className?: string }) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
@@ -200,8 +245,8 @@ function ConsigliatiSlide({
     event.description?.replace(/\s+/g, " ").trim().slice(0, 120) ?? "";
   const hasMoreDesc = (event.description?.length ?? 0) > 120;
   const displayAuthor = getDisplayAuthor(event.id, event.createdBy);
-  const countdownMs = event.fomo?.countdownMs ?? new Date(event.closesAt).getTime() - Date.now();
   const predictionsCount = event._count.predictions ?? 0;
+  const { yes: yesPct, no: noPct } = getYesNoPct(event.probability, predictionsCount);
 
   return (
     <section
@@ -214,8 +259,10 @@ function ConsigliatiSlide({
       aria-label={`Evento: ${event.title}`}
     >
       <div className={getBackdropClass(event.category)} aria-hidden />
-      <div className="consigliati-slide-content relative z-10 flex h-full flex-col justify-between px-4 pt-4 pb-[calc(4rem+var(--safe-area-inset-bottom))] pl-[max(1rem,var(--safe-area-inset-left))] pr-[max(1rem,var(--safe-area-inset-right))] md:pb-6 md:pl-4 md:pr-4">
-        {/* Top row: categoria (sinistra), previsioni (destra) — box trasparenti */}
+      {/* Tap centro foto: vai a evento (solo se tap netto, non scroll) */}
+      <ConsigliatiSlideCenterTap eventId={event.id} />
+      <div className="consigliati-slide-content relative z-10 flex h-full flex-col justify-between px-4 pb-[calc(4rem+var(--safe-area-inset-bottom))] pl-[max(1rem,var(--safe-area-inset-left))] pr-[max(1rem,var(--safe-area-inset-right))] md:pb-6 md:pl-4 md:pr-4 pt-[calc(var(--header-height,3.5rem)+52px)] md:pt-4">
+        {/* Riga sotto header/tab: categoria (sinistra), previsioni (destra) */}
         <div className="flex items-start justify-between gap-2">
           <span className="rounded-lg border border-white/20 bg-black/25 px-2.5 py-1.5 text-xs font-semibold text-white backdrop-blur-sm drop-shadow-md">
             {event.category}
@@ -257,10 +304,9 @@ function ConsigliatiSlide({
                 {hasMoreDesc ? "…" : ""}
               </p>
             )}
-            {/* Contatore dinamico tra descrizione e Vai all'evento */}
+            {/* SÌ / NO % tra descrizione e Vai all'evento (50/50 se zero previsioni) */}
             <p className="mt-1.5 text-xs font-semibold text-white/95 drop-shadow-sm tabular-nums">
-              Scade in {formatCountdown(countdownMs)}
-              {predictionsCount > 0 && ` · ${predictionsCount} previsioni`}
+              SÌ {yesPct}% · NO {noPct}%
             </p>
             <Link
               href={`/events/${event.id}`}

@@ -25,6 +25,27 @@ export default function DiscoverPage() {
     setActiveTab(tabFromUrl);
   }, [tabFromUrl]);
 
+  // Header e bottom nav trasparenti + theme-color scuro (status bar / browser UI) quando Consigliati
+  useEffect(() => {
+    const defaultThemeColor = "#161a26";
+    const consigliatiThemeColor = "#0d0e14";
+    let meta: HTMLMetaElement | null = null;
+    if (activeTab === "per-te") {
+      document.body.classList.add("discover-consigliati-active");
+      meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute("content", consigliatiThemeColor);
+    } else {
+      document.body.classList.remove("discover-consigliati-active");
+      meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute("content", defaultThemeColor);
+    }
+    return () => {
+      document.body.classList.remove("discover-consigliati-active");
+      meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute("content", defaultThemeColor);
+    };
+  }, [activeTab]);
+
   const scrollToTop = useCallback(() => {
     mainRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
