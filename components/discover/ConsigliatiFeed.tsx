@@ -7,7 +7,7 @@ import { categoryToSlug } from "@/lib/category-slug";
 import { IconChat, IconClose } from "@/components/ui/Icons";
 import CommentsSection from "@/components/CommentsSection";
 
-const DRAWER_CLOSE_MS = 320;
+const DRAWER_CLOSE_MS = 420;
 
 /** Drawer commenti stile TikTok: pannello dal basso, handle, chiudi chiaro, animazioni fluide */
 function CommentsDrawer({
@@ -81,10 +81,10 @@ function CommentsDrawer({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Handle + header stile TikTok */}
-        <div className="flex flex-shrink-0 flex-col items-center pt-3 pb-2">
+        <div className="flex flex-shrink-0 flex-col items-center pt-4 pb-2">
           <div className="h-1 w-10 shrink-0 rounded-full bg-white/25" aria-hidden />
         </div>
-        <div className="flex flex-shrink-0 items-center justify-between gap-3 px-4 pb-3">
+        <div className="flex flex-shrink-0 items-center justify-between gap-3 px-5 pb-4">
           <h2 className="text-lg font-bold text-fg">Commenti</h2>
           <button
             type="button"
@@ -95,7 +95,7 @@ function CommentsDrawer({
             <IconClose className="h-5 w-5" />
           </button>
         </div>
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-4">
+        <div className="comments-drawer-scroll px-5 pt-1 pb-6">
           <CommentsSection eventId={eventId} variant="embedded" />
         </div>
       </div>
@@ -358,12 +358,12 @@ function ConsigliatiSlide({
       {/* Tap centro foto: vai a evento (solo se tap netto, non scroll) */}
       <ConsigliatiSlideCenterTap eventId={event.id} />
       <div className="consigliati-slide-content relative z-10 flex h-full flex-col justify-between px-4 pb-[calc(4rem+var(--safe-area-inset-bottom))] pl-[max(1rem,var(--safe-area-inset-left))] pr-[max(1rem,var(--safe-area-inset-right))] md:pb-6 md:pl-4 md:pr-4 pt-[calc(var(--header-height,3.5rem)+52px)] md:pt-4">
-        {/* Riga categoria + previsioni: allineata al blocco contenuto sotto, stessa baseline */}
-        <div className="consigliati-slide-badges flex items-center justify-between gap-3 self-stretch">
-          <span className="consigliati-badge rounded-xl border border-white/15 bg-black/20 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] min-h-[36px] inline-flex items-center">
+        {/* Riga categoria + previsioni: più piccoli, distanziati dai tab, centrati */}
+        <div className="consigliati-slide-badges mt-5 flex w-full max-w-[260px] items-center justify-between gap-2 mx-auto">
+          <span className="consigliati-badge rounded-lg border border-white/15 bg-black/20 px-2.5 py-1.5 text-[11px] font-semibold text-white backdrop-blur-md drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] min-h-[28px] inline-flex items-center">
             {event.category}
           </span>
-          <span className="consigliati-badge rounded-xl border border-white/15 bg-black/20 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] tabular-nums min-h-[36px] inline-flex items-center">
+          <span className="consigliati-badge rounded-lg border border-white/15 bg-black/20 px-2.5 py-1.5 text-[11px] font-semibold text-white backdrop-blur-md drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] tabular-nums min-h-[28px] inline-flex items-center">
             {predictionsCount} previsioni
           </span>
         </div>

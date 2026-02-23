@@ -1952,7 +1952,7 @@ body.discover-consigliati-active .header-neon {
   border-bottom-color: rgb(255 255 255 / 0.06);
 }
 body.discover-consigliati-active .nav-bottom-neon {
-  background: transparent;
+  background: rgb(0, 0, 0);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   border: none;
@@ -1980,6 +1980,27 @@ body.discover-consigliati-active .nav-bottom-neon .nav-item-neon-active {
 }
 body.discover-consigliati-active .nav-bottom-neon svg {
   filter: drop-shadow(0 1px 2px rgba(0 0 0 / 0.6));
+}
+
+/* Link "Passa alla schermata generale": sul contorno superiore della bottom bar, evidenziato LED neon leggero */
+.discover-consigliati-strip {
+  background: linear-gradient(to top, rgb(0 0 0 / 0.85), rgb(0 0 0 / 0.4) 60%, transparent);
+  -webkit-tap-highlight-color: transparent;
+}
+.discover-consigliati-strip-text {
+  text-shadow:
+    0 0 8px rgba(34, 211, 238, 0.5),
+    0 0 16px rgba(34, 211, 238, 0.25),
+    0 1px 3px rgba(0 0 0 / 0.8);
+}
+.dark .discover-consigliati-strip-text {
+  text-shadow:
+    0 0 10px rgba(34, 211, 238, 0.6),
+    0 0 20px rgba(34, 211, 238, 0.3),
+    0 1px 4px rgba(0 0 0 / 0.9);
+}
+.discover-consigliati-strip:active .discover-consigliati-strip-text {
+  opacity: 0.9;
 }
 /* Icone bottom nav: stile minimal (gestito da NavIcon in Icons.tsx) */
 .nav-bottom-neon a:hover svg,
@@ -2350,12 +2371,16 @@ body:has(.discover-page) > footer {
   content: "";
   position: absolute;
   inset: 0;
+  /* Sfumatura generale + transizione fluida in nero puro in basso (allineata al menu) */
   background: linear-gradient(
     180deg,
     rgba(0, 0, 0, 0.18) 0%,
     rgba(0, 0, 0, 0.32) 35%,
     rgba(0, 0, 0, 0.62) 65%,
-    rgba(0, 0, 0, 0.78) 100%
+    rgba(0, 0, 0, 0.78) 78%,
+    rgba(0, 0, 0, 0.88) 90%,
+    rgba(0, 0, 0, 0.96) 97%,
+    rgb(0, 0, 0) 100%
   );
   z-index: 0;
 }
@@ -2447,7 +2472,7 @@ body:has(.discover-page) > footer {
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  transition: opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  transition: opacity 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
 .comments-drawer-backdrop.entering {
   opacity: 0;
@@ -2459,21 +2484,33 @@ body:has(.discover-page) > footer {
   opacity: 0;
 }
 .comments-drawer-panel {
+  height: min(88vh, 720px);
   max-height: min(88vh, 720px);
   border-top-left-radius: 1.25rem;
   border-top-right-radius: 1.25rem;
   box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.25);
-  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1);
   touch-action: pan-y;
+  will-change: transform;
 }
 .comments-drawer-panel.entering {
-  transform: translateY(100%);
+  transform: translate3d(0, 100%, 0);
 }
 .comments-drawer-panel.open {
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0);
 }
 .comments-drawer-panel.closing {
-  transform: translateY(100%);
+  transform: translate3d(0, 100%, 0);
+  transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+/* Area scroll commenti: respira e scrolla bene */
+.comments-drawer-scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 /* Wrapper feed full viewport: sfondo categoria visibile sotto tab bar */

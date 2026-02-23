@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import EventiPrevistiTab from "@/components/discover/EventiPrevistiTab";
@@ -118,13 +119,29 @@ export default function DiscoverPage() {
       </div>
 
       {activeTab === "per-te" ? (
-        <div
-          id="main-content"
-          className="discover-feed-fullviewport fixed left-0 right-0 top-0 z-0 flex flex-col"
-          style={{ height: "100dvh" }}
-        >
-          <ConsigliatiFeed />
-        </div>
+        <>
+          <div
+            id="main-content"
+            className="discover-feed-fullviewport fixed left-0 right-0 top-0 z-0 flex flex-col"
+            style={{ height: "100dvh" }}
+          >
+            <ConsigliatiFeed />
+          </div>
+          {/* Link "Passa alla schermata generale" poco sopra la barra menu inferiore, stile neon */}
+          <Link
+            href="/discover/consigliati"
+            className="discover-consigliati-strip md:hidden fixed left-0 right-0 z-40 flex items-center justify-center py-2.5 px-4"
+            style={{
+              bottom: "calc(4rem + var(--safe-area-inset-bottom))",
+              paddingBottom: "0.375rem",
+            }}
+            aria-label="Passa alla schermata generale degli eventi consigliati"
+          >
+            <span className="discover-consigliati-strip-text text-ds-micro font-semibold uppercase tracking-wider text-white/95">
+              -Passa alla schermata generale-
+            </span>
+          </Link>
+        </>
       ) : (
         <main
           ref={mainRef}
