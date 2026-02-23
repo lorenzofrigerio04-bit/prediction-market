@@ -151,7 +151,7 @@ function ConsigliatiSlide({
       aria-label={`Evento: ${event.title}`}
     >
       <div className={getBackdropClass(event.category)} aria-hidden />
-      <div className="consigliati-slide-content relative z-10 flex h-full flex-col justify-between px-4 pb-6 pt-4">
+      <div className="consigliati-slide-content relative z-10 flex h-full flex-col justify-between px-4 pt-4 pb-[calc(4rem+var(--safe-area-inset-bottom))] pl-[max(1rem,var(--safe-area-inset-left))] pr-[max(1rem,var(--safe-area-inset-right))] md:pb-6 md:pl-4 md:pr-4">
         <div className="flex justify-end gap-2" />
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0 flex-1">
@@ -176,7 +176,7 @@ function ConsigliatiSlide({
               Vai all&apos;evento →
             </Link>
           </div>
-          <div className="consigliati-actions flex flex-shrink-0 flex-col items-center gap-5">
+          <div className="consigliati-actions flex flex-shrink-0 flex-col items-center gap-5 pr-0">
             <button
               type="button"
               onClick={onLikeToggle}

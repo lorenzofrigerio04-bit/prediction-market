@@ -2335,6 +2335,38 @@ body:has(.discover-page) > footer {
   background-image: url("/images/event-intrattenimento-bg.png");
 }
 
+/* Tab bar Discover (Seguiti | Consigliati): sfondo trasparente, testo LED neon */
+.discover-tab-bar {
+  background: transparent;
+  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+}
+.discover-tab-bar button {
+  text-shadow:
+    0 0 8px rgb(var(--primary) / 0.6),
+    0 0 16px rgb(var(--primary) / 0.35),
+    0 0 24px rgb(var(--primary) / 0.2);
+}
+.discover-tab-bar button:not(.discover-tab-active) {
+  color: rgb(255 255 255 / 0.75);
+  text-shadow:
+    0 0 6px rgb(255 255 255 / 0.25),
+    0 0 12px rgb(255 255 255 / 0.12);
+}
+.discover-tab-bar .discover-tab-active {
+  color: rgb(var(--primary));
+  text-shadow:
+    0 0 10px rgb(var(--primary) / 0.8),
+    0 0 20px rgb(var(--primary) / 0.5),
+    0 0 30px rgb(var(--primary) / 0.3);
+}
+
+/* Mobile: feed Consigliati non deve andare sotto la bottom nav */
+@media (max-width: 767px) {
+  .discover-feed-main {
+    --discover-bottom-nav-offset: calc(72px + var(--safe-area-inset-bottom));
+  }
+}
+
 .event-detail-page-main {
   position: relative;
   z-index: 1;

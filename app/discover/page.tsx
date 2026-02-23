@@ -68,17 +68,17 @@ export default function DiscoverPage() {
     <div className="min-h-screen relative overflow-x-hidden discover-page">
       <Header />
 
-      {/* Tab bar: Seguiti | Consigliati (feed verticale stile TikTok) */}
-      <div className="sticky top-[var(--header-height,3.5rem)] z-30 bg-bg/95 backdrop-blur border-b border-white/10">
+      {/* Tab bar: Seguiti | Consigliati — sfondo trasparente, testo LED neon */}
+      <div className="discover-tab-bar sticky top-[var(--header-height,3.5rem)] z-30">
         <div className="mx-auto px-4 max-w-2xl">
           <div className="flex">
             <button
               type="button"
               onClick={() => setTab("seguiti")}
-              className={`flex-1 py-3.5 text-center text-sm font-semibold transition-colors ${
+              className={`flex-1 py-3.5 text-center text-sm font-semibold transition-colors border-b-2 ${
                 activeTab === "seguiti"
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-fg-muted hover:text-fg border-b-2 border-transparent"
+                  ? "discover-tab-active border-primary"
+                  : "border-transparent"
               }`}
             >
               Seguiti
@@ -86,10 +86,10 @@ export default function DiscoverPage() {
             <button
               type="button"
               onClick={() => setTab("per-te")}
-              className={`flex-1 py-3.5 text-center text-sm font-semibold transition-colors ${
+              className={`flex-1 py-3.5 text-center text-sm font-semibold transition-colors border-b-2 ${
                 activeTab === "per-te"
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-fg-muted hover:text-fg border-b-2 border-transparent"
+                  ? "discover-tab-active border-primary"
+                  : "border-transparent"
               }`}
             >
               Consigliati
@@ -101,11 +101,11 @@ export default function DiscoverPage() {
       {activeTab === "per-te" ? (
         <main
           id="main-content"
-          className="relative w-full flex flex-col"
+          className="relative w-full flex flex-col discover-feed-main"
           style={
             {
               ["--consigliati-feed-height" as string]:
-                "calc(100dvh - var(--header-height, 3.5rem) - 52px)",
+                "calc(100dvh - var(--header-height, 3.5rem) - 52px - var(--discover-bottom-nav-offset, 0px))",
             } as React.CSSProperties
           }
         >
