@@ -11,11 +11,11 @@ import {
   IconSearch,
   IconTrophy,
   IconUser,
-  IconWallet,
+  IconPlus,
   IconMenu,
   IconNavHome,
   IconNavDiscover,
-  IconNavWallet,
+  IconNavCreate,
   IconNavTrophy,
   IconNavProfile,
 } from "@/components/ui/Icons";
@@ -24,7 +24,7 @@ import {
 const MAIN_NAV_ITEMS = [
   { href: "/", label: "Home", Icon: IconChart, NavIcon: IconNavHome },
   { href: "/discover", label: "Eventi", Icon: IconSearch, NavIcon: IconNavDiscover },
-  { href: "/wallet", label: "Wallet", Icon: IconWallet, NavIcon: IconNavWallet },
+  { href: "/crea", label: "Crea", Icon: IconPlus, NavIcon: IconNavCreate },
   { href: "/leaderboard", label: "Classifica", Icon: IconTrophy, NavIcon: IconNavTrophy },
   { href: "/profile", label: "Profilo", Icon: IconUser, NavIcon: IconNavProfile },
 ] as const;
@@ -40,13 +40,13 @@ export default function Header() {
   const isActive = (path: string) =>
     pathname === path || (path !== "/" && pathname.startsWith(path));
 
-  // Dopo il login: Profilo riporta alla pagina corrente (es. Eventi), Wallet a /wallet
+  // Dopo il login: Profilo riporta alla pagina corrente (es. Eventi)
   const profileHref = session
     ? "/profile"
     : `/auth/login?callbackUrl=${encodeURIComponent(pathname || "/")}`;
-  const walletHref = session
-    ? "/wallet"
-    : "/auth/login?callbackUrl=" + encodeURIComponent("/wallet");
+  const creaHref = session
+    ? "/crea"
+    : `/auth/login?callbackUrl=${encodeURIComponent("/crea")}`;
 
   return (
     <>
@@ -61,7 +61,7 @@ export default function Header() {
             {/* Desktop: 5 voci principali (navigazione core) */}
             <nav className="hidden md:flex items-center gap-1" aria-label="Menu principale">
               {MAIN_NAV_ITEMS.map(({ href, label, Icon }) => {
-                const linkHref = href === "/profile" ? profileHref : href === "/wallet" ? walletHref : href;
+                const linkHref = href === "/profile" ? profileHref : href === "/crea" ? creaHref : href;
                 return (
                 <Link
                   key={href}
@@ -102,7 +102,7 @@ export default function Header() {
       >
         <div className="flex items-center justify-around h-16 px-1">
           {MAIN_NAV_ITEMS.map(({ href, label, NavIcon }) => {
-            const linkHref = href === "/profile" ? profileHref : href === "/wallet" ? walletHref : href;
+            const linkHref = href === "/profile" ? profileHref : href === "/crea" ? creaHref : href;
             const active = isActive(linkHref);
             return (
               <Link

@@ -149,6 +149,24 @@ export function IconNavProfile({ className, ...props }: SVGProps<SVGSVGElement>)
   );
 }
 
+/** Crea evento: plus per nav principale e bottom bar */
+export function IconPlus({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon className={className} {...props}>
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </Icon>
+  );
+}
+export function IconNavCreate({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <NavIcon className={className} {...props}>
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </NavIcon>
+  );
+}
+
 export function IconMenu({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <Icon className={className} {...props}>

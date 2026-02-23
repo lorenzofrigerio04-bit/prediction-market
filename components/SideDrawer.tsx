@@ -10,6 +10,7 @@ import {
   IconCog,
   IconShield,
   IconTarget,
+  IconWallet,
   IconLogout,
   IconLock,
   IconClose,
@@ -123,11 +124,14 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
         <nav className="flex-1 overflow-y-auto p-4 flex flex-col gap-4" aria-label="Menu utility">
           {isAuthenticated && (
             <>
-              {/* Sezione: Impegnati (missioni, notifiche) — uso meno frequente */}
+              {/* Sezione: Impegnati (wallet, missioni, notifiche) — uso meno frequente */}
               <div className="flex flex-col gap-1">
                 <span className="text-ds-micro font-semibold uppercase tracking-label text-fg-muted px-4 py-1">
                   Impegnati
                 </span>
+                <DrawerLink href="/wallet" icon={IconWallet} active={isActive("/wallet")} onClick={onClose}>
+                  Wallet
+                </DrawerLink>
                 <DrawerLink href="/missions" icon={IconTarget} active={isActive("/missions")} onClick={onClose}>
                   Missioni
                 </DrawerLink>

@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
-import CreateEventModal from "@/components/discover/CreateEventModal";
 import EventiPrevistiTab from "@/components/discover/EventiPrevistiTab";
 import ConsigliatiFeed from "@/components/discover/ConsigliatiFeed";
 
@@ -17,7 +16,6 @@ export default function DiscoverPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
 
   // Sync tab with URL
@@ -138,14 +136,6 @@ export default function DiscoverPage() {
             categoriesFromPerTe={categories}
           />
         </main>
-      )}
-
-      {/* Create Event Modal */}
-      {showCreateModal && (
-        <CreateEventModal
-          categories={categories}
-          onClose={() => setShowCreateModal(false)}
-        />
       )}
     </div>
   );

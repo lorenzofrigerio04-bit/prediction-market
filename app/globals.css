@@ -1958,9 +1958,28 @@ body.discover-consigliati-active .nav-bottom-neon {
   border: none;
   box-shadow: none;
 }
+/* Icone e testo immersi nella foto: niente box, niente contorno */
 body.discover-consigliati-active .nav-bottom-neon a {
-  background: rgb(0 0 0 / 0.2);
-  border-color: rgb(255 255 255 / 0.08);
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: rgb(255 255 255 / 0.92);
+  text-shadow: 0 1px 3px rgba(0 0 0 / 0.6), 0 0 10px rgba(0 0 0 / 0.3);
+}
+body.discover-consigliati-active .nav-bottom-neon a:hover {
+  color: white;
+  background: transparent !important;
+  text-shadow: 0 1px 4px rgba(0 0 0 / 0.7), 0 0 12px rgba(0 0 0 / 0.4);
+}
+body.discover-consigliati-active .nav-bottom-neon .nav-item-neon-active {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: white;
+  text-shadow: 0 1px 4px rgba(0 0 0 / 0.8), 0 0 14px rgba(255 255 255 / 0.15);
+}
+body.discover-consigliati-active .nav-bottom-neon svg {
+  filter: drop-shadow(0 1px 2px rgba(0 0 0 / 0.6));
 }
 /* Icone bottom nav: stile minimal (gestito da NavIcon in Icons.tsx) */
 .nav-bottom-neon a:hover svg,
@@ -2130,6 +2149,20 @@ body:has(.discover-page) > footer {
 .create-event-modal select option {
   background: rgb(30 35 50);
   color: rgb(255 255 255);
+}
+
+/* Crea page: stesso stile box della piattaforma (mobile-first) */
+.crea-page-box {
+  background: linear-gradient(145deg,
+    rgb(30 35 50 / 0.95) 0%,
+    rgb(20 25 35 / 0.98) 100%
+  );
+  border: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow:
+    0 25px 50px -12px rgb(0 0 0 / 0.5),
+    0 0 40px rgb(var(--primary) / 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 /* Stats counter animation */
@@ -2391,6 +2424,56 @@ body:has(.discover-page) > footer {
 /* Barra destra Consigliati: icone a tratto sottile */
 .consigliati-actions svg {
   stroke-width: 1.5;
+}
+
+/* Riga categoria + numero previsioni: allineata e integrata nello sfondo */
+.consigliati-slide-badges {
+  margin-bottom: 1.25rem;
+}
+.consigliati-badge {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* Barra SÌ/NO Consigliati: contorno LED neon super leggero */
+.consigliati-yesno-bar {
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.12),
+    0 0 8px rgb(var(--primary) / 0.2),
+    0 0 12px rgb(var(--primary) / 0.08);
+}
+
+/* Drawer commenti stile TikTok: pannello dal basso, fluido */
+.comments-drawer-backdrop {
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.comments-drawer-backdrop.entering {
+  opacity: 0;
+}
+.comments-drawer-backdrop.open {
+  opacity: 1;
+}
+.comments-drawer-backdrop.closing {
+  opacity: 0;
+}
+.comments-drawer-panel {
+  max-height: min(88vh, 720px);
+  border-top-left-radius: 1.25rem;
+  border-top-right-radius: 1.25rem;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.25);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  touch-action: pan-y;
+}
+.comments-drawer-panel.entering {
+  transform: translateY(100%);
+}
+.comments-drawer-panel.open {
+  transform: translateY(0);
+}
+.comments-drawer-panel.closing {
+  transform: translateY(100%);
 }
 
 /* Wrapper feed full viewport: sfondo categoria visibile sotto tab bar */

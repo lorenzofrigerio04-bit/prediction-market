@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import CreateEventModal from "@/components/discover/CreateEventModal";
 import SeguitiSection, { type SeguitiSectionEvent } from "@/components/discover/SeguitiSection";
 import type { HomeEventTileData } from "@/components/home/HomeCarouselBox";
 import { EmptyState, LoadingBlock } from "@/components/ui";
@@ -34,7 +33,6 @@ export default function EventiPrevistiTab({
   categoriesFromPerTe,
 }: EventiPrevistiTabProps) {
   const { data: session, status } = useSession();
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const [inVantaggio, setInVantaggio] = useState<{
     events: MyPredictionEvent[];
@@ -169,17 +167,15 @@ export default function EventiPrevistiTab({
   });
 
   return (
-    <>
-      <div className="pt-2 pb-4">
+    <div className="pt-2 pb-4">
         <div className="flex items-center justify-between gap-3 mb-4">
           <h1 className="text-ds-h2 font-bold text-fg">Seguiti</h1>
-          <button
-            type="button"
-            onClick={() => setShowCreateModal(true)}
+          <Link
+            href="/crea"
             className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline shrink-0"
           >
             + Crea evento
-          </button>
+          </Link>
         </div>
 
         {/* 1) Eventi in vantaggio */}
@@ -234,13 +230,5 @@ export default function EventiPrevistiTab({
           </button>
         </section>
       </div>
-
-      {showCreateModal && (
-        <CreateEventModal
-          categories={categoriesFromPerTe}
-          onClose={() => setShowCreateModal(false)}
-        />
-      )}
-    </>
   );
 }

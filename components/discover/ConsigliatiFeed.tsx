@@ -7,6 +7,102 @@ import { categoryToSlug } from "@/lib/category-slug";
 import { IconChat, IconClose } from "@/components/ui/Icons";
 import CommentsSection from "@/components/CommentsSection";
 
+const DRAWER_CLOSE_MS = 320;
+
+/** Drawer commenti stile TikTok: pannello dal basso, handle, chiudi chiaro, animazioni fluide */
+function CommentsDrawer({
+  eventId,
+  onClose,
+}: {
+  eventId: string;
+  onClose: () => void;
+}) {
+  const [entered, setEntered] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const t = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setEntered(true));
+    });
+    return () => cancelAnimationFrame(t);
+  }, []);
+
+  const close = useCallback(() => {
+    if (closing) return;
+    setClosing(true);
+    window.setTimeout(onClose, DRAWER_CLOSE_MS);
+  }, [closing, onClose]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [close]);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) close();
+  };
+
+  const panelClass =
+    closing
+      ? "comments-drawer-panel closing"
+      : entered
+        ? "comments-drawer-panel open"
+        : "comments-drawer-panel entering";
+
+  const backdropClass =
+    closing
+      ? "comments-drawer-backdrop closing"
+      : entered
+        ? "comments-drawer-backdrop open"
+        : "comments-drawer-backdrop entering";
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 ${backdropClass}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Commenti"
+      onClick={handleBackdropClick}
+    >
+      <div
+        ref={panelRef}
+        className={`${panelClass} absolute bottom-0 left-0 right-0 flex flex-col bg-bg pb-[env(safe-area-inset-bottom)]`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Handle + header stile TikTok */}
+        <div className="flex flex-shrink-0 flex-col items-center pt-3 pb-2">
+          <div className="h-1 w-10 shrink-0 rounded-full bg-white/25" aria-hidden />
+        </div>
+        <div className="flex flex-shrink-0 items-center justify-between gap-3 px-4 pb-3">
+          <h2 className="text-lg font-bold text-fg">Commenti</h2>
+          <button
+            type="button"
+            onClick={close}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-fg hover:bg-white/20 active:scale-95 transition-colors"
+            aria-label="Chiudi"
+          >
+            <IconClose className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-4">
+          <CommentsSection eventId={eventId} variant="embedded" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const LIKES_STORAGE_KEY = "consigliati-likes";
 
 /** Nomi profilo realistici (nomi e nickname) per autori evento */
@@ -31,18 +127,18 @@ const DISPLAY_AUTHORS: { name: string; initial: string }[] = [
   { name: "Lorenzo", initial: "L" },
 ];
 
-const SYSTEM_AUTHOR_PATTERN = /event\s*generator|sistema|bot|admin/i;
+const SYSTEM_AUTHOR_PATTERN = /event\s*generator|sistema|bot|admin|generatore|\(sistema\)/i;
 
-function getDisplayAuthor(eventId: string, createdBy: { name: string | null } | null) {
+function getDisplayAuthor(eventId: string, createdBy: { name: string | null; image: string | null } | null) {
   let n = 0;
   for (let i = 0; i < eventId.length; i++) n = (n * 31 + eventId.charCodeAt(i)) >>> 0;
   const idx = n % DISPLAY_AUTHORS.length;
   const author = DISPLAY_AUTHORS[idx];
   const realName = createdBy?.name?.trim();
   if (realName && !SYSTEM_AUTHOR_PATTERN.test(realName)) {
-    return { name: realName, initial: realName.charAt(0).toUpperCase() || author.initial };
+    return { name: realName, initial: realName.charAt(0).toUpperCase() || author.initial, useRealImage: true };
   }
-  return author;
+  return { ...author, useRealImage: false };
 }
 
 const TAP_MOVE_THRESHOLD_PX = 18;
@@ -262,21 +358,21 @@ function ConsigliatiSlide({
       {/* Tap centro foto: vai a evento (solo se tap netto, non scroll) */}
       <ConsigliatiSlideCenterTap eventId={event.id} />
       <div className="consigliati-slide-content relative z-10 flex h-full flex-col justify-between px-4 pb-[calc(4rem+var(--safe-area-inset-bottom))] pl-[max(1rem,var(--safe-area-inset-left))] pr-[max(1rem,var(--safe-area-inset-right))] md:pb-6 md:pl-4 md:pr-4 pt-[calc(var(--header-height,3.5rem)+52px)] md:pt-4">
-        {/* Riga sotto header/tab: categoria (sinistra), previsioni (destra) */}
-        <div className="flex items-start justify-between gap-2">
-          <span className="rounded-lg border border-white/20 bg-black/25 px-2.5 py-1.5 text-xs font-semibold text-white backdrop-blur-sm drop-shadow-md">
+        {/* Riga categoria + previsioni: allineata al blocco contenuto sotto, stessa baseline */}
+        <div className="consigliati-slide-badges flex items-center justify-between gap-3 self-stretch">
+          <span className="consigliati-badge rounded-xl border border-white/15 bg-black/20 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] min-h-[36px] inline-flex items-center">
             {event.category}
           </span>
-          <span className="rounded-lg border border-white/20 bg-black/25 px-2.5 py-1.5 text-xs font-semibold text-white backdrop-blur-sm drop-shadow-md tabular-nums">
+          <span className="consigliati-badge rounded-xl border border-white/15 bg-black/20 px-3 py-2 text-xs font-semibold text-white backdrop-blur-md drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] tabular-nums min-h-[36px] inline-flex items-center">
             {predictionsCount} previsioni
           </span>
         </div>
         <div className="flex items-end justify-between gap-3">
           <div className="min-w-0 flex-1">
-            {/* Autore: avatar + nome */}
+            {/* Autore: avatar (iniziale o foto reale) + nome sempre dal pool se sistema */}
             <div className="mb-2 flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-white/40 bg-black/40 text-sm font-bold text-white backdrop-blur-sm">
-                {event.createdBy?.image ? (
+                {"useRealImage" in displayAuthor && displayAuthor.useRealImage && event.createdBy?.image ? (
                   <img
                     src={event.createdBy.image}
                     alt=""
@@ -287,7 +383,7 @@ function ConsigliatiSlide({
                 )}
               </div>
               <span className="truncate text-sm font-medium text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                {event.createdBy?.name ?? displayAuthor.name}
+                {displayAuthor.name}
               </span>
             </div>
             <Link
@@ -304,10 +400,23 @@ function ConsigliatiSlide({
                 {hasMoreDesc ? "…" : ""}
               </p>
             )}
-            {/* SÌ / NO % tra descrizione e Vai all'evento (50/50 se zero previsioni) */}
-            <p className="mt-1.5 text-xs font-semibold text-white/95 drop-shadow-sm tabular-nums">
-              SÌ {yesPct}% · NO {noPct}%
-            </p>
+            {/* Barra SÌ/NO dinamica (verde/rosso) con contorno LED neon leggero */}
+            <div
+              className="consigliati-yesno-bar mt-1.5 h-2 w-full overflow-hidden rounded-full"
+              role="presentation"
+              aria-hidden
+            >
+              <div className="flex h-full w-full">
+                <div
+                  className="prediction-bar-fill-si h-full shrink-0 transition-[width] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)]"
+                  style={{ width: `${yesPct}%` }}
+                />
+                <div
+                  className="prediction-bar-fill-no h-full shrink-0 transition-[width] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)]"
+                  style={{ width: `${100 - yesPct}%` }}
+                />
+              </div>
+            </div>
             <Link
               href={`/events/${event.id}`}
               className="mt-1.5 inline-block text-xs font-semibold text-primary drop-shadow-sm hover:underline"
@@ -569,27 +678,10 @@ export default function ConsigliatiFeed() {
       </div>
 
       {commentsEventId && (
-        <div
-          className="fixed inset-0 z-50 flex flex-col bg-bg"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Commenti"
-        >
-          <div className="flex flex-shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
-            <h2 className="text-ds-h3 font-bold text-fg">Commenti</h2>
-            <button
-              type="button"
-              onClick={() => setCommentsEventId(null)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-fg-muted hover:bg-surface/50 hover:text-fg transition-colors"
-              aria-label="Chiudi"
-            >
-              <IconClose className="h-5 w-5" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto px-4 py-4">
-            <CommentsSection eventId={commentsEventId} variant="embedded" />
-          </div>
-        </div>
+        <CommentsDrawer
+          eventId={commentsEventId}
+          onClose={() => setCommentsEventId(null)}
+        />
       )}
     </>
   );
