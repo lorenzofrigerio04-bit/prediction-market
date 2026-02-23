@@ -22,6 +22,15 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
 
+  // Destinazione dopo login: da URL (?callbackUrl=...) o Home
+  const callbackUrl = (() => {
+    const url = searchParams.get("callbackUrl");
+    if (url && typeof url === "string" && url.startsWith("/") && !url.startsWith("//")) {
+      return url;
+    }
+    return "/";
+  })();
+
   useEffect(() => {
     const err = searchParams.get("error");
     if (err) {
@@ -65,7 +74,8 @@ export default function LoginPage() {
       }
       // Breve attesa per assicurare che il browser abbia scritto il cookie
       await new Promise((r) => setTimeout(r, 300));
-      window.location.href = "/auth/success?callbackUrl=/";
+      const safeCallback = encodeURIComponent(callbackUrl);
+      window.location.href = `/auth/success?callbackUrl=${safeCallback}`;
     } catch (err: any) {
       console.error('[LoginPage] Errore durante signIn:', err);
       const errorMsg = err?.message || err?.toString() || "Qualcosa è andato storto. Riprova tra poco.";
@@ -77,7 +87,8 @@ export default function LoginPage() {
   const handleGoogleSignIn = () => {
     setError("");
     setRedirecting(true);
-    signIn("google", { callbackUrl: "/auth/success?callbackUrl=/" });
+    const successUrl = `/auth/success?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+    signIn("google", { callbackUrl: successUrl });
   };
 
   return (

@@ -40,8 +40,13 @@ export default function Header() {
   const isActive = (path: string) =>
     pathname === path || (path !== "/" && pathname.startsWith(path));
 
-  const profileHref = session ? "/profile" : "/auth/login";
-  const walletHref = session ? "/wallet" : "/auth/login";
+  // Dopo il login: Profilo riporta alla pagina corrente (es. Eventi), Wallet a /wallet
+  const profileHref = session
+    ? "/profile"
+    : `/auth/login?callbackUrl=${encodeURIComponent(pathname || "/")}`;
+  const walletHref = session
+    ? "/wallet"
+    : "/auth/login?callbackUrl=" + encodeURIComponent("/wallet");
 
   return (
     <>

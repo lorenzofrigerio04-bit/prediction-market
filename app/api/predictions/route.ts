@@ -7,7 +7,6 @@ import { checkAndAwardBadges } from "@/lib/badges";
 import { rateLimit } from "@/lib/rate-limit";
 import { track } from "@/lib/analytics";
 import { executeBuyShares, AmmError } from "@/lib/amm/engine";
-import { assertAmmEvent } from "@/lib/amm/guards";
 import { updateUserProfileFromTrade } from "@/lib/personalization";
 import { invalidatePriceCache } from "@/lib/cache/price";
 import { invalidateTrendingCache } from "@/lib/cache/trending";
@@ -73,7 +72,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    assertAmmEvent(event);
+    if (event.tradingMode !== "AMM") {
+      return NextResponse.json(
+        { error: "Questo evento non supporta acquisti. Solo mercati AMM sono attivi." },
+        { status: 400 }
+      );
+    }
     const maxCostMicros =
       maxCostMicrosRaw != null
         ? BigInt(typeof maxCostMicrosRaw === "string" ? maxCostMicrosRaw : Math.floor(maxCostMicrosRaw))
@@ -110,7 +114,15 @@ export async function POST(request: NextRequest) {
             : err.code === "USER_NOT_FOUND"
               ? 404
               : 400;
-        return NextResponse.json({ error: err.message }, { status });
+        const userMessage =
+          err.code === "INSUFFICIENT_BALANCE"
+            ? "Saldo insufficiente"
+            : err.code === "MARKET_CLOSED" || err.code === "MARKET_RESOLVED"
+              ? "Mercato chiuso o già risolto"
+              : err.code === "AMM_STATE_NOT_FOUND"
+                ? "Mercato non pronto. Riprova più tardi."
+                : err.message;
+        return NextResponse.json({ error: userMessage }, { status });
       }
       throw err;
     }
@@ -172,8 +184,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const message =
+      error instanceof Error ? error.message : "Errore nella creazione della previsione";
     return NextResponse.json(
-      { error: "Errore nella creazione della previsione" },
+      { error: message },
       { status: 500 }
     );
   }
