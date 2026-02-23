@@ -358,8 +358,8 @@ function ConsigliatiSlide({
       {/* Tap centro foto: vai a evento (solo se tap netto, non scroll) */}
       <ConsigliatiSlideCenterTap eventId={event.id} />
       <div className="consigliati-slide-content relative z-10 flex h-full flex-col justify-between px-4 pb-[calc(4rem+var(--safe-area-inset-bottom))] pl-[max(1rem,var(--safe-area-inset-left))] pr-[max(1rem,var(--safe-area-inset-right))] md:pb-6 md:pl-4 md:pr-4 pt-[calc(var(--header-height,3.5rem)+52px)] md:pt-4">
-        {/* Riga categoria + previsioni: più piccoli, distanziati dai tab, centrati */}
-        <div className="consigliati-slide-badges mt-5 flex w-full max-w-[260px] items-center justify-between gap-2 mx-auto">
+        {/* Categoria e numero previsioni: a sinistra, uno sotto l'altro, allineati al titolo */}
+        <div className="consigliati-slide-badges mt-5 flex flex-col items-start gap-2">
           <span className="consigliati-badge rounded-lg border border-white/15 bg-black/20 px-2.5 py-1.5 text-[11px] font-semibold text-white backdrop-blur-md drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] min-h-[28px] inline-flex items-center">
             {event.category}
           </span>

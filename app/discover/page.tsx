@@ -127,18 +127,18 @@ export default function DiscoverPage() {
           >
             <ConsigliatiFeed />
           </div>
-          {/* Link "Passa alla schermata generale" poco sopra la barra menu inferiore, stile neon */}
+          {/* Link "Passa alla pagina originale": più in alto, più piccolo, discreto */}
           <Link
             href="/discover/consigliati"
-            className="discover-consigliati-strip md:hidden fixed left-0 right-0 z-40 flex items-center justify-center py-2.5 px-4"
+            className="discover-consigliati-strip md:hidden fixed left-0 right-0 z-40 flex items-center justify-center py-3 px-4"
             style={{
-              bottom: "calc(4rem + var(--safe-area-inset-bottom))",
-              paddingBottom: "0.375rem",
+              bottom: "calc(4.75rem + var(--safe-area-inset-bottom))",
+              paddingBottom: "0.5rem",
             }}
-            aria-label="Passa alla schermata generale degli eventi consigliati"
+            aria-label="Passa alla pagina originale degli eventi consigliati"
           >
-            <span className="discover-consigliati-strip-text text-ds-micro font-semibold uppercase tracking-wider text-white/95">
-              -Passa alla schermata generale-
+            <span className="discover-consigliati-strip-text font-medium uppercase text-white/80">
+              -passa alla pagina originale-
             </span>
           </Link>
         </>
