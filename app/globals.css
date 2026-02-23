@@ -100,6 +100,7 @@
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  --bottom-nav-h: 64px;
   /* Legacy aliases for components using --color-* (eventi page, modals, etc.) */
   --color-bg: rgb(var(--bg));
   --color-bg-secondary: rgb(var(--background-secondary));
@@ -116,6 +117,7 @@
 
 /* —— Semantic palette: dark theme — tech / Silicon Valley (cool slate, no purple) —— */
 .dark {
+  color-scheme: dark;
   --background-primary: 22 26 38;
   --background-secondary: 18 22 32;
   --bg: var(--background-primary);
@@ -199,7 +201,9 @@ body {
   font-size: 1rem; /* min 16px for readability (UI spec) */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  padding-bottom: calc(72px + var(--safe-area-inset-bottom));
+  min-height: 100dvh;
+  min-height: 100vh; /* fallback */
+  padding-bottom: calc(var(--bottom-nav-h) + var(--safe-area-inset-bottom));
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
@@ -1928,20 +1932,61 @@ textarea:focus-visible {
   border-bottom-color: rgb(255 255 255 / 0.04);
 }
 
-/* Bottom nav: liquid glass premium */
+/* Bottom nav: overlay sopra il background, glassmorphism per leggibilità su qualsiasi sfondo */
 .nav-bottom-neon {
-  border-radius: 1.25rem 1.25rem 0 0;
-  background: rgb(var(--surface) / 0.08);
-  backdrop-filter: blur(24px) saturate(1.2);
-  -webkit-backdrop-filter: blur(24px) saturate(1.2);
-  border: 1px solid rgb(255 255 255 / 0.04);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  height: var(--bottom-nav-h);
+  min-height: var(--bottom-nav-h);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-sizing: content-box;
+  background: linear-gradient(to top, rgba(11, 18, 32, 0.72), rgba(11, 18, 32, 0.25));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   border-bottom: none;
-  box-shadow: 0 -1px 0 0 rgb(255 255 255 / 0.03);
+  border-left: none;
+  border-right: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 .dark .nav-bottom-neon {
-  background: rgb(255 255 255 / 0.06);
-  border-color: rgb(255 255 255 / 0.04);
-  box-shadow: 0 -1px 0 0 rgb(255 255 255 / 0.02);
+  background: linear-gradient(to top, rgba(11, 18, 32, 0.72), rgba(11, 18, 32, 0.25));
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+.nav-bottom-neon .nav-bottom-neon-inner {
+  height: var(--bottom-nav-h);
+  min-height: var(--bottom-nav-h);
+}
+/* Default: icone e label leggibili su sfondo scuro/chiaro */
+.nav-bottom-neon a {
+  color: rgba(255, 255, 255, 0.75);
+}
+.nav-bottom-neon a:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+/* Tab attiva: accent blu/viola della piattaforma */
+.nav-bottom-neon .nav-item-neon-active,
+.dark .nav-bottom-neon .nav-item-neon-active {
+  color: rgb(var(--primary)) !important;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.nav-bottom-neon .nav-item-neon-active:hover {
+  color: rgb(var(--primary-hover)) !important;
+}
+.nav-bottom-neon svg {
+  opacity: 0.9;
+}
+.nav-bottom-neon .nav-item-neon-active svg {
+  opacity: 1;
+}
+.nav-bottom-neon .text-ds-micro {
+  letter-spacing: 0.05em;
+  font-weight: 500;
 }
 
 /* Consigliati: header e bottom nav trasparenti, foto di sfondo su tutta la pagina */
@@ -2522,14 +2567,14 @@ body:has(.discover-page) > footer {
 }
 @media (max-width: 767px) {
   .discover-feed-fullviewport {
-    --consigliati-feed-height: calc(100dvh - 72px - var(--safe-area-inset-bottom));
+    --consigliati-feed-height: calc(100dvh - var(--bottom-nav-h) - var(--safe-area-inset-bottom));
   }
 }
 
 /* Mobile: feed Consigliati non deve andare sotto la bottom nav */
 @media (max-width: 767px) {
   .discover-feed-main {
-    --discover-bottom-nav-offset: calc(72px + var(--safe-area-inset-bottom));
+    --discover-bottom-nav-offset: calc(var(--bottom-nav-h) + var(--safe-area-inset-bottom));
   }
 }
 

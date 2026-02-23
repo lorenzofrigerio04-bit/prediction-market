@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { getServerSession } from "next-auth";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
@@ -6,22 +6,28 @@ import { authOptions } from "@/lib/auth";
 import ThemeScript from "./ThemeScript";
 import PlatformBackground from "@/components/landing/LandingBackground";
 
+/* Colore barre sistema: status bar + barra browser (Android Chrome, iOS). Stesso valore in manifest.json. */
+const THEME_COLOR = "#161a26";
+
 export const metadata: Metadata = {
   title: "Prediction Market",
   description: "Piattaforma italiana di previsioni sociali",
-  /* Colore UI browser mobile (ora, batteria, barra inferiore) = sfondo piattaforma, meno stacco visivo */
-  themeColor: "#161a26",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "PredictionMaster",
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    viewportFit: "cover",
-  },
+  manifest: "/manifest.json",
+};
+
+/* In Next.js 14+ theme-color e viewport vanno nell'export viewport, non in metadata. */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+  themeColor: THEME_COLOR,
+  colorScheme: "dark",
 };
 
 // Obbliga il layout a essere valutato a ogni richiesta (no cache), così i cookie di sessione vengono letti
@@ -43,6 +49,14 @@ export default async function RootLayout({
   }
   return (
     <html lang="it" className="dark" suppressHydrationWarning>
+      <head>
+        {/* Barre scure: theme-color + color-scheme (Android Chrome, iOS Safari). Meta espliciti per massima compatibilità. */}
+        <meta name="theme-color" content={THEME_COLOR} />
+        <meta name="color-scheme" content="dark" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="PredictionMaster" />
+      </head>
       <body className="font-sans antialiased min-h-screen bg-transparent text-fg flex flex-col">
         <ThemeScript />
         <PlatformBackground />

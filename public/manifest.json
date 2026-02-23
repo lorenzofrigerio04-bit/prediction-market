@@ -1,0 +1,11 @@
+{
+  "name": "PredictionMaster",
+  "short_name": "PredictionMaster",
+  "description": "Piattaforma italiana di previsioni sociali",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#161a26",
+  "theme_color": "#161a26",
+  "lang": "it"
+}

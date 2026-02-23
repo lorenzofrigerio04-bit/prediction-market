@@ -94,13 +94,12 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Bottom nav mobile: stesse 5 voci, touch-friendly (min 44px) */}
+      {/* Bottom nav mobile: overlay sopra il background, glass; altezza --bottom-nav-h + safe-area */}
       <nav
-        className="nav-bottom-neon md:hidden fixed bottom-0 left-0 right-0 z-40"
-        style={{ paddingBottom: "var(--safe-area-inset-bottom)" }}
+        className="nav-bottom-neon md:hidden"
         aria-label="Navigazione principale"
       >
-        <div className="flex items-center justify-around h-16 px-1">
+        <div className="nav-bottom-neon-inner flex items-center justify-around px-1">
           {MAIN_NAV_ITEMS.map(({ href, label, NavIcon }) => {
             const linkHref = href === "/profile" ? profileHref : href === "/crea" ? creaHref : href;
             const active = isActive(linkHref);
