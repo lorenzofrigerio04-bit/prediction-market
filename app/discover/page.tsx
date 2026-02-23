@@ -99,18 +99,13 @@ export default function DiscoverPage() {
       </div>
 
       {activeTab === "per-te" ? (
-        <main
+        <div
           id="main-content"
-          className="relative w-full flex flex-col discover-feed-main"
-          style={
-            {
-              ["--consigliati-feed-height" as string]:
-                "calc(100dvh - var(--header-height, 3.5rem) - 52px - var(--discover-bottom-nav-offset, 0px))",
-            } as React.CSSProperties
-          }
+          className="discover-feed-fullviewport fixed left-0 right-0 top-0 z-0 flex flex-col"
+          style={{ height: "100dvh" }}
         >
           <ConsigliatiFeed />
-        </main>
+        </div>
       ) : (
         <main
           ref={mainRef}

@@ -9,6 +9,42 @@ import CommentsSection from "@/components/CommentsSection";
 
 const LIKES_STORAGE_KEY = "consigliati-likes";
 
+/** Autori display per far sembrare eventi da utenti diversi (nickname + iniziale) */
+const DISPLAY_AUTHORS: { name: string; initial: string }[] = [
+  { name: "Marco_Trading", initial: "M" },
+  { name: "ChiaraMercati", initial: "C" },
+  { name: "Luca_Pro", initial: "L" },
+  { name: "SofiaInvest", initial: "S" },
+  { name: "AlexPrediction", initial: "A" },
+  { name: "GioMarket", initial: "G" },
+  { name: "ElenaForecast", initial: "E" },
+  { name: "Davide_97", initial: "D" },
+  { name: "Francesca_Fin", initial: "F" },
+  { name: "MatteoBorsa", initial: "M" },
+  { name: "Laura_Eventi", initial: "L" },
+  { name: "Stefano_IT", initial: "S" },
+  { name: "Valentina_V", initial: "V" },
+  { name: "Andrea_Analisi", initial: "A" },
+  { name: "GiuliaG", initial: "G" },
+];
+
+function getDisplayAuthor(eventId: string, createdBy: { name: string | null } | null) {
+  let n = 0;
+  for (let i = 0; i < eventId.length; i++) n = (n * 31 + eventId.charCodeAt(i)) >>> 0;
+  const idx = n % DISPLAY_AUTHORS.length;
+  return DISPLAY_AUTHORS[idx];
+}
+
+function formatCountdown(ms: number): string {
+  if (ms <= 0) return "Chiuso";
+  const d = Math.floor(ms / (24 * 60 * 60 * 1000));
+  const h = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+  const m = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+  if (d > 0) return `${d}g ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m} min`;
+}
+
 export interface ConsigliatiEvent {
   id: string;
   title: string;
@@ -83,8 +119,8 @@ function IconHeart({ filled, className }: { filled: boolean; className?: string 
     <svg
       className={className}
       xmlns="http://www.w3.org/2000/svg"
-      width="28"
-      height="28"
+      width="24"
+      height="24"
       viewBox="0 0 24 24"
       fill={filled ? "currentColor" : "none"}
       stroke="currentColor"
@@ -103,8 +139,8 @@ function IconUserPlus({ className }: { className?: string }) {
     <svg
       className={className}
       xmlns="http://www.w3.org/2000/svg"
-      width="28"
-      height="28"
+      width="24"
+      height="24"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -121,12 +157,35 @@ function IconUserPlus({ className }: { className?: string }) {
   );
 }
 
+function IconShare({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+      <polyline points="16 6 12 2 8 6" />
+      <line x1="12" y1="2" x2="12" y2="15" />
+    </svg>
+  );
+}
+
 interface ConsigliatiSlideProps {
   event: ConsigliatiEvent;
   liked: boolean;
   onLikeToggle: () => void;
   onOpenComments: () => void;
   onFollowToggle: () => void;
+  onShare: () => void;
 }
 
 function ConsigliatiSlide({
@@ -135,10 +194,14 @@ function ConsigliatiSlide({
   onLikeToggle,
   onOpenComments,
   onFollowToggle,
+  onShare,
 }: ConsigliatiSlideProps) {
   const descriptionShort =
     event.description?.replace(/\s+/g, " ").trim().slice(0, 120) ?? "";
   const hasMoreDesc = (event.description?.length ?? 0) > 120;
+  const displayAuthor = getDisplayAuthor(event.id, event.createdBy);
+  const countdownMs = event.fomo?.countdownMs ?? new Date(event.closesAt).getTime() - Date.now();
+  const predictionsCount = event._count.predictions ?? 0;
 
   return (
     <section
@@ -152,14 +215,39 @@ function ConsigliatiSlide({
     >
       <div className={getBackdropClass(event.category)} aria-hidden />
       <div className="consigliati-slide-content relative z-10 flex h-full flex-col justify-between px-4 pt-4 pb-[calc(4rem+var(--safe-area-inset-bottom))] pl-[max(1rem,var(--safe-area-inset-left))] pr-[max(1rem,var(--safe-area-inset-right))] md:pb-6 md:pl-4 md:pr-4">
-        <div className="flex justify-end gap-2" />
-        <div className="flex items-end justify-between gap-4">
+        {/* Top row: categoria (sinistra), previsioni (destra) — box trasparenti */}
+        <div className="flex items-start justify-between gap-2">
+          <span className="rounded-lg border border-white/20 bg-black/25 px-2.5 py-1.5 text-xs font-semibold text-white backdrop-blur-sm drop-shadow-md">
+            {event.category}
+          </span>
+          <span className="rounded-lg border border-white/20 bg-black/25 px-2.5 py-1.5 text-xs font-semibold text-white backdrop-blur-sm drop-shadow-md tabular-nums">
+            {predictionsCount} previsioni
+          </span>
+        </div>
+        <div className="flex items-end justify-between gap-3">
           <div className="min-w-0 flex-1">
+            {/* Autore: avatar + nome */}
+            <div className="mb-2 flex items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-white/40 bg-black/40 text-sm font-bold text-white backdrop-blur-sm">
+                {event.createdBy?.image ? (
+                  <img
+                    src={event.createdBy.image}
+                    alt=""
+                    className="h-full w-full rounded-full object-cover"
+                  />
+                ) : (
+                  displayAuthor.initial
+                )}
+              </div>
+              <span className="truncate text-sm font-medium text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                {event.createdBy?.name ?? displayAuthor.name}
+              </span>
+            </div>
             <Link
               href={`/events/${event.id}`}
               className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-lg"
             >
-              <h2 className="text-lg font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] line-clamp-2 leading-snug">
+              <h2 className="text-base font-bold leading-snug text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] line-clamp-3">
                 {event.title}
               </h2>
             </Link>
@@ -169,24 +257,28 @@ function ConsigliatiSlide({
                 {hasMoreDesc ? "…" : ""}
               </p>
             )}
+            {/* Contatore dinamico tra descrizione e Vai all'evento */}
+            <p className="mt-1.5 text-xs font-semibold text-white/95 drop-shadow-sm tabular-nums">
+              Scade in {formatCountdown(countdownMs)}
+              {predictionsCount > 0 && ` · ${predictionsCount} previsioni`}
+            </p>
             <Link
               href={`/events/${event.id}`}
-              className="mt-2 inline-block text-xs font-semibold text-primary drop-shadow-sm hover:underline"
+              className="mt-1.5 inline-block text-xs font-semibold text-primary drop-shadow-sm hover:underline"
             >
               Vai all&apos;evento →
             </Link>
           </div>
-          <div className="consigliati-actions flex flex-shrink-0 flex-col items-center gap-5 pr-0">
+          {/* Barra destra stile TikTok: icona + numero, compatta */}
+          <div className="consigliati-actions flex flex-shrink-0 flex-col items-center gap-4 pr-0">
             <button
               type="button"
               onClick={onLikeToggle}
               className="flex flex-col items-center gap-0.5 text-white transition-transform active:scale-95"
               aria-label={liked ? "Rimuovi mi piace" : "Mi piace"}
             >
-              <IconHeart filled={liked} className="h-9 w-9 drop-shadow-md" />
-              <span className="text-xs font-medium drop-shadow-sm">
-                {liked ? "Cuore" : "Mi piace"}
-              </span>
+              <IconHeart filled={liked} className="h-8 w-8 drop-shadow-md" />
+              <span className="text-[10px] font-medium drop-shadow-sm">Mi piace</span>
             </button>
             <button
               type="button"
@@ -194,10 +286,17 @@ function ConsigliatiSlide({
               className="flex flex-col items-center gap-0.5 text-white transition-transform active:scale-95"
               aria-label="Commenti"
             >
-              <IconChat className="h-9 w-9 drop-shadow-md" />
-              <span className="text-xs font-medium drop-shadow-sm">
-                {event._count.comments}
-              </span>
+              <IconChat className="h-8 w-8 drop-shadow-md" />
+              <span className="text-[10px] font-medium drop-shadow-sm">{event._count.comments}</span>
+            </button>
+            <button
+              type="button"
+              onClick={onShare}
+              className="flex flex-col items-center gap-0.5 text-white transition-transform active:scale-95"
+              aria-label="Condividi"
+            >
+              <IconShare className="h-8 w-8 drop-shadow-md" />
+              <span className="text-[10px] font-medium drop-shadow-sm">Condividi</span>
             </button>
             <button
               type="button"
@@ -205,8 +304,8 @@ function ConsigliatiSlide({
               className="flex flex-col items-center gap-0.5 text-white transition-transform active:scale-95"
               aria-label={event.isFollowing ? "Non seguire più" : "Segui evento"}
             >
-              <IconUserPlus className="h-9 w-9 drop-shadow-md" />
-              <span className="text-xs font-medium drop-shadow-sm">
+              <IconUserPlus className="h-8 w-8 drop-shadow-md" />
+              <span className="text-[10px] font-medium drop-shadow-sm">
                 {event.isFollowing ? "Seguito" : "Segui"}
               </span>
             </button>
@@ -252,6 +351,36 @@ export default function ConsigliatiFeed() {
 
   useEffect(() => {
     setLikedIds(getStoredLikes());
+  }, []);
+
+  /** Quando torni sulla pagina dopo un po': refetch per feed sempre vivo (evita refetch ad ogni tab switch) */
+  const hiddenAtRef = useRef<number | null>(null);
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        hiddenAtRef.current = Date.now();
+      } else if (document.visibilityState === "visible" && hiddenAtRef.current !== null) {
+        const hiddenFor = Date.now() - hiddenAtRef.current;
+        if (hiddenFor > 8000) fetchEvents();
+        hiddenAtRef.current = null;
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [fetchEvents]);
+
+  const handleShare = useCallback((eventId: string, title: string) => {
+    const url =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/events/${eventId}`
+        : "";
+    if (typeof navigator !== "undefined" && navigator.share) {
+      navigator.share({ title, url }).catch(() => {
+        navigator.clipboard?.writeText(url);
+      });
+    } else {
+      navigator.clipboard?.writeText(url);
+    }
   }, []);
 
   const handleLikeToggle = useCallback((eventId: string) => {
@@ -388,6 +517,7 @@ export default function ConsigliatiFeed() {
             onLikeToggle={() => handleLikeToggle(event.id)}
             onOpenComments={() => setCommentsEventId(event.id)}
             onFollowToggle={() => handleFollowToggle(event.id)}
+            onShare={() => handleShare(event.id, event.title)}
           />
         ))}
       </div>

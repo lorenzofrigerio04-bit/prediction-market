@@ -2300,10 +2300,10 @@ body:has(.discover-page) > footer {
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(0, 0, 0, 0.35) 0%,
-    rgba(0, 0, 0, 0.5) 35%,
-    rgba(0, 0, 0, 0.78) 65%,
-    rgba(0, 0, 0, 0.88) 100%
+    rgba(0, 0, 0, 0.18) 0%,
+    rgba(0, 0, 0, 0.32) 35%,
+    rgba(0, 0, 0, 0.62) 65%,
+    rgba(0, 0, 0, 0.78) 100%
   );
   z-index: 0;
 }
@@ -2358,6 +2358,25 @@ body:has(.discover-page) > footer {
     0 0 10px rgb(var(--primary) / 0.8),
     0 0 20px rgb(var(--primary) / 0.5),
     0 0 30px rgb(var(--primary) / 0.3);
+}
+
+/* Feed Consigliati: scrollbar nascosta per effetto infinite scroll */
+.consigliati-feed {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.consigliati-feed::-webkit-scrollbar {
+  display: none;
+}
+
+/* Wrapper feed full viewport: sfondo categoria visibile sotto tab bar */
+.discover-feed-fullviewport {
+  --consigliati-feed-height: 100%;
+}
+@media (max-width: 767px) {
+  .discover-feed-fullviewport {
+    --consigliati-feed-height: calc(100dvh - 72px - var(--safe-area-inset-bottom));
+  }
 }
 
 /* Mobile: feed Consigliati non deve andare sotto la bottom nav */

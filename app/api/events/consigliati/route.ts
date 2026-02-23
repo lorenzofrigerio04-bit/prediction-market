@@ -200,6 +200,47 @@ export async function GET(request: NextRequest) {
     const orderMap = new Map(eventIds.map((id, i) => [id, i]));
     events.sort((a, b) => (orderMap.get(a.id) ?? 99) - (orderMap.get(b.id) ?? 99));
 
+    /** Massimo 2 eventi consecutivi della stessa categoria per feed dinamico */
+    const noMoreThanTwoSameCategory = <T extends { category: string }>(arr: T[]): T[] => {
+      if (arr.length <= 2) return arr;
+      const result: T[] = [];
+      const byCategory = new Map<string, T[]>();
+      for (const e of arr) {
+        const list = byCategory.get(e.category) ?? [];
+        list.push(e);
+        byCategory.set(e.category, list);
+      }
+      const categories = [...byCategory.keys()];
+      let last1: string | null = null;
+      let last2: string | null = null;
+      let remaining = arr.length;
+      while (remaining > 0) {
+        let chosen: T | null = null;
+        for (const cat of categories) {
+          const list = byCategory.get(cat)!;
+          if (list.length === 0) continue;
+          const wouldRepeatThree = last1 === cat && last2 === cat;
+          if (!wouldRepeatThree) {
+            chosen = list.shift()!;
+            break;
+          }
+        }
+        if (!chosen) {
+          const firstNonEmpty = categories.find((c) => (byCategory.get(c)?.length ?? 0) > 0);
+          if (firstNonEmpty) chosen = byCategory.get(firstNonEmpty)!.shift()!;
+        }
+        if (!chosen) break;
+        result.push(chosen);
+        last2 = last1;
+        last1 = chosen.category;
+        remaining--;
+      }
+      return result;
+    };
+    const reordered = noMoreThanTwoSameCategory(events);
+    events.length = 0;
+    events.push(...reordered);
+
     let followingSet: Set<string> = new Set();
     if (session?.user?.id && events.length > 0) {
       const follows = await prisma.eventFollower.findMany({
