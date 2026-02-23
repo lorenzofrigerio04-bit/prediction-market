@@ -213,23 +213,31 @@ export async function executeBuyShares(
     data: { creditsMicros: { decrement: actualCostMicros } },
   });
 
+  const currentPosition = await tx.position.findUniqueOrThrow({
+    where: { eventId_userId: { eventId, userId } },
+    select: { yesShareMicros: true, noShareMicros: true },
+  });
   if (outcome === "YES") {
     await tx.position.update({
       where: { eventId_userId: { eventId, userId } },
-      data: { yesShareMicros: { increment: shareMicros } },
+      data: { yesShareMicros: currentPosition.yesShareMicros + shareMicros },
     });
   } else {
     await tx.position.update({
       where: { eventId_userId: { eventId, userId } },
-      data: { noShareMicros: { increment: shareMicros } },
+      data: { noShareMicros: currentPosition.noShareMicros + shareMicros },
     });
   }
 
+  const currentAmm = await tx.ammState.findUniqueOrThrow({
+    where: { eventId },
+    select: { qYesMicros: true, qNoMicros: true },
+  });
   await tx.ammState.update({
     where: { eventId },
     data: {
-      qYesMicros: outcome === "YES" ? { increment: shareMicros } : undefined,
-      qNoMicros: outcome === "NO" ? { increment: shareMicros } : undefined,
+      qYesMicros: outcome === "YES" ? currentAmm.qYesMicros + shareMicros : currentAmm.qYesMicros,
+      qNoMicros: outcome === "NO" ? currentAmm.qNoMicros + shareMicros : currentAmm.qNoMicros,
       version: { increment: 1 },
     },
   });
@@ -390,20 +398,24 @@ export async function executeSellShares(
   if (outcome === "YES") {
     await tx.position.update({
       where: { eventId_userId: { eventId, userId } },
-      data: { yesShareMicros: { decrement: shareMicros } },
+      data: { yesShareMicros: positionRow.yesShareMicros - shareMicros },
     });
   } else {
     await tx.position.update({
       where: { eventId_userId: { eventId, userId } },
-      data: { noShareMicros: { decrement: shareMicros } },
+      data: { noShareMicros: positionRow.noShareMicros - shareMicros },
     });
   }
 
+  const currentAmmSell = await tx.ammState.findUniqueOrThrow({
+    where: { eventId },
+    select: { qYesMicros: true, qNoMicros: true },
+  });
   await tx.ammState.update({
     where: { eventId },
     data: {
-      qYesMicros: outcome === "YES" ? { decrement: shareMicros } : undefined,
-      qNoMicros: outcome === "NO" ? { decrement: shareMicros } : undefined,
+      qYesMicros: outcome === "YES" ? currentAmmSell.qYesMicros - shareMicros : currentAmmSell.qYesMicros,
+      qNoMicros: outcome === "NO" ? currentAmmSell.qNoMicros - shareMicros : currentAmmSell.qNoMicros,
       version: { increment: 1 },
     },
   });

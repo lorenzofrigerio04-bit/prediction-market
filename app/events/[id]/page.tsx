@@ -120,6 +120,17 @@ export default function EventDetailPage({
   }, [params?.id, session]);
 
   useEffect(() => {
+    const onVisibilityChange = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible" && params?.id) {
+        fetchEvent();
+        if (session?.user?.id) fetchUserCredits();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [params?.id, session?.user?.id]);
+
+  useEffect(() => {
     if (!event) return;
     trackView("EVENT_VIEWED", { eventId: event.id, category: event.category });
     if (event.resolved) {
@@ -142,7 +153,7 @@ export default function EventDetailPage({
   const fetchEvent = async () => {
     if (!params?.id) return;
     try {
-      const response = await fetch(`/api/events/${params.id}`);
+      const response = await fetch(`/api/events/${params.id}`, { cache: "no-store" });
       if (!response.ok) {
         if (response.status === 404) {
           if (typeof window !== "undefined" && window.history.length > 1) {
@@ -169,7 +180,7 @@ export default function EventDetailPage({
 
   const fetchUserCredits = async () => {
     try {
-      const response = await fetch("/api/user/credits");
+      const response = await fetch("/api/user/credits", { cache: "no-store" });
       if (response.ok) {
         const data = await response.json();
         if (data.creditsMicros != null) {

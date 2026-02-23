@@ -6,6 +6,8 @@ import { getCachedPrice, setCachedPrice } from "@/lib/cache/price";
 import { getEventProbability } from "@/lib/pricing/price-display";
 import { priceYesMicros, SCALE } from "@/lib/amm/fixedPointLmsr";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -97,12 +99,14 @@ export async function GET(
       }
     }
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       event,
       userPrediction,
       userPosition,
       isFollowing,
     });
+    res.headers.set("Cache-Control", "private, no-store, no-cache, must-revalidate");
+    return res;
   } catch (error) {
     console.error("Error fetching event:", error);
     return NextResponse.json(
