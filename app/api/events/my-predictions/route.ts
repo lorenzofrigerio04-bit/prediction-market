@@ -18,6 +18,7 @@ export interface MyPredictionEvent {
   b?: number | null;
   userWinProbability: number; // 0-100: probabilità che l'utente vinca (lato su cui ha scommesso)
   userSide: "YES" | "NO";
+  predictionsCount?: number;
 }
 
 export async function GET() {
@@ -68,6 +69,7 @@ export async function GET() {
         ammState: {
           select: { qYesMicros: true, qNoMicros: true, bMicros: true },
         },
+        _count: { select: { Prediction: true } },
       },
     });
 
@@ -123,6 +125,7 @@ export async function GET() {
           b: e.b,
           userWinProbability,
           userSide,
+          predictionsCount: e._count?.Prediction ?? 0,
         };
       });
 
@@ -130,7 +133,7 @@ export async function GET() {
     const sortedByLead = [...result].sort(
       (a, b) => b.userWinProbability - a.userWinProbability
     );
-    const topInLead = sortedByLead.slice(0, 5);
+    const topInLead = sortedByLead.slice(0, 10);
 
     return NextResponse.json({
       events: result,

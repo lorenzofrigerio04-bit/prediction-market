@@ -2283,6 +2283,58 @@ body:has(.discover-page) > footer {
   );
   z-index: 0;
 }
+
+/* Consigliati feed: full-height slides con stesso sfondo per categoria della pagina evento */
+.consigliati-slide-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  pointer-events: none;
+}
+.consigliati-slide-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 0.5) 35%,
+    rgba(0, 0, 0, 0.78) 65%,
+    rgba(0, 0, 0, 0.88) 100%
+  );
+  z-index: 0;
+}
+.consigliati-slide-backdrop--default {
+  background-image: url("/images/event-intrattenimento-bg.png");
+}
+.consigliati-slide-backdrop--cultura {
+  background-image: url("/images/event-cultura-bg.png");
+}
+.consigliati-slide-backdrop--economia {
+  background-image: url("/images/event-economia-bg.png");
+}
+.consigliati-slide-backdrop--intrattenimento {
+  background-image: url("/images/event-intrattenimento-bg.png");
+}
+.consigliati-slide-backdrop--sport {
+  background-image: url("/images/event-sport-bg.png");
+}
+.consigliati-slide-backdrop--tecnologia {
+  background-image: url("/images/event-tecnologia-bg.png");
+}
+.consigliati-slide-backdrop--scienza {
+  background-image: url("/images/event-scienza-bg.png");
+}
+.consigliati-slide-backdrop--politica {
+  background-image: url("/images/event-politica-bg.png");
+}
+.consigliati-slide-backdrop:not([class*="--"]) {
+  background-image: url("/images/event-intrattenimento-bg.png");
+}
+
 .event-detail-page-main {
   position: relative;
   z-index: 1;

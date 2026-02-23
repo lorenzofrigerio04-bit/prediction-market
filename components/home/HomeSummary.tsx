@@ -73,9 +73,9 @@ export default function HomeSummary({
           </div>
         </Link>
 
-        {/* Hook FOMO: Scopri eventi per te */}
+        {/* Hook FOMO: Scopri eventi consigliati */}
         <Link
-          href="#potrebbero-piacerti"
+          href="/discover"
           className="flex items-center gap-3 rounded-xl hover:bg-surface/50 transition-colors p-1 -m-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none group"
         >
           <div
@@ -88,7 +88,7 @@ export default function HomeSummary({
           </div>
           <div className="min-w-0">
             <p className="text-ds-micro font-semibold text-fg-muted uppercase tracking-wider">
-              Per te
+              Consigliati
             </p>
             <p className="text-ds-body font-bold text-fg group-hover:text-primary transition-colors">
               Scopri eventi →
