@@ -194,7 +194,8 @@ export default function EventDetailPage({
     }
   };
 
-  const handlePredictionSuccess = () => {
+  const handlePredictionSuccess = (outcome?: "YES" | "NO") => {
+    if (outcome) setSellOutcome(outcome);
     fetchEvent();
     if (session?.user?.id) {
       fetchUserCredits();
@@ -492,7 +493,7 @@ export default function EventDetailPage({
             </div>
           )}
 
-          {/* Vendita quote AMM */}
+          {/* Vendita quote AMM — integrato nel box evento, stile coerente */}
           {isAmm && userPosition && !event.resolved && new Date(event.closesAt) > new Date() && (() => {
             const yesShares = Number(BigInt(userPosition.yesShareMicros) / 1_000_000n);
             const noShares = Number(BigInt(userPosition.noShareMicros) / 1_000_000n);
@@ -502,7 +503,7 @@ export default function EventDetailPage({
             const handleSell = async () => {
               const num = parseFloat(sellShares);
               if (!Number.isFinite(num) || num <= 0 || num > maxSell) {
-                setSellError("Inserisci un numero valido di quote da vendere.");
+                setSellError("Inserisci una quantità valida.");
                 return;
               }
               setSellError(null);
@@ -532,22 +533,23 @@ export default function EventDetailPage({
               }
             };
             return (
-              <div className="box-raised p-3 mb-3">
-                <p className="text-ds-body-sm font-semibold text-fg mb-2">Vendi quote</p>
-                <div className="flex flex-wrap items-end gap-2 mb-2">
-                  <label className="flex flex-col gap-1">
-                    <span className="text-ds-caption text-fg-muted">Tipo</span>
+              <div className="pt-4 mt-4 border-t border-white/10">
+                <p className="text-ds-caption font-semibold text-fg-muted uppercase tracking-micro mb-3">Vendita quote</p>
+                <div className="flex flex-wrap items-end gap-3">
+                  <label className="flex flex-col gap-1.5 min-w-0">
+                    <span className="text-ds-caption text-fg-muted">Esito</span>
                     <select
                       value={sellOutcome}
                       onChange={(e) => setSellOutcome(e.target.value as "YES" | "NO")}
-                      className="rounded-lg border border-border bg-bg px-3 py-2 text-fg"
+                      className="rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 text-ds-body-sm text-fg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/40"
+                      aria-label="Scegli esito da vendere"
                     >
                       <option value="YES">SÌ ({yesShares.toLocaleString("it-IT")})</option>
                       <option value="NO">NO ({noShares.toLocaleString("it-IT")})</option>
                     </select>
                   </label>
-                  <label className="flex flex-col gap-1">
-                    <span className="text-ds-caption text-fg-muted">Quante quote</span>
+                  <label className="flex flex-col gap-1.5 min-w-0">
+                    <span className="text-ds-caption text-fg-muted">Quantità</span>
                     <input
                       type="number"
                       min={0}
@@ -556,19 +558,20 @@ export default function EventDetailPage({
                       value={sellShares}
                       onChange={(e) => setSellShares(e.target.value)}
                       placeholder="0"
-                      className="rounded-lg border border-border bg-bg px-3 py-2 w-24 font-numeric text-fg"
+                      className="rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 w-28 font-numeric text-ds-body-sm text-fg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      aria-label="Quantità di quote da vendere"
                     />
                   </label>
                   <button
                     type="button"
                     onClick={handleSell}
                     disabled={sellLoading}
-                    className="px-4 py-2 rounded-lg bg-primary text-primary-fg font-medium hover:bg-primary-hover disabled:opacity-60"
+                    className="px-4 py-2.5 rounded-xl bg-primary text-primary-fg text-ds-body-sm font-semibold hover:bg-primary-hover disabled:opacity-60 transition-colors min-h-[42px]"
                   >
                     {sellLoading ? "Vendita…" : "Vendi"}
                   </button>
                 </div>
-                {sellError && <p className="text-ds-caption text-error">{sellError}</p>}
+                {sellError && <p className="text-ds-caption text-danger mt-2">{sellError}</p>}
               </div>
             );
           })()}

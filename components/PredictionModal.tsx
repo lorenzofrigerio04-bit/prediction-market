@@ -9,7 +9,8 @@ interface PredictionModalProps {
   eventTitle: string;
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  /** Called after successful buy; receives the outcome that was bought (YES or NO). */
+  onSuccess?: (outcome: "YES" | "NO") => void;
   userCredits?: number;
   /** Pre-select SÌ or NO when opening from event page SI/NO boxes */
   initialOutcome?: "YES" | "NO" | null;
@@ -102,7 +103,7 @@ export default function PredictionModal({
         throw new Error(data.error || "Errore nella previsione");
       }
 
-      if (onSuccess) onSuccess();
+      if (onSuccess) onSuccess(selectedOutcome);
       onClose();
       router.refresh();
     } catch (err: unknown) {
