@@ -4,6 +4,9 @@
  * 2. Creates AmmState for every event (if missing)
  * 3. Migrates legacy Predictions to Position + AmmState (credits → shareMicros)
  *
+ * Uses short transactions + timeout to avoid P2028 on serverless DB (Neon).
+ * Idempotent: skips events whose AmmState already has liquidity from Positions.
+ *
  * Run: npx tsx scripts/migrate-all-events-to-amm.ts
  */
 
@@ -12,6 +15,8 @@ import { ensureAmmStateForEvent } from "@/lib/amm/ensure-amm-state";
 
 const prisma = new PrismaClient();
 const SCALE = 1_000_000;
+const TX_TIMEOUT_MS = 25_000;
+const PREDICTIONS_PER_TX = 30;
 
 async function main() {
   // 1. Set all events to AMM
@@ -33,7 +38,7 @@ async function main() {
   }
   console.log("AmmState created for events that had none:", ammCreated);
 
-  // 3. Migrate Predictions -> Position + AmmState
+  // 3. Migrate Predictions -> Position + AmmState (short transactions per chunk)
   const predictions = await prisma.prediction.findMany({
     where: {},
     select: { eventId: true, userId: true, outcome: true, credits: true, amount: true },
@@ -47,66 +52,76 @@ async function main() {
   }
 
   let positionsCreated = 0;
-  let ammStatesUpdated = 0;
+  let eventsWithLiquidityUpdated = 0;
 
   for (const [eventId, preds] of byEvent) {
-    let totalYesMicros = 0n;
-    let totalNoMicros = 0n;
+    const amm = await prisma.ammState.findUnique({ where: { eventId } });
+    if (!amm) continue;
+    if (amm.qYesMicros > 0n || amm.qNoMicros > 0n) continue;
 
-    await prisma.$transaction(async (tx) => {
-      for (const p of preds) {
-        const credits = p.credits ?? p.amount ?? 0;
-        if (credits <= 0) continue;
-        const micros = BigInt(credits) * BigInt(SCALE);
-        if (p.outcome === "YES") totalYesMicros += micros;
-        else totalNoMicros += micros;
+    for (let i = 0; i < preds.length; i += PREDICTIONS_PER_TX) {
+      const chunk = preds.slice(i, i + PREDICTIONS_PER_TX);
+      let chunkYes = 0n;
+      let chunkNo = 0n;
 
-        const existing = await tx.position.findUnique({
-          where: { eventId_userId: { eventId, userId: p.userId } },
-        });
-        if (existing) {
-          if (p.outcome === "YES") {
-            await tx.position.update({
+      await prisma.$transaction(
+        async (tx) => {
+          for (const p of chunk) {
+            const credits = p.credits ?? p.amount ?? 0;
+            if (credits <= 0) continue;
+            const micros = BigInt(credits) * BigInt(SCALE);
+            if (p.outcome === "YES") chunkYes += micros;
+            else chunkNo += micros;
+
+            const existing = await tx.position.findUnique({
               where: { eventId_userId: { eventId, userId: p.userId } },
-              data: { yesShareMicros: existing.yesShareMicros + micros },
             });
-          } else {
-            await tx.position.update({
-              where: { eventId_userId: { eventId, userId: p.userId } },
-              data: { noShareMicros: existing.noShareMicros + micros },
-            });
+            if (existing) {
+              if (p.outcome === "YES") {
+                await tx.position.update({
+                  where: { eventId_userId: { eventId, userId: p.userId } },
+                  data: { yesShareMicros: existing.yesShareMicros + micros },
+                });
+              } else {
+                await tx.position.update({
+                  where: { eventId_userId: { eventId, userId: p.userId } },
+                  data: { noShareMicros: existing.noShareMicros + micros },
+                });
+              }
+            } else {
+              await tx.position.create({
+                data: {
+                  eventId,
+                  userId: p.userId,
+                  yesShareMicros: p.outcome === "YES" ? micros : 0n,
+                  noShareMicros: p.outcome === "NO" ? micros : 0n,
+                },
+              });
+              positionsCreated++;
+            }
           }
-        } else {
-          await tx.position.create({
-            data: {
-              eventId,
-              userId: p.userId,
-              yesShareMicros: p.outcome === "YES" ? micros : 0n,
-              noShareMicros: p.outcome === "NO" ? micros : 0n,
-            },
-          });
-          positionsCreated++;
-        }
-      }
 
-      if (totalYesMicros > 0n || totalNoMicros > 0n) {
-        const amm = await tx.ammState.findUnique({ where: { eventId } });
-        if (amm) {
-          await tx.ammState.update({
-            where: { eventId },
-            data: {
-              qYesMicros: amm.qYesMicros + totalYesMicros,
-              qNoMicros: amm.qNoMicros + totalNoMicros,
-            },
-          });
-          ammStatesUpdated++;
-        }
-      }
-    });
+          if (chunkYes > 0n || chunkNo > 0n) {
+            const current = await tx.ammState.findUnique({ where: { eventId } });
+            if (current) {
+              await tx.ammState.update({
+                where: { eventId },
+                data: {
+                  qYesMicros: current.qYesMicros + chunkYes,
+                  qNoMicros: current.qNoMicros + chunkNo,
+                },
+              });
+              if (i === 0) eventsWithLiquidityUpdated++;
+            }
+          }
+        },
+        { timeout: TX_TIMEOUT_MS }
+      );
+    }
   }
 
   console.log("Positions created from Predictions:", positionsCreated);
-  console.log("AmmState liquidity updated from Predictions:", ammStatesUpdated);
+  console.log("Events with AmmState liquidity updated:", eventsWithLiquidityUpdated);
   console.log("Migration to AMM-only complete.");
 }
 
