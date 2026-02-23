@@ -81,10 +81,19 @@ export default function PredictionModal({
     setError(null);
 
     try {
+      const idempotencyKey =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `client-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const response = await fetch("/api/predictions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId, outcome: selectedOutcome, credits }),
+        body: JSON.stringify({
+          eventId,
+          outcome: selectedOutcome,
+          credits,
+          idempotencyKey,
+        }),
       });
 
       const data = await response.json();

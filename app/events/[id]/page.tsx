@@ -32,11 +32,9 @@ interface EventDetail {
   totalCredits: number;
   yesCredits: number;
   noCredits: number;
-  /** LMSR: quantity of YES shares (use for bar/price when present) */
+  tradingMode?: string | null;
   q_yes?: number | null;
-  /** LMSR: quantity of NO shares */
   q_no?: number | null;
-  /** LMSR: liquidity parameter */
   b?: number | null;
   yesPredictions: number;
   noPredictions: number;
@@ -60,9 +58,15 @@ interface UserPrediction {
   payout: number | null;
 }
 
+interface UserPosition {
+  yesShareMicros: string;
+  noShareMicros: string;
+}
+
 interface EventResponse {
   event: EventDetail;
   userPrediction: UserPrediction | null;
+  userPosition?: UserPosition | null;
   isFollowing?: boolean;
 }
 
@@ -82,6 +86,7 @@ export default function EventDetailPage({
   const [userPrediction, setUserPrediction] = useState<UserPrediction | null>(
     null
   );
+  const [userPosition, setUserPosition] = useState<UserPosition | null>(null);
   const [userCredits, setUserCredits] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showPredictionModal, setShowPredictionModal] = useState(false);
@@ -91,14 +96,19 @@ export default function EventDetailPage({
   const [showResolutionPopup, setShowResolutionPopup] = useState(false);
   const [showDescriptionPopup, setShowDescriptionPopup] = useState(false);
   const [predictionOutcome, setPredictionOutcome] = useState<"YES" | "NO" | null>(null);
+  const [sellOutcome, setSellOutcome] = useState<"YES" | "NO">("YES");
+  const [sellShares, setSellShares] = useState("");
+  const [sellLoading, setSellLoading] = useState(false);
+  const [sellError, setSellError] = useState<string | null>(null);
   const mainRef = useRef<HTMLElement | null>(null);
 
+  const isAmm = event?.tradingMode === "AMM";
   const canMakePrediction =
     !!event &&
     !event.resolved &&
     new Date(event.closesAt) > new Date() &&
-    !userPrediction &&
-    !!session;
+    !!session &&
+    (isAmm ? true : !userPrediction);
 
   useEffect(() => {
     if (params?.id) {
@@ -147,7 +157,8 @@ export default function EventDetailPage({
 
       const data: EventResponse = await response.json();
       setEvent(data.event);
-      setUserPrediction(data.userPrediction);
+      setUserPrediction(data.userPrediction ?? null);
+      setUserPosition(data.userPosition ?? null);
       setIsFollowing(data.isFollowing ?? false);
     } catch (error) {
       console.error("Error fetching event:", error);
@@ -158,12 +169,14 @@ export default function EventDetailPage({
 
   const fetchUserCredits = async () => {
     try {
-      // We'll need to create an API route for this, but for now we can get it from the session
-      // For now, we'll fetch it from a user API endpoint if it exists
       const response = await fetch("/api/user/credits");
       if (response.ok) {
         const data = await response.json();
-        setUserCredits(data.credits || 0);
+        if (data.creditsMicros != null) {
+          setUserCredits(Number(BigInt(data.creditsMicros) / 1_000_000n));
+        } else {
+          setUserCredits(data.credits ?? 0);
+        }
       }
     } catch (error) {
       console.error("Error fetching user credits:", error);
@@ -352,9 +365,20 @@ export default function EventDetailPage({
 
           {/* Hai previsto (solo numero + simbolo credito), dove c’era la descrizione */}
           <div className="flex items-center justify-center gap-1.5 py-2 mb-3">
-            <span className="text-ds-body-sm text-fg-muted">Hai previsto</span>
-            <span className="font-bold text-fg font-numeric tabular-nums">{(userPrediction?.credits ?? 0).toLocaleString("it-IT")}</span>
-            <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
+            {isAmm && userPosition ? (
+              <>
+                <span className="text-ds-body-sm text-fg-muted">Le tue quote</span>
+                <span className="font-bold text-fg font-numeric tabular-nums">
+                  SÌ {(Number(BigInt(userPosition.yesShareMicros) / 1_000_000n)).toLocaleString("it-IT")} / NO {(Number(BigInt(userPosition.noShareMicros) / 1_000_000n)).toLocaleString("it-IT")}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-ds-body-sm text-fg-muted">Hai previsto</span>
+                <span className="font-bold text-fg font-numeric tabular-nums">{(userPrediction?.credits ?? 0).toLocaleString("it-IT")}</span>
+                <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
+              </>
+            )}
           </div>
 
           {/* Tabella 1x2: SI | NO (click per prevedere) */}
@@ -362,8 +386,14 @@ export default function EventDetailPage({
             const qYes = event.q_yes ?? 0;
             const qNo = event.q_no ?? 0;
             const b = event.b ?? 100;
-            const displayProbability = getEventProbability(event);
-            const yesPct = getPrice(qYes, qNo, b, "YES") * 100;
+            const displayProbability =
+              typeof event.probability === "number"
+                ? event.probability
+                : getEventProbability(event);
+            const yesPct =
+              typeof event.probability === "number"
+                ? event.probability
+                : getPrice(qYes, qNo, b, "YES") * 100;
             return (
               <>
                 <div className="grid grid-cols-2 gap-3 mb-3">
@@ -450,6 +480,87 @@ export default function EventDetailPage({
               Previsioni chiuse. Risultato: in attesa.
             </div>
           )}
+
+          {/* Vendita quote AMM */}
+          {isAmm && userPosition && !event.resolved && new Date(event.closesAt) > new Date() && (() => {
+            const yesShares = Number(BigInt(userPosition.yesShareMicros) / 1_000_000n);
+            const noShares = Number(BigInt(userPosition.noShareMicros) / 1_000_000n);
+            const hasShares = yesShares > 0 || noShares > 0;
+            if (!hasShares) return null;
+            const maxSell = sellOutcome === "YES" ? yesShares : noShares;
+            const handleSell = async () => {
+              const num = parseFloat(sellShares);
+              if (!Number.isFinite(num) || num <= 0 || num > maxSell) {
+                setSellError("Inserisci un numero valido di quote da vendere.");
+                return;
+              }
+              setSellError(null);
+              setSellLoading(true);
+              try {
+                const shareMicros = BigInt(Math.round(num * 1_000_000));
+                const res = await fetch("/api/trades/sell", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    eventId: event.id,
+                    outcome: sellOutcome,
+                    shareMicros: shareMicros.toString(),
+                    idempotencyKey: crypto.randomUUID(),
+                  }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                  setSellError(data.error || "Errore durante la vendita");
+                  return;
+                }
+                setSellShares("");
+                await fetchEvent();
+                if (session?.user?.id) fetchUserCredits();
+              } finally {
+                setSellLoading(false);
+              }
+            };
+            return (
+              <div className="box-raised p-3 mb-3">
+                <p className="text-ds-body-sm font-semibold text-fg mb-2">Vendi quote</p>
+                <div className="flex flex-wrap items-end gap-2 mb-2">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-ds-caption text-fg-muted">Tipo</span>
+                    <select
+                      value={sellOutcome}
+                      onChange={(e) => setSellOutcome(e.target.value as "YES" | "NO")}
+                      className="rounded-lg border border-border bg-bg px-3 py-2 text-fg"
+                    >
+                      <option value="YES">SÌ ({yesShares.toLocaleString("it-IT")})</option>
+                      <option value="NO">NO ({noShares.toLocaleString("it-IT")})</option>
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-ds-caption text-fg-muted">Quante quote</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={maxSell}
+                      step="0.01"
+                      value={sellShares}
+                      onChange={(e) => setSellShares(e.target.value)}
+                      placeholder="0"
+                      className="rounded-lg border border-border bg-bg px-3 py-2 w-24 font-numeric text-fg"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleSell}
+                    disabled={sellLoading}
+                    className="px-4 py-2 rounded-lg bg-primary text-primary-fg font-medium hover:bg-primary-hover disabled:opacity-60"
+                  >
+                    {sellLoading ? "Vendita…" : "Vendi"}
+                  </button>
+                </div>
+                {sellError && <p className="text-ds-caption text-error">{sellError}</p>}
+              </div>
+            );
+          })()}
 
           {!session && !event.resolved && new Date(event.closesAt) > new Date() && (
             <div className="p-3 bg-warning-bg/90 border border-warning/30 rounded-xl text-ds-body-sm text-warning dark:bg-warning-bg/50 dark:text-warning mb-3">

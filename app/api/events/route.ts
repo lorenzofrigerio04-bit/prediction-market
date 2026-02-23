@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getEventsWithStats } from "@/lib/fomo/event-stats";
+import { priceYesMicros, SCALE } from "@/lib/amm/fixedPointLmsr";
+import { getEventProbability } from "@/lib/pricing/price-display";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +75,9 @@ export async function GET(request: NextRequest) {
           _count: {
             select: { Prediction: true, comments: true },
           },
+          ammState: {
+            select: { qYesMicros: true, qNoMicros: true, bMicros: true },
+          },
         },
       });
 
@@ -90,9 +95,17 @@ export async function GET(request: NextRequest) {
 
       const eventsWithStats = diverse.map((event) => {
         const stats = fomoStats.get(event.id);
-        const { _count, ...rest } = event;
+        const { _count, ammState, ...rest } = event;
+        let probability: number;
+        if (event.tradingMode === "AMM" && ammState) {
+          const yesMicros = priceYesMicros(ammState.qYesMicros, ammState.qNoMicros, ammState.bMicros);
+          probability = Number((yesMicros * 100n) / SCALE);
+        } else {
+          probability = getEventProbability(event);
+        }
         return {
           ...rest,
+          probability,
           _count: { predictions: _count.Prediction, comments: _count.comments },
           fomo: stats || {
             countdownMs: new Date(event.closesAt).getTime() - now.getTime(),
@@ -129,6 +142,9 @@ export async function GET(request: NextRequest) {
           _count: {
             select: { Prediction: true, comments: true },
           },
+          ammState: {
+            select: { qYesMicros: true, qNoMicros: true, bMicros: true },
+          },
         },
       }),
       prisma.event.count({ where }),
@@ -139,9 +155,17 @@ export async function GET(request: NextRequest) {
 
     const eventsWithStats = events.map((event) => {
       const stats = fomoStats.get(event.id);
-      const { _count, ...rest } = event;
+      const { _count, ammState, ...rest } = event;
+      let probability: number;
+      if (event.tradingMode === "AMM" && ammState) {
+        const yesMicros = priceYesMicros(ammState.qYesMicros, ammState.qNoMicros, ammState.bMicros);
+        probability = Number((yesMicros * 100n) / SCALE);
+      } else {
+        probability = getEventProbability(event);
+      }
       return {
         ...rest,
+        probability,
         _count: { predictions: _count.Prediction, comments: _count.comments },
         fomo: stats || {
           countdownMs: new Date(event.closesAt).getTime() - now.getTime(),

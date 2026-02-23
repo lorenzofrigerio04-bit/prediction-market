@@ -35,6 +35,9 @@
     "db:sanity": "tsx scripts/db-sanity.ts",
     "db:dedup-audit": "tsx scripts/db-dedup-audit.ts",
     "db:backfill-dedupkeys": "tsx scripts/backfill-dedupkeys.ts",
+    "db:backfill-amm-migration": "tsx scripts/backfill-amm-migration.ts",
+    "db:migrate-to-amm": "tsx scripts/migrate-all-events-to-amm.ts",
+    "stress-test:amm": "tsx scripts/stress-test-amm.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getCachedPrice, setCachedPrice } from "@/lib/cache/price";
 import { getEventProbability } from "@/lib/pricing/price-display";
+import { priceYesMicros, SCALE } from "@/lib/amm/fixedPointLmsr";
 
 export async function GET(
   request: NextRequest,
@@ -13,10 +14,8 @@ export async function GET(
     const session = await getServerSession(authOptions);
     const eventId = params.id;
 
-    // Optional: use cached price for probability if fresh (1s TTL)
     let cachedPrice = await getCachedPrice(eventId);
 
-    // Fetch event with all related data
     const event = await prisma.event.findUnique({
       where: { id: eventId },
       include: {
@@ -43,52 +42,65 @@ export async function GET(
       );
     }
 
-    // Set price cache (1s TTL) for /api/events/[id]/price and future requests
-    const priceData = {
-      eventId: event.id,
-      probability: getEventProbability(event),
-      q_yes: 0,
-      q_no: 0,
-      b: event.b ?? 100,
-    };
-    setCachedPrice(eventId, priceData).catch(() => {});
-
-    // Override probability with cached value if we had a fresh cache (consistent with price endpoint)
-    if (cachedPrice) {
-      (event as { probability?: number }).probability = cachedPrice.probability;
+    let probability: number;
+    if (event.tradingMode === "AMM") {
+      const amm = await prisma.ammState.findUnique({ where: { eventId: event.id } });
+      if (amm) {
+        const yesMicros = priceYesMicros(amm.qYesMicros, amm.qNoMicros, amm.bMicros);
+        probability = Number((yesMicros * 100n) / SCALE);
+      } else {
+        probability = 50;
+      }
+      setCachedPrice(eventId, { eventId: event.id, probability, q_yes: 0, q_no: 0, b: 100 }).catch(() => {});
     } else {
-      (event as { probability?: number }).probability = priceData.probability;
+      const priceData = {
+        eventId: event.id,
+        probability: getEventProbability(event),
+        q_yes: 0,
+        q_no: 0,
+        b: event.b ?? 100,
+      };
+      setCachedPrice(eventId, priceData).catch(() => {});
+      probability = cachedPrice?.probability ?? priceData.probability;
     }
+    (event as { probability?: number }).probability = probability;
 
-    // Get user's prediction and follow status if logged in
     let userPrediction = null;
+    let userPosition: { yesShareMicros: string; noShareMicros: string } | null = null;
     let isFollowing = false;
     if (session?.user?.id) {
-      const [pred, follow] = await Promise.all([
+      const [pred, follow, position] = await Promise.all([
         prisma.prediction.findUnique({
           where: {
-            eventId_userId: {
-              eventId: event.id,
-              userId: session.user.id,
-            },
+            eventId_userId: { eventId: event.id, userId: session.user.id },
           },
         }),
         prisma.eventFollower.findUnique({
           where: {
-            userId_eventId: {
-              userId: session.user.id,
-              eventId: event.id,
-            },
+            userId_eventId: { userId: session.user.id, eventId: event.id },
           },
         }),
+        event.tradingMode === "AMM"
+          ? prisma.position.findUnique({
+              where: { eventId_userId: { eventId: event.id, userId: session.user.id } },
+              select: { yesShareMicros: true, noShareMicros: true },
+            })
+          : Promise.resolve(null),
       ]);
       userPrediction = pred;
       isFollowing = !!follow;
+      if (position) {
+        userPosition = {
+          yesShareMicros: position.yesShareMicros.toString(),
+          noShareMicros: position.noShareMicros.toString(),
+        };
+      }
     }
 
     return NextResponse.json({
       event,
       userPrediction,
+      userPosition,
       isFollowing,
     });
   } catch (error) {

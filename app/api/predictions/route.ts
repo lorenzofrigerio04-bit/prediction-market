@@ -6,13 +6,15 @@ import { updateMissionProgress } from "@/lib/missions";
 import { checkAndAwardBadges } from "@/lib/badges";
 import { rateLimit } from "@/lib/rate-limit";
 import { track } from "@/lib/analytics";
-import { executePredictionBuy, TradeError } from "@/lib/pricing/trade";
+import { executeBuyShares, AmmError } from "@/lib/amm/engine";
+import { assertAmmEvent } from "@/lib/amm/guards";
 import { updateUserProfileFromTrade } from "@/lib/personalization";
 import { invalidatePriceCache } from "@/lib/cache/price";
 import { invalidateTrendingCache } from "@/lib/cache/trending";
 import { invalidateFeedCache } from "@/lib/feed-cache";
 
 const PREDICTIONS_LIMIT = 15; // previsioni per user per minuto
+const SCALE = 1_000_000;
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,6 +41,8 @@ export async function POST(request: NextRequest) {
     const outcome =
       body.outcome === "YES" || body.outcome === "NO" ? body.outcome : null;
     const credits = typeof body.credits === "number" ? body.credits : Number(body.credits);
+    const maxCostMicrosRaw = body.maxCostMicros != null ? body.maxCostMicros : null;
+    const idempotencyKey = typeof body.idempotencyKey === "string" ? body.idempotencyKey.trim() : null;
 
     if (!eventId || !outcome) {
       return NextResponse.json(
@@ -47,16 +51,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (Number.isNaN(credits) || credits < 1) {
-      return NextResponse.json(
-        { error: "Devi investire almeno 1 credito" },
-        { status: 400 }
-      );
-    }
-
-    const creditsToSpend = Math.floor(credits);
-
-    // Verifica che l'evento esista (per 404 e per passare al trade)
     const event = await prisma.event.findUnique({
       where: { id: eventId },
       select: {
@@ -65,6 +59,7 @@ export async function POST(request: NextRequest) {
         category: true,
         resolved: true,
         closesAt: true,
+        tradingMode: true,
         b: true,
         q_yes: true,
         q_no: true,
@@ -78,30 +73,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Esegue trade LMSR in transazione atomica (validazione mercato aperto, crediti, creazione prediction, update event, deduzione crediti)
-    let result: Awaited<ReturnType<typeof executePredictionBuy>>;
+    assertAmmEvent(event);
+    const maxCostMicros =
+      maxCostMicrosRaw != null
+        ? BigInt(typeof maxCostMicrosRaw === "string" ? maxCostMicrosRaw : Math.floor(maxCostMicrosRaw))
+        : (typeof credits === "number" && !Number.isNaN(credits) && credits >= 1 ? BigInt(Math.floor(credits) * SCALE) : null);
+    if (!maxCostMicros || maxCostMicros <= 0n) {
+      return NextResponse.json(
+        { error: "Indica l'importo massimo da spendere (maxCostMicros o credits)" },
+        { status: 400 }
+      );
+    }
+    if (!idempotencyKey) {
+      return NextResponse.json(
+        { error: "idempotencyKey obbligatorio" },
+        { status: 400 }
+      );
+    }
+
+    let ammResult: Awaited<ReturnType<typeof executeBuyShares>>;
     try {
-      result = await prisma.$transaction((tx) =>
-        executePredictionBuy(tx, {
-          event: {
-            id: event.id,
-            title: event.title,
-            category: event.category,
-            resolved: event.resolved,
-            closesAt: event.closesAt,
-            q_yes: event.q_yes ?? null,
-            q_no: event.q_no ?? null,
-            b: event.b ?? 100,
-          },
+      ammResult = await prisma.$transaction((tx) =>
+        executeBuyShares(tx, {
+          eventId,
           userId: session.user.id,
           outcome: outcome as "YES" | "NO",
-          creditsToSpend,
+          maxCostMicros,
+          idempotencyKey,
         })
       );
     } catch (err) {
-      if (err instanceof TradeError) {
+      if (err instanceof AmmError) {
         const status =
-          err.code === "MARKET_CLOSED" || err.code === "MARKET_RESOLVED" || err.code === "INSUFFICIENT_CREDITS" || err.code === "ALREADY_PREDICTED"
+          err.code === "MARKET_CLOSED" || err.code === "MARKET_RESOLVED" || err.code === "INSUFFICIENT_BALANCE"
             ? 400
             : err.code === "USER_NOT_FOUND"
               ? 404
@@ -111,7 +115,6 @@ export async function POST(request: NextRequest) {
       throw err;
     }
 
-    // Missioni e badge (fuori dalla transazione per non bloccare la risposta)
     const userId = session.user.id;
     updateMissionProgress(prisma, userId, "MAKE_PREDICTIONS", 1, event.category).catch((e) =>
       console.error("Mission progress update error:", e)
@@ -122,20 +125,17 @@ export async function POST(request: NextRequest) {
     updateUserProfileFromTrade(prisma, userId).catch((e) =>
       console.error("User profile update error:", e)
     );
-
     track(
       "PREDICTION_PLACED",
       {
         userId,
         eventId: event.id,
-        amount: result.actualCostPaid,
+        amount: Number(ammResult.actualCostMicros) / SCALE,
         outcome,
         category: event.category,
       },
       { request }
     );
-
-    // Invalidate caches: price for this event, trending list, and this user's feed
     Promise.all([
       invalidatePriceCache(event.id),
       invalidateTrendingCache(),
@@ -145,7 +145,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        prediction: result.prediction,
+        trade: {
+          id: ammResult.trade.id,
+          side: ammResult.trade.side,
+          outcome: ammResult.trade.outcome,
+          shareMicros: ammResult.trade.shareMicros.toString(),
+          costMicros: ammResult.trade.costMicros.toString(),
+          createdAt: ammResult.trade.createdAt,
+        },
+        position: {
+          yesShareMicros: ammResult.position.yesShareMicros.toString(),
+          noShareMicros: ammResult.position.noShareMicros.toString(),
+        },
+        actualCostMicros: ammResult.actualCostMicros.toString(),
+        shareMicros: ammResult.shareMicros.toString(),
       },
       { status: 201 }
     );

@@ -26,6 +26,7 @@ export async function GET() {
       where: { id: userId },
       select: {
         credits: true,
+        creditsMicros: true,
         totalEarned: true,
         streakCount: true,
       },
@@ -77,6 +78,7 @@ export async function GET() {
 
     return NextResponse.json({
       credits: user.credits,
+      creditsMicros: user.creditsMicros != null ? user.creditsMicros.toString() : null,
       totalEarned: user.totalEarned,
       totalSpent,
       streak: user.streakCount ?? 0,

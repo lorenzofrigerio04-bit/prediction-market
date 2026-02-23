@@ -44,8 +44,13 @@ export async function GET(request: Request) {
       prisma.transaction.count({ where }),
     ]);
 
+    const serialized = transactions.map((t) => ({
+      ...t,
+      amountMicros: t.amountMicros != null ? t.amountMicros.toString() : null,
+    }));
+
     return NextResponse.json({
-      transactions,
+      transactions: serialized,
       pagination: {
         total,
         limit,

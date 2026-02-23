@@ -9,6 +9,7 @@ import { getBufferHoursForCategory } from "@/lib/markets";
 import { parseOutcomeDateFromText } from "@/lib/event-generation/closes-at";
 import { getClosureRules } from "@/lib/event-generation/config";
 import { computeDedupKey } from "@/lib/event-publishing/dedup";
+import { ensureAmmStateForEvent } from "@/lib/amm/ensure-amm-state";
 
 /**
  * GET /api/admin/events
@@ -112,6 +113,7 @@ export async function POST(request: NextRequest) {
       resolutionSourceUrl,
       resolutionNotes,
     } = body;
+    const tradingMode = "AMM";
 
     if (!title || !category) {
       return NextResponse.json(
@@ -252,6 +254,7 @@ export async function POST(request: NextRequest) {
         b,
         resolutionBufferHours,
         dedupKey,
+        tradingMode,
         ...(resolutionAuthorityHost && { resolutionAuthorityHost }),
       },
       include: {
@@ -264,6 +267,10 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    if (tradingMode === "AMM") {
+      await ensureAmmStateForEvent(prisma, event.id);
+    }
 
     await createAuditLog(prisma, {
       userId: admin.id,

@@ -1,62 +1,13 @@
 /**
- * Previsioni simulate: bot che piazzano previsioni su eventi aperti.
- * Usa LMSR (executePredictionBuy). I bot scommettono solo su eventi con attività (q_yes + q_no > 0)
- * e scelgono SÌ/NO in proporzione al prezzo attuale per mantenere la proporzione (es. 1/2 → altre scommesse 1:2).
+ * Previsioni simulate: bot che comprano quote su eventi AMM aperti.
+ * Usa executeBuyShares (AMM). I bot scelgono SÌ/NO in proporzione al prezzo attuale.
  */
 
 import type { PrismaClient } from "@prisma/client";
-import { getPrice } from "@/lib/pricing/lmsr";
-import { executePredictionBuy, TradeError } from "@/lib/pricing/trade";
+import { randomUUID } from "crypto";
+import { priceYesMicros, SCALE } from "@/lib/amm/fixedPointLmsr";
+import { executeBuyShares, AmmError } from "@/lib/amm/engine";
 import { MAX_PREDICTIONS_PER_RUN } from "./config";
-
-/** Calcola q_yes/q_no da Prediction (Event non ha questi campi nello schema). */
-async function getEventLmsrState(
-  prisma: PrismaClient,
-  eventId: string
-): Promise<{ qYes: number; qNo: number }> {
-  const rows = await prisma.prediction.groupBy({
-    by: ["outcome"],
-    where: { eventId },
-    _sum: { amount: true },
-  });
-  let qYes = 0;
-  let qNo = 0;
-  for (const r of rows) {
-    const sum = r._sum.amount ?? 0;
-    if (r.outcome === "YES") qYes = sum;
-    else if (r.outcome === "NO") qNo = sum;
-  }
-  return { qYes, qNo };
-}
-
-/** Calcola q_yes/q_no per più eventi in una query. */
-async function getLmsrStateForEvents(
-  prisma: PrismaClient,
-  eventIds: string[]
-): Promise<Map<string, { qYes: number; qNo: number }>> {
-  const map = new Map<string, { qYes: number; qNo: number }>();
-  if (eventIds.length === 0) return map;
-  const rows = await prisma.prediction.groupBy({
-    by: ["eventId", "outcome"],
-    where: { eventId: { in: eventIds } },
-    _sum: { amount: true },
-  });
-  for (const r of rows) {
-    let cur = map.get(r.eventId);
-    if (!cur) {
-      cur = { qYes: 0, qNo: 0 };
-      map.set(r.eventId, cur);
-    }
-    const sum = r._sum.amount ?? 0;
-    if (r.outcome === "YES") cur.qYes = sum;
-    else if (r.outcome === "NO") cur.qNo = sum;
-  }
-  return map;
-}
-
-/** Crediti per scommessa: range da “piccola” a “sostanziale” per sembrare utenti reali */
-const MIN_CREDITS_DEFAULT = 50;
-const MAX_CREDITS_DEFAULT = 650;
 
 export interface CreateSimulatedPredictionParams {
   userId: string;
@@ -72,33 +23,34 @@ export interface RunSimulatedPredictionsOptions {
 }
 
 /**
- * Crea una previsione a nome di un bot usando LMSR (executePredictionBuy).
- * Non chiama missioni, badge o analytics.
+ * Crea un acquisto quote AMM a nome di un bot.
  */
 export async function createSimulatedPrediction(
   prisma: PrismaClient,
   params: CreateSimulatedPredictionParams
-): Promise<{ success: true; predictionId: string } | { success: false; error: string }> {
+): Promise<{ success: true; tradeId: string } | { success: false; error: string }> {
   const { userId, eventId, outcome, credits } = params;
 
   if (credits < 1) {
-    return { success: false, error: "Crediti devono essere almeno 1" };
+    return { success: false, error: "Importo deve essere almeno 1 credito" };
   }
 
   const event = await prisma.event.findUnique({
     where: { id: eventId },
     select: {
       id: true,
-      title: true,
-      category: true,
       resolved: true,
       closesAt: true,
-      b: true,
+      tradingMode: true,
     },
   });
 
   if (!event) {
     return { success: false, error: "Evento non trovato" };
+  }
+
+  if (event.tradingMode !== "AMM") {
+    return { success: false, error: "Solo mercati AMM supportati" };
   }
 
   if (event.resolved) {
@@ -109,46 +61,35 @@ export async function createSimulatedPrediction(
     return { success: false, error: "Previsioni per questo evento sono chiuse" };
   }
 
-  const { qYes, qNo } = await getEventLmsrState(prisma, eventId);
-  if (qYes + qNo <= 0) {
-    return { success: false, error: "Evento senza attività LMSR (0/0): i bot non scommettono" };
-  }
+  const maxCostMicros = BigInt(Math.floor(credits * Number(SCALE)));
+  const idempotencyKey = `sim-${randomUUID()}`;
 
   try {
     const result = await prisma.$transaction((tx) =>
-      executePredictionBuy(tx, {
-        event: {
-          id: event.id,
-          title: event.title,
-          category: event.category,
-          resolved: event.resolved,
-          closesAt: event.closesAt,
-          q_yes: qYes,
-          q_no: qNo,
-          b: event.b,
-        },
+      executeBuyShares(tx, {
+        eventId,
         userId,
         outcome,
-        creditsToSpend: credits,
+        maxCostMicros,
+        idempotencyKey,
       })
     );
-    return { success: true, predictionId: result.prediction.id };
+    return { success: true, tradeId: result.trade.id };
   } catch (err) {
-    if (err instanceof TradeError) {
+    if (err instanceof AmmError) {
       return { success: false, error: err.message };
     }
     const code = err && typeof err === "object" && "code" in err ? (err as { code: string }).code : null;
     if (code === "P2002") {
-      return { success: false, error: "Previsione già esistente per questo evento" };
+      return { success: false, error: "Idempotency key duplicata" };
     }
     throw err;
   }
 }
 
 /**
- * Esegue una run di previsioni simulate: solo eventi con q_yes + q_no > 0.
- * Per ogni evento, outcome scelto con probabilità pari al prezzo attuale (SÌ con p_yes, NO con p_no)
- * così le nuove scommesse mantengono la proporzione (es. 1/2 → altre scommesse in media 1:2).
+ * Esegue una run di acquisti simulate su eventi AMM aperti.
+ * Per ogni evento, outcome scelto con probabilità pari al prezzo (SÌ con p_yes, NO con p_no).
  */
 export async function runSimulatedPredictions(
   prisma: PrismaClient,
@@ -156,8 +97,8 @@ export async function runSimulatedPredictions(
   options?: RunSimulatedPredictionsOptions
 ): Promise<{ created: number; errors: { eventId: string; userId: string; error: string }[] }> {
   const maxPredictions = options?.maxPredictions ?? MAX_PREDICTIONS_PER_RUN;
-  const minCredits = options?.minCredits ?? MIN_CREDITS_DEFAULT;
-  const maxCredits = options?.maxCredits ?? MAX_CREDITS_DEFAULT;
+  const minCredits = options?.minCredits ?? 50;
+  const maxCredits = options?.maxCredits ?? 650;
 
   if (botUserIds.length === 0) {
     return { created: 0, errors: [] };
@@ -168,46 +109,40 @@ export async function runSimulatedPredictions(
     where: {
       resolved: false,
       closesAt: { gt: now },
+      tradingMode: "AMM",
     },
-    select: {
-      id: true,
-      title: true,
-      b: true,
-    },
+    select: { id: true },
   });
 
-  const eventIds = openEvents.map((e) => e.id);
-  const lmsrByEvent = await getLmsrStateForEvents(prisma, eventIds);
-
-  // Solo eventi con attività LMSR (q_yes + q_no > 0): su 0/0 i bot non scommettono
-  const eventsWithActivity = openEvents
-    .map((e) => {
-      const { qYes, qNo } = lmsrByEvent.get(e.id) ?? { qYes: 0, qNo: 0 };
-      return { ...e, q_yes: qYes, q_no: qNo };
-    })
-    .filter((e) => e.q_yes + e.q_no > 0);
-
-  if (eventsWithActivity.length === 0) {
+  if (openEvents.length === 0) {
     return { created: 0, errors: [] };
   }
 
-  const existingPredictions = await prisma.prediction.findMany({
+  const eventIds = openEvents.map((e) => e.id);
+  const ammStates = await prisma.ammState.findMany({
+    where: { eventId: { in: eventIds } },
+    select: { eventId: true, qYesMicros: true, qNoMicros: true, bMicros: true },
+  });
+  const ammByEvent = new Map(ammStates.map((a) => [a.eventId, a]));
+
+  const existingPositions = await prisma.position.findMany({
     where: {
       userId: { in: botUserIds },
-      eventId: { in: eventsWithActivity.map((e) => e.id) },
+      eventId: { in: eventIds },
     },
-    select: { userId: true, eventId: true },
+    select: { eventId: true, userId: true },
   });
-
-  const predictedKey = new Set(
-    existingPredictions.map((p) => `${p.eventId}:${p.userId}`)
+  const hasPositionKey = new Set(
+    existingPositions.map((p) => `${p.eventId}:${p.userId}`)
   );
 
-  const candidates: { event: (typeof eventsWithActivity)[number]; userId: string }[] = [];
-  for (const event of eventsWithActivity) {
+  const candidates: { eventId: string; userId: string }[] = [];
+  for (const e of openEvents) {
+    const amm = ammByEvent.get(e.id);
+    if (!amm) continue;
     for (const userId of botUserIds) {
-      if (!predictedKey.has(`${event.id}:${userId}`)) {
-        candidates.push({ event, userId });
+      if (!hasPositionKey.has(`${e.id}:${userId}`)) {
+        candidates.push({ eventId: e.id, userId });
       }
     }
   }
@@ -218,17 +153,18 @@ export async function runSimulatedPredictions(
   let created = 0;
   const errors: { eventId: string; userId: string; error: string }[] = [];
 
-  for (const { event, userId } of toCreate) {
-    const credits = randomInt(minCredits, maxCredits);
-    const qYes = event.q_yes ?? 0;
-    const qNo = event.q_no ?? 0;
-    const b = event.b ?? 100;
-    const pYes = getPrice(qYes, qNo, b, "YES");
+  for (const { eventId, userId } of toCreate) {
+    const amm = ammByEvent.get(eventId);
+    if (!amm) continue;
+
+    const yesMicros = priceYesMicros(amm.qYesMicros, amm.qNoMicros, amm.bMicros);
+    const pYes = Number((yesMicros * 100n) / SCALE) / 100;
     const outcome = Math.random() < pYes ? "YES" : "NO";
+    const credits = randomInt(minCredits, maxCredits);
 
     const result = await createSimulatedPrediction(prisma, {
       userId,
-      eventId: event.id,
+      eventId,
       outcome,
       credits,
     });
@@ -236,7 +172,7 @@ export async function runSimulatedPredictions(
     if (result.success) {
       created++;
     } else {
-      errors.push({ eventId: event.id, userId, error: result.error });
+      errors.push({ eventId, userId, error: result.error });
     }
   }
 

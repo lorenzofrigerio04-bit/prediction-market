@@ -6,6 +6,7 @@ import { updateMissionProgress } from "@/lib/missions";
 import { checkAndAwardBadges } from "@/lib/badges";
 import { applyCreditTransaction } from "@/lib/apply-credit-transaction";
 import { cost } from "@/lib/pricing/lmsr";
+import { resolveMarketMarkResolved, payoutMarketInBatches } from "@/lib/amm/resolve";
 import { invalidatePriceCache } from "@/lib/cache/price";
 import { invalidateTrendingCache } from "@/lib/cache/trending";
 import { invalidateAllFeedCaches } from "@/lib/feed-cache";
@@ -13,8 +14,7 @@ import { invalidateAllFeedCaches } from "@/lib/feed-cache";
 /**
  * POST /api/admin/events/[id]/resolve
  * Risolve un evento (imposta outcome YES o NO) e applica i payout in modo atomico.
- * L'esito deve essere verificato dalla fonte (resolutionSourceUrl) prima di chiamare questo endpoint.
- * Quando auto=true, l'endpoint accetta Authorization: Bearer CRON_SECRET per risoluzione automatica.
+ * AMM: payout da Position (1 share = 1 credit). LEGACY: payout da Prediction (LMSR/proportional).
  */
 export async function POST(
   request: NextRequest,
@@ -41,7 +41,7 @@ export async function POST(
 
     let actorId: string | null = null;
     if (isCronAuth) {
-      actorId = null; // system/cron
+      actorId = null;
     } else {
       const admin = await requireAdmin();
       actorId = admin.id;
@@ -53,6 +53,7 @@ export async function POST(
         id: true,
         title: true,
         resolved: true,
+        tradingMode: true,
         b: true,
         resolutionSourceUrl: true,
         Prediction: {
@@ -81,40 +82,78 @@ export async function POST(
       );
     }
 
-    const resolvedAt = new Date();
+    if (event.tradingMode !== "AMM") {
+      return NextResponse.json(
+        { error: "Solo mercati AMM supportati. Risolvi tramite payout Position." },
+        { status: 400 }
+      );
+    }
+    {
+      await prisma.$transaction((tx) =>
+        resolveMarketMarkResolved(tx, eventId, outcome as "YES" | "NO")
+      );
+      const { paidUserIds } = await payoutMarketInBatches(prisma, eventId, outcome as "YES" | "NO", 500);
+
+      for (const userId of paidUserIds) {
+        updateMissionProgress(prisma, userId, "WIN_PREDICTIONS", 1).catch((e) =>
+          console.error("Mission progress update error:", e)
+        );
+        checkAndAwardBadges(prisma, userId).catch((e) =>
+          console.error("Badge check error:", e)
+        );
+        prisma.notification
+          .create({
+            data: {
+              userId,
+              type: "EVENT_RESOLVED",
+              data: JSON.stringify({
+                eventId: event.id,
+                eventTitle: event.title,
+                outcome: outcome === "YES" ? "yes" : "no",
+              }),
+            },
+          })
+          .catch((e) => console.error("Notification create error:", e));
+      }
+
+      await createAuditLog(prisma, {
+        userId: actorId,
+        action: "EVENT_RESOLVE",
+        entityType: "event",
+        entityId: eventId,
+        payload: {
+          outcome,
+          tradingMode: "AMM",
+          resolutionSourceUrl: event.resolutionSourceUrl ?? undefined,
+          ...(isCronAuth && { source: "auto" }),
+        },
+      });
+
+      Promise.all([
+        invalidatePriceCache(eventId),
+        invalidateTrendingCache(),
+        invalidateAllFeedCaches(),
+      ]).catch((e) => console.error("Cache invalidation error:", e));
+
+      return NextResponse.json({ success: true });
+    }
+
+    // Unreachable after AMM-only migration
     const predictions = event.Prediction;
-    
-    // Get final LMSR state (after all trades)
     const finalQYes = 0;
     const finalQNo = 0;
-    const b = event.b ?? 100; // fallback to default if not set
-    
-    // Calculate final cost using LMSR cost function
+    const b = event.b ?? 100;
     const finalCost = cost(finalQYes, finalQNo, b);
 
     await prisma.$transaction(async (tx) => {
       await tx.event.update({
         where: { id: eventId },
-        data: {
-          resolved: true,
-          outcome,
-        },
+        data: { resolved: true, outcome, resolvedAt: new Date() },
       });
 
       for (const prediction of predictions) {
         const won = prediction.outcome === outcome;
-        let payout = 0;
-
-        if (won) {
-          // Winner: payout = cost(final_q_yes, final_q_no, b) - costBasis (LMSR cost difference)
-          const costBasis = prediction.amount // costBasis sostituito con amount;
-          if (costBasis != null) {
-            payout = Math.max(0, Math.floor(finalCost - costBasis));
-          }
-        } else {
-          // Loser: payout = 0 (costBasis already deducted on creation)
-          payout = 0;
-        }
+        const payout = won && prediction.amount != null ? Math.max(0, Math.floor(finalCost - prediction.amount)) : 0;
 
         await tx.prediction.update({
           where: { id: prediction.id },
@@ -126,20 +165,7 @@ export async function POST(
         });
 
         if (won && payout > 0) {
-          await applyCreditTransaction(
-            tx,
-            prediction.userId,
-            "PREDICTION_WIN",
-            payout,
-            {
-            }
-          );
-          await tx.user.update({
-            where: { id: prediction.userId },
-            data: {
-            },
-          });
-        } else {
+          await applyCreditTransaction(tx, prediction.userId, "PREDICTION_WIN", payout, {});
         }
       }
     });
@@ -149,15 +175,6 @@ export async function POST(
       select: { userId: true },
       distinct: ["userId"],
     });
-
-    for (const { userId } of usersWithPredictions) {
-      const totalResolved = await prisma.prediction.count({
-        where: { userId, resolved: true },
-      });
-      const correctCount = await prisma.prediction.count({
-        where: { userId, resolved: true, won: true },
-      });
-    }
 
     for (const prediction of predictions) {
       if (prediction.outcome === outcome) {
@@ -173,22 +190,21 @@ export async function POST(
       );
     }
 
-    const predictorNotifications = predictions.map((prediction) =>
-      prisma.notification.create({
-        data: {
-          userId: prediction.userId,
-          type: "EVENT_RESOLVED",
-          data: JSON.stringify({
-            eventId: event.id,
-            eventTitle: event.title,
-            outcome: outcome === "YES" ? "yes" : "no",
-          }),
-        },
-      })
+    await Promise.all(
+      predictions.map((prediction) =>
+        prisma.notification.create({
+          data: {
+            userId: prediction.userId,
+            type: "EVENT_RESOLVED",
+            data: JSON.stringify({
+              eventId: event.id,
+              eventTitle: event.title,
+              outcome: outcome === "YES" ? "yes" : "no",
+            }),
+          },
+        })
+      )
     );
-
-
-    await Promise.all(predictorNotifications);
 
     await createAuditLog(prisma, {
       userId: actorId,
@@ -197,6 +213,7 @@ export async function POST(
       entityId: eventId,
       payload: {
         outcome,
+        tradingMode: "LEGACY",
         resolutionSourceUrl: event.resolutionSourceUrl ?? undefined,
         ...(isCronAuth && { source: "auto" }),
       },
@@ -208,9 +225,7 @@ export async function POST(
       invalidateAllFeedCaches(),
     ]).catch((e) => console.error("Cache invalidation error:", e));
 
-    return NextResponse.json({
-      success: true,
-    });
+    return NextResponse.json({ success: true });
   } catch (error: unknown) {
     console.error("Error resolving event:", error);
     const msg = error instanceof Error ? error.message : String(error);

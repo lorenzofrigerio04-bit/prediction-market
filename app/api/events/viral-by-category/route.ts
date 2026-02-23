@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { priceYesMicros, SCALE } from "@/lib/amm/fixedPointLmsr";
+import { getEventProbability } from "@/lib/pricing/price-display";
 
 const CATEGORIES = [
   "Sport",
@@ -28,29 +30,25 @@ export async function GET() {
             { yesPredictions: "desc" },
             { totalCredits: "desc" },
           ],
-          select: {
-            id: true,
-            title: true,
-            category: true,
-            closesAt: true,
-            probability: true,
-            q_yes: true,
-            q_no: true,
-            b: true,
-            _count: {
-              select: {
-                Prediction: true,
-              },
-            },
+          include: {
+            ammState: { select: { qYesMicros: true, qNoMicros: true, bMicros: true } },
+            _count: { select: { Prediction: true } },
           },
         });
         return event;
       })
     );
 
-    const events = viralEvents.filter(
-      (event): event is NonNullable<typeof event> => event !== null
-    );
+    const events = viralEvents
+      .filter((event): event is NonNullable<typeof event> => event !== null)
+      .map((e) => {
+        const { ammState, ...rest } = e;
+        const probability =
+          e.tradingMode === "AMM" && ammState
+            ? Number((priceYesMicros(ammState.qYesMicros, ammState.qNoMicros, ammState.bMicros) * 100n) / SCALE)
+            : getEventProbability(e);
+        return { ...rest, probability, _count: e._count };
+      });
 
     events.sort((a, b) => {
       const predictionsA = a._count?.Prediction || 0;

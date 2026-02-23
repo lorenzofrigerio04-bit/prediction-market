@@ -20,6 +20,7 @@ export async function GET() {
       where: { id: session.user.id },
       select: {
         credits: true,
+        creditsMicros: true,
       },
     });
 
@@ -32,6 +33,7 @@ export async function GET() {
 
     return NextResponse.json({
       credits: user.credits,
+      creditsMicros: user.creditsMicros != null ? user.creditsMicros.toString() : null,
     });
   } catch (error) {
     console.error("Error fetching user credits:", error);
