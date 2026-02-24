@@ -424,8 +424,8 @@ function ConsigliatiSlide({
               Vai all&apos;evento →
             </Link>
           </div>
-          {/* Barra destra stile TikTok: icona + numero, compatta */}
-          <div className="consigliati-actions flex flex-shrink-0 flex-col items-center gap-4 pr-0">
+          {/* Barra destra stile TikTok: icona + numero, compatta; mb per separazione dalla bottom nav */}
+          <div className="consigliati-actions flex flex-shrink-0 flex-col items-center gap-4 pr-0 mb-12 md:mb-10">
             <button
               type="button"
               onClick={onLikeToggle}

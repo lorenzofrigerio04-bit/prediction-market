@@ -1991,12 +1991,12 @@ textarea:focus-visible {
   font-weight: 500;
 }
 
-/* Consigliati: header e bottom nav trasparenti, foto di sfondo su tutta la pagina */
+/* Consigliati: header glass come tab/strip, bg-layer visibile dietro */
 body.discover-consigliati-active .header-neon {
-  background: rgb(0 0 0 / 0.2);
+  background: rgba(11, 18, 32, 0.25);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border-bottom-color: rgb(255 255 255 / 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 body.discover-consigliati-active .nav-bottom-neon {
   background: transparent;
@@ -2030,7 +2030,7 @@ body.discover-consigliati-active .nav-bottom-neon svg {
   filter: drop-shadow(0 1px 2px rgba(0 0 0 / 0.6));
 }
 
-/* Zona sotto tab bar (Seguiti | Consigliati): link "passa alla visione generale" / "passa alla visione verticale"; sfondo trasparente = foto di background visibile */
+/* Zona sotto tab bar: link "passa alla visione generale"; glass leggero = bg-layer visibile */
 .discover-consigliati-strip-zone {
   min-height: 44px;
   display: flex;
@@ -2040,7 +2040,10 @@ body.discover-consigliati-active .nav-bottom-neon svg {
   background: transparent;
 }
 body.discover-consigliati-active .discover-consigliati-strip-zone {
-  background: transparent;
+  background: rgba(11, 18, 32, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 @media (min-width: 768px) {
   .discover-consigliati-strip-zone {
@@ -2069,13 +2072,17 @@ body.discover-consigliati-active .discover-consigliati-strip-zone {
 .discover-consigliati-strip-text {
   font-size: 0.65rem;
   letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.9);
   text-shadow:
+    0 1px 8px rgba(0, 0, 0, 0.45),
     0 0 6px rgba(34, 211, 238, 0.4),
     0 0 12px rgba(34, 211, 238, 0.2),
     0 1px 2px rgba(0 0 0 / 0.7);
 }
 .dark .discover-consigliati-strip-text {
+  color: rgba(255, 255, 255, 0.9);
   text-shadow:
+    0 1px 8px rgba(0, 0, 0, 0.45),
     0 0 10px rgba(34, 211, 238, 0.6),
     0 0 20px rgba(34, 211, 238, 0.3),
     0 1px 4px rgba(0 0 0 / 0.9);
@@ -2139,7 +2146,27 @@ body.discover-consigliati-active .discover-consigliati-strip-zone {
 
 /* —— Discover page: dynamic event exploration —— */
 .discover-page {
+  min-height: 100dvh;
   min-height: 100vh;
+}
+
+/* Layer sfondo full viewport (Consigliati): un solo elemento, fixed, dietro tutta la UI */
+.discover-bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image: url("/images/event-sport-bg.png");
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+.discover-bg-layer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.15));
+  pointer-events: none;
 }
 
 /* Hide footer background on discover page */
@@ -2505,31 +2532,36 @@ body:has(.discover-page) > footer {
   background-image: url("/images/event-intrattenimento-bg.png");
 }
 
-/* Tab bar Discover (Seguiti | Consigliati): sfondo trasparente così la foto di background del feed resta visibile */
+/* Tab bar Discover (Seguiti | Consigliati): glass leggero così il bg-layer resta visibile */
 .discover-tab-bar {
   background: transparent;
   border-bottom: 1px solid rgb(255 255 255 / 0.06);
 }
 body.discover-consigliati-active .discover-tab-bar {
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  background: rgba(11, 18, 32, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .discover-tab-bar button {
+  color: rgba(255, 255, 255, 0.9);
   text-shadow:
+    0 1px 8px rgba(0, 0, 0, 0.45),
     0 0 8px rgb(var(--primary) / 0.6),
     0 0 16px rgb(var(--primary) / 0.35),
     0 0 24px rgb(var(--primary) / 0.2);
 }
 .discover-tab-bar button:not(.discover-tab-active) {
-  color: rgb(255 255 255 / 0.75);
+  color: rgba(255, 255, 255, 0.9);
   text-shadow:
+    0 1px 8px rgba(0, 0, 0, 0.45),
     0 0 6px rgb(255 255 255 / 0.25),
     0 0 12px rgb(255 255 255 / 0.12);
 }
 .discover-tab-bar .discover-tab-active {
   color: rgb(var(--primary));
   text-shadow:
+    0 1px 8px rgba(0, 0, 0, 0.45),
     0 0 10px rgb(var(--primary) / 0.8),
     0 0 20px rgb(var(--primary) / 0.5),
     0 0 30px rgb(var(--primary) / 0.3);

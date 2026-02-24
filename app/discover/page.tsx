@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import EventiPrevistiTab from "@/components/discover/EventiPrevistiTab";
 import ConsigliatiFeed from "@/components/discover/ConsigliatiFeed";
@@ -10,6 +10,7 @@ import ConsigliatiFeed from "@/components/discover/ConsigliatiFeed";
 type DiscoverTab = "per-te" | "seguiti";
 
 export default function DiscoverPage() {
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const tabFromUrl = searchParams.get("tab") === "seguiti" ? "seguiti" : "per-te";
   const [activeTab, setActiveTab] = useState<DiscoverTab>(tabFromUrl);
@@ -24,12 +25,19 @@ export default function DiscoverPage() {
     setActiveTab(tabFromUrl);
   }, [tabFromUrl]);
 
-  // Header, tab bar e strip trasparenti + theme-color scuro (status bar) quando Consigliati.
-  // useLayoutEffect così le classi sono applicate prima del paint: niente sformattamento tornando da home/altre pagine.
+  // Header, tab bar e strip glass + theme-color: derivati dall’URL reale (pathname + window.location)
+  // così tornando da altre sezioni la pagina si mostra subito corretta senza dipendere dallo state.
   useLayoutEffect(() => {
     const defaultThemeColor = "#161a26";
     const consigliatiThemeColor = "#0d0e14";
-    if (activeTab === "per-te") {
+    const isDiscover = pathname === "/discover";
+    const tabFromWindow =
+      typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tab") === "seguiti"
+        ? "seguiti"
+        : "per-te";
+    const isConsigliati = isDiscover && tabFromWindow === "per-te";
+
+    if (isConsigliati) {
       document.body.classList.add("discover-consigliati-active");
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute("content", consigliatiThemeColor);
@@ -43,7 +51,7 @@ export default function DiscoverPage() {
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute("content", defaultThemeColor);
     };
-  }, [activeTab]);
+  }, [pathname, tabFromUrl]);
 
   const scrollToTop = useCallback(() => {
     mainRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -84,10 +92,17 @@ export default function DiscoverPage() {
     window.history.replaceState(null, "", url);
   };
 
+  // Per layout e stili usiamo tabFromUrl (URL) così la pagina è corretta anche al ritorno da altre sezioni
+  const showConsigliati = tabFromUrl === "per-te";
+
   return (
     <div
-      className={`min-h-screen relative overflow-x-hidden discover-page${activeTab === "per-te" ? " discover-consigliati-strip-visible" : ""}`}
+      className={`min-h-screen relative overflow-x-hidden discover-page${showConsigliati ? " discover-consigliati-strip-visible" : ""}`}
     >
+      {/* Un solo layer full-bleed dietro header, tab, strip e feed; fixed così resta stabile allo scroll */}
+      {showConsigliati && (
+        <div className="discover-bg-layer" aria-hidden />
+      )}
       <Header />
 
       {/* Tab bar + strip: Seguiti | Consigliati; sotto il link passa alla visione generale / visione verticale */}
@@ -120,7 +135,7 @@ export default function DiscoverPage() {
             </div>
           </div>
         </div>
-        {activeTab === "per-te" && (
+        {showConsigliati && (
           <div className="discover-consigliati-strip-zone md:hidden">
             <Link
               href="/discover/consigliati"
@@ -135,7 +150,7 @@ export default function DiscoverPage() {
         )}
       </div>
 
-      {activeTab === "per-te" ? (
+      {showConsigliati ? (
         <>
           {/* Feed sotto header, tab bar e strip: non li copre mai */}
           <div

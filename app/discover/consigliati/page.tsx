@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import HomeEventTile from "@/components/home/HomeEventTile";
 import { LoadingBlock, EmptyState } from "@/components/ui";
@@ -43,17 +43,41 @@ function shuffleWithSeed<T>(arr: T[], seed?: string): T[] {
   return out;
 }
 
+/** Legge le categorie selezionate dall'URL (?categories=Scienza,Politica) per persistenza al back. */
+function parseCategoriesFromSearchParams(searchParams: URLSearchParams): Set<string> {
+  const c = searchParams.get("categories");
+  if (!c || !c.trim()) return new Set<string>();
+  return new Set(
+    c
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+  );
+}
+
 export default function DiscoverConsigliatiPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [events, setEvents] = useState<ConsigliatiEvent[]>([]);
   const [allCategories, setAllCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  /** Multi-select: set vuoto = "Tutti" (feed personalizzato); altrimenti API restituisce tutti gli eventi di quelle categorie (virality). */
-  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
+  /** Multi-select: inizializzato dall'URL così il filtro resta quando si torna indietro dalla pagina evento. */
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(() =>
+    parseCategoriesFromSearchParams(searchParams)
+  );
   const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  /** Allineare state all'URL quando si torna indietro (es. da pagina evento) con query diversa. */
+  useEffect(() => {
+    const fromUrl = parseCategoriesFromSearchParams(searchParams);
+    setSelectedCategories((prev) => {
+      if (prev.size !== fromUrl.size || [...prev].some((c) => !fromUrl.has(c))) return fromUrl;
+      return prev;
+    });
+  }, [searchParams]);
 
   const buildConsigliatiUrl = useCallback(
     (offset: number) => {
@@ -135,18 +159,36 @@ export default function DiscoverConsigliatiPage() {
     [allCategories]
   );
 
-  const toggleCategory = useCallback((category: string) => {
-    setSelectedCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(category)) next.delete(category);
-      else next.add(category);
-      return next;
-    });
-  }, []);
+  /** Aggiorna URL con le categorie selezionate così il back dalla pagina evento ripristina il filtro. */
+  const syncUrlToCategories = useCallback(
+    (categories: Set<string>) => {
+      const path = "/discover/consigliati";
+      const url =
+        categories.size === 0
+          ? path
+          : `${path}?categories=${encodeURIComponent([...categories].sort().join(","))}`;
+      router.replace(url, { scroll: false });
+    },
+    [router]
+  );
+
+  const toggleCategory = useCallback(
+    (category: string) => {
+      setSelectedCategories((prev) => {
+        const next = new Set(prev);
+        if (next.has(category)) next.delete(category);
+        else next.add(category);
+        syncUrlToCategories(next);
+        return next;
+      });
+    },
+    [syncUrlToCategories]
+  );
 
   const clearSelection = useCallback(() => {
     setSelectedCategories(new Set());
-  }, []);
+    syncUrlToCategories(new Set());
+  }, [syncUrlToCategories]);
 
   /** Scroll infinito: sentinel in fondo alla lista, quando entra in view carica altra pagina. */
   useEffect(() => {
