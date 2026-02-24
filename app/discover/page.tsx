@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
@@ -24,23 +24,23 @@ export default function DiscoverPage() {
     setActiveTab(tabFromUrl);
   }, [tabFromUrl]);
 
-  // Header e bottom nav trasparenti + theme-color scuro (status bar / browser UI) quando Consigliati
-  useEffect(() => {
+  // Header, tab bar e strip trasparenti + theme-color scuro (status bar) quando Consigliati.
+  // useLayoutEffect così le classi sono applicate prima del paint: niente sformattamento tornando da home/altre pagine.
+  useLayoutEffect(() => {
     const defaultThemeColor = "#161a26";
     const consigliatiThemeColor = "#0d0e14";
-    let meta: HTMLMetaElement | null = null;
     if (activeTab === "per-te") {
       document.body.classList.add("discover-consigliati-active");
-      meta = document.querySelector('meta[name="theme-color"]');
+      const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute("content", consigliatiThemeColor);
     } else {
       document.body.classList.remove("discover-consigliati-active");
-      meta = document.querySelector('meta[name="theme-color"]');
+      const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute("content", defaultThemeColor);
     }
     return () => {
       document.body.classList.remove("discover-consigliati-active");
-      meta = document.querySelector('meta[name="theme-color"]');
+      const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute("content", defaultThemeColor);
     };
   }, [activeTab]);
@@ -90,7 +90,7 @@ export default function DiscoverPage() {
     >
       <Header />
 
-      {/* Tab bar + strip link: Seguiti | Consigliati, sotto il link passa alla pagina generale / visione verticale */}
+      {/* Tab bar + strip: Seguiti | Consigliati; sotto il link passa alla visione generale / visione verticale */}
       <div className="discover-tab-bar-wrapper sticky top-[var(--header-height,3.5rem)] z-30">
         <div className="discover-tab-bar">
           <div className="mx-auto px-4 max-w-2xl">
@@ -125,10 +125,10 @@ export default function DiscoverPage() {
             <Link
               href="/discover/consigliati"
               className="discover-consigliati-strip flex items-center justify-center py-3 px-4"
-              aria-label="Passa alla pagina generale degli eventi consigliati"
+              aria-label="Passa alla visione generale degli eventi consigliati"
             >
               <span className="discover-consigliati-strip-text font-medium uppercase text-white/80">
-                -passa alla pagina generale-
+                -passa alla visione generale-
               </span>
             </Link>
           </div>

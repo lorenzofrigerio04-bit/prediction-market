@@ -2030,13 +2030,17 @@ body.discover-consigliati-active .nav-bottom-neon svg {
   filter: drop-shadow(0 1px 2px rgba(0 0 0 / 0.6));
 }
 
-/* Zona sotto tab bar (Seguiti | Consigliati): link "passa alla pagina generale" / "passa alla visione verticale" */
+/* Zona sotto tab bar (Seguiti | Consigliati): link "passa alla visione generale" / "passa alla visione verticale"; sfondo trasparente = foto di background visibile */
 .discover-consigliati-strip-zone {
   min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0.25rem 0;
+  background: transparent;
+}
+body.discover-consigliati-active .discover-consigliati-strip-zone {
+  background: transparent;
 }
 @media (min-width: 768px) {
   .discover-consigliati-strip-zone {
@@ -2501,15 +2505,15 @@ body:has(.discover-page) > footer {
   background-image: url("/images/event-intrattenimento-bg.png");
 }
 
-/* Tab bar Discover (Seguiti | Consigliati): sfondo trasparente, testo LED neon; con Consigliati attivo sfondo leggero così resta sempre visibile */
+/* Tab bar Discover (Seguiti | Consigliati): sfondo trasparente così la foto di background del feed resta visibile */
 .discover-tab-bar {
   background: transparent;
   border-bottom: 1px solid rgb(255 255 255 / 0.06);
 }
 body.discover-consigliati-active .discover-tab-bar {
-  background: rgb(0 0 0 / 0.35);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 .discover-tab-bar button {
   text-shadow:
@@ -2644,7 +2648,7 @@ body.discover-consigliati-active .discover-tab-bar {
   margin-top: 0.75rem;
 }
 
-/* Drawer commenti aperto: nascondi il link "passa alla pagina generale" */
+/* Drawer commenti aperto: nascondi il link "passa alla visione generale" */
 body.consigliati-comments-open .discover-consigliati-strip {
   opacity: 0;
   visibility: hidden;
