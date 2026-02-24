@@ -161,7 +161,7 @@ model Event {
   resolutionCriteriaNo   String?  // Criterio formale per risoluzione NO
   sourceStorylineId      String?  // ID della storyline sorgente (da BLOCCO 3)
   templateId             String?   // ID del template usato per generazione
-  tradingMode            String    @default("LEGACY") @map("trading_mode") // LEGACY | AMM
+  tradingMode            String    @default("AMM") @map("trading_mode") // LEGACY | AMM
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @default(now()) @updatedAt
 

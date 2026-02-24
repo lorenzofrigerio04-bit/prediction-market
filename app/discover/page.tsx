@@ -120,10 +120,14 @@ export default function DiscoverPage() {
 
       {activeTab === "per-te" ? (
         <>
+          {/* Feed sotto header e tab bar: non li copre mai, visualizzazione sempre corretta */}
           <div
             id="main-content"
-            className="discover-feed-fullviewport fixed left-0 right-0 top-0 z-0 flex flex-col"
-            style={{ height: "100dvh" }}
+            className="discover-feed-fullviewport discover-feed-below-chrome fixed left-0 right-0 flex flex-col"
+            style={{
+              top: "calc(var(--header-height, 3.5rem) + var(--discover-tab-bar-h, 52px))",
+              height: "calc(100dvh - (var(--header-height, 3.5rem) + var(--discover-tab-bar-h, 52px)))",
+            }}
           >
             <ConsigliatiFeed />
           </div>

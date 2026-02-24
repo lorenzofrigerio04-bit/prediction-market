@@ -67,12 +67,12 @@ export default function HomeEventTile({
       {/* Overlay scuro per massima leggibilità del testo */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-black/40" />
       <div className="relative z-10 flex h-full min-h-[175px] flex-col justify-between p-3 sm:min-h-[195px] sm:p-4">
-        <div className="flex items-start justify-between gap-2">
+        <div className={variant === "closing" ? "flex flex-col gap-1" : ""}>
           <span className="inline-flex rounded-md border border-white/30 bg-black/70 px-2 py-0.5 text-xs font-semibold text-white shadow-[0_2px_6px_rgba(0,0,0,0.9)] backdrop-blur-sm sm:text-ds-micro">
             {category}
           </span>
           {variant === "closing" && (
-            <span className="shrink-0 rounded-lg border border-amber-400/50 bg-amber-500/40 px-2 py-1 text-xs font-bold text-amber-100 shadow-[0_0_12px_-2px_rgba(251,191,36,0.5),0_1px_3px_rgba(0,0,0,0.8)] sm:text-ds-micro">
+            <span className="rounded-lg border border-amber-400/50 bg-amber-500/40 px-2 py-1 text-xs font-bold text-amber-100 shadow-[0_0_12px_-2px_rgba(251,191,36,0.5),0_1px_3px_rgba(0,0,0,0.8)] sm:text-ds-micro w-fit">
               {formatTimeLeftShort(closesAt)}
             </span>
           )}

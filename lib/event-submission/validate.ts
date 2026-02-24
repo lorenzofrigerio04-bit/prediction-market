@@ -5,6 +5,7 @@
 
 import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { ensureAmmStateForEvent } from "@/lib/amm/ensure-amm-state";
 
 export const ALLOWED_CATEGORIES = [
   "Sport",
@@ -313,8 +314,10 @@ export async function createEventFromSubmission(
         resolved: false,
         resolutionStatus: "PENDING",
         status: "OPEN",
+        tradingMode: "AMM",
       },
     });
+    await ensureAmmStateForEvent(prisma, event.id);
 
     return { success: true, eventId: event.id };
   } catch (error: unknown) {

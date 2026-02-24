@@ -80,12 +80,12 @@ function CommentsDrawer({
         className={`${panelClass} absolute bottom-0 left-0 right-0 flex flex-col bg-bg pb-[env(safe-area-inset-bottom)]`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Handle + header stile TikTok */}
-        <div className="flex flex-shrink-0 flex-col items-center pt-4 pb-2">
-          <div className="h-1 w-10 shrink-0 rounded-full bg-white/25" aria-hidden />
+        {/* Handle + header compatti: resta chiaro che siamo nel feed */}
+        <div className="flex flex-shrink-0 flex-col items-center pt-3 pb-1.5">
+          <div className="h-0.5 w-9 shrink-0 rounded-full bg-white/20" aria-hidden />
         </div>
-        <div className="flex flex-shrink-0 items-center justify-between gap-3 px-5 pb-4">
-          <h2 className="text-lg font-bold text-fg">Commenti</h2>
+        <div className="flex flex-shrink-0 items-center justify-between gap-3 px-4 pb-3">
+          <h2 className="text-base font-semibold text-fg">Commenti</h2>
           <button
             type="button"
             onClick={close}
@@ -507,6 +507,13 @@ export default function ConsigliatiFeed() {
   useEffect(() => {
     setLikedIds(getStoredLikes());
   }, []);
+
+  /* Drawer commenti aperto: nascondi "-passa alla pagina originale-" */
+  useEffect(() => {
+    if (commentsEventId) document.body.classList.add("consigliati-comments-open");
+    else document.body.classList.remove("consigliati-comments-open");
+    return () => document.body.classList.remove("consigliati-comments-open");
+  }, [commentsEventId]);
 
   /** Quando torni sulla pagina dopo un po': refetch per feed sempre vivo (evita refetch ad ogni tab switch) */
   const hiddenAtRef = useRef<number | null>(null);

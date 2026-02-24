@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import HomeEventTile from "@/components/home/HomeEventTile";
-import { FilterChips, LoadingBlock, EmptyState } from "@/components/ui";
+import { LoadingBlock, EmptyState } from "@/components/ui";
 
 /** Stesso tipo evento restituito da /api/events/consigliati (feed TikTok) */
 interface ConsigliatiEvent {
@@ -28,11 +29,28 @@ interface ConsigliatiEvent {
 
 const CONSIGLIATI_LIMIT = 50;
 
+/** Shuffle array in place con seed opzionale per ordine riproducibile. */
+function shuffleWithSeed<T>(arr: T[], seed?: string): T[] {
+  const out = [...arr];
+  const s = seed ?? `${Date.now()}`;
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  for (let i = out.length - 1; i > 0; i--) {
+    h = (Math.imul(31, h) + i) | 0;
+    const j = Math.abs(h) % (i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 export default function DiscoverConsigliatiPage() {
+  const router = useRouter();
   const [events, setEvents] = useState<ConsigliatiEvent[]>([]);
+  const [allCategories, setAllCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  /** Multi-select: set vuoto = "Tutti", altrimenti mostra solo eventi nelle categorie selezionate. */
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -53,30 +71,80 @@ export default function DiscoverConsigliatiPage() {
     }
   }, []);
 
+  const fetchCategories = useCallback(async () => {
+    try {
+      const res = await fetch("/api/events/categories");
+      if (res.ok) {
+        const data = await res.json();
+        setAllCategories(data.categories ?? []);
+      }
+    } catch {
+      setAllCategories([]);
+    }
+  }, []);
+
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
 
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    events.forEach((e) => e.category && set.add(e.category));
-    return Array.from(set).sort();
-  }, [events]);
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
-  const filterOptions = useMemo(() => {
-    const opts: { id: string; label: string }[] = [{ id: "all", label: "Tutti" }];
-    categories.forEach((c) => opts.push({ id: c, label: c }));
-    return opts;
-  }, [categories]);
+  /** Categorie da mostrare nella barra: tutte, ordine random (stabile per sessione). */
+  const categoriesShuffled = useMemo(
+    () => shuffleWithSeed(allCategories, "consigliati-categories"),
+    [allCategories]
+  );
+
+  const toggleCategory = useCallback((category: string) => {
+    setSelectedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedCategories(new Set());
+  }, []);
 
   const filteredEvents = useMemo(() => {
-    if (categoryFilter === "all") return events;
-    return events.filter((e) => e.category === categoryFilter);
-  }, [events, categoryFilter]);
+    if (selectedCategories.size === 0) return events;
+    return events.filter((e) => e.category && selectedCategories.has(e.category));
+  }, [events, selectedCategories]);
+
+  /** Ordine random degli eventi (stabile quando cambiano filteredEvents). */
+  const displayedEvents = useMemo(() => {
+    return shuffleWithSeed(filteredEvents, `consigliati-events-${filteredEvents.length}`);
+  }, [filteredEvents]);
 
   return (
     <div className="min-h-screen discover-page">
       <Header />
+
+      {/* Tab bar: Seguiti | Consigliati — come in /discover, per poter switchare */}
+      <div className="discover-tab-bar sticky top-[var(--header-height,3.5rem)] z-30">
+        <div className="mx-auto px-4 max-w-2xl">
+          <div className="flex">
+            <button
+              type="button"
+              onClick={() => router.push("/discover?tab=seguiti")}
+              className="flex-1 py-3.5 text-center text-sm font-semibold transition-colors border-b-2 border-transparent"
+            >
+              Seguiti
+            </button>
+            <span
+              className="flex-1 py-3.5 text-center text-sm font-semibold transition-colors border-b-2 discover-tab-active border-primary"
+              aria-current="page"
+            >
+              Consigliati
+            </span>
+          </div>
+        </div>
+      </div>
+
       <main
         id="main-content"
         className="relative mx-auto max-w-2xl px-4 pb-[calc(5rem+var(--safe-area-inset-bottom))] pt-5 md:pb-8 md:pt-8"
@@ -101,33 +169,62 @@ export default function DiscoverConsigliatiPage() {
           />
         ) : (
           <>
-            {filterOptions.length > 1 && (
-              <FilterChips
-                options={filterOptions}
-                value={categoryFilter}
-                onChange={setCategoryFilter}
-                label="Categoria"
-                className="mb-4"
-              />
-            )}
+            {/* Barra Categorie: tutte le categorie, multi-selezione */}
+            <div className="mb-4">
+              <p className="text-ds-caption font-semibold text-fg-muted uppercase tracking-wider mb-2">
+                Categorie
+              </p>
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin md:flex-wrap md:overflow-visible">
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className={`shrink-0 min-h-[44px] px-4 py-2.5 rounded-2xl font-semibold text-ds-body-sm transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg ds-tap-target ${
+                    selectedCategories.size === 0
+                      ? "chip-selected"
+                      : "box-raised text-fg-muted hover:border-primary/25"
+                  }`}
+                >
+                  Tutti
+                </button>
+                {categoriesShuffled.map((cat) => {
+                  const isSelected = selectedCategories.has(cat);
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => toggleCategory(cat)}
+                      className={`shrink-0 min-h-[44px] px-4 py-2.5 rounded-2xl font-semibold text-ds-body-sm transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg ds-tap-target ${
+                        isSelected
+                          ? "chip-selected"
+                          : "box-raised text-fg-muted hover:border-primary/25"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-            {filteredEvents.length === 0 ? (
+            {displayedEvents.length === 0 ? (
               <EmptyState
                 title="Nessun evento"
                 description={
-                  categoryFilter === "all"
+                  selectedCategories.size === 0
                     ? "Nessun evento consigliato al momento."
-                    : `Nessun evento nella categoria "${categoryFilter}".`
+                    : selectedCategories.size === 1
+                      ? `Nessun evento nella categoria "${Array.from(selectedCategories)[0]}".`
+                      : "Nessun evento nelle categorie selezionate."
                 }
                 action={
-                  categoryFilter !== "all"
-                    ? { label: "Tutti", onClick: () => setCategoryFilter("all") }
+                  selectedCategories.size > 0
+                    ? { label: "Tutti", onClick: clearSelection }
                     : undefined
                 }
               />
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:gap-4" role="list">
-                {filteredEvents.map((event) => (
+                {displayedEvents.map((event) => (
                   <div key={event.id} role="listitem">
                     <HomeEventTile
                       id={event.id}

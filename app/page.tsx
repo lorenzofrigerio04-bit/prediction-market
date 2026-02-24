@@ -310,7 +310,7 @@ export default function Home() {
     if (!showLanding) return;
     setLandingEventsLoading(true);
     try {
-      const res = await fetch("/api/events?sort=recent&limit=5&status=open");
+      const res = await fetch("/api/events?sort=recent&limit=10&status=open");
       if (res.ok) {
         const data: EventsResponse = await res.json();
         setLandingEvents(data.events ?? []);
@@ -387,7 +387,7 @@ export default function Home() {
                 action={{ label: "Esplora categorie", href: "/discover" }}
               />
             ) : (
-              <ul className="flex flex-col gap-4" aria-label="Anteprima eventi">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4" aria-label="Anteprima eventi">
                 {(debugMode ? landingEvents : landingEvents.filter((e) => !isDebugTitle(e.title))).map((event) => (
                   <li key={event.id}>
                     <LandingEventRow
@@ -515,7 +515,7 @@ export default function Home() {
               Non sai da dove iniziare?
             </p>
             <Link
-              href="/discover/tutti"
+              href="/discover/consigliati"
               className="landing-cta-primary w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body-sm inline-flex items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
             >
               Esplora tutti gli eventi →

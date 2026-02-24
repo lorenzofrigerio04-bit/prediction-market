@@ -4,6 +4,7 @@ import { DEFAULT_BADGES } from '../lib/badges';
 import { parseOutcomeDateFromText } from '../lib/event-generation/closes-at';
 import { getClosureRules } from '../lib/event-generation/config';
 import { computeDedupKey } from '../lib/event-publishing/dedup';
+import { ensureAmmStateForEvent } from '../lib/amm/ensure-amm-state';
 
 const prisma = new PrismaClient();
 
@@ -203,8 +204,10 @@ async function main() {
         createdById: admin.id,
         dedupKey,
         resolutionAuthorityHost: seedAuthorityHost,
+        tradingMode: 'AMM',
       },
     });
+    await ensureAmmStateForEvent(prisma, event.id);
     console.log(`✅ Evento creato: "${event.title}" (chiude il ${event.closesAt.toLocaleDateString('it-IT')})`);
   }
 

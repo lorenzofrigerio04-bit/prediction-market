@@ -5,6 +5,7 @@
 import type { PrismaClient } from '@prisma/client';
 import type { ScoredCandidate } from './types';
 import { computeDedupKey } from './dedup';
+import { ensureAmmStateForEvent } from '@/lib/amm/ensure-amm-state';
 
 /** Client Prisma completo o client di transazione (usato in $transaction) */
 type PrismaClientLike = Omit<
@@ -87,7 +88,7 @@ async function createEventFromCandidate(
     console.log('[Event Publish] Creating event dedupKey=', dedupKey.slice(0, 16) + '...', 'title=', candidate.title?.slice(0, 40));
   }
 
-  await prisma.event.create({
+  const event = await prisma.event.create({
     data: {
       title: candidate.title,
       description: candidate.description,
@@ -106,8 +107,10 @@ async function createEventFromCandidate(
       resolutionBufferHours: 24,
       resolved: false,
       resolutionStatus: 'PENDING',
+      tradingMode: 'AMM',
     },
   });
+  await ensureAmmStateForEvent(prisma, event.id);
   return { created: true };
 }
 

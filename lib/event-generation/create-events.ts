@@ -10,6 +10,7 @@ import { validateMarket } from "@/lib/validator";
 import { getBParameter } from "@/lib/pricing/initialization";
 import { getBufferHoursForCategory } from "@/lib/markets";
 import { computeDedupKey } from "@/lib/event-publishing/dedup";
+import { ensureAmmStateForEvent } from "@/lib/amm/ensure-amm-state";
 import type { GeneratedEvent } from "./types";
 import { ALLOWED_CATEGORIES } from "./types";
 
@@ -175,9 +176,11 @@ export async function createEventsFromGenerated(
           b,
           resolutionBufferHours,
           dedupKey,
+          tradingMode: "AMM",
           ...(resolutionAuthorityHost && { resolutionAuthorityHost }),
         },
       });
+      await ensureAmmStateForEvent(prisma, event.id);
       result.created++;
       result.eventIds.push(event.id);
       existingNormalizedTitles.add(normalized);

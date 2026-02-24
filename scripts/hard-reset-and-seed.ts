@@ -17,6 +17,7 @@ import { getBParameter } from "../lib/pricing/initialization";
 import { getPrice } from "../lib/pricing/lmsr";
 import { getBufferHoursForCategory } from "../lib/markets";
 import type { Category } from "../lib/pricing/initialization";
+import { ensureAmmStateForEvent } from "../lib/amm/ensure-amm-state";
 
 const prisma = new PrismaClient();
 
@@ -199,8 +200,10 @@ async function main() {
       b,
       q_yes,
       q_no,
+      tradingMode: "AMM",
     },
   });
+  await ensureAmmStateForEvent(prisma, event.id);
 
   console.log("Inserted known-good event:");
   console.log("  id:", event.id);
@@ -255,8 +258,10 @@ async function main() {
           b,
           q_yes,
           q_no,
+          tradingMode: "AMM",
         },
       });
+      await ensureAmmStateForEvent(prisma, e.id);
       starterPackIds.push(e.id);
     }
     console.log("Starter pack created:", starterPackIds.length, "markets.");

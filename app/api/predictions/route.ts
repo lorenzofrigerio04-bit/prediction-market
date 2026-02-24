@@ -7,6 +7,7 @@ import { checkAndAwardBadges } from "@/lib/badges";
 import { rateLimit } from "@/lib/rate-limit";
 import { track } from "@/lib/analytics";
 import { executeBuyShares, AmmError } from "@/lib/amm/engine";
+import { ensureAmmStateForEvent } from "@/lib/amm/ensure-amm-state";
 import { updateUserProfileFromTrade } from "@/lib/personalization";
 import { invalidatePriceCache } from "@/lib/cache/price";
 import { invalidateTrendingCache } from "@/lib/cache/trending";
@@ -72,12 +73,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const now = new Date();
+    const isOpen = !event.resolved && (!event.closesAt || new Date(event.closesAt) > now);
+
     if (event.tradingMode !== "AMM") {
-      return NextResponse.json(
-        { error: "Questo evento non supporta acquisti. Solo mercati AMM sono attivi." },
-        { status: 400 }
-      );
+      if (!isOpen) {
+        return NextResponse.json(
+          { error: "Questo evento non supporta acquisti. Solo mercati AMM sono attivi." },
+          { status: 400 }
+        );
+      }
+      await prisma.$transaction(async (tx) => {
+        await tx.event.update({
+          where: { id: eventId },
+          data: { tradingMode: "AMM" },
+        });
+        await ensureAmmStateForEvent(tx, eventId);
+      });
+      (event as { tradingMode: string }).tradingMode = "AMM";
     }
+
+    await ensureAmmStateForEvent(prisma, eventId);
     const maxCostMicros =
       maxCostMicrosRaw != null
         ? BigInt(typeof maxCostMicrosRaw === "string" ? maxCostMicrosRaw : Math.floor(maxCostMicrosRaw))
