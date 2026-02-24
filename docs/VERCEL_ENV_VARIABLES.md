@@ -1,9 +1,12 @@
 # Variabili d'ambiente su Vercel
 
-## DB: resta com'è
+## DB: quando aggiornare DATABASE_URL
 
-**Sì, il database è la stessa di sempre.**  
-Non toccare `DATABASE_URL`: è già corretta e va bene per tutto il progetto (LMSR, feed, eventi, ecc.).
+In condizioni normali **non toccare** `DATABASE_URL`: è già corretta e va bene per tutto il progetto (LMSR, feed, eventi, ecc.).
+
+**Aggiorna `DATABASE_URL`** quando ad esempio:
+- Migri il database Neon in un’altra regione (es. da America a Europa): usa la nuova connection string del progetto di destinazione e fai redeploy. Vedi [MIGRAZIONE_NEON_EU_ITALIA.md](./MIGRAZIONE_NEON_EU_ITALIA.md).
+- Crei un nuovo progetto Neon (nuovo ambiente o nuovo account).
 
 ---
 

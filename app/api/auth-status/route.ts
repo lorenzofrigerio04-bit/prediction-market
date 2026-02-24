@@ -25,6 +25,14 @@ export async function GET(request: NextRequest) {
         ? "impostato (formato OK)"
         : "formato non valido: deve iniziare con postgresql:// o postgres://";
 
+  const dbHost = rawDbUrl.match(/@([^/]+)/)?.[1] ?? "";
+  const databaseRegion =
+    dbHost.includes("eu-central-1") || dbHost.includes("eu-west-2")
+      ? "EU"
+      : dbHost.includes("us-east-1") || dbHost.includes("us-east-2") || dbHost.includes("us-west-2")
+        ? "US"
+        : dbHost ? "other" : "unknown";
+
   const host = request.headers.get("host") || "";
   const currentOrigin = request.nextUrl?.origin || "";
 
@@ -48,6 +56,7 @@ export async function GET(request: NextRequest) {
       NEXTAUTH_SECRET: hasSecret ? "impostato" : "mancante o troppo corto",
       NEXTAUTH_URL: hasUrl ? "impostato" : "mancante o non valido",
       DATABASE_URL: databaseCheck,
+      databaseRegion,
       urlMatch: urlMatches
         ? "OK (l'URL della pagina corrisponde a NEXTAUTH_URL)"
         : `L'URL della pagina (${host}) non corrisponde all'host in NEXTAUTH_URL (${expectedHost || "non impostato"}). Imposta NEXTAUTH_URL esattamente come l'URL che usi per aprire l'app (es. https://tuo-progetto.vercel.app).`,
