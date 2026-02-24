@@ -85,66 +85,69 @@ export default function DiscoverPage() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-x-hidden discover-page">
+    <div
+      className={`min-h-screen relative overflow-x-hidden discover-page${activeTab === "per-te" ? " discover-consigliati-strip-visible" : ""}`}
+    >
       <Header />
 
-      {/* Tab bar: Seguiti | Consigliati — sfondo trasparente, testo LED neon */}
-      <div className="discover-tab-bar sticky top-[var(--header-height,3.5rem)] z-30">
-        <div className="mx-auto px-4 max-w-2xl">
-          <div className="flex">
-            <button
-              type="button"
-              onClick={() => setTab("seguiti")}
-              className={`flex-1 py-3.5 text-center text-sm font-semibold transition-colors border-b-2 ${
-                activeTab === "seguiti"
-                  ? "discover-tab-active border-primary"
-                  : "border-transparent"
-              }`}
-            >
-              Seguiti
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("per-te")}
-              className={`flex-1 py-3.5 text-center text-sm font-semibold transition-colors border-b-2 ${
-                activeTab === "per-te"
-                  ? "discover-tab-active border-primary"
-                  : "border-transparent"
-              }`}
-            >
-              Consigliati
-            </button>
+      {/* Tab bar + strip link: Seguiti | Consigliati, sotto il link passa alla pagina generale / visione verticale */}
+      <div className="discover-tab-bar-wrapper sticky top-[var(--header-height,3.5rem)] z-30">
+        <div className="discover-tab-bar">
+          <div className="mx-auto px-4 max-w-2xl">
+            <div className="flex">
+              <button
+                type="button"
+                onClick={() => setTab("seguiti")}
+                className={`flex-1 py-3.5 text-center text-sm font-semibold transition-colors border-b-2 ${
+                  activeTab === "seguiti"
+                    ? "discover-tab-active border-primary"
+                    : "border-transparent"
+                }`}
+              >
+                Seguiti
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("per-te")}
+                className={`flex-1 py-3.5 text-center text-sm font-semibold transition-colors border-b-2 ${
+                  activeTab === "per-te"
+                    ? "discover-tab-active border-primary"
+                    : "border-transparent"
+                }`}
+              >
+                Consigliati
+              </button>
+            </div>
           </div>
         </div>
+        {activeTab === "per-te" && (
+          <div className="discover-consigliati-strip-zone md:hidden">
+            <Link
+              href="/discover/consigliati"
+              className="discover-consigliati-strip flex items-center justify-center py-3 px-4"
+              aria-label="Passa alla pagina generale degli eventi consigliati"
+            >
+              <span className="discover-consigliati-strip-text font-medium uppercase text-white/80">
+                -passa alla pagina generale-
+              </span>
+            </Link>
+          </div>
+        )}
       </div>
 
       {activeTab === "per-te" ? (
         <>
-          {/* Feed sotto header e tab bar: non li copre mai, visualizzazione sempre corretta */}
+          {/* Feed sotto header, tab bar e strip: non li copre mai */}
           <div
             id="main-content"
             className="discover-feed-fullviewport discover-feed-below-chrome fixed left-0 right-0 flex flex-col"
             style={{
-              top: "calc(var(--header-height, 3.5rem) + var(--discover-tab-bar-h, 52px))",
-              height: "calc(100dvh - (var(--header-height, 3.5rem) + var(--discover-tab-bar-h, 52px)))",
+              top: "calc(var(--header-height, 3.5rem) + var(--discover-tab-bar-h, 52px) + var(--discover-consigliati-strip-zone-h, 0px))",
+              height: "calc(100dvh - (var(--header-height, 3.5rem) + var(--discover-tab-bar-h, 52px) + var(--discover-consigliati-strip-zone-h, 0px)))",
             }}
           >
             <ConsigliatiFeed />
           </div>
-          {/* Link "Passa alla pagina originale": più in alto, più piccolo, discreto */}
-          <Link
-            href="/discover/consigliati"
-            className="discover-consigliati-strip md:hidden fixed left-0 right-0 z-40 flex items-center justify-center py-3 px-4"
-            style={{
-              bottom: "calc(4.75rem + var(--safe-area-inset-bottom))",
-              paddingBottom: "0.5rem",
-            }}
-            aria-label="Passa alla pagina originale degli eventi consigliati"
-          >
-            <span className="discover-consigliati-strip-text font-medium uppercase text-white/80">
-              -passa alla pagina originale-
-            </span>
-          </Link>
         </>
       ) : (
         <main

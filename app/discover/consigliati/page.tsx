@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
@@ -27,9 +27,9 @@ interface ConsigliatiEvent {
   };
 }
 
-const CONSIGLIATI_LIMIT = 50;
+const CONSIGLIATI_PAGE_SIZE = 50;
 
-/** Shuffle array in place con seed opzionale per ordine riproducibile. */
+/** Shuffle array con seed per ordine riproducibile (solo per ordine chip categorie). */
 function shuffleWithSeed<T>(arr: T[], seed?: string): T[] {
   const out = [...arr];
   const s = seed ?? `${Date.now()}`;
@@ -48,28 +48,70 @@ export default function DiscoverConsigliatiPage() {
   const [events, setEvents] = useState<ConsigliatiEvent[]>([]);
   const [allCategories, setAllCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  /** Multi-select: set vuoto = "Tutti", altrimenti mostra solo eventi nelle categorie selezionate. */
+  /** Multi-select: set vuoto = "Tutti" (feed personalizzato); altrimenti API restituisce tutti gli eventi di quelle categorie (virality). */
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  const fetchEvents = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/events/consigliati?limit=${CONSIGLIATI_LIMIT}`);
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Errore di caricamento");
+  const buildConsigliatiUrl = useCallback(
+    (offset: number) => {
+      const params = new URLSearchParams();
+      params.set("limit", String(CONSIGLIATI_PAGE_SIZE));
+      params.set("offset", String(offset));
+      if (selectedCategories.size > 0) {
+        params.set("categories", [...selectedCategories].join(","));
       }
-      const data = await res.json();
-      setEvents(data.events ?? []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Errore di rete");
-      setEvents([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return `/api/events/consigliati?${params.toString()}`;
+    },
+    [selectedCategories]
+  );
+
+  const fetchEvents = useCallback(
+    async (append = false) => {
+      const offset = append ? events.length : 0;
+      if (offset > 0) setLoadingMore(true);
+      else setLoading(true);
+      setError(null);
+      if (!append) setHasMore(true);
+      try {
+        const url = buildConsigliatiUrl(offset);
+        const res = await fetch(url);
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Errore di caricamento");
+        }
+        const data = await res.json();
+        const next = data.events ?? [];
+        if (append) {
+          const seen = new Set(events.map((e) => e.id));
+          const newEvents = next.filter((e: ConsigliatiEvent) => !seen.has(e.id));
+          setEvents((prev) => [...prev, ...newEvents]);
+        } else {
+          setEvents(next);
+        }
+        setHasMore(data.pagination?.hasMore ?? false);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Errore di rete");
+        if (!append) setEvents([]);
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [buildConsigliatiUrl, events.length]
+  );
+
+  /** Primo caricamento e quando cambiano le categorie selezionate: ricarica da zero. */
+  const loadFromStart = useCallback(() => {
+    setEvents([]);
+    fetchEvents(false);
+  }, [fetchEvents]);
+
+  useEffect(() => {
+    loadFromStart();
+  }, [selectedCategories]);
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -82,10 +124,6 @@ export default function DiscoverConsigliatiPage() {
       setAllCategories([]);
     }
   }, []);
-
-  useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
 
   useEffect(() => {
     fetchCategories();
@@ -110,38 +148,59 @@ export default function DiscoverConsigliatiPage() {
     setSelectedCategories(new Set());
   }, []);
 
-  const filteredEvents = useMemo(() => {
-    if (selectedCategories.size === 0) return events;
-    return events.filter((e) => e.category && selectedCategories.has(e.category));
-  }, [events, selectedCategories]);
+  /** Scroll infinito: sentinel in fondo alla lista, quando entra in view carica altra pagina. */
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!hasMore || loadingMore || loading || events.length === 0) return;
+    const sentinel = loadMoreRef.current;
+    if (!sentinel) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) fetchEvents(true);
+      },
+      { rootMargin: "200px", threshold: 0 }
+    );
+    io.observe(sentinel);
+    return () => io.disconnect();
+  }, [hasMore, loadingMore, loading, events.length, fetchEvents]);
 
-  /** Ordine random degli eventi (stabile quando cambiano filteredEvents). */
-  const displayedEvents = useMemo(() => {
-    return shuffleWithSeed(filteredEvents, `consigliati-events-${filteredEvents.length}`);
-  }, [filteredEvents]);
+  const displayedEvents = events;
 
   return (
     <div className="min-h-screen discover-page">
       <Header />
 
-      {/* Tab bar: Seguiti | Consigliati — come in /discover, per poter switchare */}
-      <div className="discover-tab-bar sticky top-[var(--header-height,3.5rem)] z-30">
-        <div className="mx-auto px-4 max-w-2xl">
-          <div className="flex">
-            <button
-              type="button"
-              onClick={() => router.push("/discover?tab=seguiti")}
-              className="flex-1 py-3.5 text-center text-sm font-semibold transition-colors border-b-2 border-transparent"
-            >
-              Seguiti
-            </button>
-            <span
-              className="flex-1 py-3.5 text-center text-sm font-semibold transition-colors border-b-2 discover-tab-active border-primary"
-              aria-current="page"
-            >
-              Consigliati
-            </span>
+      {/* Tab bar + strip link: come in /discover, sotto il link passa alla visione verticale */}
+      <div className="discover-tab-bar-wrapper sticky top-[var(--header-height,3.5rem)] z-30">
+        <div className="discover-tab-bar">
+          <div className="mx-auto px-4 max-w-2xl">
+            <div className="flex">
+              <button
+                type="button"
+                onClick={() => router.push("/discover?tab=seguiti")}
+                className="flex-1 py-3.5 text-center text-sm font-semibold transition-colors border-b-2 border-transparent"
+              >
+                Seguiti
+              </button>
+              <span
+                className="flex-1 py-3.5 text-center text-sm font-semibold transition-colors border-b-2 discover-tab-active border-primary"
+                aria-current="page"
+              >
+                Consigliati
+              </span>
+            </div>
           </div>
+        </div>
+        <div className="discover-consigliati-strip-zone discover-consigliati-strip-zone--generale md:hidden">
+          <Link
+            href="/discover"
+            className="discover-consigliati-strip discover-consigliati-strip--generale flex items-center justify-center py-3 px-4"
+            aria-label="Passa alla visione verticale degli eventi consigliati"
+          >
+            <span className="discover-consigliati-strip-text font-medium uppercase text-fg-muted hover:text-fg">
+              -passa alla visione verticale-
+            </span>
+          </Link>
         </div>
       </div>
 
@@ -223,25 +282,33 @@ export default function DiscoverConsigliatiPage() {
                 }
               />
             ) : (
-              <div className="grid grid-cols-2 gap-3 sm:gap-4" role="list">
-                {displayedEvents.map((event) => (
-                  <div key={event.id} role="listitem">
-                    <HomeEventTile
-                      id={event.id}
-                      title={event.title}
-                      category={event.category}
-                      closesAt={event.closesAt}
-                      yesPct={Math.round(
-                        typeof event.probability === "number" && Number.isFinite(event.probability)
-                          ? event.probability
-                          : 50
-                      )}
-                      predictionsCount={event._count?.predictions}
-                      variant="foryou"
-                    />
+              <>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4" role="list">
+                  {displayedEvents.map((event) => (
+                    <div key={event.id} role="listitem">
+                      <HomeEventTile
+                        id={event.id}
+                        title={event.title}
+                        category={event.category}
+                        closesAt={event.closesAt}
+                        yesPct={Math.round(
+                          typeof event.probability === "number" && Number.isFinite(event.probability)
+                            ? event.probability
+                            : 50
+                        )}
+                        predictionsCount={event._count?.predictions}
+                        variant="foryou"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div ref={loadMoreRef} className="min-h-[1px]" aria-hidden />
+                {loadingMore && (
+                  <div className="flex justify-center py-6">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </>
         )}

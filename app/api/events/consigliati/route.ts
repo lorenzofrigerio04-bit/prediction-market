@@ -7,25 +7,24 @@ import { getEventsWithStats } from "@/lib/fomo/event-stats";
 export const dynamic = "force-dynamic";
 
 const CONSIGLIATI_LIMIT = 30;
+const MAX_LIMIT = 50;
 const COLD_START_PREDICTIONS_THRESHOLD = 5;
-const COLD_START_PER_CATEGORY = 3;
 const WARM_MAIN_CATEGORIES = 4;
-const WARM_DISCOVERY_COUNT = 3;
+/** Warm feed: ~70% dalle categorie preferite, ~30% da altre categorie (discovery). */
+const WARM_PREFERRED_RATIO = 0.7;
 
-function shuffle<T>(arr: T[]): T[] {
-  const out = [...arr];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
-}
+const viralOrderBy = [
+  { yesPredictions: "desc" as const },
+  { totalCredits: "desc" as const },
+  { createdAt: "desc" as const },
+];
 
 /**
  * GET /api/events/consigliati
- * Feed "Consigliati" per il vertical scroll: funziona con o senza auth.
- * - Senza auth: eventi virali per categoria, shuffle, fino a limit.
- * - Con auth: stessa logica di for-you (cold/warm), più isFollowing per ogni evento.
+ * - categories (opzionale): comma-separated; se presente restituisce TUTTI gli eventi
+ *   di quelle categorie in ordine di viralità, paginati (per visione generale + filtri).
+ * - Senza categories: feed personalizzato (cold = viral; warm = 70% gusti, 30% random).
+ * - offset/limit per scroll infinito (nessun limite al numero totale di eventi).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -33,10 +32,16 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const limit = Math.min(
       parseInt(searchParams.get("limit") || String(CONSIGLIATI_LIMIT), 10) || CONSIGLIATI_LIMIT,
-      50
+      MAX_LIMIT
     );
-    const now = new Date();
+    const offset = Math.max(0, parseInt(searchParams.get("offset") || "0", 10) || 0);
+    const categoriesParam = searchParams.get("categories")?.trim();
+    const filterCategories =
+      categoriesParam?.length
+        ? categoriesParam.split(",").map((c) => c.trim()).filter(Boolean)
+        : null;
 
+    const now = new Date();
     const baseWhere = {
       resolved: false,
       status: "OPEN" as const,
@@ -45,140 +50,139 @@ export async function GET(request: NextRequest) {
     };
 
     let eventIds: string[];
+    let totalForHasMore: number | null = null;
 
-    if (!session?.user?.id) {
-      const categories = await prisma.event
-        .findMany({
+    // --- Modalità filtri categoria: tutti gli eventi di quelle categorie, ordinati per viralità ---
+    if (filterCategories && filterCategories.length > 0) {
+      const where = { ...baseWhere, category: { in: filterCategories } };
+      const [count, rows] = await Promise.all([
+        prisma.event.count({ where }),
+        prisma.event.findMany({
+          where,
+          orderBy: viralOrderBy,
+          skip: offset,
+          take: limit,
+          select: { id: true },
+        }),
+      ]);
+      totalForHasMore = count;
+      eventIds = rows.map((r) => r.id);
+    } else {
+      // --- Feed personalizzato (no filtro categoria) ---
+      if (!session?.user?.id) {
+        // Cold: ordine viral globale, paginato
+        const rows = await prisma.event.findMany({
           where: baseWhere,
-          select: { category: true },
-          distinct: ["category"],
-        })
-        .then((rows) => rows.map((r) => r.category).filter(Boolean));
-
-      if (categories.length === 0) {
-        const fallback = await prisma.event.findMany({
-          where: baseWhere,
-          orderBy: [{ totalCredits: "desc" }, { createdAt: "desc" }],
+          orderBy: viralOrderBy,
+          skip: offset,
           take: limit,
           select: { id: true },
         });
-        eventIds = fallback.map((e) => e.id);
+        eventIds = rows.map((r) => r.id);
+        totalForHasMore = null;
       } else {
-        const viralPerCategory: string[] = [];
-        for (const category of categories) {
-          const events = await prisma.event.findMany({
-            where: { ...baseWhere, category },
-            orderBy: [
-              { yesPredictions: "desc" },
-              { totalCredits: "desc" },
-              { createdAt: "desc" },
-            ],
-            take: COLD_START_PER_CATEGORY + 2,
-            select: { id: true },
-          });
-          viralPerCategory.push(...events.map((e) => e.id));
-        }
-        eventIds = shuffle(viralPerCategory).slice(0, limit);
-      }
-    } else {
-      const userId = session.user.id;
-      const predictionCount = await prisma.prediction.count({
-        where: { userId },
-      });
+        const userId = session.user.id;
+        const predictionCount = await prisma.prediction.count({ where: { userId } });
 
-      if (predictionCount < COLD_START_PREDICTIONS_THRESHOLD) {
-        const categories = await prisma.event
-          .findMany({
+        if (predictionCount < COLD_START_PREDICTIONS_THRESHOLD) {
+          // Cold (loggato ma poche previsioni): come non loggato
+          const rows = await prisma.event.findMany({
             where: baseWhere,
-            select: { category: true },
-            distinct: ["category"],
-          })
-          .then((rows) => rows.map((r) => r.category).filter(Boolean));
-
-        if (categories.length === 0) {
-          const fallback = await prisma.event.findMany({
-            where: baseWhere,
-            orderBy: [{ totalCredits: "desc" }, { createdAt: "desc" }],
+            orderBy: viralOrderBy,
+            skip: offset,
             take: limit,
             select: { id: true },
           });
-          eventIds = fallback.map((e) => e.id);
+          eventIds = rows.map((r) => r.id);
+          totalForHasMore = null;
         } else {
-          const viralPerCategory: string[] = [];
-          for (const category of categories) {
-            const events = await prisma.event.findMany({
-              where: { ...baseWhere, category },
-              orderBy: [
-                { yesPredictions: "desc" },
-                { totalCredits: "desc" },
-                { createdAt: "desc" },
-              ],
-              take: COLD_START_PER_CATEGORY + 2,
-              select: { id: true },
-            });
-            viralPerCategory.push(...events.map((e) => e.id));
-          }
-          eventIds = shuffle(viralPerCategory).slice(0, limit);
-        }
-      } else {
-        const userPredictions = await prisma.prediction.findMany({
-          where: { userId },
-          select: { event: { select: { category: true } } },
-        });
-        const categoryCount = new Map<string, number>();
-        for (const p of userPredictions) {
-          const cat = p.event?.category;
-          if (cat) categoryCount.set(cat, (categoryCount.get(cat) || 0) + 1);
-        }
-        const preferredCategories = [...categoryCount.entries()]
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, WARM_MAIN_CATEGORIES)
-          .map(([c]) => c);
-
-        const alreadyPredictedEventIds = await prisma.prediction
-          .findMany({
+          // Warm: 70% categorie preferite, 30% altre categorie (discovery)
+          const userPredictions = await prisma.prediction.findMany({
             where: { userId },
-            select: { eventId: true },
-          })
-          .then((rows) => new Set(rows.map((r) => r.eventId)));
+            select: { event: { select: { category: true } } },
+          });
+          const categoryCount = new Map<string, number>();
+          for (const p of userPredictions) {
+            const cat = p.event?.category;
+            if (cat) categoryCount.set(cat, (categoryCount.get(cat) || 0) + 1);
+          }
+          const preferredCategories = [...categoryCount.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, WARM_MAIN_CATEGORIES)
+            .map(([c]) => c);
 
-        const mainLimit = Math.max(limit - WARM_DISCOVERY_COUNT, 1);
-        const mainIds: string[] = [];
-        if (preferredCategories.length > 0) {
-          for (const category of preferredCategories) {
-            const events = await prisma.event.findMany({
-              where: {
-                ...baseWhere,
-                category,
-                id: { notIn: [...alreadyPredictedEventIds] },
-              },
+          const alreadyPredictedEventIds = await prisma.prediction
+            .findMany({
+              where: { userId },
+              select: { eventId: true },
+            })
+            .then((rows) => new Set(rows.map((r) => r.eventId)));
+
+          const preferredTake = Math.ceil(limit * WARM_PREFERRED_RATIO);
+          const otherTake = limit - preferredTake;
+          const preferredSkip = Math.floor(offset * WARM_PREFERRED_RATIO);
+          const otherSkip = Math.floor(offset * (1 - WARM_PREFERRED_RATIO));
+
+          const preferredWhere =
+            preferredCategories.length > 0
+              ? {
+                  ...baseWhere,
+                  category: { in: preferredCategories },
+                  id: { notIn: [...alreadyPredictedEventIds] },
+                }
+              : null;
+          const otherWhere = {
+            ...baseWhere,
+            id: { notIn: [...alreadyPredictedEventIds] },
+            ...(preferredCategories.length > 0
+              ? { category: { notIn: preferredCategories } }
+              : {}),
+          };
+
+          let preferredIds: string[] = [];
+          let otherIds: string[] = [];
+
+          if (preferredWhere) {
+            const preferredRows = await prisma.event.findMany({
+              where: preferredWhere,
               orderBy: [{ totalCredits: "desc" }, { createdAt: "desc" }],
-              take: Math.ceil(mainLimit / preferredCategories.length) + 2,
+              skip: preferredSkip,
+              take: preferredTake,
               select: { id: true },
             });
-            mainIds.push(...events.map((e) => e.id));
+            preferredIds = preferredRows.map((r) => r.id);
           }
+          const otherRows = await prisma.event.findMany({
+            where: otherWhere,
+            orderBy: [{ totalCredits: "desc" }, { createdAt: "desc" }],
+            skip: otherSkip,
+            take: otherTake,
+            select: { id: true },
+          });
+          otherIds = otherRows.map((r) => r.id);
+
+          // Interleave: 2 preferred, 1 other, 2 preferred, 1 other, ...
+          eventIds = [];
+          let pi = 0;
+          let oi = 0;
+          const ratio = 2; // 2 pref : 1 other ≈ 67/33, con preferredTake/otherTake già 70/30
+          for (let i = 0; i < limit && (pi < preferredIds.length || oi < otherIds.length); i++) {
+            const usePreferred =
+              oi >= otherIds.length ||
+              (pi < preferredIds.length && (i % (ratio + 1) !== ratio));
+            if (usePreferred && pi < preferredIds.length) {
+              eventIds.push(preferredIds[pi++]);
+            } else if (oi < otherIds.length) {
+              eventIds.push(otherIds[oi++]);
+            } else if (pi < preferredIds.length) {
+              eventIds.push(preferredIds[pi++]);
+            }
+          }
+          totalForHasMore = null;
         }
-        const restWhere = {
-          ...baseWhere,
-          id: { notIn: [...alreadyPredictedEventIds, ...mainIds] },
-        };
-        const discovery = await prisma.event.findMany({
-          where: restWhere,
-          orderBy: [{ totalCredits: "desc" }, { createdAt: "desc" }],
-          take: WARM_DISCOVERY_COUNT,
-          select: { id: true },
-        });
-        const combined = [...mainIds, ...discovery.map((e) => e.id)];
-        const seen = new Set<string>();
-        eventIds = combined.filter((id) => {
-          if (seen.has(id)) return false;
-          seen.add(id);
-          return true;
-        }).slice(0, limit);
       }
 
-      if (eventIds.length === 0) {
+      if (eventIds.length === 0 && offset === 0) {
         const fallback = await prisma.event.findMany({
           where: baseWhere,
           orderBy: [{ totalCredits: "desc" }, { createdAt: "desc" }],
@@ -200,46 +204,48 @@ export async function GET(request: NextRequest) {
     const orderMap = new Map(eventIds.map((id, i) => [id, i]));
     events.sort((a, b) => (orderMap.get(a.id) ?? 99) - (orderMap.get(b.id) ?? 99));
 
-    /** Massimo 2 eventi consecutivi della stessa categoria per feed dinamico */
-    const noMoreThanTwoSameCategory = <T extends { category: string }>(arr: T[]): T[] => {
-      if (arr.length <= 2) return arr;
-      const result: T[] = [];
-      const byCategory = new Map<string, T[]>();
-      for (const e of arr) {
-        const list = byCategory.get(e.category) ?? [];
-        list.push(e);
-        byCategory.set(e.category, list);
-      }
-      const categories = [...byCategory.keys()];
-      let last1: string | null = null;
-      let last2: string | null = null;
-      let remaining = arr.length;
-      while (remaining > 0) {
-        let chosen: T | null = null;
-        for (const cat of categories) {
-          const list = byCategory.get(cat)!;
-          if (list.length === 0) continue;
-          const wouldRepeatThree = last1 === cat && last2 === cat;
-          if (!wouldRepeatThree) {
-            chosen = list.shift()!;
-            break;
+    // Massimo 2 eventi consecutivi stessa categoria solo per feed personalizzato (no filtro categoria)
+    if (!filterCategories || filterCategories.length === 0) {
+      const noMoreThanTwoSameCategory = <T extends { category: string }>(arr: T[]): T[] => {
+        if (arr.length <= 2) return arr;
+        const result: T[] = [];
+        const byCategory = new Map<string, T[]>();
+        for (const e of arr) {
+          const list = byCategory.get(e.category) ?? [];
+          list.push(e);
+          byCategory.set(e.category, list);
+        }
+        const categories = [...byCategory.keys()];
+        let last1: string | null = null;
+        let last2: string | null = null;
+        let remaining = arr.length;
+        while (remaining > 0) {
+          let chosen: T | null = null;
+          for (const cat of categories) {
+            const list = byCategory.get(cat)!;
+            if (list.length === 0) continue;
+            const wouldRepeatThree = last1 === cat && last2 === cat;
+            if (!wouldRepeatThree) {
+              chosen = list.shift()!;
+              break;
+            }
           }
+          if (!chosen) {
+            const firstNonEmpty = categories.find((c) => (byCategory.get(c)?.length ?? 0) > 0);
+            if (firstNonEmpty) chosen = byCategory.get(firstNonEmpty)!.shift()!;
+          }
+          if (!chosen) break;
+          result.push(chosen);
+          last2 = last1;
+          last1 = chosen.category;
+          remaining--;
         }
-        if (!chosen) {
-          const firstNonEmpty = categories.find((c) => (byCategory.get(c)?.length ?? 0) > 0);
-          if (firstNonEmpty) chosen = byCategory.get(firstNonEmpty)!.shift()!;
-        }
-        if (!chosen) break;
-        result.push(chosen);
-        last2 = last1;
-        last1 = chosen.category;
-        remaining--;
-      }
-      return result;
-    };
-    const reordered = noMoreThanTwoSameCategory(events);
-    events.length = 0;
-    events.push(...reordered);
+        return result;
+      };
+      const reordered = noMoreThanTwoSameCategory(events);
+      events.length = 0;
+      events.push(...reordered);
+    }
 
     let followingSet: Set<string> = new Set();
     if (session?.user?.id && events.length > 0) {
@@ -280,9 +286,19 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    const hasMore =
+      totalForHasMore !== null
+        ? offset + eventsWithMeta.length < totalForHasMore
+        : eventsWithMeta.length === limit;
+
     return NextResponse.json({
       events: eventsWithMeta,
-      pagination: { total: eventsWithMeta.length, limit, hasMore: false },
+      pagination: {
+        total: totalForHasMore ?? undefined,
+        limit,
+        offset,
+        hasMore,
+      },
     });
   } catch (error) {
     console.error("Consigliati feed error:", error);

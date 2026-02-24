@@ -471,10 +471,14 @@ function ConsigliatiSlide({
   );
 }
 
+const CONSIGLIATI_PAGE_SIZE = 30;
+
 export default function ConsigliatiFeed() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const [events, setEvents] = useState<ConsigliatiEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [likedIds, setLikedIds] = useState<Set<string>>(getStoredLikes);
   const [commentsEventId, setCommentsEventId] = useState<string | null>(null);
@@ -484,14 +488,18 @@ export default function ConsigliatiFeed() {
   const fetchEvents = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setHasMore(true);
     try {
-      const res = await fetch("/api/events/consigliati?limit=30");
+      const res = await fetch(
+        `/api/events/consigliati?limit=${CONSIGLIATI_PAGE_SIZE}&offset=0`
+      );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Errore di caricamento");
       }
       const data = await res.json();
       setEvents(data.events ?? []);
+      setHasMore(data.pagination?.hasMore ?? false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Errore di rete");
       setEvents([]);
@@ -500,9 +508,34 @@ export default function ConsigliatiFeed() {
     }
   }, []);
 
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore || events.length === 0) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(
+        `/api/events/consigliati?limit=${CONSIGLIATI_PAGE_SIZE}&offset=${events.length}`
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      const next = data.events ?? [];
+      const seen = new Set(events.map((e) => e.id));
+      const newEvents = next.filter((e: ConsigliatiEvent) => !seen.has(e.id));
+      setEvents((prev) => [...prev, ...newEvents]);
+      setHasMore(data.pagination?.hasMore ?? false);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [events.length, hasMore, loadingMore]);
+
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
+
+  /** Scroll infinito: carica altra pagina quando si è vicini alla fine (ultime 2 slide). */
+  useEffect(() => {
+    if (!hasMore || loadingMore || events.length === 0) return;
+    if (currentIndex >= events.length - 2) loadMore();
+  }, [currentIndex, events.length, hasMore, loadingMore, loadMore]);
 
   useEffect(() => {
     setLikedIds(getStoredLikes());
@@ -682,6 +715,15 @@ export default function ConsigliatiFeed() {
             onShare={() => handleShare(event.id, event.title)}
           />
         ))}
+        {loadingMore && (
+          <div
+            className="flex flex-shrink-0 items-center justify-center py-8"
+            style={{ minHeight: "120px" }}
+            aria-hidden
+          >
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        )}
       </div>
 
       {commentsEventId && (

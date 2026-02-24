@@ -2030,7 +2030,33 @@ body.discover-consigliati-active .nav-bottom-neon svg {
   filter: drop-shadow(0 1px 2px rgba(0 0 0 / 0.6));
 }
 
-/* Link "Passa alla pagina originale": poco sopra la barra, discreto ma visibile */
+/* Zona sotto tab bar (Seguiti | Consigliati): link "passa alla pagina generale" / "passa alla visione verticale" */
+.discover-consigliati-strip-zone {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0;
+}
+@media (min-width: 768px) {
+  .discover-consigliati-strip-zone {
+    display: none;
+  }
+}
+/* Altezza zona strip (feed verticale): riserva spazio sotto la tab bar; su desktop strip nascosta quindi 0 */
+.discover-consigliati-strip-visible {
+  --discover-consigliati-strip-zone-h: 44px;
+}
+@media (min-width: 768px) {
+  .discover-consigliati-strip-visible {
+    --discover-consigliati-strip-zone-h: 0px;
+  }
+}
+.discover-consigliati-strip-zone--generale .discover-consigliati-strip-text {
+  text-shadow: none;
+}
+
+/* Link "Passa alla pagina generale" (feed verticale) / "Passa alla visione verticale" (pagina generale): discreti, spazio per respirare */
 .discover-consigliati-strip {
   background: transparent;
   -webkit-tap-highlight-color: transparent;
@@ -2052,6 +2078,18 @@ body.discover-consigliati-active .nav-bottom-neon svg {
 }
 .discover-consigliati-strip:active .discover-consigliati-strip-text {
   opacity: 0.9;
+}
+.discover-consigliati-strip--generale .discover-consigliati-strip-text {
+  color: rgb(var(--fg-muted));
+}
+.discover-consigliati-strip--generale:hover .discover-consigliati-strip-text {
+  color: rgb(var(--fg));
+}
+.dark .discover-consigliati-strip--generale .discover-consigliati-strip-text {
+  color: rgb(255 255 255 / 0.7);
+}
+.dark .discover-consigliati-strip--generale:hover .discover-consigliati-strip-text {
+  color: rgb(255 255 255 / 0.95);
 }
 /* Icone bottom nav: stile minimal (gestito da NavIcon in Icons.tsx) */
 .nav-bottom-neon a:hover svg,
@@ -2606,7 +2644,7 @@ body.discover-consigliati-active .discover-tab-bar {
   margin-top: 0.75rem;
 }
 
-/* Drawer aperto: nascondi "-passa alla pagina originale-" */
+/* Drawer commenti aperto: nascondi il link "passa alla pagina generale" */
 body.consigliati-comments-open .discover-consigliati-strip {
   opacity: 0;
   visibility: hidden;
