@@ -149,7 +149,6 @@ export default function DiscoverConsigliatiPage() {
   }, []);
 
   /** Scroll infinito: sentinel in fondo alla lista, quando entra in view carica altra pagina. */
-  const loadMoreRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!hasMore || loadingMore || loading || events.length === 0) return;
     const sentinel = loadMoreRef.current;
