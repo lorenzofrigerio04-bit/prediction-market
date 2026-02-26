@@ -1,27 +1,20 @@
 "use client";
 
-const TITLE_TEXT = "Prevedi il futuro. Guadagna crediti. Scala la classifica.";
-const WORDS = TITLE_TEXT.split(/\s+/);
-const WORD_DURATION_MS = 620;
-const STAGGER_MS = 95;
+const LINES = [
+  "Prevedi il futuro.",
+  "Guadagna crediti.",
+  "Scala la classifica.",
+];
 
 export default function LandingHeroTitle() {
   return (
     <h1
-      className="landing-hero-title landing-hero-title--typewriter text-ds-display-landing my-3 md:my-4 max-w-2xl mx-auto leading-tight tracking-tight"
-      aria-label={TITLE_TEXT}
+      className="landing-hero-title landing-hero-title--lines text-ds-display-landing my-2 md:my-3 max-w-2xl mx-auto leading-tight tracking-tight text-center"
+      aria-label={LINES.join(" ")}
     >
-      {WORDS.map((word, i) => (
-        <span
-          key={i}
-          className="landing-hero-title__word inline-block"
-          style={{
-            animationDelay: `${i * STAGGER_MS}ms`,
-            animationDuration: `${WORD_DURATION_MS}ms`,
-          }}
-        >
-          {word}
-          {i < WORDS.length - 1 ? "\u00A0" : null}
+      {LINES.map((line, i) => (
+        <span key={i} className="landing-hero-title__line block">
+          {line}
         </span>
       ))}
     </h1>

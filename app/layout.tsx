@@ -4,7 +4,8 @@ import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
 import { authOptions } from "@/lib/auth";
 import ThemeScript from "./ThemeScript";
-import PlatformBackground from "@/components/landing/LandingBackground";
+import AppBackground from "@/components/AppBackground";
+import { LandingBackgroundProviderWithRoute } from "@/components/landing/LandingBackgroundCarousel";
 
 /* Colore barre sistema: status bar + barra browser (Android Chrome, iOS). Stesso valore in manifest.json. */
 const THEME_COLOR = "#161a26";
@@ -59,8 +60,9 @@ export default async function RootLayout({
       </head>
       <body className="font-sans antialiased min-h-screen bg-transparent text-fg flex flex-col">
         <ThemeScript />
-        <PlatformBackground />
-        <SessionProvider session={session}>
+        <LandingBackgroundProviderWithRoute>
+          <AppBackground />
+          <SessionProvider session={session}>
           <a
             href="#main-content"
             className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-surface focus:text-fg focus:border focus:border-border focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg"
@@ -78,6 +80,7 @@ export default async function RootLayout({
             </span>
           </footer>
         </SessionProvider>
+        </LandingBackgroundProviderWithRoute>
       </body>
     </html>
   );

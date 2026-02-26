@@ -106,10 +106,10 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
         ref={panelRef}
         role="dialog"
         aria-label="Menu utility"
-        className="fixed top-0 right-0 h-full w-[min(320px,85vw)] bg-bg border-l border-border dark:border-white/10 shadow-overlay flex flex-col transition-transform duration-200 ease-out"
+        className="side-drawer-panel fixed top-0 right-0 h-full w-[min(320px,85vw)] shadow-overlay flex flex-col transition-transform duration-200 ease-out"
         style={{ paddingTop: "var(--safe-area-inset-top)" }}
       >
-        <div className="flex items-center justify-between px-4 py-4 border-b border-border dark:border-white/10">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
           <span className="text-ds-body font-semibold text-fg tracking-title">Menu</span>
           <button
             type="button"
@@ -127,7 +127,7 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
               {/* Sezione: Impegnati (wallet, missioni, notifiche) — uso meno frequente */}
               <div className="flex flex-col gap-1">
                 <span className="text-ds-micro font-semibold uppercase tracking-label text-fg-muted px-4 py-1">
-                  Impegnati
+                  Personale
                 </span>
                 <DrawerLink href="/wallet" icon={IconWallet} active={isActive("/wallet")} onClick={onClose}>
                   Wallet
@@ -158,7 +158,7 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
                 )}
               </div>
 
-              <div className="mt-2 pt-4 border-t border-border dark:border-white/10">
+              <div className="mt-2 pt-4 border-t border-white/10">
                 <button
                   type="button"
                   onClick={handleLogout}
@@ -180,7 +180,7 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
                   Supporto
                 </DrawerLink>
               </div>
-              <div className="mt-2 pt-4 border-t border-border dark:border-white/10">
+              <div className="mt-2 pt-4 border-t border-white/10">
                 <Link
                   href="/auth/login"
                   onClick={onClose}

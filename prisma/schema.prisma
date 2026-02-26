@@ -114,6 +114,7 @@ model EventSubmission {
   reviewedById     String?
   reviewNotes      String?
   eventId          String?   // ID dell'evento creato se approvato
+  notifyPhone      String?   // Numero per avviso quando l'evento viene approvato (con consenso termini)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

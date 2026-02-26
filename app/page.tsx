@@ -6,11 +6,13 @@ import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import OnboardingTour from "@/components/OnboardingTour";
-import LandingEventRow from "@/components/landing/LandingEventRow";
+import HomeEventTile from "@/components/home/HomeEventTile";
 import LandingHeroStats from "@/components/landing/LandingHeroStats";
 import LandingHeroTitle from "@/components/landing/LandingHeroTitle";
+import LandingWhyFlip from "@/components/landing/LandingWhyFlip";
 import HomeHeaderPostLogin from "@/components/home/HomeHeaderPostLogin";
 import HomeCarouselBox, { type HomeEventTileData } from "@/components/home/HomeCarouselBox";
+import type { HomeEventTileVariant } from "@/components/home/HomeEventTile";
 import { EmptyState, LoadingBlock } from "@/components/ui";
 import { getDisplayTitle, isDebugTitle } from "@/lib/debug-display";
 import type { EventFomoStats } from "@/lib/fomo/event-stats";
@@ -340,42 +342,49 @@ export default function Home() {
     return (
       <div className="min-h-screen relative overflow-x-hidden landing-page">
         <Header />
-        <main id="main-content" className="relative mx-auto px-4 sm:px-6 py-5 md:py-12 lg:py-16 max-w-2xl">
-          {/* Hero: corpo più in alto, respiro tra contatori e barra inferiore; linee LED incubano titolo e CTA */}
-          <section className="landing-hero-section min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-4.5rem)] flex flex-col justify-center pt-2 pb-24 md:pt-4 md:pb-28">
-            <div className="landing-hero-card px-4 py-0 md:px-10 md:py-0 text-center flex flex-col justify-center">
-              <p className="landing-hero-eyebrow text-[0.7rem] sm:text-ds-caption font-semibold uppercase tracking-wider mb-1.5 md:mb-2 text-white/95 text-center max-w-full break-words leading-snug -mt-[0.5cm]">
-                Mercati di previsione – Solo crediti virtuali
-              </p>
-              <div className="landing-hero-line my-2 md:my-3" aria-hidden />
-              <LandingHeroTitle />
-              <div className="landing-hero-line landing-hero-line--below my-3 md:my-4" aria-hidden />
-              <p className="landing-hero-subtitle text-ds-body-landing font-normal text-white/90 max-w-md mx-auto leading-snug text-center">
-                Se pensi di saperlo prima degli altri,
-                <br />
-                <span className="landing-hero-subtitle-emphasis">è il momento di provarlo.</span>
-              </p>
-              <div className="landing-hero-line landing-hero-line--cta my-5 md:my-6" aria-hidden />
-              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-5 md:mb-6">
-                <Link
-                  href="/auth/signup"
-                  className="landing-cta-primary w-full sm:w-auto min-h-[52px] px-6 py-3.5 rounded-xl font-semibold text-ds-body inline-flex items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-                >
-                  Prevedi ora — 1000 crediti di benvenuto!
-                </Link>
-                <Link
-                  href="/auth/login"
-                  className="landing-cta-secondary w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body inline-flex items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-                >
-                  Già account? Accedi
-                </Link>
+        <main id="main-content" className="relative mx-auto px-4 py-4 sm:px-6 sm:py-6 md:py-10 lg:py-12 max-w-2xl">
+          {/* Hero: una schermata = solo fino ai contatori; contatori alla stessa altezza di "Eventi in corso" */}
+          <section
+            className="landing-hero-section flex flex-col min-h-[var(--landing-hero-min-h)] pt-1 pb-6 md:pt-2 md:pb-8"
+          >
+            <div className="landing-hero-card px-4 py-0 md:px-10 md:py-0 text-center flex flex-col flex-1 min-h-0">
+              {/* Blocco testo + CTA centrato in altezza nello spazio sopra i contatori */}
+              <div className="flex flex-1 min-h-0 flex-col justify-center py-4 md:py-6">
+                <p className="landing-hero-eyebrow text-[0.7rem] sm:text-ds-caption font-semibold uppercase tracking-wider mb-2 md:mb-2.5 text-white/95 text-center max-w-full break-words leading-snug">
+                  Mercati di previsione – Solo crediti virtuali
+                </p>
+                <div className="landing-hero-line mt-[1cm] mb-2.5 md:mb-3" aria-hidden />
+                <LandingHeroTitle />
+                <div className="landing-hero-line landing-hero-line--below my-3 md:my-4" aria-hidden />
+                <p className="landing-hero-subtitle text-ds-body-landing font-normal text-white/90 max-w-md mx-auto leading-snug text-center mb-[0.8cm]">
+                  Se pensi di saperlo prima degli altri,
+                  <br />
+                  <span className="landing-hero-subtitle-emphasis">è il momento di provarlo.</span>
+                </p>
+                <div className="landing-hero-line landing-hero-line--cta mt-0 mb-4 md:mb-6" aria-hidden />
+                <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                  <Link
+                    href="/auth/signup"
+                    className="landing-cta-primary w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body inline-flex items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                  >
+                    Prevedi ora — 1000 crediti di benvenuto!
+                  </Link>
+                  <Link
+                    href="/auth/login"
+                    className="landing-cta-secondary w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl font-semibold text-ds-body inline-flex items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                  >
+                    Già account? Accedi
+                  </Link>
+                </div>
               </div>
-              <LandingHeroStats />
+              <div className="shrink-0 pt-4 md:pt-6">
+                <LandingHeroStats />
+              </div>
             </div>
           </section>
 
-          <section className="mb-12 md:mb-16 pt-2">
-            <h2 className="landing-section-title text-ds-h2 font-bold text-fg mb-6">
+          <section className="mb-8 md:mb-12 pt-6 md:pt-8" aria-label="Eventi in corso">
+            <h2 className="landing-section-title landing-section-title--no-underline text-ds-h2 font-bold text-fg mb-3 sm:mb-4">
               <span className="landing-section-title__text">Eventi in corso</span>
             </h2>
             {landingEventsLoading ? (
@@ -387,49 +396,36 @@ export default function Home() {
                 action={{ label: "Esplora categorie", href: "/discover" }}
               />
             ) : (
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4" aria-label="Anteprima eventi">
-                {(debugMode ? landingEvents : landingEvents.filter((e) => !isDebugTitle(e.title))).map((event) => (
-                  <li key={event.id}>
-                    <LandingEventRow
-                      event={{
-                        id: event.id,
-                        title: getDisplayTitle(event.title, debugMode),
-                        category: event.category,
-                        closesAt: event.closesAt,
-                        probability: event.probability,
-                      }}
-                    />
-                  </li>
-                ))}
-              </ul>
+              <div className="grid grid-cols-2 gap-1 sm:gap-1.5" role="list" aria-label="Anteprima eventi">
+                {(debugMode ? landingEvents : landingEvents.filter((e) => !isDebugTitle(e.title))).map((event) => {
+                  const tile = eventToTileData(event);
+                  return (
+                    <div key={event.id} role="listitem">
+                      <HomeEventTile
+                        id={tile.id}
+                        title={getDisplayTitle(tile.title, debugMode)}
+                        category={tile.category}
+                        closesAt={tile.closesAt}
+                        yesPct={tile.yesPct}
+                        predictionsCount={tile.predictionsCount}
+                        variant={"popular" satisfies HomeEventTileVariant}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </section>
 
-          <section ref={whySectionRef} className="mb-12 md:mb-16">
-            <h2 className="landing-section-title text-ds-h2 font-bold text-fg mb-6 text-center">
+          <section ref={whySectionRef} className="mb-8 md:mb-12">
+            <h2 className="text-ds-h2 font-bold text-fg mb-4 sm:mb-5 text-center">
               Perché giocare
             </h2>
-            <div className={`grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-5 landing-why-section ${whySectionInView ? "landing-why-section--in-view" : ""}`}>
-              <div className="landing-why-box p-5 md:p-6 text-center hover-lift transition-shadow">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 border border-white/30 text-2xl mb-3" aria-hidden>🏆</div>
-                <h3 className="text-ds-body font-bold text-white mb-1">Classifiche settimanali</h3>
-                <p className="text-ds-body-sm text-white/85">Sali in classifica ogni settimana e confrontati con la community.</p>
-              </div>
-              <div className="landing-why-box p-5 md:p-6 text-center hover-lift transition-shadow">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 border border-white/30 text-2xl mb-3" aria-hidden>🎯</div>
-                <h3 className="text-ds-body font-bold text-white mb-1">Missioni & streak</h3>
-                <p className="text-ds-body-sm text-white/85">Completa missioni e mantieni lo streak per crediti extra.</p>
-              </div>
-              <div className="landing-why-box p-5 md:p-6 text-center hover-lift transition-shadow">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 border border-white/30 text-2xl mb-3" aria-hidden>📋</div>
-                <h3 className="text-ds-body font-bold text-white mb-1">Regole trasparenti</h3>
-                <p className="text-ds-body-sm text-white/85">Ogni evento ha criteri di risoluzione chiari e verificabili.</p>
-              </div>
-            </div>
+            <LandingWhyFlip />
           </section>
 
-          <section className="text-center pt-6 pb-10">
-            <div className="landing-hero-card inline-block px-8 py-6 md:px-10 md:py-8">
+          <section className="text-center pt-4 pb-8 sm:pt-6 sm:pb-10">
+            <div className="landing-hero-card inline-block px-5 py-5 sm:px-8 sm:py-6 md:px-10 md:py-8">
               <p className="text-ds-body font-semibold text-white mb-3">Pronto a iniziare?</p>
               <Link
                 href="/auth/signup"

@@ -11,4 +11,5 @@ export type { FilterChipOption } from "./FilterChips";
 export { default as FilterDropdown } from "./FilterDropdown";
 export type { FilterDropdownOption } from "./FilterDropdown";
 export { default as LoadingBlock } from "./LoadingBlock";
+export { default as LoadingChart } from "./LoadingChart";
 export * from "./Icons";

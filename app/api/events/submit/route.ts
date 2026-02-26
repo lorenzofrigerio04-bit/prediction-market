@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import {
-  validateEventSubmission,
-  createEventFromSubmission,
-} from "@/lib/event-submission/validate";
+import { validateEventSubmission } from "@/lib/event-submission/validate";
 
 export async function POST(request: Request) {
   try {
@@ -90,32 +87,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const eventResult = await createEventFromSubmission(
-      {
-        title: title.trim(),
-        description: description?.trim() || null,
-        category: category.trim(),
-        closesAt: closesAtDate,
-        resolutionSource: resolutionSource?.trim() || null,
-      },
-      session.user.id,
-      validation.dedupKey!,
-      validation.normalizedCategory!
-    );
-
-    if (!eventResult.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          approved: false,
-          errors: [eventResult.error],
-          message: eventResult.error,
-        },
-        { status: 400 }
-      );
-    }
-
-    await prisma.eventSubmission.create({
+    // Salva la proposta in revisione: il sistema approverà successivamente
+    const submission = await prisma.eventSubmission.create({
       data: {
         title: title.trim(),
         description: description?.trim() || null,
@@ -123,18 +96,16 @@ export async function POST(request: Request) {
         closesAt: closesAtDate,
         resolutionSource: resolutionSource?.trim() || null,
         submittedById: session.user.id,
-        status: "APPROVED",
-        eventId: eventResult.eventId,
-        reviewedAt: new Date(),
+        status: "PENDING",
       },
     });
 
     await prisma.notification.create({
       data: {
         userId: session.user.id,
-        type: "EVENT_SUBMISSION_APPROVED",
+        type: "EVENT_SUBMISSION_PENDING",
         data: JSON.stringify({
-          eventId: eventResult.eventId,
+          submissionId: submission.id,
           title: title.trim(),
         }),
       },
@@ -142,10 +113,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      approved: true,
-      eventId: eventResult.eventId,
-      warnings: validation.warnings,
-      message: "Evento approvato e pubblicato!",
+      approved: false,
+      pendingReview: true,
+      submissionId: submission.id,
+      message: "Il tuo evento è in revisione. Ti avviseremo quando verrà approvato.",
     });
   } catch (error) {
     console.error("Error submitting event:", error);

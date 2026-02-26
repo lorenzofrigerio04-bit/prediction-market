@@ -5,11 +5,18 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import { LoadingBlock } from "@/components/ui";
+import CreaEventTileConfigurator from "@/components/crea/CreaEventTileConfigurator";
+import CreaEventHomeBox from "@/components/crea/CreaEventHomeBox";
+import CrystalBallOnly from "@/components/crea/CrystalBallOnly";
+import CrystalBallStep from "@/components/crea/CrystalBallStep";
+import EventInRevisionModal from "@/components/crea/EventInRevisionModal";
 
-type SubmitStatus = "idle" | "loading" | "approved" | "rejected";
+type SubmitStatus = "idle" | "loading" | "approved" | "rejected" | "pendingReview";
 
 interface SubmitResult {
-  approved: boolean;
+  approved?: boolean;
+  pendingReview?: boolean;
+  submissionId?: string;
   eventId?: string;
   errors?: string[];
   warnings?: string[];
@@ -32,6 +39,12 @@ export default function CreaPage() {
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>("idle");
   const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  /** Flusso conferma: idle → retracting (messaggi rientrano) → sliding (palla+box salgono) → confirmed */
+  const [confirmState, setConfirmState] = useState<"idle" | "retracting" | "sliding" | "confirmed">("idle");
+  /** Per animare lo slide: applica translateY dopo il primo frame */
+  const [slideApplied, setSlideApplied] = useState(false);
+  /** Titolo "confermato" = utente ha fatto blur o Invio sulla tastiera; lo step 3 si mostra solo dopo */
+  const [titleConfirmed, setTitleConfirmed] = useState(false);
 
   const minDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
 
@@ -43,14 +56,13 @@ export default function CreaPage() {
         const data = await res.json();
         const list = data.categories || [];
         setCategories(list);
-        if (list.length && !category) setCategory(list[0]);
       }
     } catch {
       setCategories([]);
     } finally {
       setLoadingCat(false);
     }
-  }, [category]);
+  }, []);
 
   useEffect(() => {
     fetchCategories();
@@ -62,8 +74,8 @@ export default function CreaPage() {
       setErrorMsg("Devi effettuare il login per creare un evento.");
       return;
     }
-    if (!title.trim() || !category || !closesAt) {
-      setErrorMsg("Compila tutti i campi obbligatori.");
+    if (!title.trim() || !category || !closesAt || !resolutionSource.trim()) {
+      setErrorMsg("Compila tutti i campi obbligatori: categoria, titolo, scadenza e link risoluzione.");
       return;
     }
     setSubmitStatus("loading");
@@ -84,6 +96,9 @@ export default function CreaPage() {
       if (data.approved) {
         setSubmitResult(data);
         setSubmitStatus("approved");
+      } else if (data.pendingReview && data.submissionId) {
+        setSubmitResult(data);
+        setSubmitStatus("pendingReview");
       } else {
         setSubmitResult(data);
         setSubmitStatus("rejected");
@@ -95,8 +110,11 @@ export default function CreaPage() {
   };
 
   const resetForm = () => {
+    setConfirmState("idle");
+    setSlideApplied(false);
     setTitle("");
     setDescription("");
+    setTitleConfirmed(false);
     setCategory(categories[0] || "");
     setClosesAt("");
     setResolutionSource("");
@@ -105,9 +123,50 @@ export default function CreaPage() {
     setErrorMsg("");
   };
 
+  const closeRevisionModal = () => {
+    setSubmitStatus("idle");
+    setSubmitResult(null);
+    setConfirmState("idle");
+    setSlideApplied(false);
+    setTitle("");
+    setDescription("");
+    setTitleConfirmed(false);
+    setCategory(categories[0] || "");
+    setClosesAt("");
+    setResolutionSource("");
+  };
+
+  /** Conferma evento: ritira messaggi, poi slide su di palla + box */
+  const handleConfirm = () => {
+    if (confirmState !== "idle") return;
+    setConfirmState("retracting");
+  };
+
+  useEffect(() => {
+    if (confirmState !== "retracting") return;
+    const t = setTimeout(() => {
+      setConfirmState("sliding");
+    }, 520);
+    return () => clearTimeout(t);
+  }, [confirmState]);
+
+  useEffect(() => {
+    if (confirmState !== "sliding") return;
+    const raf = requestAnimationFrame(() => {
+      setSlideApplied(true);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [confirmState]);
+
+  useEffect(() => {
+    if (confirmState !== "sliding" || !slideApplied) return;
+    const t = setTimeout(() => setConfirmState("confirmed"), 520);
+    return () => clearTimeout(t);
+  }, [confirmState, slideApplied]);
+
   if (status === "unauthenticated") {
     return (
-      <div className="min-h-screen bg-bg">
+      <div className="min-h-screen relative">
         <Header />
         <main id="main-content" className="mx-auto max-w-md px-page-x py-page-y md:py-8">
           <div className="crea-page-box create-event-modal rounded-2xl p-6 text-center">
@@ -127,12 +186,136 @@ export default function CreaPage() {
     );
   }
 
-  if (loadingCat) {
+  /* Mostra la schermata di caricamento solo al primo carico (nessuna categoria ancora). Quando l'utente seleziona la categoria restiamo sulla schermata attuale così si vede la scossa della sfera. */
+  if (loadingCat && categories.length === 0) {
     return (
-      <div className="min-h-screen bg-bg">
+      <div className="min-h-screen relative">
         <Header />
-        <main id="main-content" className="mx-auto max-w-md px-page-x py-page-y md:py-8">
+        <main id="main-content" className="mx-auto max-w-md px-page-x py-page-y md:py-8 flex items-center justify-center min-h-[60vh]">
           <LoadingBlock message="Caricamento…" />
+        </main>
+      </div>
+    );
+  }
+
+  /* Unica schermata: crea evento. Idle = compila + conferma; retracting/sliding/confirmed = palla ritira messaggi e sale con il box */
+  if (status === "authenticated" && (confirmState === "idle" || confirmState === "retracting")) {
+    const step5Done = resolutionSource.trim().length > 0;
+    const canConfirm = !!category && title.trim().length > 0 && !!closesAt && step5Done;
+    const step1Done = !!category;
+    const step2Done = titleConfirmed;
+    const step3Done = description.trim().length > 0;
+    const step4Done = !!closesAt;
+    const isRetracting = confirmState === "retracting";
+    return (
+      <div className="min-h-screen relative flex flex-col">
+        <Header />
+        <main
+          id="main-content"
+          className="relative mx-auto px-4 flex flex-col flex-1 min-h-0 pt-4 pb-[calc(0.5cm+5rem+var(--safe-area-inset-bottom))] md:pb-[calc(0.5cm+5rem)]"
+        >
+          <header className="relative flex items-center justify-center shrink-0 pt-1 pb-3 min-h-[3rem]">
+            <h1 className="text-sm sm:text-lg font-semibold text-white/90 tracking-tight uppercase whitespace-nowrap px-2 text-center">
+              Crea il tuo evento
+            </h1>
+          </header>
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex-1 min-h-0" aria-hidden />
+            <CrystalBallStep
+              step1Done={step1Done}
+              step2Done={step2Done}
+              step3Done={step3Done}
+              step4Done={step4Done}
+              step5Done={step5Done}
+              retract={isRetracting}
+            />
+            <div className="flex-1 flex items-center justify-center min-h-0 py-4 overflow-auto">
+              <div className="w-full max-w-[320px] sm:max-w-[360px] min-w-[280px] sm:min-w-[320px]">
+                <CreaEventHomeBox
+                  category={category}
+                  onCategoryChange={setCategory}
+                  categories={categories}
+                  title={title}
+                  onTitleChange={(value) => {
+                    setTitle(value);
+                    if (!value.trim()) setTitleConfirmed(false);
+                  }}
+                  onTitleConfirm={() => title.trim().length > 0 && setTitleConfirmed(true)}
+                  description={description}
+                  onDescriptionChange={setDescription}
+                  closesAt={closesAt}
+                  onClosesAtChange={setClosesAt}
+                  resolutionSource={resolutionSource}
+                  onResolutionSourceChange={setResolutionSource}
+                  minDate={minDate}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="shrink-0 flex justify-center">
+            <button
+              type="button"
+              onClick={handleConfirm}
+              disabled={!canConfirm || isRetracting}
+              className="landing-cta-primary min-h-[52px] px-8 py-3 rounded-xl font-semibold text-ds-body-sm w-full max-w-md inline-flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Conferma
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  /* Sliding o confirmed: blocco palla + box (senza numeri) che è salito */
+  if (status === "authenticated" && (confirmState === "sliding" || confirmState === "confirmed")) {
+    const blockClass =
+      confirmState === "confirmed"
+        ? "crea-confirmed-block crea-confirmed-block--done"
+        : `crea-confirmed-block ${slideApplied ? "crea-confirmed-block--sliding" : ""}`;
+    return (
+      <div className="min-h-screen relative flex flex-col">
+        <Header />
+        <main
+          id="main-content"
+          className="relative mx-auto px-4 flex flex-col flex-1 min-h-0 pt-4 pb-[calc(0.5cm+5rem+var(--safe-area-inset-bottom))] md:pb-[calc(0.5cm+5rem)]"
+        >
+          <header className="relative flex items-center justify-center shrink-0 pt-1 pb-3 min-h-[3rem]">
+            <h1 className="text-sm sm:text-lg font-semibold text-white/90 tracking-tight uppercase whitespace-nowrap px-2 text-center">
+              Crea il tuo evento
+            </h1>
+          </header>
+          <div className="flex-1 flex items-center justify-center overflow-auto">
+            <div className={`${blockClass} flex flex-col items-center gap-4`}>
+              <div className="flex flex-col items-center shrink-0">
+                <CrystalBallOnly />
+              </div>
+              <div className="w-full max-w-[320px] sm:max-w-[360px]">
+                <CreaEventTileConfigurator
+                  category={category}
+                  categories={categories}
+                  title={title}
+                  description={description}
+                  readOnly
+                  closesAt={closesAt || undefined}
+                />
+              </div>
+            </div>
+          </div>
+          {confirmState === "confirmed" && (
+            <div className="shrink-0 flex justify-center pb-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmState("idle");
+                  setSlideApplied(false);
+                }}
+                className="text-sm font-medium text-white/70 hover:text-white transition-colors py-2"
+              >
+                Modifica
+              </button>
+            </div>
+          )}
         </main>
       </div>
     );
@@ -140,7 +323,7 @@ export default function CreaPage() {
 
   if (submitStatus === "approved" && submitResult?.eventId) {
     return (
-      <div className="min-h-screen bg-bg">
+      <div className="min-h-screen relative">
         <Header />
         <main id="main-content" className="mx-auto max-w-md px-page-x py-page-y md:py-8">
           <div className="crea-page-box create-event-modal rounded-2xl p-6 text-center animate-in-fade-up">
@@ -186,7 +369,7 @@ export default function CreaPage() {
 
   if (submitStatus === "rejected" && submitResult) {
     return (
-      <div className="min-h-screen bg-bg">
+      <div className="min-h-screen relative">
         <Header />
         <main id="main-content" className="mx-auto max-w-md px-page-x py-page-y md:py-8">
           <div className="crea-page-box create-event-modal rounded-2xl p-6 text-center animate-in-fade-up">
@@ -232,123 +415,5 @@ export default function CreaPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-bg">
-      <Header />
-      <main id="main-content" className="mx-auto max-w-md px-page-x py-page-y md:py-8 pb-[calc(5rem+var(--safe-area-inset-bottom))] md:pb-8">
-        <div className="crea-page-box create-event-modal rounded-2xl p-6 sm:p-8 shadow-xl">
-          <h1 className="text-ds-h2 font-bold text-white mb-6">Crea evento</h1>
-
-          {status !== "authenticated" && (
-            <div className="mb-4 p-3 rounded-lg bg-warning/20 border border-warning/30 text-warning text-ds-body-sm">
-              Devi effettuare il login per creare un evento.
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className={labelClass}>Titolo evento *</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Es: L'Italia vincerà gli Europei 2026?"
-                className={inputClass}
-                maxLength={200}
-                required
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>Descrizione</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Descrivi l'evento e il contesto..."
-                rows={3}
-                className={`${inputClass} resize-none`}
-                maxLength={1000}
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>Categoria *</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className={`${inputClass} appearance-none cursor-pointer`}
-                required
-              >
-                <option value="" disabled className="bg-gray-900">
-                  Seleziona categoria
-                </option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat} className="bg-gray-900">
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className={labelClass}>Data chiusura *</label>
-              <input
-                type="datetime-local"
-                value={closesAt}
-                onChange={(e) => setClosesAt(e.target.value)}
-                min={minDate}
-                className={inputClass}
-                required
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>Fonte di risoluzione</label>
-              <input
-                type="text"
-                value={resolutionSource}
-                onChange={(e) => setResolutionSource(e.target.value)}
-                placeholder="Es: Risultato ufficiale FIFA, Comunicato stampa..."
-                className={inputClass}
-                maxLength={300}
-              />
-              <p className="text-ds-micro text-white/50 mt-1">Come verrà verificato il risultato dell&apos;evento?</p>
-            </div>
-
-            {submitStatus === "idle" && errorMsg && (
-              <div className="p-3 rounded-lg bg-danger/20 border border-danger/30 text-danger text-ds-body-sm">
-                {errorMsg}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={submitStatus === "loading" || status !== "authenticated"}
-              className="landing-cta-primary min-h-[52px] px-6 py-3.5 rounded-xl font-semibold text-ds-body w-full disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submitStatus === "loading" ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                    />
-                  </svg>
-                  Invio in corso...
-                </span>
-              ) : (
-                "Invia per revisione"
-              )}
-            </button>
-          </form>
-
-          <p className="text-ds-micro text-white/50 text-center mt-4">
-            Gli eventi devono rispettare le nostre linee guida e saranno revisionati prima della pubblicazione.
-          </p>
-        </div>
-      </main>
-    </div>
-  );
+  return null;
 }
