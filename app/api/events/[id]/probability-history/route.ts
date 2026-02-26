@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getPrice } from "@/lib/pricing/lmsr";
 import { priceYesMicros, SCALE } from "@/lib/amm/fixedPointLmsr";
 
 const MAX_POINTS = 100;
@@ -72,29 +71,15 @@ export async function GET(
         yesPct: Math.round(yesPct * 10) / 10,
       }));
 
-    // Append current probability so the chart extends to "now" (credits/LMSR or AMM)
+    // Append current probability so the chart extends to "now" (AMM)
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      select: {
-        tradingMode: true,
-        q_yes: true,
-        q_no: true,
-        b: true,
-        ammState: { select: { qYesMicros: true, qNoMicros: true, bMicros: true } },
-      },
+      select: { ammState: { select: { qYesMicros: true, qNoMicros: true, bMicros: true } } },
     });
-    if (event) {
-      let currentYesPct: number;
-      if (event.tradingMode === "AMM" && event.ammState) {
-        const amm = event.ammState;
-        const yesMicros = priceYesMicros(amm.qYesMicros, amm.qNoMicros, amm.bMicros);
-        currentYesPct = Number((yesMicros * 100n) / SCALE);
-      } else {
-        const qYes = event.q_yes ?? 0;
-        const qNo = event.q_no ?? 0;
-        const b = event.b ?? 100;
-        currentYesPct = getPrice(qYes, qNo, b, "YES") * 100;
-      }
+    if (event?.ammState) {
+      const amm = event.ammState;
+      const yesMicros = priceYesMicros(amm.qYesMicros, amm.qNoMicros, amm.bMicros);
+      const currentYesPct = Number((yesMicros * 100n) / SCALE);
       const lastPoint = points[points.length - 1];
       const lastT = lastPoint ? new Date(lastPoint.t).getTime() : 0;
       if (now.getTime() - lastT > 60 * 1000) {

@@ -57,16 +57,74 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const userId = session.user.id;
+
+    const [position, buyTradesForOutcome] = await Promise.all([
+      prisma.position.findUnique({
+        where: { eventId_userId: { eventId, userId } },
+        select: { yesShareMicros: true, noShareMicros: true },
+      }),
+      prisma.trade.findMany({
+        where: {
+          eventId,
+          userId,
+          side: "BUY",
+          outcome,
+        },
+        select: { costMicros: true },
+      }),
+    ]);
+
+    if (!position) {
+      return NextResponse.json(
+        { error: "Nessuna posizione su questo evento" },
+        { status: 400 }
+      );
+    }
+
+    // Normalizza a BigInt (Prisma può restituire bigint o in alcuni casi valori da serializzare)
+    const yesMicros = BigInt(position.yesShareMicros.toString());
+    const noMicros = BigInt(position.noShareMicros.toString());
+    const totalShareMicrosForOutcome = outcome === "YES" ? yesMicros : noMicros;
+    if (totalShareMicrosForOutcome < shareMicros) {
+      return NextResponse.json(
+        { error: "Quote insufficienti da vendere" },
+        { status: 400 }
+      );
+    }
+
+    const costForOutcome = buyTradesForOutcome.reduce(
+      (acc, t) => acc + (t.costMicros < 0n ? -t.costMicros : t.costMicros),
+      0n
+    );
+    const costBasisMicros =
+      totalShareMicrosForOutcome > 0n
+        ? (costForOutcome * shareMicros) / totalShareMicrosForOutcome
+        : 0n;
+
     const result = await prisma.$transaction((tx) =>
       executeSellShares(tx, {
         eventId,
-        userId: session.user.id,
+        userId,
         outcome: outcome as "YES" | "NO",
         shareMicros,
         minProceedsMicros,
         idempotencyKey,
       })
     );
+
+    const proceedsMicros = result.proceedsMicros;
+    const realizedPlMicros = proceedsMicros - costBasisMicros;
+
+    try {
+      await prisma.trade.update({
+        where: { id: result.trade.id },
+        data: { realizedPlMicros },
+      });
+    } catch (updateErr) {
+      console.error("[trades/sell] trade.update realizedPlMicros failed:", updateErr);
+      // La vendita è già andata a buon fine; restituiamo 201 senza far esplodere la richiesta
+    }
 
     return NextResponse.json(
       {
@@ -83,6 +141,8 @@ export async function POST(request: NextRequest) {
           noShareMicros: result.position.noShareMicros.toString(),
         },
         proceedsMicros: result.proceedsMicros.toString(),
+        costBasisMicros: costBasisMicros.toString(),
+        realizedPlMicros: realizedPlMicros.toString(),
       },
       { status: 201 }
     );
@@ -95,6 +155,14 @@ export async function POST(request: NextRequest) {
             ? 404
             : 400;
       return NextResponse.json({ error: e.message }, { status });
+    }
+    // Evita 500 per errori "quote insufficienti" non wrappati in AmmError (es. da Prisma/DB)
+    const msg = e instanceof Error ? e.message : String(e);
+    if (/insufficient|quote|shares|position/i.test(msg)) {
+      return NextResponse.json(
+        { error: "Quote insufficienti da vendere" },
+        { status: 400 }
+      );
     }
     throw e;
   }

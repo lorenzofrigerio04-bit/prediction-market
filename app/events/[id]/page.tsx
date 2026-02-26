@@ -13,8 +13,6 @@ import { trackView } from "@/lib/analytics-client";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { IconCurrency } from "@/components/ui/Icons";
 import BackLink from "@/components/ui/BackLink";
-import { getEventProbability } from "@/lib/pricing/price-display";
-import { getPrice, cost } from "@/lib/pricing/lmsr";
 
 interface EventDetail {
   id: string;
@@ -49,24 +47,32 @@ interface EventDetail {
   };
 }
 
-interface UserPrediction {
-  id: string;
-  outcome: "YES" | "NO";
-  credits: number;
-  resolved: boolean;
-  won: boolean | null;
-  payout: number | null;
-}
-
 interface UserPosition {
   yesShareMicros: string;
   noShareMicros: string;
+  /** Crediti effettivamente spesi (costo) per questa posizione AMM */
+  positionCostMicros?: string;
+  /** Costo attribuito alle quote SÌ (per P&L vendita) */
+  positionYesCostMicros?: string;
+  /** Costo attribuito alle quote NO (per P&L vendita) */
+  positionNoCostMicros?: string;
+}
+
+interface TradeHistoryEntry {
+  id: string;
+  side: string;
+  outcome: string;
+  shareMicros: string;
+  costMicros: string;
+  createdAt: string;
+  /** Solo per SELL: P&L realizzato in micros (per mostrare +X% / -X%) */
+  realizedPlMicros?: string | null;
 }
 
 interface EventResponse {
   event: EventDetail;
-  userPrediction: UserPrediction | null;
   userPosition?: UserPosition | null;
+  tradeHistory?: TradeHistoryEntry[];
   isFollowing?: boolean;
 }
 
@@ -83,9 +89,6 @@ export default function EventDetailPage({
     (typeof process.env.NEXT_PUBLIC_DEBUG_MODE !== "undefined" &&
       process.env.NEXT_PUBLIC_DEBUG_MODE === "true");
   const [event, setEvent] = useState<EventDetail | null>(null);
-  const [userPrediction, setUserPrediction] = useState<UserPrediction | null>(
-    null
-  );
   const [userPosition, setUserPosition] = useState<UserPosition | null>(null);
   const [userCredits, setUserCredits] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -95,20 +98,28 @@ export default function EventDetailPage({
   const [shareCopied, setShareCopied] = useState(false);
   const [showResolutionPopup, setShowResolutionPopup] = useState(false);
   const [showDescriptionPopup, setShowDescriptionPopup] = useState(false);
+  const [showSellInfoPopup, setShowSellInfoPopup] = useState(false);
   const [predictionOutcome, setPredictionOutcome] = useState<"YES" | "NO" | null>(null);
   const [sellOutcome, setSellOutcome] = useState<"YES" | "NO">("YES");
   const [sellShares, setSellShares] = useState("");
   const [sellLoading, setSellLoading] = useState(false);
   const [sellError, setSellError] = useState<string | null>(null);
+  const [sellPreview, setSellPreview] = useState<{
+    estimatedProceedsMicros: string | null;
+    loading: boolean;
+  }>({ estimatedProceedsMicros: null, loading: false });
+  const [sellSuccessPl, setSellSuccessPl] = useState<number | null>(null);
+  const [tradeHistory, setTradeHistory] = useState<TradeHistoryEntry[]>([]);
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
   const mainRef = useRef<HTMLElement | null>(null);
+  const [prevProbability, setPrevProbability] = useState<number | null>(null);
+  const SCALE = 1_000_000;
 
-  const isAmm = event?.tradingMode === "AMM";
   const canMakePrediction =
     !!event &&
     !event.resolved &&
     new Date(event.closesAt) > new Date() &&
-    !!session &&
-    (isAmm ? true : !userPrediction);
+    !!session;
 
   useEffect(() => {
     if (params?.id) {
@@ -139,16 +150,66 @@ export default function EventDetailPage({
   }, [event?.id, event?.resolved, event?.category]);
 
   useEffect(() => {
-    if (!showResolutionPopup && !showDescriptionPopup) return;
+    if (!showResolutionPopup && !showDescriptionPopup && !showSellInfoPopup) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setShowResolutionPopup(false);
         setShowDescriptionPopup(false);
+        setShowSellInfoPopup(false);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [showResolutionPopup, showDescriptionPopup]);
+  }, [showResolutionPopup, showDescriptionPopup, showSellInfoPopup]);
+
+  useEffect(() => {
+    if (event?.probability != null && typeof event.probability === "number") {
+      setPrevProbability(event.probability);
+    }
+  }, [event?.probability]);
+
+  useEffect(() => {
+    if (!event?.id || !userPosition) {
+      setSellPreview({ estimatedProceedsMicros: null, loading: false });
+      return;
+    }
+    const num = parseFloat(sellShares);
+    if (!Number.isFinite(num) || num <= 0) {
+      setSellPreview({ estimatedProceedsMicros: null, loading: false });
+      return;
+    }
+    const maxSell = sellOutcome === "YES"
+      ? Number(BigInt(userPosition.yesShareMicros) / BigInt(SCALE))
+      : Number(BigInt(userPosition.noShareMicros) / BigInt(SCALE));
+    if (num > maxSell) {
+      setSellPreview({ estimatedProceedsMicros: null, loading: false });
+      return;
+    }
+    const shareMicros = BigInt(Math.round(num * SCALE));
+    let cancelled = false;
+    setSellPreview((p) => ({ ...p, loading: true }));
+    fetch("/api/trades/sell/preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        eventId: event.id,
+        outcome: sellOutcome,
+        shareMicros: shareMicros.toString(),
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        setSellPreview({
+          estimatedProceedsMicros: data.estimatedProceedsMicros ?? null,
+          loading: false,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setSellPreview((p) => ({ ...p, loading: false }));
+      });
+    return () => { cancelled = true; };
+  }, [event?.id, userPosition, sellOutcome, sellShares]);
 
   const fetchEvent = async () => {
     if (!params?.id) return;
@@ -168,8 +229,8 @@ export default function EventDetailPage({
 
       const data: EventResponse = await response.json();
       setEvent(data.event);
-      setUserPrediction(data.userPrediction ?? null);
       setUserPosition(data.userPosition ?? null);
+      setTradeHistory(data.tradeHistory ?? []);
       setIsFollowing(data.isFollowing ?? false);
     } catch (error) {
       console.error("Error fetching event:", error);
@@ -183,11 +244,7 @@ export default function EventDetailPage({
       const response = await fetch("/api/user/credits", { cache: "no-store" });
       if (response.ok) {
         const data = await response.json();
-        if (data.creditsMicros != null) {
-          setUserCredits(Number(BigInt(data.creditsMicros) / 1_000_000n));
-        } else {
-          setUserCredits(data.credits ?? 0);
-        }
+        setUserCredits(typeof data.credits === "number" ? data.credits : 0);
       }
     } catch (error) {
       console.error("Error fetching user credits:", error);
@@ -375,37 +432,10 @@ export default function EventDetailPage({
             </button>
           </div>
 
-          {/* Hai previsto (solo numero + simbolo credito), dove c’era la descrizione */}
-          <div className="flex items-center justify-center gap-1.5 py-2 mb-3">
-            {isAmm && userPosition ? (
-              <>
-                <span className="text-ds-body-sm text-fg-muted">Le tue quote</span>
-                <span className="font-bold text-fg font-numeric tabular-nums">
-                  SÌ {(Number(BigInt(userPosition.yesShareMicros) / 1_000_000n)).toLocaleString("it-IT")} / NO {(Number(BigInt(userPosition.noShareMicros) / 1_000_000n)).toLocaleString("it-IT")}
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="text-ds-body-sm text-fg-muted">Hai previsto</span>
-                <span className="font-bold text-fg font-numeric tabular-nums">{(userPrediction?.credits ?? 0).toLocaleString("it-IT")}</span>
-                <IconCurrency className="w-5 h-5 text-primary shrink-0" aria-hidden />
-              </>
-            )}
-          </div>
-
-          {/* Tabella 1x2: SI | NO (click per prevedere) */}
+          {/* Tabella 1x2: SÌ | NO (prezzo = probabilità, click per comprare quote) */}
           {(() => {
-            const qYes = event.q_yes ?? 0;
-            const qNo = event.q_no ?? 0;
-            const b = event.b ?? 100;
-            const displayProbability =
-              typeof event.probability === "number"
-                ? event.probability
-                : getEventProbability(event);
-            const yesPct =
-              typeof event.probability === "number"
-                ? event.probability
-                : getPrice(qYes, qNo, b, "YES") * 100;
+            const displayProbability = typeof event.probability === "number" ? event.probability : 50;
+            const yesPct = displayProbability;
             return (
               <>
                 <div className="grid grid-cols-2 gap-3 mb-3">
@@ -441,11 +471,11 @@ export default function EventDetailPage({
                   </button>
                 </div>
 
-                {/* Barra indicatore SI/NO */}
+                {/* Barra indicatore SÌ/NO (prezzo = probabilità) */}
                 <div className="mb-3">
                   <div className="flex justify-between text-ds-caption font-medium text-fg-muted mb-1.5">
-                    <span>SÌ {(event.q_yes ?? 0).toLocaleString()} ({event.yesPredictions})</span>
-                    <span>NO {(event.q_no ?? 0).toLocaleString()} ({event.noPredictions})</span>
+                    <span>SÌ {displayProbability.toFixed(1)}%</span>
+                    <span>NO {(100 - displayProbability).toFixed(1)}%</span>
                   </div>
                   <div
                     className="prediction-bar-led h-2.5 w-full flex animate-bar-pulse"
@@ -493,85 +523,313 @@ export default function EventDetailPage({
             </div>
           )}
 
-          {/* Vendita quote AMM — integrato nel box evento, stile coerente */}
-          {isAmm && userPosition && !event.resolved && new Date(event.closesAt) > new Date() && (() => {
-            const yesShares = Number(BigInt(userPosition.yesShareMicros) / 1_000_000n);
-            const noShares = Number(BigInt(userPosition.noShareMicros) / 1_000_000n);
+          {/* Box sotto al contatore: Vendi posizioni + Storico (solo se hai posizioni) */}
+          {userPosition && (() => {
+            const yesShareMicros = BigInt(userPosition.yesShareMicros);
+            const noShareMicros = BigInt(userPosition.noShareMicros);
+            const yesShares = Math.round(Number(yesShareMicros) / SCALE);
+            const noShares = Math.round(Number(noShareMicros) / SCALE);
+            const yesCredits = Math.round(Number(BigInt(userPosition.positionYesCostMicros ?? "0")) / SCALE);
+            const noCredits = Math.round(Number(BigInt(userPosition.positionNoCostMicros ?? "0")) / SCALE);
             const hasShares = yesShares > 0 || noShares > 0;
-            if (!hasShares) return null;
-            const maxSell = sellOutcome === "YES" ? yesShares : noShares;
-            const handleSell = async () => {
-              const num = parseFloat(sellShares);
-              if (!Number.isFinite(num) || num <= 0 || num > maxSell) {
-                setSellError("Inserisci una quantità valida.");
-                return;
+            const marketOpen = !event.resolved && new Date(event.closesAt) > new Date();
+            const displayedHistory = showAllTransactions ? tradeHistory : tradeHistory.slice(0, 2);
+            const hasMoreThanTwo = tradeHistory.length > 2;
+
+            const renderTransactionItem = (t: TradeHistoryEntry) => {
+              const shares = Math.round(Number(BigInt(t.shareMicros)) / SCALE);
+              const credits = Math.round(Number(BigInt(t.costMicros) < 0 ? -BigInt(t.costMicros) : BigInt(t.costMicros)) / SCALE);
+              const esito = t.outcome === "YES" ? "SÌ" : "NO";
+              const dataOra = new Date(t.createdAt).toLocaleString("it-IT", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+              const dataSolo = new Date(t.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" });
+              const oraSolo = new Date(t.createdAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+              if (t.side === "BUY") {
+                return (
+                  <li key={t.id} className="text-ds-body-sm text-fg-muted flex flex-col gap-0.5">
+                    <span>
+                      Hai acquistato <span className="font-semibold text-fg">{shares.toLocaleString("it-IT")} &quot;{esito}&quot;</span> per{" "}
+                      <span className="font-semibold text-fg">{credits.toLocaleString("it-IT")} crediti</span>
+                    </span>
+                    <span className="text-ds-caption opacity-90 text-right">{dataSolo}, {oraSolo}</span>
+                  </li>
+                );
               }
-              setSellError(null);
-              setSellLoading(true);
-              try {
-                const shareMicros = BigInt(Math.round(num * 1_000_000));
-                const res = await fetch("/api/trades/sell", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    eventId: event.id,
-                    outcome: sellOutcome,
-                    shareMicros: shareMicros.toString(),
-                    idempotencyKey: crypto.randomUUID(),
-                  }),
-                });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok) {
-                  setSellError(data.error || "Errore durante la vendita");
-                  return;
-                }
-                setSellShares("");
-                await fetchEvent();
-                if (session?.user?.id) fetchUserCredits();
-              } finally {
-                setSellLoading(false);
-              }
+              const realizedPlMicros = t.realizedPlMicros != null ? BigInt(t.realizedPlMicros) : null;
+              const costBasisMicros = realizedPlMicros != null && t.costMicros ? BigInt(t.costMicros) - realizedPlMicros : null;
+              const pct = costBasisMicros != null && costBasisMicros !== 0n
+                ? Number((realizedPlMicros! * 10000n) / costBasisMicros) / 100
+                : null;
+              const isProfit = pct != null && pct >= 0;
+              const arrow = isProfit ? "↑" : "↓";
+              return (
+                <li key={t.id} className="text-ds-body-sm text-fg-muted flex flex-col gap-0.5">
+                  <span>
+                    Hai venduto <span className="font-semibold text-fg">{shares.toLocaleString("it-IT")} &quot;{esito}&quot;</span> per{" "}
+                    <span className="font-semibold text-fg">{credits.toLocaleString("it-IT")} crediti</span>
+                    {pct != null && (
+                      <span className={isProfit ? "text-emerald-500 dark:text-emerald-400 font-semibold" : "text-red-500 dark:text-red-400 font-semibold"}>
+                        {" "}({arrow} {pct >= 0 ? "+" : ""}{pct.toFixed(1)}%)
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-ds-caption opacity-90 text-right">{dataSolo}, {oraSolo}</span>
+                </li>
+              );
             };
+
             return (
               <div className="pt-4 mt-4 border-t border-white/10">
-                <p className="text-ds-caption font-semibold text-fg-muted uppercase tracking-micro mb-3">Vendita quote</p>
-                <div className="flex flex-wrap items-end gap-3">
-                  <label className="flex flex-col gap-1.5 min-w-0">
-                    <span className="text-ds-caption text-fg-muted">Esito</span>
-                    <select
-                      value={sellOutcome}
-                      onChange={(e) => setSellOutcome(e.target.value as "YES" | "NO")}
-                      className="rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 text-ds-body-sm text-fg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/40"
-                      aria-label="Scegli esito da vendere"
-                    >
-                      <option value="YES">SÌ ({yesShares.toLocaleString("it-IT")})</option>
-                      <option value="NO">NO ({noShares.toLocaleString("it-IT")})</option>
-                    </select>
-                  </label>
-                  <label className="flex flex-col gap-1.5 min-w-0">
-                    <span className="text-ds-caption text-fg-muted">Quantità</span>
-                    <input
-                      type="number"
-                      min={0}
-                      max={maxSell}
-                      step="0.01"
-                      value={sellShares}
-                      onChange={(e) => setSellShares(e.target.value)}
-                      placeholder="0"
-                      className="rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 w-28 font-numeric text-ds-body-sm text-fg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      aria-label="Quantità di quote da vendere"
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleSell}
-                    disabled={sellLoading}
-                    className="px-4 py-2.5 rounded-xl bg-primary text-primary-fg text-ds-body-sm font-semibold hover:bg-primary-hover disabled:opacity-60 transition-colors min-h-[42px]"
-                  >
-                    {sellLoading ? "Vendita…" : "Vendi"}
-                  </button>
-                </div>
-                {sellError && <p className="text-ds-caption text-danger mt-2">{sellError}</p>}
+                {/* Prima: VENDI LE TUE POSIZIONI */}
+                {marketOpen && hasShares && (() => {
+                  const maxSell = sellOutcome === "YES" ? yesShares : noShares;
+                  const num = parseFloat(sellShares);
+                  const displayProbability = typeof event.probability === "number" ? event.probability : 50;
+                  const currentPriceYes = displayProbability / 100;
+                  const currentPriceNo = (100 - displayProbability) / 100;
+                  const currentPrice = sellOutcome === "YES" ? currentPriceYes : currentPriceNo;
+                  const currentPricePct = sellOutcome === "YES" ? displayProbability : 100 - displayProbability;
+                  const esitoLabel = sellOutcome === "YES" ? "SÌ" : "NO";
+                  const prevPct = prevProbability != null ? (sellOutcome === "YES" ? prevProbability : 100 - prevProbability) : currentPricePct;
+                  const priceVariationPct = currentPricePct - prevPct;
+                  const avgPriceYes = yesShares > 0 ? yesCredits / yesShares : 0;
+                  const avgPriceNo = noShares > 0 ? noCredits / noShares : 0;
+
+                  const handleSell = async () => {
+                    const sellNum = parseFloat(sellShares);
+                    if (!Number.isFinite(sellNum) || sellNum <= 0 || sellNum > maxSell) {
+                      setSellError("Inserisci una quantità valida.");
+                      return;
+                    }
+                    const shareMicros = BigInt(Math.round(sellNum * SCALE));
+                    const maxShareMicros = sellOutcome === "YES" ? yesShareMicros : noShareMicros;
+                    if (shareMicros > maxShareMicros) {
+                      setSellError("Quote insufficienti da vendere. Non puoi vendere più di quanto possiedi.");
+                      return;
+                    }
+                    setSellError(null);
+                    setSellLoading(true);
+                    try {
+                      const res = await fetch("/api/trades/sell", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          eventId: event.id,
+                          outcome: sellOutcome,
+                          shareMicros: shareMicros.toString(),
+                          idempotencyKey: crypto.randomUUID(),
+                        }),
+                      });
+                      const data = await res.json().catch(() => ({}));
+                      if (!res.ok) {
+                        setSellError(data.error || "Errore durante la vendita");
+                        return;
+                      }
+                      const realizedPl = data.realizedPlMicros != null
+                        ? Number(BigInt(data.realizedPlMicros) / BigInt(SCALE))
+                        : null;
+                      if (realizedPl != null) setSellSuccessPl(realizedPl);
+                      setSellShares("");
+                      setSellError(null);
+                      await fetchEvent();
+                      if (session?.user?.id) fetchUserCredits();
+                      if (realizedPl != null) setTimeout(() => setSellSuccessPl(null), 6000);
+                    } finally {
+                      setSellLoading(false);
+                    }
+                  };
+                  const totalShareMicros = sellOutcome === "YES" ? yesShareMicros : noShareMicros;
+                  const costMicrosForOutcome = BigInt(
+                    sellOutcome === "YES"
+                      ? (userPosition.positionYesCostMicros ?? "0")
+                      : (userPosition.positionNoCostMicros ?? "0")
+                  );
+                  const shareMicrosToSell = totalShareMicros > 0n && num > 0 ? BigInt(Math.round(num * SCALE)) : 0n;
+                  const costBasisMicros =
+                    totalShareMicros > 0n && shareMicrosToSell > 0n
+                      ? (costMicrosForOutcome * shareMicrosToSell) / totalShareMicros
+                      : 0n;
+                  const costBasisCredits = Math.round(Number(costBasisMicros) / SCALE);
+                  const estimatedProceedsCredits =
+                    sellPreview.estimatedProceedsMicros != null
+                      ? Math.round(Number(BigInt(sellPreview.estimatedProceedsMicros)) / SCALE)
+                      : null;
+                  const plCredits = estimatedProceedsCredits != null ? estimatedProceedsCredits - costBasisCredits : null;
+                  const hasValidPl = plCredits != null && Number.isFinite(plCredits);
+
+                  return (
+                    <div className="rounded-xl bg-white/5 border border-white/10 p-4 md:p-5">
+                      <div className="flex items-center justify-center gap-2 mb-5">
+                        <p className="text-ds-body font-bold text-fg uppercase tracking-label">Vendi le tue posizioni</p>
+                        <button
+                          type="button"
+                          onClick={() => setShowSellInfoPopup(true)}
+                          className="w-6 h-6 rounded-full border border-white/20 bg-white/10 text-slate-300 hover:text-white hover:bg-white/15 flex items-center justify-center text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                          aria-label="Come funziona la vendita e il payoff delle quote"
+                        >
+                          i
+                        </button>
+                      </div>
+
+                      {/* Hai: */}
+                      <p className="text-ds-caption font-semibold text-fg-muted uppercase tracking-micro mb-2">Hai:</p>
+                      <ul className="space-y-2 mb-5 text-center">
+                        {yesShares > 0 && (
+                          <li className="text-ds-body-sm text-fg flex flex-col items-center justify-center gap-0.5">
+                            <span className="inline-flex flex-wrap items-center justify-center gap-2">
+                              <span className="font-numeric tabular-nums">{yesShares.toLocaleString("it-IT")} &quot;SÌ&quot;</span>
+                              <span className="text-fg-muted">acquistati per</span>
+                              <span className="font-semibold font-numeric tabular-nums">{yesCredits.toLocaleString("it-IT")}</span>
+                              <IconCurrency className="w-4 h-4 text-primary shrink-0" aria-hidden />
+                            </span>
+                            <span className="text-ds-caption text-fg-muted">(acquistati a {avgPriceYes.toFixed(2)} ({Math.round(avgPriceYes * 100)}%))</span>
+                          </li>
+                        )}
+                        {noShares > 0 && (
+                          <li className="text-ds-body-sm text-fg flex flex-col items-center justify-center gap-0.5">
+                            <span className="inline-flex flex-wrap items-center justify-center gap-2">
+                              <span className="font-numeric tabular-nums">{noShares.toLocaleString("it-IT")} &quot;NO&quot;</span>
+                              <span className="text-fg-muted">acquistati per</span>
+                              <span className="font-semibold font-numeric tabular-nums">{noCredits.toLocaleString("it-IT")}</span>
+                              <IconCurrency className="w-4 h-4 text-primary shrink-0" aria-hidden />
+                            </span>
+                            <span className="text-ds-caption text-fg-muted">(acquistati a {avgPriceNo.toFixed(2)} ({Math.round(avgPriceNo * 100)}%))</span>
+                          </li>
+                        )}
+                      </ul>
+
+                      {/* Puoi: */}
+                      <p className="text-ds-caption font-semibold text-fg-muted uppercase tracking-micro mb-2">Puoi:</p>
+                      <div className="text-center mb-3">
+                        <p className="text-ds-body-sm text-fg-muted mb-1.5">
+                          Vendere{" "}
+                          <span className="inline-flex align-middle">
+                            <input
+                              type="number"
+                              min={0}
+                              max={maxSell}
+                              step="1"
+                              value={sellShares}
+                              onChange={(e) => {
+                                setSellShares(e.target.value);
+                                setSellSuccessPl(null);
+                              }}
+                              placeholder="0"
+                              className="mx-1 w-14 rounded-lg border border-white/40 bg-transparent px-2 py-1.5 text-center font-numeric text-ds-body-sm text-fg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-white/60 shadow-[0_0_8px_rgba(255,255,255,0.15)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              aria-label="Quantità quote da vendere"
+                            />
+                          </span>{" "}
+                          &quot;{esitoLabel}&quot;
+                        </p>
+                        <p className="text-ds-body-sm text-fg-muted flex items-center justify-center gap-1.5 flex-wrap">
+                          <span>al prezzo attuale</span>
+                          <span className="font-semibold text-fg font-numeric tabular-nums">{currentPrice.toFixed(2)} ({currentPricePct}%)</span>
+                          {priceVariationPct !== 0 && (
+                            <span
+                              className={`inline-flex items-center font-numeric tabular-nums text-xs font-semibold ${
+                                priceVariationPct > 0 ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400"
+                              }`}
+                              aria-label={priceVariationPct > 0 ? `Variazione +${priceVariationPct.toFixed(1)}%` : `Variazione ${priceVariationPct.toFixed(1)}%`}
+                            >
+                              {priceVariationPct > 0 ? (
+                                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                                </svg>
+                              ) : (
+                                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                </svg>
+                              )}
+                              {priceVariationPct > 0 ? "+" : ""}{priceVariationPct.toFixed(1)}%
+                            </span>
+                          )}
+                        </p>
+                      </div>
+
+                      {(num > 0 && num <= maxSell) && (
+                        <div className="rounded-xl bg-black/20 border border-white/10 p-3 mb-3 space-y-1.5">
+                          <div className="flex items-center gap-2 text-ds-body-sm font-numeric tabular-nums">
+                            <IconCurrency className="w-4 h-4 text-primary shrink-0" aria-hidden />
+                            <span className="text-fg-muted">Ricavo stimato:</span>
+                            {sellPreview.loading ? (
+                              <span className="text-fg">…</span>
+                            ) : estimatedProceedsCredits != null ? (
+                              <span className="text-fg font-semibold">{estimatedProceedsCredits.toLocaleString("it-IT")}</span>
+                            ) : (
+                              <span className="text-fg">—</span>
+                            )}
+                          </div>
+                          {hasValidPl && (
+                            <div className="flex items-center gap-2 text-ds-body-sm font-numeric tabular-nums pt-1 border-t border-white/10">
+                              <span className="text-fg-muted">Profit or Loss:</span>
+                              <span
+                                className={
+                                  plCredits! > 0
+                                    ? "text-emerald-500 dark:text-emerald-400 font-semibold"
+                                    : plCredits! < 0
+                                      ? "text-red-500 dark:text-red-400 font-semibold"
+                                      : "text-fg-muted font-semibold"
+                                }
+                              >
+                                {plCredits! > 0 ? "+" : ""}{plCredits!.toLocaleString("it-IT")} crediti
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {sellSuccessPl != null && (
+                        <div
+                          className={`mb-3 p-3 rounded-xl border text-ds-body-sm font-semibold text-center ${
+                            sellSuccessPl >= 0
+                              ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+                              : "bg-red-500/15 border-red-500/40 text-red-600 dark:text-red-400"
+                          }`}
+                          role="status"
+                        >
+                          {sellSuccessPl >= 0 ? `+${sellSuccessPl.toLocaleString("it-IT")} crediti` : `${sellSuccessPl.toLocaleString("it-IT")} crediti`}
+                        </div>
+                      )}
+
+                      <div className="flex justify-center mt-4">
+                        <button
+                          type="button"
+                          onClick={handleSell}
+                          disabled={sellLoading}
+                          className="px-6 py-3 rounded-xl bg-primary text-primary-fg text-ds-body font-semibold hover:bg-primary-hover disabled:opacity-60 transition-colors"
+                        >
+                          {sellLoading ? "Vendita…" : "Vendi"}
+                        </button>
+                      </div>
+
+                      {sellError && <p className="text-ds-caption text-danger mt-3 text-center">{sellError}</p>}
+                    </div>
+                  );
+                })()}
+
+                {/* Sotto: Storico transazioni (ultime 2 + Vedi tutte / Chiudi) */}
+                {tradeHistory.length > 0 && (
+                  <div className={marketOpen && hasShares ? "mt-5" : "mt-0"}>
+                    <p className="text-ds-caption font-semibold text-fg-muted uppercase tracking-micro mb-2">Storico transazioni</p>
+                    <ul className="space-y-2" role="list">
+                      {displayedHistory.map((t) => renderTransactionItem(t))}
+                    </ul>
+                    {hasMoreThanTwo && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllTransactions(!showAllTransactions)}
+                        className="mt-2 text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
+                      >
+                        {showAllTransactions ? "Chiudi" : "Vedi tutte"}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -606,14 +864,15 @@ export default function EventDetailPage({
       {/* Popup Descrizione evento */}
       {showDescriptionPopup && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md transition-[background-color,filter] duration-300"
           role="dialog"
           aria-modal="true"
           aria-labelledby="description-popup-title"
           onClick={() => setShowDescriptionPopup(false)}
         >
           <div
-            className="bg-bg border border-white/20 rounded-2xl shadow-overlay max-w-lg w-full max-h-[85vh] overflow-y-auto p-6"
+            className="event-detail-box event-detail-box-neon max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 rounded-2xl"
+            style={{ background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-3 mb-4">
@@ -638,17 +897,64 @@ export default function EventDetailPage({
         </div>
       )}
 
+      {/* Popup Info vendita / payoff quote */}
+      {showSellInfoPopup && event && userPosition && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md transition-[background-color,filter] duration-300"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="sell-info-popup-title"
+          onClick={() => setShowSellInfoPopup(false)}
+        >
+          <div
+            className="event-detail-box event-detail-box-neon max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 rounded-2xl"
+            style={{ background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative flex items-center justify-center mb-4 pr-12">
+              <h2 id="sell-info-popup-title" className="text-ds-h3 font-bold text-fg uppercase tracking-label text-center">Come funziona</h2>
+              <button
+                type="button"
+                onClick={() => setShowSellInfoPopup(false)}
+                className="absolute right-0 top-1/2 -translate-y-1/2 p-2.5 rounded-xl text-fg-muted hover:text-fg hover:bg-surface/50 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                aria-label="Chiudi"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <p className="text-ds-body-sm text-fg-muted mb-4">
+              Ogni quota paga 1 <IconCurrency className="w-4 h-4 text-primary inline-block align-middle" aria-hidden /> se l&apos;esito che hai scelto si verifica (SÌ o NO).<br />
+              Se non si verifica, paga 0.
+            </p>
+            <p className="text-ds-h3 font-bold text-fg uppercase tracking-label text-center mb-2">Esempio</p>
+            <p className="text-ds-body-sm text-fg-muted mb-2">Hai 100 quote SÌ.</p>
+            <p className="text-ds-body-sm text-fg-muted mb-1">
+              Se l&apos;evento è SÌ → ricevi <span className="font-semibold text-emerald-500 dark:text-emerald-400">100</span> crediti.
+            </p>
+            <p className="text-ds-body-sm text-fg-muted mb-4">
+              Se l&apos;evento è NO → ricevi <span className="font-semibold text-red-500 dark:text-red-400">0</span>.
+            </p>
+            <p className="text-ds-body-sm text-fg-muted pt-3 border-t border-white/10 text-center">
+              Il tuo profitto dipende dal prezzo a cui hai acquistato le quote.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Popup Criterio di risoluzione e scadenza */}
       {showResolutionPopup && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md transition-[background-color,filter] duration-300"
           role="dialog"
           aria-modal="true"
           aria-labelledby="resolution-popup-title"
           onClick={() => setShowResolutionPopup(false)}
         >
           <div
-            className="bg-bg border border-white/20 rounded-2xl shadow-overlay max-w-lg w-full max-h-[85vh] overflow-y-auto p-6"
+            className="event-detail-box event-detail-box-neon max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 rounded-2xl"
+            style={{ background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-3 mb-4">

@@ -29,7 +29,13 @@ export async function POST(
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      include: { Prediction: { where: { resolved: true } } },
+      select: {
+        id: true,
+        resolved: true,
+        resolvedAt: true,
+        outcome: true,
+        tradingMode: true,
+      },
     });
 
     if (!event) {
@@ -81,30 +87,27 @@ export async function POST(
     }
 
     if (action === "CORRECT" && (newOutcome === "YES" || newOutcome === "NO")) {
-      // Revert: ripristina crediti e previsioni, poi imposta evento non risolto
-      const winningOutcome = event.outcome!;
-      for (const p of event.Prediction) {
-        if (p.won && p.payout != null) {
+      // Revert AMM: annulla SHARE_PAYOUT (1 per share) e riporta evento non risolto
+      const payouts = await prisma.transaction.findMany({
+        where: {
+          type: "SHARE_PAYOUT",
+          referenceId: eventId,
+        },
+        select: { userId: true, amountMicros: true },
+      });
+      for (const p of payouts) {
+        const amount = p.amountMicros ?? 0n;
+        if (amount > 0n) {
           await prisma.user.update({
             where: { id: p.userId },
-            data: {
-              credits: { decrement: p.payout },
-              totalEarned: { decrement: p.payout },
-            },
-          });
-          await prisma.transaction.deleteMany({
-            where: {
-              userId: p.userId,
-              type: "PREDICTION_WIN",
-            },
+            data: { creditsMicros: { decrement: amount } },
           });
         }
-        await prisma.prediction.update({
-          where: { id: p.id },
-          data: {
-            resolved: false,
-            won: null,
-            payout: null,
+        await prisma.transaction.deleteMany({
+          where: {
+            userId: p.userId,
+            type: "SHARE_PAYOUT",
+            referenceId: eventId,
           },
         });
       }
@@ -113,6 +116,7 @@ export async function POST(
         data: {
           resolved: false,
           outcome: null,
+          resolvedAt: null,
           resolutionDisputedAt: null,
           resolutionDisputedBy: null,
         },

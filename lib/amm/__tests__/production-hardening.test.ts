@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { assertAmmEvent, assertLegacyEvent } from "../guards";
+import { assertAmmEvent } from "../guards";
 import { readFileSync } from "fs";
 import { join } from "path";
 
@@ -17,11 +17,6 @@ describe("PATCH 6 & 7: Safety and no float in AMM", () => {
     expect(() => assertAmmEvent({ tradingMode: "AMM" })).not.toThrow();
   });
 
-  it("assertLegacyEvent throws when tradingMode is not LEGACY", () => {
-    expect(() => assertLegacyEvent({ tradingMode: "AMM" })).toThrow("TradingMode mismatch");
-    expect(() => assertLegacyEvent({ tradingMode: null })).toThrow("TradingMode mismatch");
-    expect(() => assertLegacyEvent({ tradingMode: "LEGACY" })).not.toThrow();
-  });
 
   it("AMM engine and resolve do not use float (no Number, parseFloat, .toFixed, Math. in production path)", () => {
     const floatPattern = /(?:Number\s*\(|parseFloat\s*\(|\.toFixed\s*\(|Math\.\w+\s*\()/;

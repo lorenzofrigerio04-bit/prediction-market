@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import type { CreditTransactionType } from "./credits-config";
+import { CREDITS_SCALE, getDisplayCredits } from "./credits-config";
 
 /** Client Prisma o transaction client (stessa interfaccia per user + transaction) */
 type PrismaTx = Pick<PrismaClient, "user" | "transaction">;
@@ -43,17 +44,17 @@ export async function applyCreditTransaction(
   if (amount === 0) {
     const u = await tx.user.findUnique({
       where: { id: userId },
-      select: { credits: true },
+      select: { credits: true, creditsMicros: true },
     });
-    return u?.credits ?? 0;
+    return u ? getDisplayCredits({ credits: u.credits, creditsMicros: u.creditsMicros }) : 0;
   }
 
   if (skipUserUpdate) {
     const user = await tx.user.findUnique({
       where: { id: userId },
-      select: { credits: true },
+      select: { credits: true, creditsMicros: true },
     });
-    const balanceAfter = user?.credits ?? 0;
+    const balanceAfter = user ? getDisplayCredits({ credits: user.credits, creditsMicros: user.creditsMicros }) : 0;
     await tx.transaction.create({
       data: {
         userId,
@@ -67,14 +68,16 @@ export async function applyCreditTransaction(
 
   const isCredit = amount > 0;
   const effectiveAmount = Math.abs(amount);
+  const microsDelta = BigInt(effectiveAmount) * BigInt(CREDITS_SCALE);
 
   const updated = await tx.user.update({
     where: { id: userId },
     data: {
       credits: { [isCredit ? "increment" : "decrement"]: effectiveAmount },
+      creditsMicros: { [isCredit ? "increment" : "decrement"]: microsDelta },
       ...(isCredit ? { totalEarned: { increment: effectiveAmount } } : {}),
     },
-    select: { credits: true },
+    select: { credits: true, creditsMicros: true },
   });
 
   await tx.transaction.create({
@@ -86,5 +89,5 @@ export async function applyCreditTransaction(
     },
   });
 
-  return updated.credits;
+  return getDisplayCredits({ credits: updated.credits, creditsMicros: updated.creditsMicros });
 }

@@ -6,6 +6,7 @@ import type { PrismaClient } from '@prisma/client';
 import type { ScoredCandidate } from './types';
 import { computeDedupKey } from './dedup';
 import { ensureAmmStateForEvent } from '@/lib/amm/ensure-amm-state';
+import { getBParameterOrDefault } from '@/lib/pricing/initialization';
 
 /** Client Prisma completo o client di transazione (usato in $transaction) */
 type PrismaClientLike = Omit<
@@ -103,7 +104,7 @@ async function createEventFromCandidate(
       templateId: candidate.templateId,
       dedupKey, // sempre valorizzato
       createdById: systemUserId,
-      b: 100.0,
+      b: getBParameterOrDefault(candidate.category),
       resolutionBufferHours: 24,
       resolved: false,
       resolutionStatus: 'PENDING',

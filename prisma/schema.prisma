@@ -161,7 +161,7 @@ model Event {
   resolutionCriteriaNo   String?  // Criterio formale per risoluzione NO
   sourceStorylineId      String?  // ID della storyline sorgente (da BLOCCO 3)
   templateId             String?   // ID del template usato per generazione
-  tradingMode            String    @default("AMM") @map("trading_mode") // LEGACY | AMM
+  tradingMode            String    @default("AMM") @map("trading_mode") // Solo AMM (Polymarket-style)
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @default(now()) @updatedAt
 
@@ -303,15 +303,16 @@ model Position {
 
 // Immutable AMM trade record (buy/sell)
 model Trade {
-  id             String   @id @default(cuid())
-  eventId        String   @map("event_id")
-  userId         String   @map("user_id")
-  side           String   // BUY | SELL
-  outcome        String   // YES | NO
-  shareMicros    BigInt   @map("share_micros")
-  costMicros     BigInt   @map("cost_micros") // negative = cost paid, positive = proceeds
-  idempotencyKey String   @map("idempotency_key")
-  createdAt      DateTime @default(now())
+  id                String   @id @default(cuid())
+  eventId           String   @map("event_id")
+  userId            String   @map("user_id")
+  side              String   // BUY | SELL
+  outcome           String   // YES | NO
+  shareMicros       BigInt   @map("share_micros")
+  costMicros        BigInt   @map("cost_micros") // negative = cost paid, positive = proceeds
+  realizedPlMicros  BigInt?  @map("realized_pl_micros") // solo per SELL: P&L realizzato (proceeds - cost basis)
+  idempotencyKey    String   @map("idempotency_key")
+  createdAt         DateTime @default(now())
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)

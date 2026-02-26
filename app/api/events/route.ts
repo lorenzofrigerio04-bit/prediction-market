@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getEventsWithStats } from "@/lib/fomo/event-stats";
 import { priceYesMicros, SCALE } from "@/lib/amm/fixedPointLmsr";
-import { getEventProbability } from "@/lib/pricing/price-display";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +24,7 @@ export async function GET(request: NextRequest) {
     // Mostriamo tutti gli eventi (inclusi quelli del generatore) così la pagina Eventi e Discover restano piene
     where.category = { not: "News" };
 
+    // Filtro stato: aperti / in revisione / chiusi / tutti (nessun filtro)
     if (status === "open") {
       where.resolved = false;
       where.closesAt = { gt: now };
@@ -36,9 +36,15 @@ export async function GET(request: NextRequest) {
         in7d.setDate(in7d.getDate() + 7);
         where.closesAt = { gte: now, lte: in7d };
       }
+    } else if (status === "in_revision") {
+      // In revisione: scaduti ma non ancora risolti (nessun esito)
+      where.resolved = false;
+      where.closesAt = { lte: now };
     } else if (status === "closed") {
-      where.OR = [{ resolved: true }, { closesAt: { lte: now } }];
+      // Chiusi: mercato chiuso (scaduto). Include sia "in revisione" sia "risolti con esito"
+      where.closesAt = { lte: now };
     }
+    // status === "all" o altro: nessun filtro su stato
 
     if (category) where.category = category;
 
@@ -96,12 +102,10 @@ export async function GET(request: NextRequest) {
       const eventsWithStats = diverse.map((event) => {
         const stats = fomoStats.get(event.id);
         const { _count, ammState, ...rest } = event;
-        let probability: number;
-        if (event.tradingMode === "AMM" && ammState) {
+        let probability = 50;
+        if (ammState) {
           const yesMicros = priceYesMicros(ammState.qYesMicros, ammState.qNoMicros, ammState.bMicros);
           probability = Number((yesMicros * 100n) / SCALE);
-        } else {
-          probability = getEventProbability(event);
         }
         return {
           ...rest,
@@ -156,12 +160,10 @@ export async function GET(request: NextRequest) {
     const eventsWithStats = events.map((event) => {
       const stats = fomoStats.get(event.id);
       const { _count, ammState, ...rest } = event;
-      let probability: number;
-      if (event.tradingMode === "AMM" && ammState) {
+      let probability = 50;
+      if (ammState) {
         const yesMicros = priceYesMicros(ammState.qYesMicros, ammState.qNoMicros, ammState.bMicros);
         probability = Number((yesMicros * 100n) / SCALE);
-      } else {
-        probability = getEventProbability(event);
       }
       return {
         ...rest,

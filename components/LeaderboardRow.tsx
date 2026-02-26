@@ -1,20 +1,31 @@
 "use client";
 
-import StreakBadge from "./StreakBadge";
 import Link from "next/link";
+
+const RARITY_BORDER: Record<string, string> = {
+  COMMON: "border-slate-400/30 dark:border-slate-500/40",
+  RARE: "border-primary/40 dark:border-primary/50",
+  EPIC: "border-purple-400/40 dark:border-purple-400/50",
+  LEGENDARY: "border-amber-400/50 dark:border-amber-400/60",
+};
+
+export interface LeaderboardBadgeItem {
+  id: string;
+  name: string;
+  icon: string | null;
+  rarity: string;
+}
 
 interface LeaderboardRowProps {
   rank: number;
+  totalUsers: number;
   user: {
     id: string;
     name: string | null;
     email: string;
     image: string | null;
   };
-  accuracy: number;
-  score: number;
-  streak: number;
-  totalPredictions: number;
+  badges: LeaderboardBadgeItem[];
   correctPredictions: number;
   isCurrentUser?: boolean;
 }
@@ -22,22 +33,10 @@ interface LeaderboardRowProps {
 export default function LeaderboardRow({
   rank,
   user,
-  accuracy,
-  score,
-  streak,
-  totalPredictions,
+  badges,
   correctPredictions,
   isCurrentUser = false,
 }: LeaderboardRowProps) {
-  const formatPercentage = (value: number) => {
-    return `${Math.round(value * 100) / 100}%`;
-  };
-
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat("it-IT").format(amount);
-  };
-
-  // Medal emojis for top 3
   const getRankDisplay = () => {
     if (rank === 1) return "🥇";
     if (rank === 2) return "🥈";
@@ -45,83 +44,70 @@ export default function LeaderboardRow({
     return `#${rank}`;
   };
 
-  const getRankColor = () => {
-    if (rank === 1) return "bg-amber-500/15 border-amber-500/40 dark:border-amber-400/30 shadow-[0_0_16px_-4px_rgba(251,191,36,0.25)]";
-    if (rank === 2) return "stat-mini";
-    if (rank === 3) return "bg-orange-500/15 border-orange-500/40 dark:border-orange-400/30 shadow-[0_0_16px_-4px_rgba(249,115,22,0.2)]";
-    return "stat-mini";
-  };
+  const baseBoxClass = "rounded-2xl border p-3 transition-all sm:p-4 border-black/10 dark:border-white/10 bg-white/5 dark:bg-white/5";
+  const currentUserHighlightClass = isCurrentUser
+    ? "ring-2 ring-primary bg-primary/10 dark:bg-primary/15 border-primary/30 dark:border-primary/40 shadow-[0_0_20px_-6px_rgba(var(--primary-glow),0.3)]"
+    : "";
+
+  const displayName = user.name || user.email || "Utente";
 
   return (
-    <div
-      className={`p-4 rounded-2xl border transition-all ${getRankColor()} ${
-        isCurrentUser ? "ring-2 ring-primary shadow-[0_0_20px_-6px_rgba(var(--primary-glow),0.3)]" : ""
-      }`}
-    >
-      <div className="flex items-center gap-3 md:gap-4">
-        <div className="flex-shrink-0 w-10 md:w-12 text-center">
-          <span className="text-xl md:text-2xl font-bold text-fg-muted">
-            {getRankDisplay()}
-          </span>
+    <div className={`${baseBoxClass} ${currentUserHighlightClass}`}>
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        {/* Posizione */}
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-black/10 dark:bg-white/10 text-lg font-bold text-fg sm:h-12 sm:w-12 sm:text-xl">
+          {getRankDisplay()}
         </div>
-
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-primary to-accent-700 flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
-            {user.image ? (
-              <img
-                src={user.image}
-                alt={user.name || "User"}
-                className="w-full h-full rounded-full object-cover"
-              />
-            ) : (
-              (user.name || user.email)[0].toUpperCase()
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            {isCurrentUser ? (
-              <Link href="/profile" className="block">
-                <h3 className="font-semibold text-fg truncate hover:text-primary transition-colors">
-                  {user.name || user.email}
-                  <span className="ml-2 text-xs text-primary font-normal">(Tu)</span>
-                </h3>
-              </Link>
-            ) : (
-              <Link href={`/profile/${user.id}`} className="block">
-                <h3 className="font-semibold text-fg truncate hover:text-primary transition-colors">
-                  {user.name || user.email}
-                </h3>
-              </Link>
-            )}
-            <p className="text-xs text-fg-muted truncate">{user.email}</p>
-          </div>
+        {/* Avatar in alto a sinistra (object-top per ritaglio) */}
+        <div className="flex h-10 w-10 flex-shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-primary to-accent-700 text-white sm:h-12 sm:w-12">
+          {user.image ? (
+            <img
+              src={user.image}
+              alt={displayName}
+              className="h-full w-full object-cover object-top"
+            />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center text-base font-bold sm:text-lg">
+              {displayName[0].toUpperCase()}
+            </span>
+          )}
         </div>
-
-        <div className="hidden md:flex items-center gap-4 flex-shrink-0">
-          <div className="text-center min-w-[70px]">
-            <p className="text-[10px] text-fg-muted uppercase font-semibold mb-0.5">Accuratezza %</p>
-            <p className="text-base font-bold text-primary">{formatPercentage(accuracy)}</p>
-            <p className="text-[10px] text-fg-subtle">{correctPredictions}/{totalPredictions}</p>
-          </div>
-          <div className="text-center min-w-[80px]">
-            <p className="text-[10px] text-fg-muted uppercase font-semibold mb-0.5">Serie</p>
-            <StreakBadge streak={streak} size="sm" />
-          </div>
-          <div
-            className="text-center min-w-[70px]"
-            title="Punteggio basato su previsioni corrette e consistenza."
-          >
-            <p className="text-[10px] text-fg-muted uppercase font-semibold mb-0.5">Punteggio</p>
-            <p className="text-base font-bold text-fg">{score.toFixed(1)}</p>
-          </div>
+        {/* Nome per intero + previsioni corrette */}
+        <div className="min-w-0 flex-1">
+          {isCurrentUser ? (
+            <Link href="/profile" className="block">
+              <span className="font-semibold text-fg break-words hover:text-primary transition-colors">
+                {displayName}
+              </span>
+              <span className="ml-1.5 text-xs font-normal text-primary">(Tu)</span>
+            </Link>
+          ) : (
+            <Link href={`/profile/${user.id}`} className="block">
+              <span className="font-semibold text-fg break-words hover:text-primary transition-colors">
+                {displayName}
+              </span>
+            </Link>
+          )}
+          <p className="mt-0.5 text-xs text-fg-muted sm:text-sm">
+            {correctPredictions}{" "}
+            {correctPredictions === 1 ? "previsione corretta" : "previsioni corrette"}
+          </p>
         </div>
-
-        <div className="md:hidden flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          <span className="font-semibold text-primary">{formatPercentage(accuracy)}</span>
-          <StreakBadge streak={streak} size="sm" />
-          <span className="font-semibold text-fg" title="Punteggio basato su previsioni corrette e consistenza.">
-            {score.toFixed(1)}
-          </span>
-        </div>
+        {/* Badge in fila in alto a destra (stemmi) */}
+        {badges.length > 0 && (
+          <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-1.5">
+            {badges.map((badge) => (
+              <span
+                key={badge.id}
+                title={badge.name}
+                className={`inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border bg-black/5 text-base dark:bg-white/10 sm:h-9 sm:w-9 sm:text-lg ${RARITY_BORDER[badge.rarity] ?? RARITY_BORDER.COMMON}`}
+                aria-label={badge.name}
+              >
+                {badge.icon || "🏆"}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

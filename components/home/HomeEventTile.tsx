@@ -14,6 +14,8 @@ export interface HomeEventTileProps {
   yesPct: number;
   predictionsCount?: number;
   variant: HomeEventTileVariant;
+  /** Se true, l’evento è risolto con esito */
+  resolved?: boolean;
   onNavigate?: () => void;
 }
 
@@ -34,6 +36,7 @@ export default function HomeEventTile({
   yesPct,
   predictionsCount,
   variant,
+  resolved,
   onNavigate,
 }: HomeEventTileProps) {
   const noPct = 100 - yesPct;
@@ -71,7 +74,7 @@ export default function HomeEventTile({
           <span className="inline-flex w-fit rounded-md border border-white/30 bg-black/70 px-2 py-0.5 text-xs font-semibold text-white shadow-[0_2px_6px_rgba(0,0,0,0.9)] backdrop-blur-sm sm:text-ds-micro">
             {category}
           </span>
-          {variant === "closing" && (
+          {(variant === "closing" || new Date(closesAt).getTime() <= Date.now()) && (
             <span className="rounded-lg border border-amber-400/50 bg-amber-500/40 px-2 py-1 text-xs font-bold text-amber-100 shadow-[0_0_12px_-2px_rgba(251,191,36,0.5),0_1px_3px_rgba(0,0,0,0.8)] sm:text-ds-micro w-fit">
               {formatTimeLeftShort(closesAt)}
             </span>

@@ -6,6 +6,15 @@
  * per importarla invece del placeholder.
  */
 
+// Workaround per "unable to get local issuer certificate" con Login con Google in sviluppo
+// (es. proxy aziendale, certificati di sistema mancanti). Solo in dev e solo se esplicitamente abilitato.
+if (
+  process.env.NODE_ENV === 'development' &&
+  process.env.NEXTAUTH_INSECURE_SSL_DEV === '1'
+) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
 import { getServerSession } from 'next-auth';
 import type { NextAuthOptions, Account } from 'next-auth';
 import type { AdapterUser } from 'next-auth/adapters';

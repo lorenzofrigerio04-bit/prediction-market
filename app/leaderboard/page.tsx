@@ -4,17 +4,26 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Header from "@/components/Header";
 import LeaderboardRow from "@/components/LeaderboardRow";
+import ConfettiCelebration from "@/components/leaderboard/ConfettiCelebration";
 import { trackView } from "@/lib/analytics-client";
+import { getLeaderboardMotivationalPhrase } from "@/lib/leaderboard-messages";
 import {
   PageHeader,
   SectionContainer,
   Card,
-  FilterChips,
   EmptyState,
   LoadingBlock,
 } from "@/components/ui";
+import FilterDropdown from "@/components/ui/FilterDropdown";
 
-type PeriodType = "weekly" | "monthly" | "all-time";
+type PeriodType = "daily" | "weekly" | "monthly" | "all-time";
+
+interface LeaderboardBadge {
+  id: string;
+  name: string;
+  icon: string | null;
+  rarity: string;
+}
 
 interface LeaderboardUser {
   rank: number;
@@ -30,6 +39,7 @@ interface LeaderboardUser {
   correctPredictions: number;
   totalEarned: number;
   totalSpent: number;
+  badges: LeaderboardBadge[];
 }
 
 interface LeaderboardResponse {
@@ -49,6 +59,8 @@ export default function LeaderboardPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [myRank, setMyRank] = useState<number | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+  const [openFilter, setOpenFilter] = useState<"category" | "period" | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     trackView("LEADERBOARD_VIEWED");
@@ -76,6 +88,7 @@ export default function LeaderboardPage() {
       const data: LeaderboardResponse = await response.json();
       setLeaderboard(data.leaderboard);
       setMyRank(data.myRank);
+      if (data.leaderboard.length > 0) setShowConfetti(true);
     } catch (err) {
       console.error("Error fetching leaderboard:", err);
       setError("Errore nel caricamento della classifica");
@@ -84,20 +97,28 @@ export default function LeaderboardPage() {
     }
   };
 
-  const periodButtons: Array<{ id: PeriodType; label: string }> = [
+  const periodOptions: Array<{ id: PeriodType; label: string }> = [
+    { id: "daily", label: "Giornaliero" },
     { id: "weekly", label: "Settimanale" },
     { id: "monthly", label: "Mensile" },
-    { id: "all-time", label: "Tutti i tempi" },
+    { id: "all-time", label: "Sempre" },
+  ];
+
+  const categoryOptions = [
+    { id: "", label: "Tutte" },
+    ...categories.map((c) => ({ id: c, label: c })),
   ];
 
   return (
     <div className="min-h-screen bg-bg">
+      <ConfettiCelebration
+        active={showConfetti}
+        onComplete={() => setShowConfetti(false)}
+        durationMs={4000}
+      />
       <Header />
       <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
-        <PageHeader
-          title="Classifica"
-          description="Sali in classifica prevedendo bene."
-        />
+        <PageHeader title="CLASSIFICA" align="center" />
 
         {error && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-600 dark:text-red-400 text-ds-body-sm">
@@ -106,29 +127,58 @@ export default function LeaderboardPage() {
         )}
 
         <SectionContainer>
-          <Card className="p-4 mb-6 space-y-4">
-            <FilterChips
-              options={periodButtons.map((b) => ({ id: b.id, label: b.label }))}
-              value={period}
-              onChange={setPeriod}
-            />
-            {categories.length > 0 && (
-              <div>
-                <label className="text-ds-caption font-semibold text-fg-muted uppercase tracking-wide block mb-2">Categoria</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full md:w-auto min-h-[44px] px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-fg font-medium ds-tap-target input-neon-focus"
-                >
-                  <option value="">Tutte</option>
-                  {categories.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </Card>
+          <div className="mb-4 flex flex-wrap items-end justify-center gap-4 sm:gap-6">
+            <div className="flex flex-col items-center">
+              <FilterDropdown
+                label="Categoria"
+                options={categoryOptions}
+                value={category}
+                onChange={(id) => {
+                  setCategory(id);
+                  setOpenFilter(null);
+                }}
+                open={openFilter === "category"}
+                onOpenChange={(o) => setOpenFilter(o ? "category" : null)}
+                onOpen={() => setOpenFilter("category")}
+              />
+            </div>
+            <div className="flex flex-col items-center">
+              <FilterDropdown
+                label="Tempo"
+                options={periodOptions}
+                value={period}
+                onChange={(id) => {
+                  setPeriod(id as PeriodType);
+                  setOpenFilter(null);
+                }}
+                open={openFilter === "period"}
+                onOpenChange={(o) => setOpenFilter(o ? "period" : null)}
+                onOpen={() => setOpenFilter("period")}
+              />
+            </div>
+          </div>
         </SectionContainer>
+
+        {!loading && session?.user && (() => {
+          const myEntry = leaderboard.find((u) => u.id === session.user?.id);
+          if (!myEntry) return null;
+          const phrase = getLeaderboardMotivationalPhrase(
+            myEntry.rank,
+            leaderboard.length,
+            myEntry.correctPredictions,
+            true
+          ).replace(/^Tu:\s*/i, "");
+          return (
+            <div className="mx-auto mb-6 max-w-2xl px-page-x text-center">
+              <p className="text-ds-h3 font-semibold text-fg">
+                Sei il numero {myEntry.rank}
+              </p>
+              <p className="mt-2 text-ds-body-sm text-fg-muted italic leading-snug">
+                {phrase}
+              </p>
+            </div>
+          );
+        })()}
 
         {loading ? (
           <LoadingBlock message="Caricamento…" />
@@ -136,28 +186,14 @@ export default function LeaderboardPage() {
           <EmptyState description="Nessun dato per questo periodo." />
         ) : (
           <Card elevated className="p-4 md:p-6">
-            {myRank != null && session?.user && (
-              <div className="mb-4 p-3 rounded-xl pill-credits text-sm text-white/90">
-                La tua posizione: <strong className="text-white">#{myRank}</strong>
-              </div>
-            )}
-            <div className="hidden md:grid grid-cols-12 gap-4 mb-4 pb-3 border-b border-border dark:border-white/10">
-              <div className="col-span-2 text-xs font-semibold text-fg-muted uppercase">Posizione</div>
-              <div className="col-span-4 text-xs font-semibold text-fg-muted uppercase">Utente</div>
-              <div className="col-span-2 text-xs font-semibold text-fg-muted uppercase text-center">Accuratezza %</div>
-              <div className="col-span-2 text-xs font-semibold text-fg-muted uppercase text-center">Serie</div>
-              <div className="col-span-2 text-xs font-semibold text-fg-muted uppercase text-center" title="Punteggio basato su previsioni corrette e consistenza.">Punteggio</div>
-            </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {leaderboard.map((user) => (
                 <LeaderboardRow
                   key={user.id}
                   rank={user.rank}
+                  totalUsers={leaderboard.length}
                   user={{ id: user.id, name: user.name, email: user.email, image: user.image }}
-                  accuracy={user.accuracy}
-                  score={user.score}
-                  streak={user.streak}
-                  totalPredictions={user.totalPredictions}
+                  badges={user.badges ?? []}
                   correctPredictions={user.correctPredictions}
                   isCurrentUser={session?.user?.id === user.id}
                 />

@@ -1,8 +1,9 @@
+/* @import deve stare in cima, prima di @tailwind (altrimenti dopo la compilazione finisce dopo altre regole) */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Orbitron:wght@500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Orbitron:wght@500;600;700&display=swap');
 
 /* —— Design system: spacing scale (mobile-first, 4px base) —— */
 :root {
@@ -390,6 +391,18 @@ textarea:focus-visible {
 @keyframes landing-mesh {
   0% { transform: translate(0, 0) scale(1); }
   100% { transform: translate(-5%, -3%) scale(1.05); }
+}
+
+/* Coriandoli classifica: caduta fluida GPU-accelerated (transform3d + opacity) */
+@keyframes confetti-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--cf-drift, 0px), 105vh, 0) rotate(var(--cf-rot, 0deg));
+    opacity: 0.75;
+  }
 }
 
 /* Contenuto pagine trasparente per far vedere il background mesh su tutta la piattaforma */
@@ -1991,11 +2004,11 @@ textarea:focus-visible {
   font-weight: 500;
 }
 
-/* Consigliati: header glass come tab/strip, bg-layer visibile dietro */
+/* Consigliati: gradiente trasparenza header → tab → strip (header meno trasparente, strip più trasparente) */
 body.discover-consigliati-active .header-neon {
-  background: rgba(11, 18, 32, 0.25);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(11, 18, 32, 0.52);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 body.discover-consigliati-active .nav-bottom-neon {
@@ -2040,10 +2053,10 @@ body.discover-consigliati-active .nav-bottom-neon svg {
   background: transparent;
 }
 body.discover-consigliati-active .discover-consigliati-strip-zone {
-  background: rgba(11, 18, 32, 0.25);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: none;
 }
 @media (min-width: 768px) {
   .discover-consigliati-strip-zone {
@@ -2150,23 +2163,33 @@ body.discover-consigliati-active .discover-consigliati-strip-zone {
   min-height: 100vh;
 }
 
-/* Layer sfondo full viewport (Consigliati): un solo elemento, fixed, dietro tutta la UI */
-.discover-bg-layer {
+/* Layer sfondo full viewport (Consigliati): stessa foto dell’evento corrente dietro header, tab, strip e feed */
+.discover-consigliati-bg-layer {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background-image: url("/images/event-sport-bg.png");
-  background-size: cover;
-  background-position: center top;
-  background-repeat: no-repeat;
   pointer-events: none;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
 }
-.discover-bg-layer::before {
+.discover-consigliati-bg-layer.consigliati-slide-backdrop {
+  position: fixed;
+}
+.discover-consigliati-bg-layer.consigliati-slide-backdrop::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.15));
-  pointer-events: none;
+  /* Un’unica sfumatura continua su tutta la viewport: foto unica, leggibilità senza “due pezzi” */
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.15) 0%,
+    rgba(0, 0, 0, 0.25) 30%,
+    rgba(0, 0, 0, 0.4) 60%,
+    rgba(0, 0, 0, 0.55) 80%,
+    rgba(0, 0, 0, 0.65) 100%
+  );
+  z-index: 0;
 }
 
 /* Hide footer background on discover page */
@@ -2532,16 +2555,24 @@ body:has(.discover-page) > footer {
   background-image: url("/images/event-intrattenimento-bg.png");
 }
 
-/* Tab bar Discover (Seguiti | Consigliati): glass leggero così il bg-layer resta visibile */
+/* Consigliati: nella slide non ripetere la foto (la mostra il layer full-viewport); niente seconda sfumatura = una sola foto per tutto lo schermo */
+body.discover-consigliati-active .consigliati-slide .consigliati-slide-backdrop {
+  background-image: none !important;
+}
+body.discover-consigliati-active .consigliati-slide .consigliati-slide-backdrop::after {
+  display: none;
+}
+
+/* Tab bar Discover (Seguiti | Consigliati): trasparente in Consigliati così si vede la foto dell’evento */
 .discover-tab-bar {
   background: transparent;
   border-bottom: 1px solid rgb(255 255 255 / 0.06);
 }
 body.discover-consigliati-active .discover-tab-bar {
-  background: rgba(11, 18, 32, 0.25);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 .discover-tab-bar button {
   color: rgba(255, 255, 255, 0.9);

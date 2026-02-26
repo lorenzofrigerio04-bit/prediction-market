@@ -5,6 +5,21 @@ import { authOptions } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
+/** Ordine di possibilità di conseguimento: dai più facili ai più difficili */
+const ACHIEVEMENT_ORDER = [
+  "Prima previsione",
+  "Apprendista",
+  "Veggente",
+  "Oracolo",
+  "Prima vittoria",
+  "Vincente",
+  "Streak 3 giorni",
+  "Streak 7 giorni",
+  "Streak 30 giorni",
+  "Precisione 60%",
+  "Precisione 80%",
+];
+
 /**
  * GET /api/badges
  * Restituisce tutti i badge con stato sbloccato/non sbloccato per l'utente corrente.
@@ -49,6 +64,15 @@ export async function GET() {
       unlocked: userBadgeIds.has(badge.id),
       unlockedAt: userBadges.find((ub) => ub.badgeId === badge.id)?.unlockedAt || null,
     }));
+
+    badgesWithStatus.sort((a, b) => {
+      const i = ACHIEVEMENT_ORDER.indexOf(a.name);
+      const j = ACHIEVEMENT_ORDER.indexOf(b.name);
+      const orderA = i === -1 ? ACHIEVEMENT_ORDER.length : i;
+      const orderB = j === -1 ? ACHIEVEMENT_ORDER.length : j;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.name.localeCompare(b.name);
+    });
 
     return NextResponse.json(badgesWithStatus);
   } catch (error) {

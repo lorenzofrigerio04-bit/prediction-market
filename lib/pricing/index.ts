@@ -15,17 +15,9 @@ export {
 // Initialization functions
 export {
   getBParameter,
+  getBParameterOrDefault,
+  DEFAULT_B,
   getInitialQuantities,
   type Category,
   type HypeLevel,
 } from "./initialization";
-
-// Trade execution (LMSR prediction buy)
-export {
-  executePredictionBuy,
-  validateMarketOpen,
-  TradeError,
-  type ExecutePredictionBuyParams,
-  type ExecutePredictionBuyResult,
-  type EventForTrade,
-} from "./trade";

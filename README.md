@@ -63,23 +63,18 @@ Il sistema gestisce automaticamente gli eventi chiusi:
 
 ### API Endpoints
 
-- `POST /api/events/resolve-closed` - Processa tutti gli eventi chiusi automaticamente
-- `POST /api/events/resolve/[eventId]` - Risolve manualmente un evento specifico
-  ```json
-  { "outcome": "YES" | "NO" }
-  ```
+- `POST /api/events/resolve-closed` - Elenco eventi chiusi in attesa di risoluzione (admin/cron)
+- `POST /api/admin/events/[id]/resolve` - Risolve un evento AMM (outcome YES/NO, payout 1 per share ai vincenti)
 - `GET /api/cron/resolve-events` - Endpoint per cron job esterni (richiede `CRON_SECRET`)
 - `GET /api/cron/generate-events` - Pipeline generazione eventi (fetch → verify → generate → create); richiede `CRON_SECRET` o `EVENT_GENERATOR_SECRET`
 - `GET|POST /api/cron/generate-markets` - Pipeline generazione mercati (ingestion → LLM → validator → publish); richiede `CRON_SECRET`
 
 ### Come Funziona
 
-1. Quando un evento chiude, viene trovato dalla query `closesAt <= now AND resolved = false`
-2. L'outcome viene determinato automaticamente (maggioranza crediti) o manualmente (admin)
-3. Le previsioni vincenti ricevono: `payout = credits_investiti * (totalCredits / credits_lato_vincente)`
-4. I crediti vengono aggiunti agli utenti vincenti
-5. Le statistiche (accuracy, correctPredictions) vengono aggiornate
-6. Le transazioni vengono registrate nel wallet
+1. Tutti gli eventi sono mercati AMM (Polymarket-style): prezzo = probabilità, 1 share = 1 credit a risoluzione.
+2. Quando un evento chiude, l'admin risolve da Admin → Risoluzione (outcome YES o NO).
+3. I vincenti ricevono 1 credit per ogni share dell'esito vincente; i perdenti 0.
+4. Le transazioni SHARE_PAYOUT e il saldo (creditsMicros) vengono aggiornati.
 
 ### Configurazione Cron Job (Produzione)
 

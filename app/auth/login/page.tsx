@@ -10,6 +10,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   OAuthAccountNotLinked:
     "Questa email è già usata con un altro metodo di accesso. Accedi con email e password oppure usa sempre lo stesso metodo (solo Google o solo email).",
   CredentialsSignin: "Email o password non corretti. Riprova.",
+  OAuthSignin:
+    "Accesso con Google non riuscito. Verifica che in .env.local ci siano GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET (crea una credenziale OAuth in Google Cloud Console). Se prima vedevi un errore sul certificato, aggiungi anche NEXTAUTH_INSECURE_SSL_DEV=1 e riavvia il server.",
   Default: "Qualcosa è andato storto. Riprova tra poco.",
 };
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getDisplayCredits } from "@/lib/credits-config";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,7 @@ export async function GET() {
         email: true,
         image: true,
         credits: true,
+        creditsMicros: true,
         totalEarned: true,
         streakCount: true,
         createdAt: true,
@@ -65,29 +67,25 @@ export async function GET() {
       );
     }
 
-    // Fetch predictions stats
-    const [activePredictions, wonPredictions, lostPredictions] = await Promise.all([
-      prisma.prediction.count({
-        where: {
-          userId,
-          resolved: false,
-        },
+    // Count events created by user
+    const eventsCreatedCount = await prisma.event.count({
+      where: { createdById: userId },
+    });
+
+    // Previsioni: da Position (AMM). Ogni posizione = una previsione su un evento.
+    const [totalPredictions, activePredictions, wonYes, wonNo, resolvedCount] = await Promise.all([
+      prisma.position.count({ where: { userId } }),
+      prisma.position.count({ where: { userId, event: { resolved: false } } }),
+      prisma.position.count({
+        where: { userId, event: { resolved: true, outcome: "YES" }, yesShareMicros: { gt: 0 } },
       }),
-      prisma.prediction.count({
-        where: {
-          userId,
-          resolved: true,
-          won: true,
-        },
+      prisma.position.count({
+        where: { userId, event: { resolved: true, outcome: "NO" }, noShareMicros: { gt: 0 } },
       }),
-      prisma.prediction.count({
-        where: {
-          userId,
-          resolved: true,
-          won: false,
-        },
-      }),
+      prisma.position.count({ where: { userId, event: { resolved: true } } }),
     ]);
+    const wonPredictions = wonYes + wonNo;
+    const lostPredictions = resolvedCount - wonPredictions;
 
     // Calculate total spent from transactions (negative amounts)
     const totalSpentResult = await prisma.transaction.aggregate({
@@ -108,7 +106,6 @@ export async function GET() {
       ? ((totalReturn - totalInvested) / totalInvested) * 100 
       : 0;
 
-    const totalPredictions = activePredictions + wonPredictions + lostPredictions;
     const correctPredictions = wonPredictions;
     const accuracy =
       totalPredictions > 0 ? (correctPredictions / totalPredictions) * 100 : 0;
@@ -123,7 +120,10 @@ export async function GET() {
         createdAt: user.createdAt,
       },
       stats: {
-        credits: user.credits,
+        credits: getDisplayCredits({
+          credits: user.credits,
+          creditsMicros: user.creditsMicros,
+        }),
         totalEarned: user.totalEarned,
         totalSpent,
         streak: user.streakCount ?? 0,
@@ -134,6 +134,7 @@ export async function GET() {
         correctPredictions,
         accuracy: Math.round(accuracy * 100) / 100,
         roi: Math.round(roi * 100) / 100,
+        eventsCreatedCount,
       },
       badges: user.userBadges.map((ub) => ({
         ...ub.badge,

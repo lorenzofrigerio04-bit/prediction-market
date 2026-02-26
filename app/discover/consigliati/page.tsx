@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
@@ -29,20 +29,6 @@ interface ConsigliatiEvent {
 
 const CONSIGLIATI_PAGE_SIZE = 50;
 
-/** Shuffle array con seed per ordine riproducibile (solo per ordine chip categorie). */
-function shuffleWithSeed<T>(arr: T[], seed?: string): T[] {
-  const out = [...arr];
-  const s = seed ?? `${Date.now()}`;
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
-  for (let i = out.length - 1; i > 0; i--) {
-    h = (Math.imul(31, h) + i) | 0;
-    const j = Math.abs(h) % (i + 1);
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
-}
-
 /** Legge le categorie selezionate dall'URL (?categories=Scienza,Politica) per persistenza al back. */
 function parseCategoriesFromSearchParams(searchParams: URLSearchParams): Set<string> {
   const c = searchParams.get("categories");
@@ -68,6 +54,8 @@ export default function DiscoverConsigliatiPage() {
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(() =>
     parseCategoriesFromSearchParams(searchParams)
   );
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   /** Allineare state all'URL quando si torna indietro (es. da pagina evento) con query diversa. */
@@ -153,12 +141,6 @@ export default function DiscoverConsigliatiPage() {
     fetchCategories();
   }, [fetchCategories]);
 
-  /** Categorie da mostrare nella barra: tutte, ordine random (stabile per sessione). */
-  const categoriesShuffled = useMemo(
-    () => shuffleWithSeed(allCategories, "consigliati-categories"),
-    [allCategories]
-  );
-
   /** Aggiorna URL con le categorie selezionate così il back dalla pagina evento ripristina il filtro. */
   const syncUrlToCategories = useCallback(
     (categories: Set<string>) => {
@@ -189,6 +171,16 @@ export default function DiscoverConsigliatiPage() {
     setSelectedCategories(new Set());
     syncUrlToCategories(new Set());
   }, [syncUrlToCategories]);
+
+  useEffect(() => {
+    if (!categoryDropdownOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(e.target as Node))
+        setCategoryDropdownOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [categoryDropdownOpen]);
 
   /** Scroll infinito: sentinel in fondo alla lista, quando entra in view carica altra pagina. */
   useEffect(() => {
@@ -259,6 +251,98 @@ export default function DiscoverConsigliatiPage() {
           </Link>
         </div>
 
+        <div className="mb-4 flex items-center gap-2" ref={categoryDropdownRef}>
+          <span className="text-ds-body-sm font-medium text-fg-muted shrink-0">Categoria:</span>
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => setCategoryDropdownOpen((o) => !o)}
+              className="flex items-center justify-between gap-2 min-h-[44px] min-w-[140px] max-w-[200px] px-3 sm:px-4 py-2.5 rounded-xl border border-black/15 dark:border-white/15 bg-white/50 dark:bg-white/5 backdrop-blur-sm text-fg text-left text-sm sm:text-ds-body-sm font-medium hover:bg-white/60 dark:hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg transition-colors"
+              aria-expanded={categoryDropdownOpen}
+              aria-haspopup="listbox"
+              aria-label={`Categoria: ${selectedCategories.size === 0 ? "Tutte" : `${selectedCategories.size} selezionate`}`}
+            >
+              <span className="truncate">
+                {selectedCategories.size === 0
+                  ? "Tutte"
+                  : selectedCategories.size === 1
+                    ? [...selectedCategories][0]
+                    : `${selectedCategories.size} categorie`}
+              </span>
+              <svg
+                className={`w-4 h-4 shrink-0 text-fg-muted transition-transform ${categoryDropdownOpen ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {categoryDropdownOpen && (
+              <div
+                className="absolute left-0 top-full z-50 mt-1 min-w-[200px] max-w-[min(280px,85vw)] py-1.5 rounded-xl border border-black/15 dark:border-white/15 bg-white/85 dark:bg-black/60 backdrop-blur-md shadow-lg max-h-[min(280px,70vh)] overflow-y-auto"
+                role="listbox"
+                aria-label="Seleziona categorie"
+                aria-multiselectable
+              >
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={selectedCategories.size === 0}
+                  onClick={() => {
+                    clearSelection();
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3 sm:px-4 py-2.5 text-left text-sm sm:text-ds-body-sm font-medium transition-colors text-fg hover:bg-white/10 dark:hover:bg-white/10"
+                >
+                  <span
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                      selectedCategories.size === 0
+                        ? "border-primary bg-primary text-white"
+                        : "border-white/30 bg-transparent"
+                    }`}
+                    aria-hidden
+                  >
+                    {selectedCategories.size === 0 && (
+                      <svg className="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </span>
+                  Tutte
+                </button>
+                {allCategories.map((cat) => {
+                  const isSelected = selectedCategories.has(cat);
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
+                      onClick={() => toggleCategory(cat)}
+                      className="flex w-full items-center gap-2.5 px-3 sm:px-4 py-2.5 text-left text-sm sm:text-ds-body-sm font-medium transition-colors text-fg hover:bg-white/10 dark:hover:bg-white/10"
+                    >
+                      <span
+                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                          isSelected ? "border-primary bg-primary text-white" : "border-white/30 bg-transparent"
+                        }`}
+                        aria-hidden
+                      >
+                        {isSelected && (
+                          <svg className="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </span>
+                      {cat}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
         {loading ? (
           <LoadingBlock message="Caricamento eventi…" />
         ) : error ? (
@@ -269,43 +353,6 @@ export default function DiscoverConsigliatiPage() {
           />
         ) : (
           <>
-            {/* Barra Categorie: tutte le categorie, multi-selezione */}
-            <div className="mb-4">
-              <p className="text-ds-caption font-semibold text-fg-muted uppercase tracking-wider mb-2">
-                Categorie
-              </p>
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin md:flex-wrap md:overflow-visible">
-                <button
-                  type="button"
-                  onClick={clearSelection}
-                  className={`shrink-0 min-h-[44px] px-4 py-2.5 rounded-2xl font-semibold text-ds-body-sm transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg ds-tap-target ${
-                    selectedCategories.size === 0
-                      ? "chip-selected"
-                      : "box-raised text-fg-muted hover:border-primary/25"
-                  }`}
-                >
-                  Tutti
-                </button>
-                {categoriesShuffled.map((cat) => {
-                  const isSelected = selectedCategories.has(cat);
-                  return (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => toggleCategory(cat)}
-                      className={`shrink-0 min-h-[44px] px-4 py-2.5 rounded-2xl font-semibold text-ds-body-sm transition-all duration-ds-normal ease-ds-ease focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg ds-tap-target ${
-                        isSelected
-                          ? "chip-selected"
-                          : "box-raised text-fg-muted hover:border-primary/25"
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             {displayedEvents.length === 0 ? (
               <EmptyState
                 title="Nessun evento"

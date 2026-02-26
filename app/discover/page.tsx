@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import EventiPrevistiTab from "@/components/discover/EventiPrevistiTab";
-import ConsigliatiFeed from "@/components/discover/ConsigliatiFeed";
+import ConsigliatiFeed, { getBackdropClass } from "@/components/discover/ConsigliatiFeed";
 
 type DiscoverTab = "per-te" | "seguiti";
 
@@ -14,6 +14,10 @@ export default function DiscoverPage() {
   const searchParams = useSearchParams();
   const tabFromUrl = searchParams.get("tab") === "seguiti" ? "seguiti" : "per-te";
   const [activeTab, setActiveTab] = useState<DiscoverTab>(tabFromUrl);
+  /** Classe sfondo della slide corrente: stessa foto dell’evento dietro header, tab e strip */
+  const [currentBackdropClass, setCurrentBackdropClass] = useState<string>(() =>
+    getBackdropClass("Sport")
+  );
 
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +27,18 @@ export default function DiscoverPage() {
   // Sync tab with URL
   useEffect(() => {
     setActiveTab(tabFromUrl);
+  }, [tabFromUrl]);
+
+  // Scroll to #creati quando si arriva da profilo (Eventi creati)
+  useEffect(() => {
+    if (tabFromUrl !== "seguiti") return;
+    const hash = typeof window !== "undefined" ? window.location.hash : "";
+    if (hash !== "#creati") return;
+    const el = document.getElementById("creati");
+    if (el) {
+      const t = setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
+      return () => clearTimeout(t);
+    }
   }, [tabFromUrl]);
 
   // Header, tab bar e strip glass + theme-color: derivati dall’URL reale (pathname + window.location)
@@ -99,9 +115,12 @@ export default function DiscoverPage() {
     <div
       className={`min-h-screen relative overflow-x-hidden discover-page${showConsigliati ? " discover-consigliati-strip-visible" : ""}`}
     >
-      {/* Un solo layer full-bleed dietro header, tab, strip e feed; fixed così resta stabile allo scroll */}
+      {/* Sfondo unico: foto della slide corrente a tutta pagina (dietro header, tab, strip e feed) */}
       {showConsigliati && (
-        <div className="discover-bg-layer" aria-hidden />
+        <div
+          className={`discover-consigliati-bg-layer ${currentBackdropClass}`}
+          aria-hidden
+        />
       )}
       <Header />
 
@@ -161,7 +180,7 @@ export default function DiscoverPage() {
               height: "calc(100dvh - (var(--header-height, 3.5rem) + var(--discover-tab-bar-h, 52px) + var(--discover-consigliati-strip-zone-h, 0px)))",
             }}
           >
-            <ConsigliatiFeed />
+            <ConsigliatiFeed onSlideChange={setCurrentBackdropClass} />
           </div>
         </>
       ) : (

@@ -3,6 +3,9 @@
  * Unica fonte di verità: niente numeri casuali nel codice.
  */
 
+/** 1 credito = CREDITS_SCALE micros (usato da AMM e per saldo unificato) */
+export const CREDITS_SCALE = 1_000_000;
+
 /** Crediti assegnati alla registrazione (signup email; OAuth usa default schema) */
 export const INITIAL_CREDITS = 1000;
 
@@ -66,3 +69,17 @@ export const CREDIT_TRANSACTION_TYPES = {
 
 export type CreditTransactionType =
   (typeof CREDIT_TRANSACTION_TYPES)[keyof typeof CREDIT_TRANSACTION_TYPES];
+
+/**
+ * Saldo crediti unificato per la UI: stesso valore ovunque (home, eventi, wallet, shop).
+ * Usa creditsMicros (saldo AMM) quando presente, altrimenti credits (legacy).
+ */
+export function getDisplayCredits(user: {
+  credits: number;
+  creditsMicros: bigint | null;
+}): number {
+  if (user.creditsMicros != null) {
+    return Math.floor(Number(user.creditsMicros) / CREDITS_SCALE);
+  }
+  return user.credits;
+}

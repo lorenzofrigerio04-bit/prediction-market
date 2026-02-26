@@ -5,6 +5,7 @@
  */
 
 import { getPrice } from "./lmsr";
+import { DEFAULT_B } from "./initialization";
 
 /**
  * Get event probability from LMSR parameters
@@ -19,7 +20,7 @@ export function getEventProbability(event: {
 }): number {
   const qYes = event.q_yes ?? 0;
   const qNo = event.q_no ?? 0;
-  const b = event.b ?? 100; // fallback to default if not set
+  const b = event.b ?? DEFAULT_B;
 
   return getPrice(qYes, qNo, b, "YES") * 100;
 }

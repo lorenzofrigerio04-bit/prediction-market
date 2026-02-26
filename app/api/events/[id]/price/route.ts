@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCachedPrice, setCachedPrice } from "@/lib/cache/price";
 import { getEventProbability } from "@/lib/pricing/price-display";
+import { DEFAULT_B } from "@/lib/pricing/initialization";
 
 /**
  * GET /api/events/[id]/price — current market price (probability). Cached 1s.
@@ -38,7 +39,7 @@ export async function GET(
 
     const qYes = 0;
     const qNo = 0;
-    const b = event.b ?? 100;
+    const b = event.b ?? DEFAULT_B;
     const probability = getEventProbability(event);
 
     const data = {

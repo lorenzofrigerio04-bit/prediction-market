@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import {
   getNextDailyBonusAmount,
   getDailyBonusMultiplier,
+  getDisplayCredits,
 } from "@/lib/credits-config";
 
 export const dynamic = "force-dynamic";
@@ -76,8 +77,12 @@ export async function GET() {
     });
     const totalSpent = Math.abs(totalSpentResult._sum.amount ?? 0);
 
-    return NextResponse.json({
+    const credits = getDisplayCredits({
       credits: user.credits,
+      creditsMicros: user.creditsMicros,
+    });
+    return NextResponse.json({
+      credits,
       creditsMicros: user.creditsMicros != null ? user.creditsMicros.toString() : null,
       totalEarned: user.totalEarned,
       totalSpent,

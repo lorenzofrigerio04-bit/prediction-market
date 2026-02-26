@@ -1,4 +1,5 @@
 import type { PrismaClient, Prisma } from "@prisma/client";
+import { DEFAULT_B } from "@/lib/pricing/initialization";
 
 type Tx = Omit<
   Prisma.TransactionClient,
@@ -20,7 +21,7 @@ export async function ensureAmmStateForEvent(
   if (!event || event.tradingMode !== "AMM") return;
   if (event.ammState) return;
 
-  const bMicros = BigInt(Math.round((event.b ?? 100) * 1_000_000));
+  const bMicros = BigInt(Math.round((event.b ?? DEFAULT_B) * 1_000_000));
   await prismaOrTx.ammState.create({
     data: {
       eventId,

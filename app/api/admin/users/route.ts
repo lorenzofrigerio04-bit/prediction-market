@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
+import { getDisplayCredits } from "@/lib/credits-config";
 
 /**
  * GET /api/admin/users
@@ -35,6 +36,7 @@ export async function GET(request: NextRequest) {
           name: true,
           role: true,
           credits: true,
+          creditsMicros: true,
           createdAt: true,
         },
       }),
@@ -47,7 +49,10 @@ export async function GET(request: NextRequest) {
         email: u.email,
         name: u.name,
         role: u.role || "USER",
-        credits: u.credits,
+        credits: getDisplayCredits({
+          credits: u.credits,
+          creditsMicros: u.creditsMicros,
+        }),
         createdAt: u.createdAt.toISOString(),
       })),
       pagination: {

@@ -205,7 +205,7 @@ export interface ConsigliatiEvent {
   };
 }
 
-function getBackdropClass(category: string): string {
+export function getBackdropClass(category: string): string {
   const slug = categoryToSlug(category);
   const allowed = [
     "cultura",
@@ -473,7 +473,12 @@ function ConsigliatiSlide({
 
 const CONSIGLIATI_PAGE_SIZE = 30;
 
-export default function ConsigliatiFeed() {
+export interface ConsigliatiFeedProps {
+  /** Chiamato quando cambia la slide visibile; usato per lo sfondo full-viewport (stessa foto dietro header/tab/strip). */
+  onSlideChange?: (backdropClass: string) => void;
+}
+
+export default function ConsigliatiFeed({ onSlideChange }: ConsigliatiFeedProps) {
   const { data: session } = useSession();
   const [events, setEvents] = useState<ConsigliatiEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -642,6 +647,14 @@ export default function ConsigliatiFeed() {
     onScroll();
     return () => el.removeEventListener("scroll", onScroll);
   }, [events.length]);
+
+  /* Sfondo full-viewport: notifica la slide corrente così la stessa foto sta dietro header/tab/strip */
+  useEffect(() => {
+    if (!onSlideChange || events.length === 0) return;
+    const idx = Math.max(0, Math.min(currentIndex, events.length - 1));
+    const category = events[idx]?.category ?? "Sport";
+    onSlideChange(getBackdropClass(category));
+  }, [currentIndex, events, onSlideChange]);
 
   if (loading) {
     return (

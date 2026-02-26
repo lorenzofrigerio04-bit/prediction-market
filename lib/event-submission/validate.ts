@@ -6,6 +6,7 @@
 import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { ensureAmmStateForEvent } from "@/lib/amm/ensure-amm-state";
+import { getBParameterOrDefault } from "@/lib/pricing/initialization";
 
 export const ALLOWED_CATEGORIES = [
   "Sport",
@@ -309,7 +310,7 @@ export async function createEventFromSubmission(
           : "Evento creato dalla community.",
         createdById: submittedById,
         dedupKey,
-        b: 100.0,
+        b: getBParameterOrDefault(normalizedCategory),
         resolutionBufferHours: 24,
         resolved: false,
         resolutionStatus: "PENDING",

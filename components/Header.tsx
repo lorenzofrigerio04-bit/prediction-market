@@ -11,11 +11,10 @@ import {
   IconSearch,
   IconTrophy,
   IconUser,
-  IconPlus,
   IconMenu,
   IconNavHome,
   IconNavDiscover,
-  IconNavCreate,
+  IconNavExplore,
   IconNavTrophy,
   IconNavProfile,
 } from "@/components/ui/Icons";
@@ -24,7 +23,7 @@ import {
 const MAIN_NAV_ITEMS = [
   { href: "/", label: "Home", Icon: IconChart, NavIcon: IconNavHome },
   { href: "/discover", label: "Eventi", Icon: IconSearch, NavIcon: IconNavDiscover },
-  { href: "/crea", label: "Crea", Icon: IconPlus, NavIcon: IconNavCreate },
+  { href: "/esplora", label: "Esplora", Icon: IconNavExplore, NavIcon: IconNavExplore },
   { href: "/leaderboard", label: "Classifica", Icon: IconTrophy, NavIcon: IconNavTrophy },
   { href: "/profile", label: "Profilo", Icon: IconUser, NavIcon: IconNavProfile },
 ] as const;
@@ -44,9 +43,6 @@ export default function Header() {
   const profileHref = session
     ? "/profile"
     : `/auth/login?callbackUrl=${encodeURIComponent(pathname || "/")}`;
-  const creaHref = session
-    ? "/crea"
-    : `/auth/login?callbackUrl=${encodeURIComponent("/crea")}`;
 
   return (
     <>
@@ -61,7 +57,7 @@ export default function Header() {
             {/* Desktop: 5 voci principali (navigazione core) */}
             <nav className="hidden md:flex items-center gap-1" aria-label="Menu principale">
               {MAIN_NAV_ITEMS.map(({ href, label, Icon }) => {
-                const linkHref = href === "/profile" ? profileHref : href === "/crea" ? creaHref : href;
+                const linkHref = href === "/profile" ? profileHref : href;
                 return (
                 <Link
                   key={href}
@@ -101,7 +97,7 @@ export default function Header() {
       >
         <div className="nav-bottom-neon-inner flex items-center justify-around px-1">
           {MAIN_NAV_ITEMS.map(({ href, label, NavIcon }) => {
-            const linkHref = href === "/profile" ? profileHref : href === "/crea" ? creaHref : href;
+            const linkHref = href === "/profile" ? profileHref : href;
             const active = isActive(linkHref);
             return (
               <Link

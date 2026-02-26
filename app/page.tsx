@@ -476,7 +476,7 @@ export default function Home() {
         <div className="pt-4 sm:pt-5">
           <HomeCarouselBox
             title="Più previsti ora"
-            viewAllHref="/discover/tutti?status=open&sort=popular"
+            viewAllHref="/esplora?category=tutti&status=open&sort=popular"
             viewAllLabel="Vedi tutti"
             events={debugMode ? mostPredicted : mostPredicted.filter((e) => !isDebugTitle(e.title))}
             loading={loadingMostPredicted}
@@ -488,7 +488,7 @@ export default function Home() {
         <div className="border-t border-white/10 pt-4 sm:pt-5">
           <HomeCarouselBox
             title="Eventi in scadenza"
-            viewAllHref="/discover/tutti?status=open&sort=expiring"
+            viewAllHref="/esplora?category=tutti&status=open&sort=expiring"
             viewAllLabel="Vedi tutti"
             events={debugMode ? closingSoon : closingSoon.filter((e) => !isDebugTitle(e.title))}
             loading={loadingClosingSoon}
@@ -500,8 +500,8 @@ export default function Home() {
         <div className="border-t border-white/10 pt-4 sm:pt-5">
           <HomeCarouselBox
             title="Potrebbe piacerti"
-            viewAllHref="/discover/tutti"
-            viewAllLabel="Esplora tutti"
+            viewAllHref="/esplora?category=tutti&status=open&sort=popular"
+            viewAllLabel="Vedi tutti"
             events={debugMode ? forYouEvents : forYouEvents.filter((e) => !isDebugTitle(e.title))}
             loading={loadingForYou}
             variant="foryou"

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { applyCreditTransaction } from "@/lib/apply-credit-transaction";
+import { getDisplayCredits } from "@/lib/credits-config";
 
 export async function POST(request: Request) {
   try {
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { credits: true },
+      select: { credits: true, creditsMicros: true },
     });
 
     if (!user) {
@@ -48,7 +49,11 @@ export async function POST(request: Request) {
       );
     }
 
-    if (user.credits < item.priceCredits) {
+    const balance = getDisplayCredits({
+      credits: user.credits,
+      creditsMicros: user.creditsMicros,
+    });
+    if (balance < item.priceCredits) {
       return NextResponse.json(
         { error: "Crediti insufficienti" },
         { status: 400 }

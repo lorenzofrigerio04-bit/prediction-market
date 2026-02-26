@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getCachedPrice, setCachedPrice } from "@/lib/cache/price";
-import { getEventProbability } from "@/lib/pricing/price-display";
+import { setCachedPrice } from "@/lib/cache/price";
+import { DEFAULT_B } from "@/lib/pricing/initialization";
 import { priceYesMicros, SCALE } from "@/lib/amm/fixedPointLmsr";
 
 export const dynamic = "force-dynamic";
@@ -15,8 +15,6 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     const eventId = params.id;
-
-    let cachedPrice = await getCachedPrice(eventId);
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
@@ -44,65 +42,105 @@ export async function GET(
       );
     }
 
-    let probability: number;
-    if (event.tradingMode === "AMM") {
-      const amm = await prisma.ammState.findUnique({ where: { eventId: event.id } });
-      if (amm) {
-        const yesMicros = priceYesMicros(amm.qYesMicros, amm.qNoMicros, amm.bMicros);
-        probability = Number((yesMicros * 100n) / SCALE);
-      } else {
-        probability = 50;
-      }
-      setCachedPrice(eventId, { eventId: event.id, probability, q_yes: 0, q_no: 0, b: 100 }).catch(() => {});
-    } else {
-      const priceData = {
-        eventId: event.id,
-        probability: getEventProbability(event),
-        q_yes: 0,
-        q_no: 0,
-        b: event.b ?? 100,
-      };
-      setCachedPrice(eventId, priceData).catch(() => {});
-      probability = cachedPrice?.probability ?? priceData.probability;
+    const amm = await prisma.ammState.findUnique({ where: { eventId: event.id } });
+    let probability = 50;
+    if (amm) {
+      const yesMicros = priceYesMicros(amm.qYesMicros, amm.qNoMicros, amm.bMicros);
+      probability = Number((yesMicros * 100n) / SCALE);
     }
+    setCachedPrice(eventId, { eventId: event.id, probability, q_yes: 0, q_no: 0, b: DEFAULT_B }).catch(() => {});
     (event as { probability?: number }).probability = probability;
 
-    let userPrediction = null;
-    let userPosition: { yesShareMicros: string; noShareMicros: string } | null = null;
+    let userPosition: { yesShareMicros: string; noShareMicros: string; positionCostMicros?: string; positionYesCostMicros?: string; positionNoCostMicros?: string } | null = null;
+    let tradeHistory: { id: string; side: string; outcome: string; shareMicros: string; costMicros: string; createdAt: string; realizedPlMicros: string | null }[] = [];
     let isFollowing = false;
     if (session?.user?.id) {
-      const [pred, follow, position] = await Promise.all([
-        prisma.prediction.findUnique({
-          where: {
-            eventId_userId: { eventId: event.id, userId: session.user.id },
-          },
-        }),
+      const [follow, position, costBySide, history] = await Promise.all([
         prisma.eventFollower.findUnique({
           where: {
             userId_eventId: { userId: session.user.id, eventId: event.id },
           },
         }),
-        event.tradingMode === "AMM"
-          ? prisma.position.findUnique({
-              where: { eventId_userId: { eventId: event.id, userId: session.user.id } },
-              select: { yesShareMicros: true, noShareMicros: true },
-            })
-          : Promise.resolve(null),
+        prisma.position.findUnique({
+          where: { eventId_userId: { eventId: event.id, userId: session.user.id } },
+          select: { yesShareMicros: true, noShareMicros: true },
+        }),
+        prisma.trade
+          .findMany({
+            where: {
+              eventId: event.id,
+              userId: session.user.id,
+              side: "BUY",
+            },
+            select: { costMicros: true, outcome: true },
+          })
+          .then((trades) => {
+            let total = 0n;
+            let yesCost = 0n;
+            let noCost = 0n;
+            for (const t of trades) {
+              const abs = t.costMicros < 0n ? -t.costMicros : t.costMicros;
+              total += abs;
+              if (t.outcome === "YES") yesCost += abs;
+              else if (t.outcome === "NO") noCost += abs;
+            }
+            return { total, yesCost, noCost };
+          }),
+        prisma.trade.findMany({
+          where: { eventId: event.id, userId: session.user.id },
+          orderBy: { createdAt: "desc" },
+          select: { id: true, side: true, outcome: true, shareMicros: true, costMicros: true, createdAt: true, realizedPlMicros: true },
+        }),
       ]);
-      userPrediction = pred;
       isFollowing = !!follow;
+      tradeHistory = history.map((t) => ({
+        id: t.id,
+        side: t.side,
+        outcome: t.outcome,
+        shareMicros: t.shareMicros.toString(),
+        costMicros: t.costMicros.toString(),
+        createdAt: t.createdAt.toISOString(),
+        realizedPlMicros: t.realizedPlMicros != null ? t.realizedPlMicros.toString() : null,
+      }));
+
+      // Cost basis residuo: sottrae il cost basis già "consumato" nelle vendite parziali,
+      // così "HAI: X quote acquistate per Y crediti" e P&L si riferiscono solo alle quote ancora possedute.
+      let remainingYesCostMicros = costBySide.yesCost;
+      let remainingNoCostMicros = costBySide.noCost;
+      for (const t of history) {
+        if (t.side !== "SELL" || t.realizedPlMicros == null) continue;
+        const proceedsMicros = t.costMicros > 0n ? t.costMicros : -t.costMicros;
+        const costBasisUsedMicros = proceedsMicros - t.realizedPlMicros;
+        if (t.outcome === "YES") {
+          remainingYesCostMicros =
+            remainingYesCostMicros - costBasisUsedMicros > 0n
+              ? remainingYesCostMicros - costBasisUsedMicros
+              : 0n;
+        } else {
+          remainingNoCostMicros =
+            remainingNoCostMicros - costBasisUsedMicros > 0n
+              ? remainingNoCostMicros - costBasisUsedMicros
+              : 0n;
+        }
+      }
+      const totalRemainingCostMicros = remainingYesCostMicros + remainingNoCostMicros;
+
       if (position) {
         userPosition = {
           yesShareMicros: position.yesShareMicros.toString(),
           noShareMicros: position.noShareMicros.toString(),
+          positionCostMicros: totalRemainingCostMicros.toString(),
+          positionYesCostMicros: remainingYesCostMicros.toString(),
+          positionNoCostMicros: remainingNoCostMicros.toString(),
         };
       }
     }
 
     const res = NextResponse.json({
       event,
-      userPrediction,
+      userPrediction: null,
       userPosition,
+      tradeHistory,
       isFollowing,
     });
     res.headers.set("Cache-Control", "private, no-store, no-cache, must-revalidate");

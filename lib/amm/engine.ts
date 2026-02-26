@@ -242,6 +242,15 @@ export async function executeBuyShares(
     },
   });
 
+  // Aggiorna crediti in gioco sull'evento (sempre in crediti interi, non micro)
+  const creditsToAdd = Math.floor(Number(actualCostMicros) / 1_000_000);
+  if (creditsToAdd > 0) {
+    await tx.event.update({
+      where: { id: eventId },
+      data: { totalCredits: { increment: creditsToAdd } },
+    });
+  }
+
   const position = await tx.position.findUniqueOrThrow({
     where: { eventId_userId: { eventId, userId } },
     select: { yesShareMicros: true, noShareMicros: true },

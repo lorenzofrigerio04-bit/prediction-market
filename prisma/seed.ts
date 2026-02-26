@@ -5,6 +5,7 @@ import { parseOutcomeDateFromText } from '../lib/event-generation/closes-at';
 import { getClosureRules } from '../lib/event-generation/config';
 import { computeDedupKey } from '../lib/event-publishing/dedup';
 import { ensureAmmStateForEvent } from '../lib/amm/ensure-amm-state';
+import { getBParameterOrDefault } from '../lib/pricing/initialization';
 
 const prisma = new PrismaClient();
 
@@ -198,7 +199,7 @@ async function main() {
         description: def.description,
         category: def.category,
         closesAt,
-        b: 100,
+        b: getBParameterOrDefault(def.category),
         resolutionSourceUrl: 'https://example.com/source',
         resolutionNotes: 'Risoluzione secondo fonte ufficiale alla data di chiusura.',
         createdById: admin.id,

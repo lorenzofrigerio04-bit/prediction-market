@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     const newStreak = (user.streakCount || 0) + 1;
     const bonusAmount = getNextDailyBonusAmount(user.streakCount, true);
     const multiplier = (bonusAmount / DAILY_BONUS_BASE).toFixed(1);
-    const updatedUser = await prisma.$transaction(async (tx) => {
+    const { newCredits, newStreak: streakCount } = await prisma.$transaction(async (tx) => {
       const newCredits = await applyCreditTransaction(
         tx,
         userId,
@@ -78,9 +78,9 @@ export async function POST(request: Request) {
       });
       const userAfter = await tx.user.findUnique({
         where: { id: userId },
-        select: { credits: true, streakCount: true },
+        select: { streakCount: true },
       });
-      return userAfter!;
+      return { newCredits, newStreak: userAfter!.streakCount };
     });
 
     // Missione "Login giornaliero" e badge (streak può aver sbloccato badge)
@@ -100,8 +100,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       bonusAmount,
-      newCredits: updatedUser.credits,
-      newStreak: updatedUser.streakCount,
+      newCredits,
+      newStreak: streakCount,
     });
   } catch (error) {
     console.error("Error claiming daily bonus:", error);

@@ -73,24 +73,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const now = new Date();
-    const isOpen = !event.resolved && (!event.closesAt || new Date(event.closesAt) > now);
-
     if (event.tradingMode !== "AMM") {
-      if (!isOpen) {
-        return NextResponse.json(
-          { error: "Questo evento non supporta acquisti. Solo mercati AMM sono attivi." },
-          { status: 400 }
-        );
-      }
-      await prisma.$transaction(async (tx) => {
-        await tx.event.update({
-          where: { id: eventId },
-          data: { tradingMode: "AMM" },
-        });
-        await ensureAmmStateForEvent(tx, eventId);
-      });
-      (event as { tradingMode: string }).tradingMode = "AMM";
+      return NextResponse.json(
+        { error: "Solo mercati AMM supportati." },
+        { status: 400 }
+      );
     }
 
     await ensureAmmStateForEvent(prisma, eventId);

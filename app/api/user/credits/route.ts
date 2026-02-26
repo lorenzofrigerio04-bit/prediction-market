@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getDisplayCredits } from "@/lib/credits-config";
 
 export const dynamic = "force-dynamic";
 
@@ -31,8 +32,12 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({
+    const credits = getDisplayCredits({
       credits: user.credits,
+      creditsMicros: user.creditsMicros,
+    });
+    return NextResponse.json({
+      credits,
       creditsMicros: user.creditsMicros != null ? user.creditsMicros.toString() : null,
     });
   } catch (error) {

@@ -167,6 +167,17 @@ export function IconNavCreate({ className, ...props }: SVGProps<SVGSVGElement>) 
   );
 }
 
+/** Esplora: bussola per nav (scopri tutti gli eventi) */
+export function IconNavExplore({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <NavIcon className={className} {...props}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v2M12 20v2M2 12h2M20 12h2" />
+      <path d="m4.93 4.93 1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+    </NavIcon>
+  );
+}
+
 export function IconMenu({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <Icon className={className} {...props}>

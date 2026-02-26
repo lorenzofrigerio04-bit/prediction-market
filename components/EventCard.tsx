@@ -36,20 +36,17 @@ interface EventCardProps {
 
 function useEventDerived(event: EventCardEvent) {
   return useMemo(() => {
-    const qYes = event.q_yes ?? 0;
-    const qNo = event.q_no ?? 0;
-    const b = event.b ?? 100;
-    // Sempre LMSR: percentuale da q_yes, q_no, b (0/0 → 50%)
-    const yesPct = b > 0 ? Math.round(getEventProbability({ q_yes: qYes, q_no: qNo, b })) : 50;
+    // Prezzo = probabilità (AMM): da API o fallback
+    const yesPct = typeof event.probability === "number" ? event.probability : (event.q_yes != null && event.q_no != null && event.b != null ? Math.round(getEventProbability({ q_yes: event.q_yes, q_no: event.q_no, b: event.b })) : 50);
     const noPct = 100 - yesPct;
     const total = event.totalCredits || 0;
-    const yes = qYes;
-    const no = qNo;
-    const totalForMultiplier = total > 0 ? total : (qYes + qNo > 0 ? qYes + qNo : 1);
+    const yes = event.q_yes ?? 0;
+    const no = event.q_no ?? 0;
+    const totalForMultiplier = total > 0 ? total : (yes + no > 0 ? yes + no : 1);
     const yesMultiplier = yes > 0 ? Math.max(1, totalForMultiplier / yes) : 1;
     const noMultiplier = no > 0 ? Math.max(1, totalForMultiplier / no) : 1;
     return { yesPct, noPct, yesMultiplier, noMultiplier };
-  }, [event.totalCredits, event.q_yes, event.q_no, event.b]);
+  }, [event.probability, event.totalCredits, event.q_yes, event.q_no, event.b]);
 }
 
 function getTimeRemaining(closesAt: string | Date, countdownMs?: number): string {

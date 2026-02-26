@@ -1,20 +1,14 @@
 /**
  * LMSR Parameter Initialization
- * 
- * Defines b parameter strategy by category and hype multiplier.
- * 
- * b parameter values by category:
- * - Sport: 100
- * - Politica: 150
- * - Economia: 200
- * - Tecnologia: 120
- * - Cultura: 80
- * - Scienza: 130
- * 
- * Hype multipliers:
- * - High: 1.5
- * - Medium: 1.0
- * - Low: 0.7
+ *
+ * b = liquidità: più alto = meno slippage, prezzo medio acquisto/vendita vicino al prezzo mostrato.
+ * Con LIQUIDITY_MULTIPLIER alto, il prezzo è determinato dall'interesse collettivo (chi compra SÌ/NO),
+ * non dalla dimensione del singolo ordine.
+ *
+ * Base b per categoria × LIQUIDITY_MULTIPLIER (es. 25):
+ * - Sport: 12500, Politica: 18750, Economia: 25000, Tecnologia: 15000, ...
+ *
+ * Hype multipliers: High 1.5, Medium 1.0, Low 0.7
  */
 
 export type Category =
@@ -28,17 +22,20 @@ export type Category =
 
 export type HypeLevel = "High" | "Medium" | "Low";
 
+/** Moltiplicatore di liquidità: prezzo medio ≈ prezzo mostrato, slippage ridotto */
+const LIQUIDITY_MULTIPLIER = 25;
+
 /**
- * Base b parameter values by category
+ * Base b parameter values by category (prima del moltiplicatore liquidità)
  */
 const BASE_B_PARAMETERS: Record<Category, number> = {
-  Sport: 100,
-  Politica: 150,
-  Economia: 200,
-  Tecnologia: 120,
-  Cultura: 80,
-  Scienza: 130,
-  Intrattenimento: 80,
+  Sport: 500,
+  Politica: 750,
+  Economia: 1000,
+  Tecnologia: 600,
+  Cultura: 400,
+  Scienza: 650,
+  Intrattenimento: 400,
 };
 
 /**
@@ -49,6 +46,9 @@ const HYPE_MULTIPLIERS: Record<HypeLevel, number> = {
   Medium: 1.0,
   Low: 0.7,
 };
+
+/** Valore b di fallback quando categoria sconosciuta (alta liquidità) */
+export const DEFAULT_B = 500 * LIQUIDITY_MULTIPLIER; // 12500
 
 /**
  * Get the b parameter for a given category and hype score
@@ -71,14 +71,25 @@ export function getBParameter(
     throw new Error(`Unknown hype level: ${hypeScore}`);
   }
 
-  const b = baseB * multiplier;
-  
+  const b = baseB * multiplier * LIQUIDITY_MULTIPLIER;
+
   // Ensure b is positive and reasonable
   if (b <= 0) {
     throw new Error(`Invalid b parameter: ${b}. Must be positive.`);
   }
 
   return b;
+}
+
+/**
+ * Restituisce b per una categoria (string); se categoria non valida, restituisce DEFAULT_B.
+ */
+export function getBParameterOrDefault(category: string): number {
+  const cat = category as Category;
+  if (BASE_B_PARAMETERS[cat] != null) {
+    return getBParameter(cat, "Medium");
+  }
+  return DEFAULT_B;
 }
 
 /**

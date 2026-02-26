@@ -41,8 +41,7 @@ async function main() {
     }
 
     console.log("💡 Per risolvere questi eventi:");
-    console.log("   1. Chiama POST /api/events/resolve-closed");
-    console.log("   2. Oppure risolvi manualmente: POST /api/events/resolve/[eventId]");
+    console.log("   Usa Admin → Risoluzione oppure POST /api/admin/events/[id]/resolve con { outcome: 'YES' | 'NO' }");
   } else {
     console.log("✅ Tutti gli eventi chiusi sono già stati risolti!");
   }

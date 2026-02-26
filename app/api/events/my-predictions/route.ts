@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { priceYesMicros, SCALE } from "@/lib/amm/fixedPointLmsr";
-import { getEventProbability } from "@/lib/pricing/price-display";
 
 export const dynamic = "force-dynamic";
 
@@ -32,27 +31,15 @@ export async function GET() {
     }
     const userId = session.user.id;
 
-    // Eventi in cui l'utente ha una position (AMM) o una prediction (legacy)
-    const [positions, predictions] = await Promise.all([
-      prisma.position.findMany({
-        where: { userId },
-        select: {
-          eventId: true,
-          yesShareMicros: true,
-          noShareMicros: true,
-        },
-      }),
-      prisma.prediction.findMany({
-        where: { userId },
-        select: { eventId: true, outcome: true },
-      }),
-    ]);
-
-    const eventIdsFromPositions = new Set(positions.map((p) => p.eventId));
-    const eventIdsFromPredictions = new Set(
-      predictions.filter((p) => !eventIdsFromPositions.has(p.eventId)).map((p) => p.eventId)
-    );
-    const allEventIds = [...eventIdsFromPositions, ...eventIdsFromPredictions];
+    const positions = await prisma.position.findMany({
+      where: { userId },
+      select: {
+        eventId: true,
+        yesShareMicros: true,
+        noShareMicros: true,
+      },
+    });
+    const allEventIds = positions.map((p) => p.eventId);
     if (allEventIds.length === 0) {
       return NextResponse.json({
         events: [],
@@ -88,29 +75,22 @@ export async function GET() {
               : "NO";
       positionByEvent.set(p.eventId, { userSide: side });
     });
-    const predictionOutcomeByEvent = new Map(
-      predictions.map((p) => [p.eventId, p.outcome as "YES" | "NO"])
-    );
 
     const now = new Date();
     const result: MyPredictionEvent[] = events
       .filter((e) => e.closesAt > now && !e.resolved)
       .map((e) => {
-        let probability: number;
-        if (e.tradingMode === "AMM" && e.ammState) {
+        let probability = 50;
+        if (e.ammState) {
           const yesMicros = priceYesMicros(
             e.ammState.qYesMicros,
             e.ammState.qNoMicros,
             e.ammState.bMicros
           );
           probability = Number((yesMicros * 100n) / SCALE);
-        } else {
-          probability = getEventProbability(e);
         }
         const pos = positionByEvent.get(e.id);
-        const predOutcome = predictionOutcomeByEvent.get(e.id);
-        const userSide: "YES" | "NO" =
-          pos?.userSide ?? (predOutcome === "YES" ? "YES" : "NO");
+        const userSide: "YES" | "NO" = pos?.userSide ?? "YES";
         const userWinProbability =
           userSide === "YES" ? probability : 100 - probability;
 

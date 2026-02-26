@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { track } from "@/lib/analytics";
-import { INITIAL_CREDITS } from "@/lib/credits-config";
+import { CREDITS_SCALE, INITIAL_CREDITS } from "@/lib/credits-config";
 
 const SIGNUP_LIMIT = 5; // richieste signup per IP per minuto
 
@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
         name: name || null,
         password: hashedPassword,
         credits: INITIAL_CREDITS,
+        creditsMicros: BigInt(INITIAL_CREDITS) * BigInt(CREDITS_SCALE),
       },
     });
 

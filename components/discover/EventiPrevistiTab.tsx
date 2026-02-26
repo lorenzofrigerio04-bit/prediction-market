@@ -180,7 +180,7 @@ export default function EventiPrevistiTab({
 
         {/* 1) Eventi in vantaggio */}
         <SeguitiSection
-          title="Eventi in vantaggio"
+          title={`Eventi in vantaggio (${inVantaggio?.events?.length ?? 0})`}
           topN={10}
           topEvents={inVantaggio?.topInLead ?? []}
           allEvents={inVantaggio?.events ?? []}
@@ -194,7 +194,7 @@ export default function EventiPrevistiTab({
         {/* 2) Eventi seguiti */}
         <div className="border-t border-white/10 pt-4 sm:pt-5">
           <SeguitiSection
-            title="Eventi seguiti"
+            title={`Eventi seguiti (${seguiti?.events?.length ?? 0})`}
             topN={10}
             topEvents={seguiti?.topFollowed ?? []}
             allEvents={seguiti?.events ?? []}
@@ -206,9 +206,9 @@ export default function EventiPrevistiTab({
         </div>
 
         {/* 3) I tuoi eventi creati */}
-        <div className="border-t border-white/10 pt-4 sm:pt-5">
+        <div id="creati" className="border-t border-white/10 pt-4 sm:pt-5">
           <SeguitiSection
-            title="I tuoi eventi creati"
+            title={`I tuoi eventi creati (${creati?.events?.length ?? 0})`}
             topN={3}
             topEvents={creati?.topCreated ?? []}
             allEvents={creati?.events ?? []}
