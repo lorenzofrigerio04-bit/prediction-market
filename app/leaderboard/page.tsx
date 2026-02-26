@@ -29,7 +29,7 @@ interface LeaderboardUser {
   rank: number;
   id: string;
   name: string | null;
-  email: string;
+  email: string | null;
   image: string | null;
   accuracy: number;
   roi: number;

@@ -18,7 +18,7 @@ interface LeaderboardUser {
   rank: number;
   id: string;
   name: string | null;
-  email: string;
+  email: string | null;
   image: string | null;
   roi: number;
   streak: number;
