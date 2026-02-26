@@ -104,7 +104,7 @@
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
-  --bottom-nav-h: 64px;
+  --bottom-nav-h: 56px;
   --header-height: 3.5rem;
   --discover-tab-bar-h: 52px;
   /* Landing: altezza area sopra la fold (header + main pt + bottom nav esclusi) */
@@ -2891,6 +2891,11 @@ body.discover-consigliati-active .discover-consigliati-strip-zone {
 .discover-page ~ footer,
 body:has(.discover-page) > footer {
   background: transparent !important;
+}
+
+/* Eventi consigliati (lista): nascondi del tutto il footer "PredictionMaster" così non copre la bottom nav */
+body:has(.discover-consigliati-list-page) > footer {
+  display: none !important;
 }
 
 /* Discover: category boxes premium — bordi sottili, superficie più definita */

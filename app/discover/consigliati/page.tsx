@@ -200,7 +200,7 @@ export default function DiscoverConsigliatiPage() {
   const displayedEvents = events;
 
   return (
-    <div className="min-h-screen discover-page">
+    <div className="min-h-screen discover-page discover-consigliati-list-page">
       <Header />
 
       {/* Tab bar + strip link: come in /discover, sotto il link passa alla visione verticale */}
