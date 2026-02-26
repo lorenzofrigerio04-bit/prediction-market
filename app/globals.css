@@ -483,6 +483,10 @@ textarea:focus-visible {
 }
 
 /* —— Brand logo: Prediction neutro, Master in tinta palette (premium, tech) —— */
+/* Forza Syne per logo (header) e footer ovunque, anche se i font caricano in ritardo */
+.brand-logo__text {
+  font-family: 'Syne', 'Outfit', system-ui, sans-serif !important;
+}
 .brand-logo__word--prediction {
   color: rgb(15 23 42);
 }
@@ -516,8 +520,9 @@ textarea:focus-visible {
   text-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
 }
 
-/* Hero: sfondo trasparente, linee neon blu sottili, testo bianco */
+/* Hero: sfondo trasparente, linee neon blu sottili, testo bianco — corpo in Outfit */
 .landing-hero-card {
+  font-family: 'Outfit', system-ui, sans-serif;
   position: relative;
   background: transparent;
   border: none;
@@ -564,7 +569,7 @@ textarea:focus-visible {
 }
 .landing-hero-eyebrow {
   letter-spacing: 0.08em;
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: 'Outfit', system-ui, sans-serif !important;
   font-weight: 600;
 }
 
@@ -603,6 +608,7 @@ textarea:focus-visible {
 
 /* Bottoni: sfondo trasparente — primary bordo bianco LED, secondary bordo blu LED leggero */
 .landing-cta-primary {
+  font-family: 'Outfit', system-ui, sans-serif !important;
   background: transparent;
   color: rgb(255 255 255);
   border: 1px solid rgb(255 255 255 / 0.9);
@@ -613,6 +619,7 @@ textarea:focus-visible {
   box-shadow: 0 0 20px rgb(255 255 255 / 0.45), inset 0 0 18px rgb(255 255 255 / 0.08);
 }
 .landing-cta-secondary {
+  font-family: 'Outfit', system-ui, sans-serif !important;
   background: transparent;
   color: rgb(255 255 255);
   border: 1px solid rgb(96 165 250 / 0.6);
@@ -624,6 +631,7 @@ textarea:focus-visible {
 }
 /* Bottone "Prevedi...gratis" in fondo pagina: bordo blu (stile come secondary ma pieno blu) */
 .landing-cta-primary--blue {
+  font-family: 'Outfit', system-ui, sans-serif !important;
   border-color: rgb(96 165 250 / 0.85);
   box-shadow: 0 0 14px rgb(96 165 250 / 0.3), inset 0 0 14px rgb(96 165 250 / 0.06);
 }
@@ -633,7 +641,7 @@ textarea:focus-visible {
 }
 
 .landing-section-title {
-  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+  font-family: 'Syne', 'Outfit', system-ui, sans-serif !important;
   font-weight: 700;
   color: rgb(255 255 255);
 }
@@ -763,7 +771,7 @@ textarea:focus-visible {
 
 /* Titolo hero: colore chiaro, leggero effetto “illuminato” dalle due linee (nessun neon) */
 .landing-hero-title {
-  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+  font-family: 'Syne', 'Outfit', system-ui, sans-serif !important;
   font-weight: 800;
   color: rgb(230 235 245);
   text-shadow: 0 0 20px rgb(255 255 255 / 0.08), 0 1px 2px rgb(0 0 0 / 0.2);
