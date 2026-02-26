@@ -128,6 +128,7 @@ export async function GET(request: Request) {
             : 0;
 
         return {
+          rank: 0, // filled after sort in rankedData
           id: user.id,
           name: user.name,
           email: user.email,
@@ -141,7 +142,7 @@ export async function GET(request: Request) {
           totalPredictions: periodStats.totalPredictions,
           correctPredictions: periodStats.correctPredictions,
           badges: [], // filled below
-        } as LeaderboardUser;
+        };
       })
     );
 
