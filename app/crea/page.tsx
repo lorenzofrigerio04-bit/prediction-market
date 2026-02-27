@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import { LoadingBlock } from "@/components/ui";
@@ -10,6 +11,7 @@ import CreaEventHomeBox from "@/components/crea/CreaEventHomeBox";
 import CrystalBallOnly from "@/components/crea/CrystalBallOnly";
 import CrystalBallStep from "@/components/crea/CrystalBallStep";
 import EventInRevisionModal from "@/components/crea/EventInRevisionModal";
+import PublishPhoneModal from "@/components/crea/PublishPhoneModal";
 
 type SubmitStatus = "idle" | "loading" | "approved" | "rejected" | "pendingReview";
 
@@ -29,6 +31,7 @@ const labelClass = "block text-ds-body-sm font-semibold text-white/90 mb-1.5";
 
 export default function CreaPage() {
   const { status } = useSession();
+  const router = useRouter();
   const [categories, setCategories] = useState<string[]>([]);
   const [loadingCat, setLoadingCat] = useState(true);
   const [title, setTitle] = useState("");
@@ -45,6 +48,8 @@ export default function CreaPage() {
   const [slideApplied, setSlideApplied] = useState(false);
   /** Titolo "confermato" = utente ha fatto blur o Invio sulla tastiera; lo step 3 si mostra solo dopo */
   const [titleConfirmed, setTitleConfirmed] = useState(false);
+  /** Popup telefono + termini prima di inviare (stato "confirmed") */
+  const [showPublishPhoneModal, setShowPublishPhoneModal] = useState(false);
 
   const minDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
 
@@ -68,7 +73,11 @@ export default function CreaPage() {
     fetchCategories();
   }, [fetchCategories]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (showPublishPhoneModal) setErrorMsg("");
+  }, [showPublishPhoneModal]);
+
+  const handleSubmit = async (e: React.FormEvent, notifyPhone?: string) => {
     e.preventDefault();
     if (status !== "authenticated") {
       setErrorMsg("Devi effettuare il login per creare un evento.");
@@ -90,18 +99,28 @@ export default function CreaPage() {
           category,
           closesAt: new Date(closesAt).toISOString(),
           resolutionSource: resolutionSource.trim() || null,
+          ...(notifyPhone != null && notifyPhone.trim() ? { notifyPhone: notifyPhone.trim() } : {}),
         }),
       });
-      const data = await res.json();
-      if (data.approved) {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErrorMsg(data.error || data.message || "Errore durante l'invio. Riprova.");
+        setSubmitStatus("idle");
+        return;
+      }
+      if (data.approved && data.eventId) {
         setSubmitResult(data);
         setSubmitStatus("approved");
+        setShowPublishPhoneModal(false);
       } else if (data.pendingReview && data.submissionId) {
         setSubmitResult(data);
         setSubmitStatus("pendingReview");
+        setShowPublishPhoneModal(false);
+        router.replace("/discover?tab=seguiti#creati");
       } else {
         setSubmitResult(data);
         setSubmitStatus("rejected");
+        setShowPublishPhoneModal(false);
       }
     } catch {
       setErrorMsg("Errore di rete. Riprova.");
@@ -146,7 +165,7 @@ export default function CreaPage() {
     if (confirmState !== "retracting") return;
     const t = setTimeout(() => {
       setConfirmState("sliding");
-    }, 520);
+    }, 600);
     return () => clearTimeout(t);
   }, [confirmState]);
 
@@ -160,7 +179,7 @@ export default function CreaPage() {
 
   useEffect(() => {
     if (confirmState !== "sliding" || !slideApplied) return;
-    const t = setTimeout(() => setConfirmState("confirmed"), 520);
+    const t = setTimeout(() => setConfirmState("confirmed"), 650);
     return () => clearTimeout(t);
   }, [confirmState, slideApplied]);
 
@@ -229,8 +248,8 @@ export default function CreaPage() {
               step5Done={step5Done}
               retract={isRetracting}
             />
-            <div className="flex-1 flex items-center justify-center min-h-0 py-4 overflow-auto">
-              <div className="w-full max-w-[320px] sm:max-w-[360px] min-w-[280px] sm:min-w-[320px]">
+            <div className="flex-1 flex items-center justify-center min-h-0 py-4 overflow-auto overflow-x-hidden">
+              <div className="w-full max-w-[320px] sm:max-w-[360px] min-w-[280px] sm:min-w-[320px] scroll-mt-4">
                 <CreaEventHomeBox
                   category={category}
                   onCategoryChange={setCategory}
@@ -254,6 +273,7 @@ export default function CreaPage() {
           </div>
           <div className="shrink-0 flex justify-center">
             <button
+              id="crea-confirm-button"
               type="button"
               onClick={handleConfirm}
               disabled={!canConfirm || isRetracting}
@@ -288,7 +308,9 @@ export default function CreaPage() {
           <div className="flex-1 flex items-center justify-center overflow-auto">
             <div className={`${blockClass} flex flex-col items-center gap-4`}>
               <div className="flex flex-col items-center shrink-0">
-                <CrystalBallOnly />
+                <CrystalBallOnly
+                  message={confirmState === "confirmed" ? "Complimenti! Il tuo evento è creato" : undefined}
+                />
               </div>
               <div className="w-full max-w-[320px] sm:max-w-[360px]">
                 <CreaEventTileConfigurator
@@ -303,18 +325,40 @@ export default function CreaPage() {
             </div>
           </div>
           {confirmState === "confirmed" && (
-            <div className="shrink-0 flex justify-center pb-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setConfirmState("idle");
-                  setSlideApplied(false);
+            <>
+              <div className="shrink-0 flex flex-col items-center gap-2 w-full max-w-md">
+                <button
+                  type="button"
+                  onClick={() => setShowPublishPhoneModal(true)}
+                  disabled={submitStatus === "loading"}
+                  className="landing-cta-primary min-h-[52px] px-8 py-3 rounded-xl font-semibold text-ds-body-sm w-full inline-flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Pubblica
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmState("idle");
+                    setSlideApplied(false);
+                  }}
+                  className="text-sm font-medium text-white/70 hover:text-white transition-colors py-2"
+                >
+                  Modifica
+                </button>
+              </div>
+              <PublishPhoneModal
+                open={showPublishPhoneModal}
+                onClose={() => {
+                  setShowPublishPhoneModal(false);
+                  setErrorMsg("");
                 }}
-                className="text-sm font-medium text-white/70 hover:text-white transition-colors py-2"
-              >
-                Modifica
-              </button>
-            </div>
+                onConfirm={(phone) =>
+                  handleSubmit({ preventDefault: () => {} } as React.FormEvent, phone)
+                }
+                isSubmitting={submitStatus === "loading"}
+                error={errorMsg}
+              />
+            </>
           )}
         </main>
       </div>

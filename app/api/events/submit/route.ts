@@ -16,7 +16,8 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { title, description, category, closesAt, resolutionSource } = body;
+    const { title, description, category, closesAt, resolutionSource, notifyPhone } = body;
+    const phoneToSave = typeof notifyPhone === "string" && notifyPhone.trim() ? notifyPhone.trim() : null;
 
     if (!title?.trim()) {
       return NextResponse.json(
@@ -49,54 +50,25 @@ export async function POST(request: Request) {
       resolutionSource: resolutionSource?.trim() || null,
     });
 
-    if (!validation.valid) {
-      await prisma.eventSubmission.create({
-        data: {
-          title: title.trim(),
-          description: description?.trim() || null,
-          category: category.trim(),
-          closesAt: closesAtDate,
-          resolutionSource: resolutionSource?.trim() || null,
-          submittedById: session.user.id,
-          status: "REJECTED",
-          reviewNotes: validation.errors.join(" | "),
-          reviewedAt: new Date(),
-        },
-      });
+    // Accetta tutti gli eventi e mettili in revisione (PENDING). Eventuali note di validazione
+    // vengono salvate in reviewNotes per riferimento futuro; la notifica di non accettazione
+    // verrà gestita successivamente.
+    const categoryToSave = validation.valid ? validation.normalizedCategory! : category.trim();
+    const reviewNotesToSave = !validation.valid && validation.errors?.length
+      ? validation.errors.join(" | ")
+      : null;
 
-      await prisma.notification.create({
-        data: {
-          userId: session.user.id,
-          type: "EVENT_SUBMISSION_REJECTED",
-          data: JSON.stringify({
-            title: title.trim(),
-            reasons: validation.errors,
-          }),
-        },
-      });
-
-      return NextResponse.json(
-        {
-          success: false,
-          approved: false,
-          errors: validation.errors,
-          warnings: validation.warnings,
-          message: "L'evento non rispetta i criteri della piattaforma.",
-        },
-        { status: 400 }
-      );
-    }
-
-    // Salva la proposta in revisione: il sistema approverà successivamente
     const submission = await prisma.eventSubmission.create({
       data: {
         title: title.trim(),
         description: description?.trim() || null,
-        category: validation.normalizedCategory!,
+        category: categoryToSave,
         closesAt: closesAtDate,
         resolutionSource: resolutionSource?.trim() || null,
         submittedById: session.user.id,
         status: "PENDING",
+        notifyPhone: phoneToSave,
+        reviewNotes: reviewNotesToSave,
       },
     });
 

@@ -77,8 +77,8 @@ export default function SeguitiSection({
   }, [topEvents.length]);
 
   return (
-    <section className="py-4 sm:py-5" aria-label={title}>
-      <h2 className="text-ds-h2 font-bold text-fg mb-3 sm:mb-4">{title}</h2>
+    <section className="py-4 sm:py-5" aria-label={title || undefined}>
+      {title ? <h2 className="text-ds-h2 font-bold text-fg mb-3 sm:mb-4">{title}</h2> : null}
 
       {topEvents.length === 0 ? (
         <p className="py-2 text-ds-body-sm text-fg-muted">{emptyMessage}</p>

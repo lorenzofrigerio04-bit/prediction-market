@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import SeguitiSection, { type SeguitiSectionEvent } from "@/components/discover/SeguitiSection";
+import CreatedEventTileInRevision from "@/components/discover/CreatedEventTileInRevision";
+import HomeEventTile from "@/components/home/HomeEventTile";
 import type { HomeEventTileData } from "@/components/home/HomeCarouselBox";
 import { EmptyState, LoadingBlock } from "@/components/ui";
 
@@ -46,6 +48,7 @@ export default function EventiPrevistiTab({
   } | null>(null);
   const [creati, setCreati] = useState<{
     events: CreatedEvent[];
+    submissions: { id: string; title: string; description?: string | null; category: string; closesAt: string; status: string }[];
     categories: string[];
     topCreated: CreatedEvent[];
   } | null>(null);
@@ -93,6 +96,7 @@ export default function EventiPrevistiTab({
           createdRes
             ? {
                 events: createdRes.events ?? [],
+                submissions: createdRes.submissions ?? [],
                 categories: createdRes.categories ?? [],
                 topCreated: (createdRes.topCreated ?? []).slice(0, 3),
               }
@@ -205,18 +209,54 @@ export default function EventiPrevistiTab({
           />
         </div>
 
-        {/* 3) I tuoi eventi creati */}
-        <div id="creati" className="border-t border-white/10 pt-4 sm:pt-5">
-          <SeguitiSection
-            title={`I tuoi eventi creati (${creati?.events?.length ?? 0})`}
-            topN={3}
-            topEvents={creati?.topCreated ?? []}
-            allEvents={creati?.events ?? []}
-            categories={creati?.categories ?? []}
-            toTileData={(e) => toTileCreated(e as CreatedEvent)}
-            variant="popular"
-            emptyMessage="Non hai ancora creato eventi."
-          />
+        {/* 3) I tuoi eventi creati: una sola griglia 2 colonne, submission (in revisione) prima a sinistra, poi eventi pubblicati */}
+        <div id="creati" className="border-t border-white/10 pt-4 sm:pt-5 scroll-mt-24">
+          <h2 className="text-ds-h2 font-bold text-fg mb-3 sm:mb-4">
+            I tuoi eventi creati ({(creati?.events?.length ?? 0) + (creati?.submissions?.length ?? 0)})
+          </h2>
+          {(() => {
+            const subs = creati?.submissions ?? [];
+            const events = creati?.topCreated ?? [];
+            const total = subs.length + events.length;
+            if (total === 0) {
+              return (
+                <p className="py-2 text-ds-body-sm text-fg-muted">Non hai ancora creato eventi.</p>
+              );
+            }
+            const items: { type: "submission"; data: (typeof subs)[0] } | { type: "event"; data: CreatedEvent }[] = [
+              ...subs.map((s) => ({ type: "submission" as const, data: s })),
+              ...events.map((e) => ({ type: "event" as const, data: e })),
+            ];
+            return (
+              <div className="grid grid-cols-2 gap-1 sm:gap-1.5">
+                {items.map((item) =>
+                  item.type === "submission" ? (
+                    <div key={`sub-${item.data.id}`}>
+                      <CreatedEventTileInRevision
+                        id={item.data.id}
+                        title={item.data.title}
+                        category={item.data.category}
+                        closesAt={item.data.closesAt}
+                        description={item.data.description}
+                      />
+                    </div>
+                  ) : (
+                    <div key={`ev-${item.data.id}`}>
+                      <HomeEventTile
+                        id={item.data.id}
+                        title={item.data.title}
+                        category={item.data.category}
+                        closesAt={item.data.closesAt}
+                        yesPct={(item.data as CreatedEvent).yesPct ?? 50}
+                        predictionsCount={(item.data as CreatedEvent).predictionsCount}
+                        variant="popular"
+                      />
+                    </div>
+                  )
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* CTA Torna a tutti gli eventi */}

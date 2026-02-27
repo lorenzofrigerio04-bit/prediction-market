@@ -630,6 +630,36 @@ textarea:focus-visible {
   opacity: 0;
   transform: scale(0.5);
 }
+/* Messaggio "Complimenti!" che esce dalla sfera nello stato confermato */
+.crystal-ball-bubbles--congrats {
+  animation: crystal-ball-congrats-in 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+.crystal-ball-bubbles--congrats .crystal-ball-bubble {
+  animation: crystal-ball-congrats-bubble-in 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) 0.08s both;
+}
+@keyframes crystal-ball-congrats-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes crystal-ball-congrats-bubble-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.crystal-ball-bubble--animate-in {
+  animation: crystal-ball-congrats-bubble-in 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
 /* Nuvoletta pensiero: sfondo morbido, animazione sognante */
 .crystal-ball-bubble {
   position: relative;
@@ -846,7 +876,7 @@ textarea:focus-visible {
 }
 
 /* ——— Step esterni (numeri + linee): stesso linguaggio premium, fluido ——— */
-/* Blocco palla + box confermato: slide verso l'alto */
+/* Blocco palla + box confermato: slide verso l'alto (transizione più fluida) */
 .crea-confirmed-block {
   display: flex;
   flex-direction: column;
@@ -854,7 +884,7 @@ textarea:focus-visible {
   gap: 1rem;
   width: 100%;
   max-width: 320px;
-  transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition: transform 0.65s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.4s ease-out;
 }
 @media (min-width: 640px) {
   .crea-confirmed-block { max-width: 360px; }
@@ -864,6 +894,38 @@ textarea:focus-visible {
 }
 .crea-confirmed-block--done {
   transform: translateY(-28px);
+}
+
+/* Modale categoria crea: animazione fluida (mobile slide from bottom) */
+.crea-category-modal-anim {
+  animation: crea-category-modal-in 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+@keyframes crea-category-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (min-width: 640px) {
+  .crea-category-modal-anim {
+    animation: none;
+  }
+}
+.crea-category-overlay-fade {
+  animation: crea-category-overlay-fade-in 0.2s ease-out forwards;
+}
+@keyframes crea-category-overlay-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Mobile: spazio sotto gli input quando si scrolla con tastiera aperta */
+.crea-home-input-scroll-margin {
+  scroll-margin-bottom: 28vh;
 }
 
 /* Box input STEP 4: glass liquido / premium */

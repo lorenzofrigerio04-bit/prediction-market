@@ -19,7 +19,8 @@ export async function GET() {
     const userId = session.user.id;
     const now = new Date();
 
-    const events = await prisma.event.findMany({
+    const [events, submissions] = await Promise.all([
+      prisma.event.findMany({
       where: {
         createdById: userId,
         status: "OPEN",
@@ -34,7 +35,16 @@ export async function GET() {
           select: { Prediction: true },
         },
       },
-    });
+    }),
+      prisma.eventSubmission.findMany({
+        where: {
+          submittedById: userId,
+          status: "PENDING",
+        },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, title: true, description: true, category: true, closesAt: true, status: true },
+      }),
+    ]);
 
     const result = events.map((e) => {
       let probability: number;
@@ -63,8 +73,18 @@ export async function GET() {
     result.sort((a, b) => b.predictionsCount - a.predictionsCount);
     const topCreated = result.slice(0, 3);
 
+    const submissionList = submissions.map((s) => ({
+      id: s.id,
+      title: s.title,
+      description: s.description,
+      category: s.category,
+      closesAt: s.closesAt.toISOString(),
+      status: s.status,
+    }));
+
     return NextResponse.json({
       events: result,
+      submissions: submissionList,
       categories,
       topCreated,
       totalEvents: result.length,

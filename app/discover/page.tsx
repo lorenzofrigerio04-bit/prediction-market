@@ -29,16 +29,21 @@ export default function DiscoverPage() {
     setActiveTab(tabFromUrl);
   }, [tabFromUrl]);
 
-  // Scroll to #creati quando si arriva da profilo (Eventi creati)
+  // Scroll to #creati quando si arriva da crea evento o profilo (Eventi creati)
   useEffect(() => {
     if (tabFromUrl !== "seguiti") return;
     const hash = typeof window !== "undefined" ? window.location.hash : "";
     if (hash !== "#creati") return;
-    const el = document.getElementById("creati");
-    if (el) {
-      const t = setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
-      return () => clearTimeout(t);
-    }
+    const scrollToCreati = () => {
+      const el = document.getElementById("creati");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    const t1 = setTimeout(scrollToCreati, 100);
+    const t2 = setTimeout(scrollToCreati, 600);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [tabFromUrl]);
 
   // Header, tab bar e strip glass + theme-color: derivati dall’URL reale (pathname + window.location)
