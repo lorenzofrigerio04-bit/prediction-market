@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import SeguitiSection, { type SeguitiSectionEvent } from "@/components/discover/SeguitiSection";
 import CreatedEventTileInRevision from "@/components/discover/CreatedEventTileInRevision";
@@ -35,6 +36,11 @@ export default function EventiPrevistiTab({
   categoriesFromPerTe,
 }: EventiPrevistiTabProps) {
   const { data: session, status } = useSession();
+  const router = useRouter();
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [inVantaggio, setInVantaggio] = useState<{
     events: MyPredictionEvent[];
@@ -106,6 +112,49 @@ export default function EventiPrevistiTab({
       .catch(() => setError("Impossibile caricare i dati."))
       .finally(() => setLoading(false));
   }, [status]);
+
+  const refetchCreati = () => {
+    fetch("/api/events/my-created")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((createdRes) => {
+        if (createdRes) {
+          setCreati({
+            events: createdRes.events ?? [],
+            submissions: createdRes.submissions ?? [],
+            categories: createdRes.categories ?? [],
+            topCreated: (createdRes.topCreated ?? []).slice(0, 3),
+          });
+        }
+      });
+  };
+
+  useEffect(() => {
+    if (menuOpenId === null) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpenId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpenId]);
+
+  const handleDelete = async (type: "submission" | "event", id: string) => {
+    setMenuOpenId(null);
+    if (!window.confirm("Vuoi davvero eliminare questo evento?")) return;
+    setDeletingId(id);
+    try {
+      const url = type === "submission" ? `/api/events/submit/${id}` : `/api/events/${id}`;
+      const res = await fetch(url, { method: "DELETE" });
+      if (res.ok) refetchCreati();
+      else {
+        const data = await res.json().catch(() => ({}));
+        window.alert(data.error || "Errore durante l'eliminazione.");
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   if (status === "unauthenticated") {
     return (
@@ -229,31 +278,86 @@ export default function EventiPrevistiTab({
             ];
             return (
               <div className="grid grid-cols-2 gap-1 sm:gap-1.5">
-                {items.map((item) =>
-                  item.type === "submission" ? (
-                    <div key={`sub-${item.data.id}`}>
-                      <CreatedEventTileInRevision
-                        id={item.data.id}
-                        title={item.data.title}
-                        category={item.data.category}
-                        closesAt={item.data.closesAt}
-                        description={item.data.description}
-                      />
+                {items.map((item) => {
+                  const isSubmission = item.type === "submission";
+                  const itemId = item.data.id;
+                  const menuId = isSubmission ? `sub-${itemId}` : `ev-${itemId}`;
+                  const isMenuOpen = menuOpenId === menuId;
+                  const isDeleting = deletingId === itemId;
+                  return (
+                    <div key={menuId} className="relative" ref={isMenuOpen ? menuRef : undefined}>
+                      {/* Menu 3 pallini in alto a destra */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setMenuOpenId(isMenuOpen ? null : menuId);
+                        }}
+                        disabled={isDeleting}
+                        className="absolute top-2 right-2 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white/90 backdrop-blur-sm hover:bg-black/80 focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
+                        aria-label="Opzioni evento"
+                        aria-expanded={isMenuOpen}
+                        aria-haspopup="menu"
+                      >
+                        <span className="sr-only">Opzioni</span>
+                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                          <circle cx="12" cy="6" r="1.5" />
+                          <circle cx="12" cy="12" r="1.5" />
+                          <circle cx="12" cy="18" r="1.5" />
+                        </svg>
+                      </button>
+                      {isMenuOpen && (
+                        <div
+                          className="absolute right-2 top-10 z-30 min-w-[140px] rounded-lg border border-white/20 bg-bg/95 py-1 shadow-lg backdrop-blur-sm"
+                          role="menu"
+                          aria-orientation="vertical"
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-ds-body-sm text-fg hover:bg-white/10"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setMenuOpenId(null);
+                              if (isSubmission) router.push(`/crea?submission=${itemId}`);
+                              else router.push(`/crea?edit=${itemId}`);
+                            }}
+                          >
+                            Modifica
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-ds-body-sm text-red-400 hover:bg-white/10"
+                            onClick={() => handleDelete(isSubmission ? "submission" : "event", itemId)}
+                          >
+                            Elimina
+                          </button>
+                        </div>
+                      )}
+                      {isSubmission ? (
+                        <CreatedEventTileInRevision
+                          id={item.data.id}
+                          title={item.data.title}
+                          category={item.data.category}
+                          closesAt={item.data.closesAt}
+                          description={item.data.description}
+                        />
+                      ) : (
+                        <HomeEventTile
+                          id={item.data.id}
+                          title={item.data.title}
+                          category={item.data.category}
+                          closesAt={item.data.closesAt}
+                          yesPct={(item.data as CreatedEvent).yesPct ?? 50}
+                          predictionsCount={(item.data as CreatedEvent).predictionsCount}
+                          variant="popular"
+                        />
+                      )}
                     </div>
-                  ) : (
-                    <div key={`ev-${item.data.id}`}>
-                      <HomeEventTile
-                        id={item.data.id}
-                        title={item.data.title}
-                        category={item.data.category}
-                        closesAt={item.data.closesAt}
-                        yesPct={(item.data as CreatedEvent).yesPct ?? 50}
-                        predictionsCount={(item.data as CreatedEvent).predictionsCount}
-                        variant="popular"
-                      />
-                    </div>
-                  )
-                )}
+                  );
+                })}
               </div>
             );
           })()}

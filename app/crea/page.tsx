@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import { LoadingBlock } from "@/components/ui";
@@ -30,8 +30,9 @@ const inputClass =
 const labelClass = "block text-ds-body-sm font-semibold text-white/90 mb-1.5";
 
 export default function CreaPage() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [categories, setCategories] = useState<string[]>([]);
   const [loadingCat, setLoadingCat] = useState(true);
   const [title, setTitle] = useState("");
@@ -50,8 +51,14 @@ export default function CreaPage() {
   const [titleConfirmed, setTitleConfirmed] = useState(false);
   /** Popup telefono + termini prima di inviare (stato "confirmed") */
   const [showPublishPhoneModal, setShowPublishPhoneModal] = useState(false);
+  /** Modifica: id submission o evento da precompilare */
+  const [editSubmissionId, setEditSubmissionId] = useState<string | null>(null);
+  const [editEventId, setEditEventId] = useState<string | null>(null);
+  const [loadingEdit, setLoadingEdit] = useState(false);
+  const [editLoadError, setEditLoadError] = useState<string | null>(null);
 
   const minDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+  const isEditMode = !!editSubmissionId || !!editEventId;
 
   const fetchCategories = useCallback(async () => {
     setLoadingCat(true);
@@ -73,6 +80,62 @@ export default function CreaPage() {
     fetchCategories();
   }, [fetchCategories]);
 
+  /** Precompila il form da ?submission= o ?edit= (solo dopo che le categorie sono caricate). */
+  useEffect(() => {
+    if (status !== "authenticated" || categories.length === 0) return;
+    const subId = searchParams.get("submission");
+    const evId = searchParams.get("edit");
+    if (subId) {
+      setLoadingEdit(true);
+      setEditLoadError(null);
+      setEditEventId(null);
+      fetch(`/api/events/submit/${subId}`)
+        .then((r) => {
+          if (!r.ok) throw new Error("Proposta non trovata o già elaborata.");
+          return r.json();
+        })
+        .then((data) => {
+          setEditSubmissionId(subId);
+          setTitle(data.title ?? "");
+          setDescription(data.description ?? "");
+          setCategory(data.category ?? categories[0] ?? "");
+          setClosesAt(data.closesAt ? new Date(data.closesAt).toISOString().slice(0, 16) : "");
+          setResolutionSource(data.resolutionSource ?? "");
+          if ((data.title ?? "").trim().length > 0) setTitleConfirmed(true);
+        })
+        .catch(() => setEditLoadError("Impossibile caricare la proposta."))
+        .finally(() => setLoadingEdit(false));
+      return;
+    }
+    if (evId) {
+      setLoadingEdit(true);
+      setEditLoadError(null);
+      setEditSubmissionId(null);
+      fetch(`/api/events/${evId}`)
+        .then((r) => {
+          if (!r.ok) throw new Error("Evento non trovato.");
+          return r.json();
+        })
+        .then((data) => {
+          const event = data.event;
+          if (!event || (session?.user?.id && event.createdBy?.id !== session.user.id)) {
+            setEditLoadError("Non puoi modificare questo evento.");
+            setLoadingEdit(false);
+            return;
+          }
+          setEditEventId(evId);
+          setTitle(event.title ?? "");
+          setDescription(event.description ?? "");
+          setCategory(event.category ?? categories[0] ?? "");
+          setClosesAt(event.closesAt ? new Date(event.closesAt).toISOString().slice(0, 16) : "");
+          setResolutionSource(event.resolutionSourceUrl ?? "");
+          if ((event.title ?? "").trim().length > 0) setTitleConfirmed(true);
+        })
+        .catch(() => setEditLoadError("Impossibile caricare l'evento."))
+        .finally(() => setLoadingEdit(false));
+    }
+  }, [status, categories, searchParams, session?.user?.id]);
+
   useEffect(() => {
     if (showPublishPhoneModal) setErrorMsg("");
   }, [showPublishPhoneModal]);
@@ -90,6 +153,50 @@ export default function CreaPage() {
     setSubmitStatus("loading");
     setErrorMsg("");
     try {
+      if (editSubmissionId) {
+        const res = await fetch(`/api/events/submit/${editSubmissionId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: title.trim(),
+            description: description.trim() || null,
+            category,
+            closesAt: new Date(closesAt).toISOString(),
+            resolutionSource: resolutionSource.trim() || null,
+          }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setErrorMsg(data.error || "Errore durante il salvataggio.");
+          setSubmitStatus("idle");
+          return;
+        }
+        setShowPublishPhoneModal(false);
+        router.replace("/discover?tab=seguiti#creati");
+        return;
+      }
+      if (editEventId) {
+        const res = await fetch(`/api/events/${editEventId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: title.trim(),
+            description: description.trim() || null,
+            category,
+            closesAt: new Date(closesAt).toISOString(),
+            resolutionSourceUrl: resolutionSource.trim() || null,
+          }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setErrorMsg(data.error || "Errore durante il salvataggio.");
+          setSubmitStatus("idle");
+          return;
+        }
+        setShowPublishPhoneModal(false);
+        router.replace(`/events/${editEventId}`);
+        return;
+      }
       const res = await fetch("/api/events/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -126,6 +233,11 @@ export default function CreaPage() {
       setErrorMsg("Errore di rete. Riprova.");
       setSubmitStatus("idle");
     }
+  };
+
+  /** Salva modifiche in modalità modifica (senza modal telefono). */
+  const handleSaveEdit = () => {
+    handleSubmit({ preventDefault: () => {} } as React.FormEvent);
   };
 
   const resetForm = () => {
@@ -234,10 +346,27 @@ export default function CreaPage() {
           className="relative mx-auto px-4 flex flex-col flex-1 min-h-0 pt-4 pb-[calc(0.5cm+5rem+var(--safe-area-inset-bottom))] md:pb-[calc(0.5cm+5rem)]"
         >
           <header className="relative flex items-center justify-center shrink-0 pt-1 pb-3 min-h-[3rem]">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="absolute left-0 -ml-8 z-10 flex items-center gap-1.5 text-ds-body-sm font-medium text-white/80 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-lg py-2 pr-2"
+              aria-label="Indietro"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Indietro
+            </button>
             <h1 className="text-sm sm:text-lg font-semibold text-white/90 tracking-tight uppercase whitespace-nowrap px-2 text-center">
               Crea il tuo evento
             </h1>
           </header>
+          {editLoadError && (
+            <p className="text-sm text-red-400 mb-2" role="alert">{editLoadError}</p>
+          )}
+          {loadingEdit && (
+            <p className="text-sm text-white/70 mb-2">Caricamento…</p>
+          )}
           <div className="flex-1 flex flex-col min-h-0">
             <div className="flex-1 min-h-0" aria-hidden />
             <CrystalBallStep
@@ -301,6 +430,17 @@ export default function CreaPage() {
           className="relative mx-auto px-4 flex flex-col flex-1 min-h-0 pt-4 pb-[calc(0.5cm+5rem+var(--safe-area-inset-bottom))] md:pb-[calc(0.5cm+5rem)]"
         >
           <header className="relative flex items-center justify-center shrink-0 pt-1 pb-3 min-h-[3rem]">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="absolute left-0 -ml-8 z-10 flex items-center gap-1.5 text-ds-body-sm font-medium text-white/80 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-lg py-2 pr-2"
+              aria-label="Indietro"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Indietro
+            </button>
             <h1 className="text-sm sm:text-lg font-semibold text-white/90 tracking-tight uppercase whitespace-nowrap px-2 text-center">
               Crea il tuo evento
             </h1>
@@ -327,37 +467,52 @@ export default function CreaPage() {
           {confirmState === "confirmed" && (
             <>
               <div className="shrink-0 flex flex-col items-center gap-2 w-full max-w-md">
-                <button
-                  type="button"
-                  onClick={() => setShowPublishPhoneModal(true)}
-                  disabled={submitStatus === "loading"}
-                  className="landing-cta-primary min-h-[52px] px-8 py-3 rounded-xl font-semibold text-ds-body-sm w-full inline-flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Pubblica
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setConfirmState("idle");
-                    setSlideApplied(false);
-                  }}
-                  className="text-sm font-medium text-white/70 hover:text-white transition-colors py-2"
-                >
-                  Modifica
-                </button>
+                {isEditMode ? (
+                  <button
+                    type="button"
+                    onClick={handleSaveEdit}
+                    disabled={submitStatus === "loading"}
+                    className="landing-cta-primary min-h-[52px] px-8 py-3 rounded-xl font-semibold text-ds-body-sm w-full inline-flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitStatus === "loading" ? "Salvataggio…" : "Salva modifiche"}
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowPublishPhoneModal(true)}
+                      disabled={submitStatus === "loading"}
+                      className="landing-cta-primary min-h-[52px] px-8 py-3 rounded-xl font-semibold text-ds-body-sm w-full inline-flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Pubblica
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConfirmState("idle");
+                        setSlideApplied(false);
+                      }}
+                      className="text-sm font-medium text-white/70 hover:text-white transition-colors py-2"
+                    >
+                      Modifica
+                    </button>
+                  </>
+                )}
               </div>
-              <PublishPhoneModal
-                open={showPublishPhoneModal}
-                onClose={() => {
-                  setShowPublishPhoneModal(false);
-                  setErrorMsg("");
-                }}
-                onConfirm={(phone) =>
-                  handleSubmit({ preventDefault: () => {} } as React.FormEvent, phone)
-                }
-                isSubmitting={submitStatus === "loading"}
-                error={errorMsg}
-              />
+              {!isEditMode && (
+                <PublishPhoneModal
+                  open={showPublishPhoneModal}
+                  onClose={() => {
+                    setShowPublishPhoneModal(false);
+                    setErrorMsg("");
+                  }}
+                  onConfirm={(phone) =>
+                    handleSubmit({ preventDefault: () => {} } as React.FormEvent, phone)
+                  }
+                  isSubmitting={submitStatus === "loading"}
+                  error={errorMsg}
+                />
+              )}
             </>
           )}
         </main>

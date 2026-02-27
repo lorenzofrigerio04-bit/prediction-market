@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import BackLink from "@/components/ui/BackLink";
+import FilterDropdown from "@/components/ui/FilterDropdown";
 
 export default function CreateEventPage() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function CreateEventPage() {
     resolutionNotes: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showDateModal, setShowDateModal] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -41,8 +43,11 @@ export default function CreateEventPage() {
     >
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    // Rimuovi errore quando l'utente inizia a digitare
+    const next =
+      name === "resolutionNotes"
+        ? { ...formData, [name]: value.toLowerCase() }
+        : { ...formData, [name]: value };
+    setFormData(next);
     if (errors[name]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -197,37 +202,30 @@ export default function CreateEventPage() {
             />
           </div>
 
-          {/* Category */}
+          {/* Category — dropdown come in classifica, scrollabile e ottimizzato per mobile */}
           <div className="mb-6">
-            <label
-              htmlFor="category"
-              className="block text-sm font-medium text-fg-muted mb-2"
-            >
-              Categoria *
-            </label>
-            <select
-              id="category"
-              name="category"
+            <FilterDropdown
+              label="Categoria *"
+              options={[
+                { id: "", label: "Seleziona una categoria" },
+                ...categories.map((c) => ({ id: c, label: c })),
+              ]}
               value={formData.category}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border rounded-xl bg-white/5 text-fg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors appearance-none ${
-                errors.category ? "border-danger" : "border-border dark:border-white/10"
-              }`}
-            >
-              <option value="">Seleziona una categoria</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+              onChange={(id) => {
+                setFormData((prev) => ({ ...prev, category: id }));
+                if (errors.category) {
+                  setErrors((prev) => ({ ...prev, category: "" }));
+                }
+              }}
+              className="w-full"
+            />
             {errors.category && (
               <p className="mt-1.5 text-sm text-danger">{errors.category}</p>
             )}
             {categories.length === 0 && (
               <p className="mt-2 text-sm text-fg-subtle">
                 Nessuna categoria disponibile. Puoi inserire una nuova categoria
-                digitandola nel campo sopra.
+                digitandola nel campo sotto.
               </p>
             )}
           </div>
@@ -257,7 +255,7 @@ export default function CreateEventPage() {
             />
           </div>
 
-          {/* Closes At */}
+          {/* Closes At — apertura in modale per sfondo stabile e calendario leggibile */}
           <div className="mb-6">
             <label
               htmlFor="closesAt"
@@ -265,16 +263,26 @@ export default function CreateEventPage() {
             >
               Data e ora di chiusura *
             </label>
-            <input
-              type="datetime-local"
-              id="closesAt"
-              name="closesAt"
-              value={formData.closesAt}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border rounded-xl bg-white/5 text-fg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors ${
+            <button
+              type="button"
+              id="closesAt-trigger"
+              onClick={() => setShowDateModal(true)}
+              className={`w-full px-4 py-3 border rounded-xl bg-white/5 text-fg text-left focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors flex items-center justify-between ${
                 errors.closesAt ? "border-danger" : "border-border dark:border-white/10"
               }`}
-            />
+            >
+              <span className={formData.closesAt ? "" : "text-fg-subtle"}>
+                {formData.closesAt
+                  ? new Date(formData.closesAt).toLocaleString("it-IT", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })
+                  : "Scegli data e ora"}
+              </span>
+              <svg className="w-5 h-5 text-fg-muted shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </button>
             {errors.closesAt && (
               <p className="mt-1.5 text-sm text-danger">{errors.closesAt}</p>
             )}
@@ -283,6 +291,62 @@ export default function CreateEventPage() {
               sull&apos;evento.
             </p>
           </div>
+
+          {/* Modale calendario: sfondo fisso, calendario in primo piano */}
+          {showDateModal && (
+            <div
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowDateModal(false)}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="date-modal-title"
+            >
+              <div
+                className="bg-bg border border-border dark:border-white/10 rounded-2xl shadow-xl w-full max-w-md overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-4 border-b border-border dark:border-white/10 flex items-center justify-between">
+                  <h2 id="date-modal-title" className="text-lg font-semibold text-fg">
+                    Data e ora di chiusura
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setShowDateModal(false)}
+                    className="p-2 rounded-lg hover:bg-white/10 text-fg-muted hover:text-fg transition-colors"
+                    aria-label="Chiudi"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="p-4">
+                  <input
+                    type="datetime-local"
+                    id="closesAt"
+                    name="closesAt"
+                    value={formData.closesAt}
+                    onChange={(e) => {
+                      handleChange(e);
+                      if (e.target.value) setShowDateModal(false);
+                    }}
+                    className={`w-full px-4 py-3 border rounded-xl bg-white/5 text-fg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-base min-h-[48px] ${
+                      errors.closesAt ? "border-danger" : "border-border dark:border-white/10"
+                    }`}
+                  />
+                </div>
+                <div className="p-4 pt-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowDateModal(false)}
+                    className="w-full py-2.5 rounded-xl bg-primary text-white font-medium hover:bg-primary-hover transition-colors"
+                  >
+                    Fatto
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Resolution source URL */}
           <div className="mb-6">
@@ -311,7 +375,7 @@ export default function CreateEventPage() {
             </p>
           </div>
 
-          {/* Resolution notes */}
+          {/* Resolution notes — testo minuscolo, incolla link consentito */}
           <div className="mb-6">
             <label
               htmlFor="resolutionNotes"
@@ -325,10 +389,11 @@ export default function CreateEventPage() {
               value={formData.resolutionNotes}
               onChange={handleChange}
               rows={3}
-              className={`w-full px-4 py-3 border rounded-xl bg-white/5 text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors ${
+              className={`w-full px-4 py-3 border rounded-xl bg-white/5 text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors lowercase ${
                 errors.resolutionNotes ? "border-danger" : "border-border dark:border-white/10"
               }`}
-              placeholder="Criteri e note per determinare l'esito (SÌ/NO)..."
+              placeholder="criteri e note per determinare l'esito (sì/no). puoi incollare un link..."
+              style={{ textTransform: "lowercase" }}
             />
             {errors.resolutionNotes && (
               <p className="mt-1.5 text-sm text-danger">{errors.resolutionNotes}</p>

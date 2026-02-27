@@ -15,6 +15,9 @@ const ERROR_MESSAGES: Record<string, string> = {
   Default: "Qualcosa è andato storto. Riprova tra poco.",
 };
 
+const NOTE_494 =
+  "Se vedi \"Request has too large of headers\" (errore 494): in Safari vai in Impostazioni > Safari > Cancella cronologia e dati siti web, oppure cancella i dati solo per questo sito, poi riprova.";
+
 export default function LoginPage() {
   const searchParams = useSearchParams();
   const { update: updateSession } = useSession();
@@ -24,11 +27,13 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
 
-  // Destinazione dopo login: da URL (?callbackUrl=...) o Home
+  // Destinazione dopo login: da URL (?callbackUrl=...) o Home. Limita lunghezza per evitare
+  // REQUEST_HEADER_TOO_LARGE (494) su Safari/Vercel (cookie callback-url troppo grande).
   const callbackUrl = (() => {
     const url = searchParams.get("callbackUrl");
     if (url && typeof url === "string" && url.startsWith("/") && !url.startsWith("//")) {
-      return url;
+      const pathOnly = url.split("?")[0];
+      return pathOnly.length <= 80 ? url : pathOnly;
     }
     return "/";
   })();
@@ -74,9 +79,8 @@ export default function LoginPage() {
       } catch {
         // Ignora errori di refetch; il redirect server-side risolverà
       }
-      // Breve attesa per assicurare che il browser abbia scritto il cookie
       await new Promise((r) => setTimeout(r, 300));
-      const safeCallback = encodeURIComponent(callbackUrl);
+      const safeCallback = encodeURIComponent(callbackUrl.length > 100 ? "/" : callbackUrl);
       window.location.href = `/auth/success?callbackUrl=${safeCallback}`;
     } catch (err: any) {
       console.error('[LoginPage] Errore durante signIn:', err);
@@ -89,7 +93,9 @@ export default function LoginPage() {
   const handleGoogleSignIn = () => {
     setError("");
     setRedirecting(true);
-    const successUrl = `/auth/success?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+    // Usa solo path per callbackUrl (max 100 char) per ridurre dimensione cookie e rischio 494
+    const shortCallback = callbackUrl.length > 100 ? "/" : callbackUrl;
+    const successUrl = `/auth/success?callbackUrl=${encodeURIComponent(shortCallback)}`;
     signIn("google", { callbackUrl: successUrl });
   };
 
@@ -108,11 +114,12 @@ export default function LoginPage() {
         {error && (
           <div className="mb-4 p-3 bg-danger-bg/50 border border-danger/30 rounded-xl text-danger text-ds-body-sm">
             {error}
-            <p className="mt-2 text-xs">
+            <p className="mt-2 text-xs text-fg-muted">
               Se il problema persiste, apri{" "}
               <a href="/api/auth-status" target="_blank" rel="noopener noreferrer" className="underline font-medium">
                 /api/auth-status
               </a>
+              . {NOTE_494}
             </p>
           </div>
         )}

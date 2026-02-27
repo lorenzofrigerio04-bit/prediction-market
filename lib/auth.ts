@@ -134,39 +134,42 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     session: async ({ session, token }) => {
-      // IMPORTANTE: Aggiunge userId e role alla session
       if (session.user && token.sub) {
         (session.user as any).id = token.sub;
-        // Aggiunge role dal token alla session
-        if (token.role) {
-          (session.user as any).role = token.role;
-        } else {
-          // Fallback: recupera role dal database se non presente nel token
-          const user = await prisma.user.findUnique({
-            where: { id: token.sub },
-            select: { role: true },
-          });
-          if (user?.role) {
-            (session.user as any).role = user.role;
-          }
+        (session.user as any).role = token.role ?? null;
+        // JWT minimo non include name/email: recuperali dal DB (evita cookie troppo grandi → 494 Safari)
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub },
+          select: { name: true, email: true, image: true },
+        });
+        if (dbUser) {
+          session.user.name = dbUser.name ?? session.user.name ?? null;
+          session.user.email = dbUser.email ?? session.user.email ?? null;
+          session.user.image = dbUser.image ?? session.user.image ?? null;
         }
       }
       return session;
     },
     jwt: async ({ token, user }) => {
-      // Aggiunge userId e role al token quando l'utente fa login
+      // JWT minimo (solo sub + role) per evitare REQUEST_HEADER_TOO_LARGE (494) su Safari/Vercel
       if (user) {
-        token.sub = user.id;
-        // Recupera role dal database
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
           select: { role: true },
         });
-        if (dbUser?.role) {
-          token.role = dbUser.role;
-        }
+        return {
+          sub: user.id,
+          role: dbUser?.role ?? null,
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+        };
       }
-      return token;
+      return {
+        sub: token.sub,
+        role: (token as { role?: string }).role ?? null,
+        iat: (token as { iat?: number }).iat ?? Math.floor(Date.now() / 1000),
+        exp: (token as { exp?: number }).exp ?? Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+      };
     },
   },
   pages: {
@@ -174,7 +177,11 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/login', // così gli errori di login mostrano la pagina di login invece della generica "Error"
   },
   session: {
-    strategy: 'jwt', // Usa JWT invece di database session (più semplice)
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60,
+  },
+  jwt: {
+    maxAge: 30 * 24 * 60 * 60,
   },
   secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
 };

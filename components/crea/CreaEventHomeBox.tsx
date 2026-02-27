@@ -72,6 +72,7 @@ export default function CreaEventHomeBox({
   minDate,
 }: CreaEventHomeBoxProps) {
   const [categoryOpen, setCategoryOpen] = useState(false);
+  const [scadenzaModalOpen, setScadenzaModalOpen] = useState(false);
   const categoryRef = useRef<HTMLDivElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const descriptionInputRef = useRef<HTMLInputElement>(null);
@@ -142,7 +143,7 @@ export default function CreaEventHomeBox({
                 id="crea-category-list"
                 role="listbox"
                 aria-label="Opzioni categoria"
-                className="fixed left-4 right-4 bottom-[calc(env(safe-area-inset-bottom)+1rem)] top-[20%] z-[101] flex flex-col rounded-2xl border border-white/15 bg-black/95 backdrop-blur-xl shadow-2xl overflow-hidden crea-category-modal-anim sm:left-0 sm:right-auto sm:top-full sm:bottom-auto sm:absolute sm:mt-1.5 sm:min-w-[200px] sm:max-h-[min(320px,70vh)]"
+                className="fixed left-4 right-4 top-1/2 -translate-y-1/2 z-[101] flex flex-col rounded-2xl border border-white/15 bg-black/95 backdrop-blur-xl shadow-2xl overflow-hidden crea-category-modal-anim max-h-[min(280px,70vh)] sm:left-0 sm:right-auto sm:top-full sm:translate-y-0 sm:absolute sm:mt-1.5 sm:min-w-[200px] sm:max-h-[min(320px,70vh)]"
               >
                 <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/10">
                   <span className="text-sm font-semibold text-white/90 uppercase tracking-wide">Categoria</span>
@@ -157,7 +158,7 @@ export default function CreaEventHomeBox({
                     </svg>
                   </button>
                 </div>
-                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-2 -webkit-overflow-scrolling-touch">
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-2 scroll-smooth touch-pan-y" style={{ WebkitOverflowScrolling: "touch" }}>
                   {categoryOptions.map((opt) => {
                     const isSelected = category === opt;
                     return (
@@ -190,31 +191,71 @@ export default function CreaEventHomeBox({
           )}
         </div>
 
-        {/* Box Scadenza a destra — label "Scadenza", tap apre calendario */}
+        {/* Box Scadenza a destra — tap apre modale calendario (sfondo stabile) */}
         <div className={`relative inline-flex ${BOX_SIZE}`}>
-          <span
-            className={`${BADGE_BOX_CLASS} pointer-events-none w-full h-full ${BOX_TRANSITION} ${!dateInputValue ? "text-white/80" : ""} ${scadenzaDone ? BOX_DONE_GLOW : ""}`}
-            aria-hidden
+          <button
+            type="button"
+            onClick={() => setScadenzaModalOpen(true)}
+            className={`${BADGE_BOX_CLASS} w-full h-full cursor-pointer hover:bg-black/80 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${BOX_TRANSITION} ${!dateInputValue ? "text-white/80" : ""} ${scadenzaDone ? BOX_DONE_GLOW : ""}`}
+            aria-label="Scadenza: apri calendario"
           >
             <span className="truncate">{scadenzaDisplay}</span>
-          </span>
-          <input
-            ref={scadenzaInputRef}
-            type="date"
-            value={dateInputValue}
-            min={minDateValue}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (v) {
-                onClosesAtChange(new Date(v).toISOString());
-                requestAnimationFrame(() => resolutionInputRef.current?.focus());
-              }
-            }}
-            onBlur={() => requestAnimationFrame(() => resolutionInputRef.current?.focus())}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            style={{ colorScheme: "dark" }}
-            aria-label="Scadenza: apri calendario"
-          />
+          </button>
+          {scadenzaModalOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-[102] bg-black/60 backdrop-blur-sm"
+                aria-hidden
+                onClick={() => setScadenzaModalOpen(false)}
+              />
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="crea-scadenza-modal-title"
+                className="fixed left-4 right-4 top-1/2 -translate-y-1/2 z-[103] rounded-2xl border border-white/15 bg-black/95 backdrop-blur-xl shadow-2xl p-4 flex flex-col gap-4 max-w-sm mx-auto"
+              >
+                <div className="flex items-center justify-between">
+                  <h2 id="crea-scadenza-modal-title" className="text-sm font-semibold text-white/90 uppercase tracking-wide">
+                    Scadenza
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setScadenzaModalOpen(false)}
+                    className="p-2 -m-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                    aria-label="Chiudi"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <input
+                  ref={scadenzaInputRef}
+                  type="date"
+                  value={dateInputValue}
+                  min={minDateValue}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v) {
+                      onClosesAtChange(new Date(v).toISOString());
+                      setScadenzaModalOpen(false);
+                      requestAnimationFrame(() => resolutionInputRef.current?.focus());
+                    }
+                  }}
+                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 min-h-[48px] text-base"
+                  style={{ colorScheme: "dark" }}
+                  aria-label="Data di scadenza"
+                />
+                <button
+                  type="button"
+                  onClick={() => setScadenzaModalOpen(false)}
+                  className="w-full py-2.5 rounded-xl bg-primary text-white font-medium hover:opacity-90 transition-opacity"
+                >
+                  Fatto
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -252,16 +293,8 @@ export default function CreaEventHomeBox({
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  requestAnimationFrame(() => {
-                    const dateInput = scadenzaInputRef.current;
-                    if (dateInput) {
-                      dateInput.focus();
-                      scrollInputIntoView(dateInput);
-                      if (typeof dateInput.showPicker === "function") {
-                        dateInput.showPicker();
-                      }
-                    }
-                  });
+                  setScadenzaModalOpen(true);
+                  requestAnimationFrame(() => scadenzaInputRef.current?.focus());
                 }
               }}
               placeholder="DESCRIZIONE"
@@ -270,13 +303,13 @@ export default function CreaEventHomeBox({
               aria-label="Descrizione dell'evento"
             />
           </div>
-          {/* Angolo in basso a destra: Risoluzione — stessa misura degli altri box */}
+          {/* Angolo in basso a destra: Risoluzione — testo minuscolo, si può incollare un link */}
           <input
             ref={resolutionInputRef}
             id="crea-home-resolution"
-            type="url"
+            type="text"
             value={resolutionSource}
-            onChange={(e) => onResolutionSourceChange(e.target.value)}
+            onChange={(e) => onResolutionSourceChange(e.target.value.toLowerCase())}
             onFocus={() => scrollInputIntoView(resolutionInputRef.current)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -286,10 +319,10 @@ export default function CreaEventHomeBox({
                 });
               }
             }}
-            placeholder="RISOLUZIONE"
-            className={`${BOX_SIZE} shrink-0 ${INPUT_BOX_CLASS} crea-home-input-scroll-margin ${BOX_TRANSITION} ${resolutionDone ? BOX_DONE_GLOW : ""}`}
-            style={DESC_STYLE}
-            aria-label="Link per risoluzione dell'evento"
+            placeholder="risoluzione (link o testo)"
+            className={`${BOX_SIZE} shrink-0 crea-home-input-scroll-margin ${BOX_TRANSITION} ${resolutionDone ? BOX_DONE_GLOW : ""} flex items-center rounded-md border border-white/30 bg-black/70 px-2 py-0.5 font-sans text-xs font-semibold tracking-wide text-white shadow-[0_2px_6px_rgba(0,0,0,0.9)] backdrop-blur-sm sm:text-ds-micro placeholder:text-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent text-center truncate normal-case lowercase`}
+            style={{ ...DESC_STYLE, textTransform: "lowercase" }}
+            aria-label="Link o testo per risoluzione dell'evento"
           />
         </div>
         <div

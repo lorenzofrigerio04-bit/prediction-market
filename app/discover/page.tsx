@@ -29,7 +29,7 @@ export default function DiscoverPage() {
     setActiveTab(tabFromUrl);
   }, [tabFromUrl]);
 
-  // Scroll to #creati quando si arriva da crea evento o profilo (Eventi creati)
+  // Scroll to #creati quando si arriva da crea evento (dopo Pubblica) o profilo → "I tuoi eventi creati" in fondo
   useEffect(() => {
     if (tabFromUrl !== "seguiti") return;
     const hash = typeof window !== "undefined" ? window.location.hash : "";
@@ -38,13 +38,10 @@ export default function DiscoverPage() {
       const el = document.getElementById("creati");
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     };
-    const t1 = setTimeout(scrollToCreati, 100);
-    const t2 = setTimeout(scrollToCreati, 600);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [tabFromUrl]);
+    const delays = [100, 400, 800, 1200, 1800];
+    const timers = delays.map((ms) => setTimeout(scrollToCreati, ms));
+    return () => timers.forEach((t) => clearTimeout(t));
+  }, [tabFromUrl, pathname]);
 
   // Header, tab bar e strip glass + theme-color: derivati dall’URL reale (pathname + window.location)
   // così tornando da altre sezioni la pagina si mostra subito corretta senza dipendere dallo state.
