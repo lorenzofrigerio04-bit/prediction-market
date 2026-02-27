@@ -223,7 +223,7 @@ export default function EventiPrevistiTab({
                 <p className="py-2 text-ds-body-sm text-fg-muted">Non hai ancora creato eventi.</p>
               );
             }
-            const items: { type: "submission"; data: (typeof subs)[0] } | { type: "event"; data: CreatedEvent }[] = [
+            const items: ({ type: "submission"; data: (typeof subs)[0] } | { type: "event"; data: CreatedEvent })[] = [
               ...subs.map((s) => ({ type: "submission" as const, data: s })),
               ...events.map((e) => ({ type: "event" as const, data: e })),
             ];
