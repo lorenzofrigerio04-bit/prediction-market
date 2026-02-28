@@ -28,13 +28,13 @@ export default function StreakBadge({ streak, size = "md" }: StreakBadgeProps) {
   };
 
   return (
-    <div
+    <span
       className={`inline-flex items-center gap-1.5 rounded-full font-semibold border-2 ${sizeClasses[size]} ${getStreakColor(
         streak
       )}`}
     >
       <span className={iconSizeClasses[size]}>🔥</span>
       <span>{streak} giorni</span>
-    </div>
+    </span>
   );
 }

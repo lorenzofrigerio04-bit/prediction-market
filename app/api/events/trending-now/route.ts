@@ -22,14 +22,18 @@ export async function GET(request: NextRequest) {
       take: limit,
       include: {
         createdBy: { select: { id: true, name: true, image: true } },
-        _count: { select: { Prediction: true, comments: true } },
+        _count: { select: { Prediction: true, Trade: true, comments: true } },
       },
     });
 
-    const eventsWithCount = events.map((e) => ({
-      ...e,
-      _count: { predictions: e._count.Prediction, comments: e._count.comments },
-    }));
+    const predCount = (c: { Prediction: number; Trade: number }) => (c.Prediction ?? 0) + (c.Trade ?? 0);
+    const eventsWithCount = events.map((e) => {
+      const count = predCount(e._count as { Prediction: number; Trade: number });
+      return {
+        ...e,
+        _count: { predictions: count, comments: e._count.comments },
+      };
+    });
 
     return NextResponse.json({ events: eventsWithCount });
   } catch (error) {

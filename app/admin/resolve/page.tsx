@@ -12,7 +12,7 @@ interface PendingEvent {
   closesAt: string;
   resolutionSourceUrl: string | null;
   resolutionNotes: string | null;
-  totalCredits: number;
+  totalCredits: number | null;
   _count: { predictions: number; comments: number };
 }
 
@@ -154,7 +154,7 @@ export default function AdminResolvePage() {
                       Chiuso il{" "}
                       {new Date(event.closesAt).toLocaleString("it-IT")} ·{" "}
                       {event._count.predictions} previsioni ·{" "}
-                      {event.totalCredits.toLocaleString()} crediti in gioco
+                      {(event.totalCredits ?? 0).toLocaleString()} crediti in gioco
                     </p>
                   </div>
 

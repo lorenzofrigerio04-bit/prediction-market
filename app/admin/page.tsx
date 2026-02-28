@@ -14,7 +14,7 @@ interface Event {
   resolved: boolean;
   outcome: "YES" | "NO" | null;
   resolvedAt: string | null;
-  totalCredits: number;
+  totalCredits: number | null;
   createdBy: {
     id: string;
     name: string | null;
@@ -367,7 +367,7 @@ export default function AdminDashboard() {
                           {event._count.predictions}
                         </td>
                         <td className="px-6 py-4 text-sm text-fg font-numeric">
-                          {event.totalCredits.toLocaleString()}
+                          {(event.totalCredits ?? 0).toLocaleString()}
                         </td>
                         <td className="px-6 py-4">
                           {event.resolved ? (

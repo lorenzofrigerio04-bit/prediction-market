@@ -24,6 +24,8 @@ interface EventProbabilityChartProps {
   refetchTrigger?: number;
   /** Layout standalone: titolo centrato, grafico centrato con assi bilanciati */
   layout?: "default" | "standalone";
+  /** Numero di previsioni sull’evento: se 0 si mostra CTA "Diventa il primo...", altrimenti il grafico */
+  predictionsCount?: number;
 }
 
 function formatAxisTime(iso: string, range: string): string {
@@ -48,6 +50,7 @@ export default function EventProbabilityChart({
   range = "7d",
   refetchTrigger,
   layout = "default",
+  predictionsCount = 0,
 }: EventProbabilityChartProps) {
   const isStandalone = layout === "standalone";
   const [points, setPoints] = useState<Point[]>([]);
@@ -65,8 +68,10 @@ export default function EventProbabilityChart({
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    queueMicrotask(() => {
+      setLoading(true);
+      setError(null);
+    });
     fetchHistory()
       .then((pts) => {
         if (!cancelled) setPoints(pts);
@@ -117,6 +122,33 @@ export default function EventProbabilityChart({
       timeDomain: domain,
     };
   }, [points, range]);
+
+  if (predictionsCount === 0) {
+    return (
+      <div className={isStandalone ? "event-chart-standalone py-4" : "py-2"}>
+        <h2
+          id="chart-heading"
+          className={`text-ds-body-sm font-semibold text-fg mb-4 ${isStandalone ? "text-center" : ""}`}
+        >
+          Andamento SÌ / NO nel tempo
+        </h2>
+        <div
+          className={`flex flex-col items-center justify-center gap-3 text-center ${isStandalone ? "h-[240px] md:h-[280px]" : "h-[200px]"}`}
+          style={{ background: "rgb(255 255 255 / 0.03)", borderRadius: "var(--radius-lg)" }}
+        >
+          <p className="text-ds-body-sm text-fg-muted max-w-sm">
+            Diventa il primo a prevedere questo evento
+          </p>
+          <a
+            href="#prediction-section"
+            className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded px-2 py-1"
+          >
+            Fai la tua previsione →
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

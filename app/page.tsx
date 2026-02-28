@@ -229,17 +229,41 @@ export default function Home() {
     fetchForYou();
   }, [fetchMostPredicted, fetchClosingSoon, fetchForYou]);
 
+  const prevPathnameRef = useRef(pathname);
+
   // Carica feed alla mount e quando si torna sulla home (visibility o pathname)
   useEffect(() => {
     if (status !== "authenticated") return;
     refetchHomeFeeds();
   }, [status, refetchHomeFeeds]);
 
+  // Al ritorno dalla pagina evento (o da qualsiasi altra pagina) aggiorna i feed così il numero previsioni è aggiornato
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    if (pathname === "/" && prevPathnameRef.current !== "/") {
+      refetchHomeFeeds();
+    }
+    prevPathnameRef.current = pathname;
+  }, [pathname, status, refetchHomeFeeds]);
+
   useEffect(() => {
     if (status !== "authenticated" || pathname !== "/") return;
     const onVisible = () => refetchHomeFeeds();
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [status, pathname, refetchHomeFeeds]);
+
+  // Aggiornamento in tempo reale del numero previsioni sulle tile (polling quando in home e tab visibile)
+  const HOME_FEEDS_POLL_MS = 30_000;
+  useEffect(() => {
+    if (status !== "authenticated" || pathname !== "/") return;
+    const poll = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        refetchHomeFeeds();
+      }
+    };
+    const id = setInterval(poll, HOME_FEEDS_POLL_MS);
+    return () => clearInterval(id);
   }, [status, pathname, refetchHomeFeeds]);
 
   // Ripristino scroll quando si torna indietro da un evento (solo se salvataggio recente)
@@ -274,8 +298,11 @@ export default function Home() {
     if (status !== "authenticated") return;
     setMissionsLoading(true);
     fetch("/api/missions")
-      .then((r) => r.ok && r.json())
-      .then((data) => setMissions(data?.daily ?? []))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        const list = data?.missions;
+        setMissions(Array.isArray(list) ? list : []);
+      })
       .catch(() => setMissions([]))
       .finally(() => setMissionsLoading(false));
   }, [status]);

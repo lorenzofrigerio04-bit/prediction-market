@@ -99,7 +99,7 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
     <div
       ref={overlayRef}
       onClick={handleOverlayClick}
-      className="fixed inset-0 z-50 md:bg-black/40 transition-opacity"
+      className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm transition-opacity"
       aria-hidden={!open}
     >
       <aside

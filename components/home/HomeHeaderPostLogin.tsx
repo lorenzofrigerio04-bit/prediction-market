@@ -34,6 +34,7 @@ interface HomeHeaderPostLoginProps {
  * Sceglie una missione realizzabile a breve: non completata, max 3 passi rimanenti (o altrimenti la più vicina, max 5).
  */
 function pickClosestMission(missions: Mission[]): Mission | null {
+  if (!Array.isArray(missions)) return null;
   const incomplete = missions.filter((m) => !m.completed && m.target > 0);
   if (incomplete.length === 0) return null;
   const withRemaining = incomplete.map((m) => ({ mission: m, remaining: m.target - m.progress }));
@@ -89,12 +90,16 @@ export default function HomeHeaderPostLogin({
   missions,
   missionsLoading,
 }: HomeHeaderPostLoginProps) {
+  // Inizialmente sempre "Benvenuto" per evitare hydration mismatch (server non ha localStorage).
   const [welcomeWord, setWelcomeWord] = useState<"Benvenuto" | "Bentornato">("Benvenuto");
   useEffect(() => {
     if (typeof window === "undefined") return;
     const seen = localStorage.getItem(HOME_SEEN_KEY);
-    if (seen) setWelcomeWord("Bentornato");
-    else localStorage.setItem(HOME_SEEN_KEY, "1");
+    if (seen) {
+      queueMicrotask(() => setWelcomeWord("Bentornato"));
+    } else {
+      localStorage.setItem(HOME_SEEN_KEY, "1");
+    }
   }, []);
 
   const closestMission = missionsLoading ? null : pickClosestMission(missions);

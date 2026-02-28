@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -31,10 +31,20 @@ const MAIN_NAV_ITEMS = [
 const bottomLinkClass =
   "flex flex-col items-center justify-center gap-0.5 min-w-[52px] min-h-[48px] rounded-2xl transition-colors touch-manipulation active:scale-[0.98]";
 
+const SCROLL_THRESHOLD = 24;
+
 export default function Header() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(typeof window !== "undefined" ? window.scrollY > SCROLL_THRESHOLD : false);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const isActive = (path: string) =>
     pathname === path || (path !== "/" && pathname.startsWith(path));
@@ -47,7 +57,7 @@ export default function Header() {
   return (
     <>
       <header
-        className="header-neon sticky top-0 z-40"
+        className={`header-neon sticky top-0 z-40 transition-[background,backdrop-filter,border-color] duration-200 ${scrolled ? "header-neon-scrolled" : ""}`}
         style={{ paddingTop: "var(--safe-area-inset-top)" }}
       >
         <div className="mx-auto px-4 max-w-7xl">

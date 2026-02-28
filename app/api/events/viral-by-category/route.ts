@@ -32,27 +32,29 @@ export async function GET() {
           ],
           include: {
             ammState: { select: { qYesMicros: true, qNoMicros: true, bMicros: true } },
-            _count: { select: { Prediction: true } },
+            _count: { select: { Prediction: true, Trade: true } },
           },
         });
         return event;
       })
     );
 
+    const predCount = (c: { Prediction: number; Trade: number }) => (c.Prediction ?? 0) + (c.Trade ?? 0);
     const events = viralEvents
       .filter((event): event is NonNullable<typeof event> => event !== null)
       .map((e) => {
-        const { ammState, ...rest } = e;
+        const { ammState, _count, ...rest } = e;
         const probability =
           e.tradingMode === "AMM" && ammState
             ? Number((priceYesMicros(ammState.qYesMicros, ammState.qNoMicros, ammState.bMicros) * 100n) / SCALE)
             : getEventProbability(e);
-        return { ...rest, probability, _count: e._count };
+        const count = predCount(_count as { Prediction: number; Trade: number });
+        return { ...rest, probability, _count: { predictions: count } };
       });
 
     events.sort((a, b) => {
-      const predictionsA = a._count?.Prediction || 0;
-      const predictionsB = b._count?.Prediction || 0;
+      const predictionsA = a._count?.predictions ?? 0;
+      const predictionsB = b._count?.predictions ?? 0;
       return predictionsB - predictionsA;
     });
 

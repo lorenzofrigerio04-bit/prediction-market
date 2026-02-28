@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
         select: { id: true, name: true, image: true },
       },
       _count: {
-        select: { Prediction: true, comments: true },
+        select: { Prediction: true, Trade: true, comments: true },
       },
     };
 
@@ -200,7 +200,7 @@ export async function GET(request: NextRequest) {
       where: { id: { in: eventIds } },
       include: {
         createdBy: { select: { id: true, name: true, image: true } },
-        _count: { select: { Prediction: true, comments: true } },
+        _count: { select: { Prediction: true, Trade: true, comments: true } },
       },
     });
 
@@ -209,15 +209,17 @@ export async function GET(request: NextRequest) {
 
     const fomoStats = await getEventsWithStats(prisma, events.map((e) => e.id), now);
 
+    const predCount = (c: { Prediction: number; Trade: number }) => (c.Prediction ?? 0) + (c.Trade ?? 0);
     const eventsWithStats = events.map((event) => {
       const stats = fomoStats.get(event.id);
       const { _count, ...rest } = event;
+      const count = predCount(_count as { Prediction: number; Trade: number });
       return {
         ...rest,
-        _count: { predictions: _count.Prediction, comments: _count.comments },
+        _count: { predictions: count, comments: _count.comments },
         fomo: stats || {
           countdownMs: new Date(event.closesAt).getTime() - now.getTime(),
-          participantsCount: _count.Prediction,
+          participantsCount: count,
           votesVelocity: 0,
           pointsMultiplier: 1.0,
           isClosingSoon: false,

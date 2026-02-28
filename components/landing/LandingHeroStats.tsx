@@ -27,10 +27,10 @@ function useCountUp(end: number, enabled: boolean, durationMs: number) {
 
   useEffect(() => {
     if (!enabled || end === 0) {
-      setValue(end);
+      queueMicrotask(() => setValue(end));
       return;
     }
-    setValue(0);
+    queueMicrotask(() => setValue(0));
     startRef.current = null;
 
     const tick = (now: number) => {
@@ -63,7 +63,7 @@ function useAnimatedValue(
 
   useEffect(() => {
     if (!enabled) {
-      setValue(target);
+      queueMicrotask(() => setValue(target));
       prevTargetRef.current = target;
       currentRef.current = target;
       return;
@@ -74,7 +74,7 @@ function useAnimatedValue(
       currentRef.current = target;
       fromRef.current = target;
       prevTargetRef.current = target;
-      setValue(target);
+      queueMicrotask(() => setValue(target));
       return;
     }
     startRef.current = performance.now();
@@ -95,7 +95,7 @@ function useAnimatedValue(
 
   useEffect(() => {
     if (!enabled) {
-      setValue(target);
+      queueMicrotask(() => setValue(target));
       currentRef.current = target;
     }
   }, [enabled, target]);

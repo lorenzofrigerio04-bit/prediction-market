@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-
 export const dynamic = "force-dynamic";
 
 function startOfToday() {
@@ -25,15 +24,7 @@ export async function GET() {
     const userId = session.user.id;
     const todayStart = startOfToday();
 
-    const [pendingTx, cashedToday] = await Promise.all([
-      prisma.transaction.findFirst({
-        where: {
-          userId,
-          type: "SPIN_PENDING",
-          createdAt: { gte: todayStart },
-        },
-        orderBy: { createdAt: "desc" },
-      }),
+    const [spinToday, user] = await Promise.all([
       prisma.transaction.findFirst({
         where: {
           userId,
@@ -41,29 +32,22 @@ export async function GET() {
           createdAt: { gte: todayStart },
         },
       }),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { streakCount: true },
+      }),
     ]);
 
-    const pendingId = pendingTx?.id;
-    const alreadyCashed = pendingId
-      ? await prisma.transaction.findFirst({
-          where: {
-            userId,
-            type: "SPIN_REWARD",
-            referenceId: pendingId,
-          },
-        })
-      : null;
-
-    const hasUncashedPending = !!pendingTx && !alreadyCashed;
-    const canSpin = !hasUncashedPending && !cashedToday;
-    const pendingCredits = hasUncashedPending ? Math.abs(pendingTx!.amount) : null;
+    const canSpin = !spinToday;
+    const streak = user?.streakCount ?? 0;
 
     return NextResponse.json({
       canSpin,
-      lastSpinAt: pendingTx?.createdAt?.toISOString() ?? null,
+      lastSpinAt: spinToday?.createdAt?.toISOString() ?? null,
       nextSpinAt: null,
-      pendingCredits,
-      payloadStatus: hasUncashedPending ? "PENDING_CHOICE" : null,
+      pendingCredits: null,
+      payloadStatus: null,
+      streak,
     });
   } catch (error) {
     console.error("Error:", error);

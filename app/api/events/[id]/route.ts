@@ -10,11 +10,11 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: eventId } = await params;
     const session = await getServerSession(authOptions);
-    const eventId = params.id;
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
@@ -29,6 +29,7 @@ export async function GET(
         _count: {
           select: {
             Prediction: true,
+            Trade: true,
             comments: true,
           },
         },
@@ -136,8 +137,15 @@ export async function GET(
       }
     }
 
+    const { _count, ...eventRest } = event;
+    const predictionsCount = (_count.Prediction ?? 0) + ((_count as { Trade?: number }).Trade ?? 0);
+    const eventForClient = {
+      ...eventRest,
+      _count: { predictions: predictionsCount, comments: _count.comments },
+    };
+
     const res = NextResponse.json({
-      event,
+      event: eventForClient,
       userPrediction: null,
       userPosition,
       tradeHistory,
@@ -157,14 +165,14 @@ export async function GET(
 /** PATCH: solo il creatore può aggiornare il proprio evento (campi editabili). */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: eventId } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
     }
-    const eventId = params.id;
     const event = await prisma.event.findUnique({
       where: { id: eventId },
       select: { id: true, createdById: true },
@@ -206,14 +214,14 @@ export async function PATCH(
 /** DELETE: solo il creatore può eliminare il proprio evento (cascade su relazioni). */
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: eventId } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
     }
-    const eventId = params.id;
     const event = await prisma.event.findUnique({
       where: { id: eventId },
       select: { id: true, createdById: true },

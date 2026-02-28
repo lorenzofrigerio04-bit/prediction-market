@@ -46,11 +46,12 @@ export async function GET() {
           select: { qYesMicros: true, qNoMicros: true, bMicros: true },
         },
         _count: {
-          select: { Prediction: true, followers: true },
+          select: { Prediction: true, Trade: true, followers: true },
         },
       },
     });
 
+    const predCount = (c: { Prediction?: number; Trade?: number }) => (c?.Prediction ?? 0) + (c?.Trade ?? 0);
     const result = events.map((e) => {
       let probability: number;
       if (e.tradingMode === "AMM" && e.ammState) {
@@ -70,7 +71,7 @@ export async function GET() {
         closesAt: e.closesAt.toISOString(),
         probability,
         yesPct: Math.round(probability),
-        predictionsCount: e._count?.Prediction ?? 0,
+        predictionsCount: predCount(e._count as { Prediction?: number; Trade?: number }),
         followersCount: e._count?.followers ?? 0,
       };
     });

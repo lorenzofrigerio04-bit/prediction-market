@@ -513,6 +513,23 @@ export default function ConsigliatiFeed({ onSlideChange }: ConsigliatiFeedProps)
     }
   }, []);
 
+  /** Refetch in background per aggiornare conteggio previsioni in tempo reale (senza mostrare loading). */
+  const refreshPredictionsCount = useCallback(async () => {
+    if (document.visibilityState !== "visible") return;
+    try {
+      const res = await fetch(
+        `/api/events/consigliati?limit=${CONSIGLIATI_PAGE_SIZE}&offset=0`
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      const next = data.events ?? [];
+      if (next.length > 0) setEvents(next);
+      setHasMore(data.pagination?.hasMore ?? false);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || events.length === 0) return;
     setLoadingMore(true);
@@ -568,6 +585,13 @@ export default function ConsigliatiFeed({ onSlideChange }: ConsigliatiFeedProps)
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, [fetchEvents]);
+
+  /** Aggiornamento in tempo reale del numero previsioni nelle slide (polling in background quando tab visibile). */
+  const CONSIGLIATI_POLL_MS = 30_000;
+  useEffect(() => {
+    const id = setInterval(refreshPredictionsCount, CONSIGLIATI_POLL_MS);
+    return () => clearInterval(id);
+  }, [refreshPredictionsCount]);
 
   const handleShare = useCallback((eventId: string, title: string) => {
     const url =

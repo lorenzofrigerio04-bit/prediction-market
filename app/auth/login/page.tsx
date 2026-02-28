@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -27,6 +27,12 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
 
+  // Errore da query string (?error=...) — derivato, senza setState in effect
+  const errorFromUrl = (() => {
+    const err = searchParams.get("error");
+    return err ? (ERROR_MESSAGES[err] || ERROR_MESSAGES.Default) : "";
+  })();
+
   // Destinazione dopo login: da URL (?callbackUrl=...) o Home. Limita lunghezza per evitare
   // REQUEST_HEADER_TOO_LARGE (494) su Safari/Vercel (cookie callback-url troppo grande).
   const callbackUrl = (() => {
@@ -37,13 +43,6 @@ export default function LoginPage() {
     }
     return "/";
   })();
-
-  useEffect(() => {
-    const err = searchParams.get("error");
-    if (err) {
-      setError(ERROR_MESSAGES[err] || ERROR_MESSAGES.Default);
-    }
-  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,9 +110,9 @@ export default function LoginPage() {
           Accedi al tuo account
         </p>
 
-        {error && (
+        {(errorFromUrl || error) && (
           <div className="mb-4 p-3 bg-danger-bg/50 border border-danger/30 rounded-xl text-danger text-ds-body-sm">
-            {error}
+            {errorFromUrl || error}
             <p className="mt-2 text-xs text-fg-muted">
               Se il problema persiste, apri{" "}
               <a href="/api/auth-status" target="_blank" rel="noopener noreferrer" className="underline font-medium">

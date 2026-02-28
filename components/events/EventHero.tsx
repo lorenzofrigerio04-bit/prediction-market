@@ -26,18 +26,18 @@ export function EventHero({ event }: EventHeroProps) {
 
   useEffect(() => {
     if (event.isClosed) {
-      setTimeRemaining('Chiuso');
-      setProgress(100);
+      queueMicrotask(() => {
+        setTimeRemaining("Chiuso");
+        setProgress(100);
+      });
       return;
     }
 
     const closesAt = new Date(event.closesAt);
-    
     // Calcola il tempo totale dall'inizio (assumiamo che l'evento sia iniziato 7 giorni fa)
-    // In produzione questo dovrebbe venire da event.createdAt
     const createdAt = new Date(closesAt.getTime() - 7 * 24 * 60 * 60 * 1000);
     const totalDuration = closesAt.getTime() - createdAt.getTime();
-    setTotalTimeMs(totalDuration);
+    queueMicrotask(() => setTotalTimeMs(totalDuration));
 
     const updateCountdown = () => {
       const now = new Date();

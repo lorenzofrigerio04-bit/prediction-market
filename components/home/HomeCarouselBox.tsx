@@ -45,7 +45,7 @@ export default function HomeCarouselBox({
     const count = events.length;
     const isNewData = count !== prevEventsLenRef.current;
     prevEventsLenRef.current = count;
-    if (isNewData) setVisibleIndices(new Set());
+    if (isNewData) queueMicrotask(() => setVisibleIndices(new Set()));
 
     const t = setTimeout(() => {
       events.forEach((_, index) => {

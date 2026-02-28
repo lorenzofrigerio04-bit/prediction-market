@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 /** Ordine di possibilità di conseguimento: dai più facili ai più difficili */
 const ACHIEVEMENT_ORDER = [
+  "Primo evento",
   "Prima previsione",
   "Apprendista",
   "Veggente",

@@ -125,6 +125,31 @@ export default function DiscoverConsigliatiPage() {
     loadFromStart();
   }, [selectedCategories]);
 
+  /** Aggiornamento in tempo reale del numero previsioni (polling in background, solo quando tab visibile). */
+  const CONSIGLIATI_LIST_POLL_MS = 30_000;
+  const refreshPredictionsInBackground = useCallback(async () => {
+    if (typeof document === "undefined" || document.visibilityState !== "visible") return;
+    try {
+      const url = buildConsigliatiUrl(0);
+      const res = await fetch(url);
+      if (!res.ok) return;
+      const data = await res.json();
+      const next = (data.events ?? []) as ConsigliatiEvent[];
+      if (next.length === 0) return;
+      setEvents((prev) => {
+        const byId = new Map(next.map((e) => [e.id, e]));
+        return prev.map((e) => byId.get(e.id) ?? e);
+      });
+    } catch {
+      // ignore
+    }
+  }, [buildConsigliatiUrl]);
+
+  useEffect(() => {
+    const id = setInterval(refreshPredictionsInBackground, CONSIGLIATI_LIST_POLL_MS);
+    return () => clearInterval(id);
+  }, [refreshPredictionsInBackground]);
+
   const fetchCategories = useCallback(async () => {
     try {
       const res = await fetch("/api/events/categories");

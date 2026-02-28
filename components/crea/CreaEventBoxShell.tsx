@@ -19,7 +19,7 @@ export default function CreaEventBoxShell({
   const fallbackGradient = category ? getCategoryFallbackGradient(category) : "linear-gradient(135deg, #374151 0%, #1f2937 100%)";
 
   useEffect(() => {
-    if (!category) setImageFailed(false);
+    if (!category) queueMicrotask(() => setImageFailed(false));
   }, [category]);
 
   return (

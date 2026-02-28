@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { validateEventSubmission } from "@/lib/event-submission/validate";
+import { validateEventSubmission, createEventFromSubmission } from "@/lib/event-submission/validate";
 
 export async function POST(request: Request) {
   try {
@@ -50,14 +50,56 @@ export async function POST(request: Request) {
       resolutionSource: resolutionSource?.trim() || null,
     });
 
-    // Accetta tutti gli eventi e mettili in revisione (PENDING). Eventuali note di validazione
-    // vengono salvate in reviewNotes per riferimento futuro; la notifica di non accettazione
-    // verrà gestita successivamente.
     const categoryToSave = validation.valid ? validation.normalizedCategory! : category.trim();
     const reviewNotesToSave = !validation.valid && validation.errors?.length
       ? validation.errors.join(" | ")
       : null;
 
+    // Se la validazione è ok, prova a creare subito l'evento (pubblicazione immediata + missione "Primo evento")
+    if (
+      validation.valid &&
+      validation.dedupKey != null &&
+      validation.normalizedCategory != null
+    ) {
+      const createResult = await createEventFromSubmission(
+        {
+          title: title.trim(),
+          description: description?.trim() || null,
+          category: categoryToSave,
+          closesAt: closesAtDate,
+          resolutionSource: resolutionSource?.trim() || null,
+        },
+        session.user.id,
+        validation.dedupKey,
+        validation.normalizedCategory
+      );
+
+      if (createResult.success && createResult.eventId) {
+        const submission = await prisma.eventSubmission.create({
+          data: {
+            title: title.trim(),
+            description: description?.trim() || null,
+            category: categoryToSave,
+            closesAt: closesAtDate,
+            resolutionSource: resolutionSource?.trim() || null,
+            submittedById: session.user.id,
+            status: "APPROVED",
+            eventId: createResult.eventId,
+            notifyPhone: phoneToSave,
+          },
+        });
+
+        return NextResponse.json({
+          success: true,
+          approved: true,
+          eventId: createResult.eventId,
+          submissionId: submission.id,
+          message: "Evento pubblicato con successo.",
+        });
+      }
+    }
+
+    // Altrimenti: salva in revisione (PENDING)
     const submission = await prisma.eventSubmission.create({
       data: {
         title: title.trim(),

@@ -18,10 +18,10 @@ type RangeKey = keyof typeof RANGE_MS;
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const eventId = params.id;
+    const { id: eventId } = await params;
     if (!eventId) {
       return NextResponse.json(
         { error: "Event ID required" },
@@ -47,7 +47,23 @@ export async function GET(
       select: { yesPct: true, createdAt: true },
     });
 
+    // Se non ci sono snapshot ma l’evento ha attività AMM (almeno una previsione),
+    // restituiamo 2 punti: inizio periodo 50% → ora con probabilità corrente (mostra andamento).
     if (raw.length === 0) {
+      const event = await prisma.event.findUnique({
+        where: { id: eventId },
+        select: { ammState: { select: { qYesMicros: true, qNoMicros: true, bMicros: true } } },
+      });
+      if (event?.ammState) {
+        const amm = event.ammState;
+        const yesMicros = priceYesMicros(amm.qYesMicros, amm.qNoMicros, amm.bMicros);
+        const currentYesPct = Math.round(Number((yesMicros * 100n) / SCALE) * 10) / 10;
+        const points = [
+          { t: from.toISOString(), yesPct: 50 },
+          { t: now.toISOString(), yesPct: currentYesPct },
+        ];
+        return NextResponse.json({ points });
+      }
       return NextResponse.json({ points: [] });
     }
 

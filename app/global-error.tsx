@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 /**
  * Cattura errori non gestiti nel root layout (es. getServerSession, DB).
  * In produzione evita la pagina bianca e mostra un messaggio con possibilità di riprovare.
@@ -11,15 +13,6 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const handleBack = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      window.history.back();
-    } else {
-      window.location.href = "/";
-    }
-  };
-
   return (
     <html lang="it">
       <body style={{ fontFamily: "system-ui, sans-serif", padding: "2rem", maxWidth: "32rem", margin: "0 auto", background: "#f8fafc", color: "#1e293b" }}>
@@ -43,9 +36,8 @@ export default function GlobalError({
           >
             Riprova
           </button>
-          <a
+          <Link
             href="/"
-            onClick={handleBack}
             style={{
               padding: "0.5rem 1rem",
               background: "#e2e8f0",
@@ -56,7 +48,7 @@ export default function GlobalError({
             }}
           >
             Indietro
-          </a>
+          </Link>
         </div>
         {process.env.NODE_ENV === "development" && (
           <pre style={{ marginTop: "1.5rem", padding: "1rem", background: "#f1f5f9", borderRadius: "0.375rem", fontSize: "0.75rem", overflow: "auto" }}>

@@ -147,7 +147,12 @@ export default function EsploraPage() {
         const data: EventsResponse = await res.json();
         const list = data.events ?? [];
         if (append) {
-          setEvents((prev) => (pageNum === 1 ? list : [...prev, ...list]));
+          setEvents((prev) => {
+            if (pageNum === 1) return list;
+            const prevIds = new Set(prev.map((e) => e.id));
+            const newEvents = list.filter((e) => !prevIds.has(e.id));
+            return [...prev, ...newEvents];
+          });
         } else {
           setEvents(list);
         }
@@ -181,6 +186,38 @@ export default function EsploraPage() {
     setPage(1);
     fetchPage(1, false);
   }, [status, sort, search, categoryName]);
+
+  /** Aggiornamento in tempo reale del numero previsioni (polling in background quando tab visibile). */
+  const ESPLORA_POLL_MS = 30_000;
+  const refreshPredictionsInBackground = useCallback(async () => {
+    if (typeof document === "undefined" || document.visibilityState !== "visible") return;
+    try {
+      const params = new URLSearchParams({
+        status,
+        sort,
+        page: "1",
+        limit: String(LIMIT),
+        ...(search && { search }),
+        ...(categoryName && { category: categoryName }),
+      });
+      const res = await fetch(`/api/events?${params}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const next = (data.events ?? []) as EsploraEvent[];
+      if (next.length === 0) return;
+      setEvents((prev) => {
+        const byId = new Map(next.map((e) => [e.id, e]));
+        return prev.map((e) => byId.get(e.id) ?? e);
+      });
+    } catch {
+      // ignore
+    }
+  }, [status, sort, search, categoryName]);
+
+  useEffect(() => {
+    const id = setInterval(refreshPredictionsInBackground, ESPLORA_POLL_MS);
+    return () => clearInterval(id);
+  }, [refreshPredictionsInBackground]);
 
   // Infinite scroll: observe sentinel at bottom
   useEffect(() => {
@@ -219,7 +256,8 @@ export default function EsploraPage() {
     ...(categories.map((c) => ({ id: categoryToSlug(c), label: c }))),
   ];
 
-  const visibleEvents = debugMode ? events : events.filter((e) => !isDebugTitle(e.title));
+  const filtered = debugMode ? events : events.filter((e) => !isDebugTitle(e.title));
+  const visibleEvents = filtered.filter((e, i, arr) => arr.findIndex((x) => x.id === e.id) === i);
 
   return (
     <div className="min-h-screen bg-bg flex flex-col">

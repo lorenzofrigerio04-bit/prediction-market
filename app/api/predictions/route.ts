@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { updateMissionProgress } from "@/lib/missions";
+import { handleMissionEvent } from "@/lib/missions/mission-progress-service";
 import { checkAndAwardBadges } from "@/lib/badges";
 import { rateLimit } from "@/lib/rate-limit";
 import { track } from "@/lib/analytics";
@@ -57,6 +58,7 @@ export async function POST(request: NextRequest) {
         id: true,
         title: true,
         category: true,
+        probability: true,
         resolved: true,
         closesAt: true,
         tradingMode: true,
@@ -134,6 +136,13 @@ export async function POST(request: NextRequest) {
     updateMissionProgress(prisma, userId, "MAKE_PREDICTIONS", 1, event.category).catch((e) =>
       console.error("Mission progress update error:", e)
     );
+    handleMissionEvent(prisma, userId, "PLACE_PREDICTION", {
+      eventId: event.id,
+      category: event.category,
+      probability: event.probability ?? undefined,
+      outcome,
+      amount: Number(ammResult.actualCostMicros) / SCALE,
+    }).catch((e) => console.error("Mission event (place prediction) error:", e));
     checkAndAwardBadges(prisma, userId).catch((e) =>
       console.error("Badge check error:", e)
     );

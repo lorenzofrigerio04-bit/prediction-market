@@ -149,16 +149,24 @@ export default function ProfilePage() {
     setError(null);
     try {
       const response = await fetch("/api/profile/stats");
-      if (!response.ok) throw new Error("Errore nel caricamento del profilo");
-      const data: ProfileStats = await response.json();
-      setProfileData(data);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push("/auth/login");
+          return;
+        }
+        const message = typeof data?.error === "string" ? data.error : "Errore nel caricamento del profilo";
+        throw new Error(message);
+      }
+      setProfileData(data as ProfileStats);
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Errore nel caricamento dei dati del profilo";
       console.error("Error fetching profile data:", err);
-      setError("Errore nel caricamento dei dati del profilo");
+      setError(message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (status === "unauthenticated") {

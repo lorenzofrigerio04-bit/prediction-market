@@ -14,6 +14,7 @@ module.exports = {
         logo: ['Rubik', 'Outfit', 'system-ui', 'sans-serif'],
         numeric: ['JetBrains Mono', 'ui-monospace', 'monospace'],
         stats: ['Orbitron', 'JetBrains Mono', 'ui-monospace', 'monospace'],
+        levels: ['Bebas Neue', 'Oswald', 'system-ui', 'sans-serif'],
       },
       letterSpacing: {
         'headline': '0.02em',

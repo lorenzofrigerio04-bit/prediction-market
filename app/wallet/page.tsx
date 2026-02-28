@@ -5,7 +5,6 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
-import StreakBadge from "@/components/StreakBadge";
 import {
   PageHeader,
   SectionContainer,
@@ -20,6 +19,7 @@ import {
   IconGift,
   IconSparkles,
   IconCurrency,
+  IconCheck,
   IconTrendUp,
   IconTrendDown,
   IconTarget,
@@ -35,8 +35,8 @@ interface WalletStats {
   lastDailyBonus: string | null;
   canClaimDailyBonus: boolean;
   nextBonusAmount: number;
-  bonusMultiplier?: number;
   canSpinToday?: boolean;
+  todaySpinCredits?: number | null;
   boostMultiplier?: number | null;
   boostExpiresAt?: string | null;
   hasActiveBoost?: boolean;
@@ -94,7 +94,6 @@ export default function WalletPage() {
   const [pagination, setPagination] = useState<TransactionsResponse["pagination"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [claimingBonus, setClaimingBonus] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -121,22 +120,35 @@ export default function WalletPage() {
         fetch(`/api/wallet/transactions?limit=${TRANSACTION_PAGE_SIZE}&offset=${offset}`),
       ]);
 
-      if (!statsRes.ok) throw new Error("Errore nel caricamento delle statistiche");
-      if (!transactionsRes.ok) throw new Error("Errore nel caricamento delle transazioni");
+      if (!statsRes.ok) {
+        const body = await statsRes.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error ?? "Errore nel caricamento delle statistiche");
+      }
 
       const statsData = await statsRes.json();
-      const transactionsData: TransactionsResponse = await transactionsRes.json();
-
       setStats(statsData);
-      if (append) {
-        setTransactions((prev) => [...prev, ...transactionsData.transactions]);
+
+      if (!transactionsRes.ok) {
+        const body = await transactionsRes.json().catch(() => ({}));
+        const msg = (body as { error?: string }).error ?? "Errore nel caricamento delle transazioni";
+        setError(msg);
+        if (!append) {
+          setTransactions([]);
+          setPagination({ total: 0, limit: TRANSACTION_PAGE_SIZE, offset: 0, hasMore: false });
+        }
       } else {
-        setTransactions(transactionsData.transactions);
+        const transactionsData: TransactionsResponse = await transactionsRes.json();
+        if (append) {
+          setTransactions((prev) => [...prev, ...transactionsData.transactions]);
+        } else {
+          setTransactions(transactionsData.transactions);
+        }
+        setPagination(transactionsData.pagination);
+        setError(null);
       }
-      setPagination(transactionsData.pagination);
     } catch (err) {
       console.error("Error fetching wallet data:", err);
-      setError("Errore nel caricamento dei dati del wallet");
+      setError(err instanceof Error ? err.message : "Errore nel caricamento dei dati del wallet");
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -147,28 +159,6 @@ export default function WalletPage() {
     if (!pagination?.hasMore || loadingMore) return;
     setLoadingMore(true);
     fetchWalletData(true);
-  };
-
-  const handleClaimDailyBonus = async () => {
-    if (!stats?.canClaimDailyBonus || claimingBonus) return;
-
-    setClaimingBonus(true);
-    setError(null);
-    setSuccessMessage(null);
-
-    try {
-      const response = await fetch("/api/wallet/daily-bonus", { method: "POST" });
-      const data = await response.json();
-
-      if (!response.ok) throw new Error(data.error || "Errore nel riscatto del bonus");
-
-      setSuccessMessage(data.message);
-      await fetchWalletData();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Errore nel riscatto del bonus giornaliero");
-    } finally {
-      setClaimingBonus(false);
-    }
   };
 
   const formatDate = (dateString: string) =>
@@ -296,78 +286,44 @@ export default function WalletPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-ds-h3 font-bold text-fg">Bonus giornaliero</h3>
-                <p className="mt-1 text-ds-body-sm text-fg-muted">
-                  {stats.canClaimDailyBonus
-                    ? `Riscatta ${formatAmount(stats.nextBonusAmount)} crediti oggi.`
-                    : "Prossimo bonus domani."}
-                </p>
-                {stats.streak > 0 && (
-                  <p className="mt-2">
-                    <StreakBadge streak={stats.streak} size="sm" />
-                    {stats.bonusMultiplier != null && (
-                      <span className="ml-2 text-ds-body-sm text-fg-muted">
-                        Moltiplicatore: ×{stats.bonusMultiplier} (fino a ×2 con 10 giorni consecutivi)
-                      </span>
-                    )}
-                  </p>
-                )}
-                {stats.lastDailyBonus && (
-                  <p className="mt-1 text-ds-micro text-fg-muted">Ultimo riscatto: {formatDate(stats.lastDailyBonus)}</p>
-                )}
-              </div>
-              <CTAButton
-                fullWidth={false}
-                disabled={!stats.canClaimDailyBonus || claimingBonus}
-                onClick={handleClaimDailyBonus}
-                variant="primary"
-                className={
-                  !stats.canClaimDailyBonus || claimingBonus
-                    ? "!border-border !bg-surface/50 !text-fg-muted dark:!border-white/10"
-                    : ""
-                }
-              >
-                {claimingBonus ? (
-                  <span className="flex items-center gap-2">
-                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" aria-hidden />
-                    Riscatto...
-                  </span>
-                ) : stats.canClaimDailyBonus ? (
-                  <span className="flex items-center gap-2">
-                    <IconGift className="w-4 h-4" />
-                    Ritira bonus
-                  </span>
-                ) : (
-                  "Prossimo domani"
-                )}
-              </CTAButton>
-            </div>
-          </Card>
-
-          <Card className="mb-4 p-5 md:p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="text-ds-h3 font-bold text-fg">Spin of the Day</h3>
-                <p className="mt-1 text-ds-body-sm text-fg-muted">
-                  {stats.canSpinToday
-                    ? "Un giro al giorno. Vinci fino a 500 crediti, poi scegli se incassare o giocare la ruota moltiplicatrice."
-                    : "Hai già usato lo spin di oggi. Torna domani."}
-                </p>
-              </div>
-              <CTAButton
-                href="/spin"
-                fullWidth={false}
-                variant="primary"
-                className={!stats.canSpinToday ? "!border-border !bg-surface/50 !text-fg-muted dark:!border-white/10" : ""}
-              >
                 {stats.canSpinToday ? (
+                  <p className="mt-1 text-ds-body font-bold text-fg">
+                    Riscatta il tuo bonus giornaliero!
+                  </p>
+                ) : (
+                  <>
+                    <p className="mt-1 flex items-center gap-1.5 text-ds-h2 font-sans leading-none">
+                      <span className="font-semibold tabular-nums text-white">
+                        {stats.todaySpinCredits != null ? stats.todaySpinCredits.toLocaleString("it-IT") : "—"}
+                      </span>
+                      <svg className="h-[0.9em] w-[0.9em] shrink-0 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden style={{ verticalAlign: "middle" }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </p>
+                    <p className="mt-1.5 flex items-center gap-2 text-ds-body-sm text-fg-muted">
+                      <IconCheck className="h-4 w-4 shrink-0 text-success" aria-hidden />
+                      Ruota già girata
+                    </p>
+                  </>
+                )}
+                <div className="mt-4 border-t border-white/10 pt-4">
+                  <p className="text-ds-body font-semibold text-fg">
+                    La tua streak: {stats.streak} <span className="inline-block text-lg leading-none" aria-hidden>🔥</span>
+                  </p>
+                </div>
+              </div>
+              {stats.canSpinToday && (
+                <CTAButton
+                  href="/spin"
+                  fullWidth={false}
+                  variant="primary"
+                >
                   <span className="flex items-center gap-2">
                     <IconSparkles className="w-4 h-4" />
                     Gira la ruota
                   </span>
-                ) : (
-                  "Vedi la ruota"
-                )}
-              </CTAButton>
+                </CTAButton>
+              )}
             </div>
           </Card>
 
@@ -376,12 +332,14 @@ export default function WalletPage() {
             <p className="mt-1 text-ds-body-sm text-fg-muted">
               Completa missioni giornaliere e settimanali per crediti extra. Le ricompense sono definite per ogni missione.
             </p>
-            <Link
-              href="/missions"
-              className="mt-4 inline-block text-ds-body-sm font-medium text-primary hover:underline"
-            >
-              Vai alle missioni →
-            </Link>
+            <div className="mt-4 flex justify-end">
+              <Link
+                href="/missions"
+                className="text-ds-body-sm font-medium text-primary hover:underline"
+              >
+                Vai alle missioni →
+              </Link>
+            </div>
           </Card>
         </SectionContainer>
 

@@ -1,5 +1,5 @@
 /* @import deve stare in cima, prima di @tailwind (altrimenti dopo la compilazione finisce dopo altre regole) */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Nunito:wght@600;700;800&family=Space+Grotesk:wght@500;600;700&family=Rubik:wght@500;600;700&family=Oswald:wght@500;600;700&family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Orbitron:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@600;700;800&family=Nunito:wght@600;700;800&family=Space+Grotesk:wght@500;600;700&family=Rubik:wght@500;600;700&family=Oswald:wght@500;600;700&family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Orbitron:wght@600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -12,6 +12,7 @@
   --font-logo: 'Orbitron', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-cta: 'Plus Jakarta Sans', 'Outfit', system-ui, sans-serif;
   --font-eyebrow: 'Oswald', 'Outfit', system-ui, sans-serif;
+  --font-levels: 'Bebas Neue', 'Oswald', system-ui, sans-serif;
   --space-0: 0;
   --space-1: 0.25rem;   /* 4px */
   --space-2: 0.5rem;    /* 8px */
@@ -807,6 +808,45 @@ textarea:focus-visible {
   position: relative;
   flex-shrink: 0;
 }
+/* Ruota livelli missioni: oracolo protagonista, sfera grande al centro; cerchio centrale trasparente */
+.level-wheel-oracle {
+  background: transparent;
+}
+.level-wheel-oracle-inner {
+  background: transparent;
+}
+.level-wheel-oracle .crystal-ball {
+  --ball-size: 88px;
+}
+
+/* Spicchi ruota: sfumatura colore → trasparente verso prossimo livello; contorno verde se completato */
+.level-wheel-segment-gradient .level-wheel-segment-gradient-start {
+  stop-color: rgb(var(--success));
+}
+.level-wheel-segment {
+  stroke: rgba(255, 255, 255, 0.06);
+  stroke-width: 0.5;
+}
+.level-wheel-segment--reached {
+  stroke: rgb(var(--success));
+  stroke-width: 1.2;
+}
+
+/* Etichette livelli: più visibili; stile "ancora da sbloccare" per i non raggiunti */
+.level-wheel-label {
+  font-size: 10px;
+  font-weight: 600;
+}
+.level-wheel-label--reached {
+  fill: rgba(255, 255, 255, 0.98);
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.25));
+}
+.level-wheel-label--locked {
+  fill: rgba(255, 255, 255, 0.6);
+  stroke: rgba(0, 0, 0, 0.4);
+  stroke-width: 0.6px;
+  paint-order: stroke fill;
+}
 .crystal-ball--shake {
   animation: crystal-ball-shake 1.15s var(--crystal-ease) both;
 }
@@ -1455,10 +1495,10 @@ textarea:focus-visible {
 
 /* Landing page: header liquid glass premium — logo tinta unita, bordi sottili */
 .landing-page .header-neon {
-  background: rgb(255 255 255 / 0.04);
-  backdrop-filter: blur(24px) saturate(1.2);
-  -webkit-backdrop-filter: blur(24px) saturate(1.2);
-  border-bottom: 1px solid rgb(255 255 255 / 0.04);
+  background: rgb(0 0 0 / 0.35);
+  backdrop-filter: blur(28px) saturate(1.25);
+  -webkit-backdrop-filter: blur(28px) saturate(1.25);
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
   box-shadow: none;
 }
 .landing-page .header-neon a,
@@ -1475,8 +1515,8 @@ textarea:focus-visible {
   border-color: rgb(255 255 255 / 0.18);
 }
 .dark .landing-page .header-neon {
-  background: rgb(255 255 255 / 0.06);
-  border-bottom-color: rgb(255 255 255 / 0.04);
+  background: rgb(11 18 32 / 0.72);
+  border-bottom-color: rgb(255 255 255 / 0.08);
 }
 
 .landing-page main#main-content {
@@ -1756,6 +1796,34 @@ textarea:focus-visible {
 }
 .animate-bar-pulse {
   animation: bar-pulse 2.5s ease-in-out infinite;
+}
+
+/* —— Missions: livelli – glow sul livello corrente e fill progress —— */
+@keyframes level-current-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(var(--primary) / 0.4); }
+  50% { box-shadow: 0 0 0 6px rgb(var(--primary) / 0.15); }
+}
+.animate-level-current-glow {
+  animation: level-current-glow 2s ease-in-out infinite;
+}
+@keyframes level-progress-fill {
+  from { width: 0; }
+  to { width: var(--level-progress-pct, 0); }
+}
+.animate-level-progress-fill {
+  --level-progress-pct: 0;
+  animation: level-progress-fill 0.7s var(--ease-out) forwards;
+}
+
+/* Barra XP: blu coerente con la piattaforma, sfumatura elegante come gli spicchi della ruota */
+.level-progress-bar-fill {
+  background: linear-gradient(
+    90deg,
+    rgb(var(--primary) / 0.92) 0%,
+    rgb(var(--primary)) 35%,
+    rgb(var(--primary-hover)) 65%,
+    rgb(var(--primary) / 0.88) 100%
+  );
 }
 
 /* —— Loading chart: asse X si allarga lentamente, Y si allunga veloce, linea che si traccia (stile memecoin) —— */
@@ -2694,17 +2762,28 @@ textarea:focus-visible {
   box-shadow: 0 0 0 2px rgb(var(--primary) / 0.35);
 }
 
-/* —— Header: liquid glass premium — bordi sottili, glass definito —— */
+/* —— Header: liquid glass premium — bordi sottili, ben leggibile —— */
 .header-neon {
-  background: rgb(var(--surface) / 0.06);
-  backdrop-filter: blur(24px) saturate(1.2);
-  -webkit-backdrop-filter: blur(24px) saturate(1.2);
-  border-bottom: 1px solid rgb(255 255 255 / 0.04);
+  background: rgb(var(--surface) / 0.28);
+  backdrop-filter: blur(28px) saturate(1.25);
+  -webkit-backdrop-filter: blur(28px) saturate(1.25);
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
   box-shadow: none;
 }
 .dark .header-neon {
-  background: rgb(255 255 255 / 0.06);
-  border-bottom-color: rgb(255 255 255 / 0.04);
+  background: rgb(11 18 32 / 0.75);
+  border-bottom-color: rgb(255 255 255 / 0.08);
+}
+/* Header in scroll: sfondo ancora più opaco */
+.header-neon.header-neon-scrolled {
+  background: rgb(var(--surface) / 0.42);
+  backdrop-filter: blur(32px) saturate(1.3);
+  -webkit-backdrop-filter: blur(32px) saturate(1.3);
+  border-bottom-color: rgb(255 255 255 / 0.12);
+}
+.dark .header-neon.header-neon-scrolled {
+  background: rgb(11 18 32 / 0.92);
+  border-bottom-color: rgb(255 255 255 / 0.12);
 }
 
 /* Bottom nav: pill/ellisse flottante stile Apple, staccata dai bordi */
@@ -2728,21 +2807,22 @@ textarea:focus-visible {
   height: var(--bottom-nav-h);
   min-height: var(--bottom-nav-h);
   border-radius: 9999px;
+  /* Sfondo quasi opaco: barra ben isolata dallo sfondo della pagina */
   background: linear-gradient(
     to bottom,
-    rgba(255, 255, 255, 0.14) 0%,
-    rgba(255, 255, 255, 0.05) 35%,
-    rgba(11, 18, 32, 0.5) 70%,
-    rgba(11, 18, 32, 0.82) 100%
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(255, 255, 255, 0.22) 35%,
+    rgba(11, 18, 32, 0.96) 70%,
+    rgba(11, 18, 32, 1) 100%
   );
-  backdrop-filter: blur(20px) saturate(1.15);
-  -webkit-backdrop-filter: blur(20px) saturate(1.15);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(32px) saturate(1.2);
+  -webkit-backdrop-filter: blur(32px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   box-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.2) inset,
-    0 -1px 0 0 rgba(0, 0, 0, 0.08) inset,
-    0 4px 24px rgba(0, 0, 0, 0.12),
-    0 2px 8px rgba(0, 0, 0, 0.06);
+    0 1px 0 0 rgba(255, 255, 255, 0.35) inset,
+    0 -1px 0 0 rgba(0, 0, 0, 0.2) inset,
+    0 4px 28px rgba(0, 0, 0, 0.45),
+    0 2px 10px rgba(0, 0, 0, 0.2);
   overflow: hidden;
 }
 .nav-bottom-neon .nav-bottom-neon-inner::before {
@@ -2761,17 +2841,17 @@ textarea:focus-visible {
 .dark .nav-bottom-neon .nav-bottom-neon-inner {
   background: linear-gradient(
     to bottom,
-    rgba(255, 255, 255, 0.12) 0%,
-    rgba(255, 255, 255, 0.03) 35%,
-    rgba(11, 18, 32, 0.55) 70%,
-    rgba(11, 18, 32, 0.88) 100%
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.18) 35%,
+    rgba(11, 18, 32, 0.97) 70%,
+    rgba(11, 18, 32, 1) 100%
   );
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
   box-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.15) inset,
-    0 -1px 0 0 rgba(0, 0, 0, 0.15) inset,
-    0 4px 24px rgba(0, 0, 0, 0.35),
-    0 2px 8px rgba(0, 0, 0, 0.2);
+    0 1px 0 0 rgba(255, 255, 255, 0.3) inset,
+    0 -1px 0 0 rgba(0, 0, 0, 0.25) inset,
+    0 4px 28px rgba(0, 0, 0, 0.6),
+    0 2px 10px rgba(0, 0, 0, 0.35);
 }
 .dark .nav-bottom-neon .nav-bottom-neon-inner::before {
   background: linear-gradient(
@@ -2811,19 +2891,19 @@ textarea:focus-visible {
   font-weight: 500;
 }
 
-/* Consigliati: gradiente trasparenza header → tab → strip (header meno trasparente, strip più trasparente) */
+/* Consigliati: header e bottom nav ben leggibili su foto sfondo */
 body.discover-consigliati-active .header-neon {
-  background: rgba(11, 18, 32, 0.52);
-  backdrop-filter: blur(14px) saturate(1.1);
-  -webkit-backdrop-filter: blur(14px) saturate(1.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(11, 18, 32, 0.82);
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 body.discover-consigliati-active .nav-bottom-neon .nav-bottom-neon-inner {
-  background: rgba(11, 18, 32, 0.35);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  background: rgba(11, 18, 32, 0.97);
+  backdrop-filter: blur(32px) saturate(1.2);
+  -webkit-backdrop-filter: blur(32px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 28px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.15) inset;
 }
 /* Icone e testo immersi nella foto: niente box, niente contorno */
 body.discover-consigliati-active .nav-bottom-neon a {
@@ -2946,12 +3026,15 @@ body.discover-consigliati-active .discover-consigliati-strip-zone {
   border-color: rgb(255 255 255 / 0.12);
 }
 
-/* Menu a tendina: stesso mood della barra inferiore (glass, gradiente, blur) */
+/* Menu a tendina: sfondo solido per leggibilità ottimale, bordo e ombra */
 .side-drawer-panel {
-  background: linear-gradient(to left, rgba(11, 18, 32, 0.78), rgba(11, 18, 32, 0.28));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgb(var(--bg));
+  border-left: 1px solid rgb(var(--border) / var(--border-o, 1));
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.15);
+}
+.dark .side-drawer-panel {
+  border-left-color: rgba(255, 255, 255, 0.1);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.4);
 }
 
 .header-icon-btn {
@@ -3592,6 +3675,10 @@ body.discover-consigliati-active {
   .discover-feed-main {
     --discover-bottom-nav-offset: var(--bottom-nav-total);
   }
+  /* Contenitore fixed del feed: altezza ridotta così la barra non copre nulla */
+  .discover-feed-fullviewport.discover-feed-below-chrome {
+    height: calc(100dvh - (var(--header-height, 3.5rem) + var(--discover-tab-bar-h, 52px) + var(--discover-consigliati-strip-zone-h, 0px)) - var(--bottom-nav-total)) !important;
+  }
 }
 
 .event-detail-page-main {
@@ -3652,6 +3739,25 @@ body.discover-consigliati-active {
 .event-detail-box-neon {
   border: 1px solid rgb(255 255 255 / 0.22);
   animation: home-summary-neon-border 2.8s linear infinite;
+}
+
+/* Missioni riscattate: contorno verde successo (override su .event-detail-box che ha border:none) */
+.event-detail-box.mission-card-claimed {
+  border: 2px solid rgb(var(--success));
+}
+
+/* Popup info missioni: sfondo quasi opaco per isolare il contenuto */
+.mission-info-popup {
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgb(255 255 255 / 0.1);
+}
+.dark .mission-info-popup {
+  background: rgba(0, 0, 0, 0.92);
+  border-color: rgb(255 255 255 / 0.12);
 }
 
 /* Toolbar su sfondo cinema: testo chiaro per leggibilità */

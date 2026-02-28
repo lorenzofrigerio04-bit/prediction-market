@@ -32,7 +32,7 @@ export default function CrystalBallStep({ step1Done, step2Done, step3Done, step4
   const allComplete = step1Done && step2Done && step3Done && step4Done && step5Done;
 
   useEffect(() => {
-    setIsShaking(true);
+    queueMicrotask(() => setIsShaking(true));
     const t = setTimeout(() => setIsShaking(false), 1180);
     return () => clearTimeout(t);
   }, [currentStep]);

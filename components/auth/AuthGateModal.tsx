@@ -25,9 +25,9 @@ export function AuthGateModal({
 
   useEffect(() => {
     if (isOpen) {
-      setIsClosing(false);
       // Prevent body scroll when modal is open
       document.body.style.overflow = 'hidden';
+      queueMicrotask(() => setIsClosing(false));
     } else {
       document.body.style.overflow = '';
     }

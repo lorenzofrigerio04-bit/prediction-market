@@ -56,7 +56,7 @@ export async function GET() {
         ammState: {
           select: { qYesMicros: true, qNoMicros: true, bMicros: true },
         },
-        _count: { select: { Prediction: true } },
+        _count: { select: { Prediction: true, Trade: true } },
       },
     });
 
@@ -105,7 +105,7 @@ export async function GET() {
           b: e.b,
           userWinProbability,
           userSide,
-          predictionsCount: e._count?.Prediction ?? 0,
+          predictionsCount: (e._count?.Prediction ?? 0) + ((e._count as { Trade?: number })?.Trade ?? 0),
         };
       });
 

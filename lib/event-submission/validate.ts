@@ -7,6 +7,8 @@ import { createHash } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { ensureAmmStateForEvent } from "@/lib/amm/ensure-amm-state";
 import { getBParameterOrDefault } from "@/lib/pricing/initialization";
+import { handleMissionEvent } from "@/lib/missions/mission-progress-service";
+import { checkAndAwardBadges } from "@/lib/badges";
 
 export const ALLOWED_CATEGORIES = [
   "Sport",
@@ -319,6 +321,14 @@ export async function createEventFromSubmission(
       },
     });
     await ensureAmmStateForEvent(prisma, event.id);
+
+    // Missione "Primo evento" e badge FIRST_EVENT_CREATED
+    handleMissionEvent(prisma, submittedById, "CREATE_EVENT", { eventId: event.id }).catch((e) =>
+      console.error("Mission progress (CREATE_EVENT) error:", e)
+    );
+    checkAndAwardBadges(prisma, submittedById).catch((e) =>
+      console.error("Badge check after event create error:", e)
+    );
 
     return { success: true, eventId: event.id };
   } catch (error: unknown) {

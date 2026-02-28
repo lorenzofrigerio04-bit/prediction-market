@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 import { createAuditLog } from "@/lib/audit";
 import { updateMissionProgress } from "@/lib/missions";
+import { handleMissionEvent } from "@/lib/missions/mission-progress-service";
 import { checkAndAwardBadges } from "@/lib/badges";
 import { resolveMarketMarkResolved, payoutMarketInBatches } from "@/lib/amm/resolve";
 import { invalidatePriceCache } from "@/lib/cache/price";
@@ -80,6 +81,19 @@ export async function POST(
         resolveMarketMarkResolved(tx, eventId, outcome as "YES" | "NO")
       );
       const { paidUserIds } = await payoutMarketInBatches(prisma, eventId, outcome as "YES" | "NO", 500);
+
+      const allPredictions = await prisma.prediction.findMany({
+        where: { eventId, resolved: true },
+        select: { userId: true, won: true },
+      });
+      const paidSet = new Set(paidUserIds);
+      for (const p of allPredictions) {
+        handleMissionEvent(prisma, p.userId, p.won ? "WIN_PREDICTION" : "LOSE_PREDICTION", {
+          eventId,
+          outcome: outcome as "YES" | "NO",
+          won: p.won ?? false,
+        }).catch((e) => console.error("Mission event (win/lose) error:", e));
+      }
 
       for (const userId of paidUserIds) {
         updateMissionProgress(prisma, userId, "WIN_PREDICTIONS", 1).catch((e) =>

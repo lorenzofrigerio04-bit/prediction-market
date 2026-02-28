@@ -24,8 +24,8 @@ export function useTheme() {
   useEffect(() => {
     const stored = getStoredTheme();
     const resolved = stored ?? getSystemTheme();
-    setThemeState(resolved);
     document.documentElement.classList.toggle("dark", resolved === "dark");
+    queueMicrotask(() => setThemeState(resolved));
   }, []);
 
   const setTheme = (next: Theme) => {

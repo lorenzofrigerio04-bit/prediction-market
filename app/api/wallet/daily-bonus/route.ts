@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { updateMissionProgress } from "@/lib/missions";
+import { handleMissionEvent } from "@/lib/missions/mission-progress-service";
 import { checkAndAwardBadges } from "@/lib/badges";
 import { track } from "@/lib/analytics";
 import {
@@ -86,6 +87,9 @@ export async function POST(request: Request) {
     // Missione "Login giornaliero" e badge (streak può aver sbloccato badge)
     updateMissionProgress(prisma, userId, "DAILY_LOGIN", 1).catch((e) =>
       console.error("Mission progress update error:", e)
+    );
+    handleMissionEvent(prisma, userId, "LOGIN_STREAK_DAYS", { streak: streakCount }).catch((e) =>
+      console.error("Mission event (login streak) error:", e)
     );
     checkAndAwardBadges(prisma, userId).catch((e) =>
       console.error("Badge check error:", e)

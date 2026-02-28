@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 /** Palette coerente con il design system: primary, accent, teal, success, toni neutri */
 const PALETTE = [
@@ -29,6 +29,25 @@ interface Piece {
   shape: "rect" | "circle" | "round";
 }
 
+function generatePieces(durationMs: number): Piece[] {
+  const list: Piece[] = [];
+  const count = 220;
+  for (let i = 0; i < count; i++) {
+    list.push({
+      id: i,
+      left: randomBetween(-2, 102),
+      delay: randomBetween(0, 1400),
+      duration: randomBetween(durationMs * 0.8, durationMs * 1.2) / 1000,
+      drift: randomBetween(-80, 80),
+      rotation: randomBetween(360, 1080) * (Math.random() > 0.5 ? 1 : -1),
+      size: randomBetween(4, 12),
+      color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
+      shape: ["rect", "circle", "round"][Math.floor(Math.random() * 3)] as Piece["shape"],
+    });
+  }
+  return list;
+}
+
 interface ConfettiCelebrationProps {
   active: boolean;
   onComplete: () => void;
@@ -40,24 +59,14 @@ export default function ConfettiCelebration({
   onComplete,
   durationMs = 4000,
 }: ConfettiCelebrationProps) {
-  const pieces = useMemo(() => {
-    if (!active) return [];
-    const list: Piece[] = [];
-    const count = 220;
-    for (let i = 0; i < count; i++) {
-      list.push({
-        id: i,
-        left: randomBetween(-2, 102),
-        delay: randomBetween(0, 1400),
-        duration: randomBetween(durationMs * 0.8, durationMs * 1.2) / 1000,
-        drift: randomBetween(-80, 80),
-        rotation: randomBetween(360, 1080) * (Math.random() > 0.5 ? 1 : -1),
-        size: randomBetween(4, 12),
-        color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
-        shape: ["rect", "circle", "round"][Math.floor(Math.random() * 3)] as Piece["shape"],
-      });
+  const [pieces, setPieces] = useState<Piece[]>([]);
+
+  useEffect(() => {
+    if (!active) {
+      queueMicrotask(() => setPieces([]));
+      return;
     }
-    return list;
+    queueMicrotask(() => setPieces(generatePieces(durationMs)));
   }, [active, durationMs]);
 
   useEffect(() => {

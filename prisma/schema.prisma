@@ -39,9 +39,10 @@ model User {
   userBadges  UserBadge[]
   eventFollows EventFollower[]
   userMissions UserMission[]
-  accounts    Account[]
-  Position    Position[]
-  Trade       Trade[]
+  userXP       UserXP?
+  accounts     Account[]
+  Position     Position[]
+  Trade        Trade[]
 
   @@map("users")
 }
@@ -352,12 +353,15 @@ model Badge {
   icon        String
   rarity      String // COMMON, RARE, EPIC, LEGENDARY
   criteria    String? // JSON string con criteri per sbloccare il badge
+  code        String?   @unique // Stable code for mission rewards (e.g. STREAK_3, ACCURACY_60)
+  effect      String?   // JSON: { type, value, durationDays? } BONUS_MULTIPLIER | PROFILE_BORDER | DAILY_BONUS
   createdAt   DateTime  @default(now())
 
   // Relazioni
   userBadges UserBadge[]
 
   @@index([rarity])
+  @@index([code])
   @@map("badges")
 }
 
@@ -404,7 +408,7 @@ model EventFollower {
   @@map("event_followers")
 }
 
-// Template missioni (daily/weekly): target, reward, tipo
+// Template missioni (daily/weekly): target, reward, tipo — legacy, prefer MissionTemplate
 model Mission {
   id          String   @id @default(cuid())
   name        String
@@ -424,25 +428,75 @@ model Mission {
   @@map("missions")
 }
 
-// Progresso utente per una missione in un periodo (un record per user+mission+periodStart)
-model UserMission {
-  id         String    @id @default(cuid())
-  userId     String
-  missionId  String
-  periodStart DateTime // inizio giorno o settimana
-  progress   Int      @default(0)
-  completed  Boolean  @default(false)
-  completedAt DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+// Template missioni nuovo sistema: DAILY | WEEKLY | CHAPTER | SKILL
+model MissionTemplate {
+  id             String   @id @default(cuid())
+  code           String   @unique
+  title          String
+  description    String
+  type           String   // DAILY | WEEKLY | CHAPTER | SKILL
+  category       String   // HABIT | EXPLORATION | SKILL | PERFORMANCE | SOCIAL
+  difficulty     String   // EASY | MEDIUM | HARD
+  chapterLevel   Int?     // per CHAPTER (1-5)
+  progressMetric String   // LOGIN_STREAK_DAYS, PREDICTIONS_COUNT, WINS_COUNT, WIN_STREAK, etc.
+  targetValue    Int
+  constraints    String?  // JSON: minProbability, categories[], sameCategory, underusedCategory, etc.
+  rewards        String   // JSON: { credits, xp, badgeCode?, multiplier? }
+  isActive       Boolean  @default(true)
+  sortOrder      Int?
+  createdAt      DateTime @default(now())
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  mission Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  userMissions UserMission[]
+
+  @@index([type])
+  @@index([isActive])
+  @@index([chapterLevel])
+  @@map("mission_templates")
+}
+
+// XP e livello utente (1-5)
+model UserXP {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  xpTotal      Int      @default(0)
+  currentLevel Int      @default(1) // 1..5
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_xp")
+}
+
+// Progresso utente per una missione (legacy: missionId + periodStart; nuovo: missionTemplateId + periodStart)
+model UserMission {
+  id                String    @id @default(cuid())
+  userId            String
+  missionId         String?   // legacy
+  missionTemplateId String?   @map("mission_template_id")
+  periodStart       DateTime  // inizio giorno/settimana o epoch per CHAPTER/SKILL
+  progress          Int       @default(0) // legacy
+  progressValue     Int       @default(0) @map("progress_value") // nuovo
+  targetValue       Int?      @map("target_value") // snapshot da template
+  status            String    @default("ACTIVE") // ACTIVE | COMPLETED | EXPIRED | CLAIMED
+  expiresAt         DateTime? @map("expires_at")
+  metadata          String?   // JSON snapshot (assignedCategory, etc.)
+  completed         Boolean   @default(false) // legacy
+  completedAt       DateTime?
+  claimedAt         DateTime? @map("claimed_at")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mission         Mission?        @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  missionTemplate MissionTemplate? @relation(fields: [missionTemplateId], references: [id], onDelete: Cascade)
 
   @@unique([userId, missionId, periodStart])
+  @@unique([userId, missionTemplateId, periodStart])
   @@index([userId])
   @@index([missionId])
+  @@index([missionTemplateId])
   @@index([periodStart])
+  @@index([status])
   @@map("user_missions")
 }
 

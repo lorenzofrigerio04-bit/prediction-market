@@ -6,6 +6,14 @@ export interface BadgeCriteria {
   correctPredictions?: number;
   streak?: number;
   accuracy?: number; // minimo % (0-100)
+  eventsCreated?: number;
+}
+
+/** Effect JSON for badge (multiplier, profile border, etc.) */
+export interface BadgeEffect {
+  type: "BONUS_MULTIPLIER" | "PROFILE_BORDER" | "DAILY_BONUS";
+  value?: number; // e.g. 0.1 for +10%
+  durationDays?: number;
 }
 
 /** Dati per creare un badge nel seed */
@@ -15,15 +23,26 @@ export interface BadgeDefinition {
   icon: string;
   rarity: "COMMON" | "RARE" | "EPIC" | "LEGENDARY";
   criteria: BadgeCriteria;
+  code?: string; // Stable code for mission rewards (e.g. STREAK_3, ACCURACY_60)
+  effect?: BadgeEffect;
 }
 
 export const DEFAULT_BADGES: BadgeDefinition[] = [
+  {
+    name: "Primo evento",
+    description: "Hai creato il tuo primo evento di previsione",
+    icon: "📝",
+    rarity: "COMMON",
+    criteria: { eventsCreated: 1 },
+    code: "FIRST_EVENT_CREATED",
+  },
   {
     name: "Prima previsione",
     description: "Hai fatto la tua prima previsione",
     icon: "🎯",
     rarity: "COMMON",
     criteria: { predictions: 1 },
+    code: "FIRST_PREDICTION",
   },
   {
     name: "Apprendista",
@@ -31,6 +50,7 @@ export const DEFAULT_BADGES: BadgeDefinition[] = [
     icon: "📚",
     rarity: "COMMON",
     criteria: { predictions: 10 },
+    code: "APPRENTICE",
   },
   {
     name: "Veggente",
@@ -38,6 +58,8 @@ export const DEFAULT_BADGES: BadgeDefinition[] = [
     icon: "🔮",
     rarity: "RARE",
     criteria: { predictions: 50 },
+    code: "SEER",
+    effect: { type: "PROFILE_BORDER", value: 1 },
   },
   {
     name: "Oracolo",
@@ -45,6 +67,8 @@ export const DEFAULT_BADGES: BadgeDefinition[] = [
     icon: "✨",
     rarity: "EPIC",
     criteria: { predictions: 100 },
+    code: "ORACLE",
+    effect: { type: "PROFILE_BORDER", value: 2 },
   },
   {
     name: "Prima vittoria",
@@ -52,6 +76,7 @@ export const DEFAULT_BADGES: BadgeDefinition[] = [
     icon: "🏆",
     rarity: "COMMON",
     criteria: { correctPredictions: 1 },
+    code: "FIRST_WIN",
   },
   {
     name: "Vincente",
@@ -59,6 +84,7 @@ export const DEFAULT_BADGES: BadgeDefinition[] = [
     icon: "⭐",
     rarity: "RARE",
     criteria: { correctPredictions: 10 },
+    code: "WINNER",
   },
   {
     name: "Streak 3 giorni",
@@ -66,6 +92,8 @@ export const DEFAULT_BADGES: BadgeDefinition[] = [
     icon: "🔥",
     rarity: "COMMON",
     criteria: { streak: 3 },
+    code: "STREAK_3",
+    effect: { type: "BONUS_MULTIPLIER", value: 0.1 },
   },
   {
     name: "Streak 7 giorni",
@@ -73,6 +101,8 @@ export const DEFAULT_BADGES: BadgeDefinition[] = [
     icon: "💪",
     rarity: "RARE",
     criteria: { streak: 7 },
+    code: "STREAK_7",
+    effect: { type: "BONUS_MULTIPLIER", value: 0.2 },
   },
   {
     name: "Streak 30 giorni",
@@ -80,6 +110,8 @@ export const DEFAULT_BADGES: BadgeDefinition[] = [
     icon: "👑",
     rarity: "LEGENDARY",
     criteria: { streak: 30 },
+    code: "STREAK_30",
+    effect: { type: "BONUS_MULTIPLIER", value: 0.5 },
   },
   {
     name: "Precisione 60%",
@@ -87,6 +119,7 @@ export const DEFAULT_BADGES: BadgeDefinition[] = [
     icon: "🎲",
     rarity: "RARE",
     criteria: { accuracy: 60 },
+    code: "ACCURACY_60",
   },
   {
     name: "Precisione 80%",
@@ -94,6 +127,7 @@ export const DEFAULT_BADGES: BadgeDefinition[] = [
     icon: "🎪",
     rarity: "EPIC",
     criteria: { accuracy: 80 },
+    code: "ACCURACY_80",
   },
 ];
 
@@ -113,6 +147,7 @@ function meetsCriteria(
     correctPredictions: number;
     streak: number;
     accuracy: number;
+    eventsCreated: number;
   }
 ): boolean {
   if (criteria.predictions !== undefined && stats.totalPredictions < criteria.predictions)
@@ -120,6 +155,8 @@ function meetsCriteria(
   if (criteria.correctPredictions !== undefined && stats.correctPredictions < criteria.correctPredictions)
     return false;
   if (criteria.streak !== undefined && stats.streak < criteria.streak)
+    return false;
+  if (criteria.eventsCreated !== undefined && stats.eventsCreated < criteria.eventsCreated)
     return false;
   if (criteria.accuracy !== undefined) {
     const minResolved = 5;
@@ -143,10 +180,11 @@ export async function checkAndAwardBadges(
   });
   if (!user) return { awarded: [] };
 
-  const [totalPredictions, correctCount, resolvedCount] = await Promise.all([
+  const [totalPredictions, correctCount, resolvedCount, eventsCreated] = await Promise.all([
     prisma.prediction.count({ where: { userId } }),
     prisma.prediction.count({ where: { userId, won: true } }),
     prisma.prediction.count({ where: { userId, resolved: true } }),
+    prisma.event.count({ where: { createdById: userId } }),
   ]);
   const accuracy = resolvedCount > 0 ? Math.round((correctCount / resolvedCount) * 100) : 0;
 
@@ -155,6 +193,7 @@ export async function checkAndAwardBadges(
     correctPredictions: correctCount,
     streak: user.streakCount,
     accuracy,
+    eventsCreated,
   };
 
   const existingBadgeIds = new Set(

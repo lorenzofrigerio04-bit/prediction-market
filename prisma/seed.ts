@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { DEFAULT_BADGES } from '../lib/badges';
+import { MISSION_TEMPLATES_SEED } from '../lib/missions/seed-templates';
 import { parseOutcomeDateFromText } from '../lib/event-generation/closes-at';
 import { getClosureRules } from '../lib/event-generation/config';
 import { computeDedupKey } from '../lib/event-publishing/dedup';
@@ -122,13 +123,55 @@ async function main() {
           icon: b.icon,
           rarity: b.rarity,
           criteria: JSON.stringify(b.criteria),
+          code: b.code ?? undefined,
+          effect: b.effect ? JSON.stringify(b.effect) : undefined,
         },
       });
     }
     console.log(`✅ Creati ${DEFAULT_BADGES.length} badge.`);
+  } else {
+    // Aggiorna badge esistenti e aggiungi eventuali nuovi (es. FIRST_EVENT_CREATED)
+    for (const b of DEFAULT_BADGES) {
+      const byCode = b.code
+        ? await prisma.badge.findUnique({ where: { code: b.code } })
+        : null;
+      if (byCode) {
+        await prisma.badge.update({
+          where: { id: byCode.id },
+          data: {
+            name: b.name,
+            description: b.description,
+            icon: b.icon,
+            rarity: b.rarity,
+            criteria: JSON.stringify(b.criteria),
+            ...(b.effect && { effect: JSON.stringify(b.effect) }),
+          },
+        });
+      } else if (b.code) {
+        await prisma.badge.create({
+          data: {
+            name: b.name,
+            description: b.description,
+            icon: b.icon,
+            rarity: b.rarity,
+            criteria: JSON.stringify(b.criteria),
+            code: b.code,
+            effect: b.effect ? JSON.stringify(b.effect) : undefined,
+          },
+        });
+        console.log(`✅ Badge creato: ${b.name} (${b.code})`);
+      } else {
+        await prisma.badge.updateMany({
+          where: { name: b.name },
+          data: {
+            ...(b.effect && { effect: JSON.stringify(b.effect) }),
+          },
+        });
+      }
+    }
   }
 
-  // Missioni di default (daily + weekly)
+  // Missioni legacy (daily + weekly)
   const missionCount = await prisma.mission.count();
   if (missionCount === 0) {
     const missions = [
@@ -139,7 +182,64 @@ async function main() {
     for (const m of missions) {
       await prisma.mission.create({ data: m });
     }
-    console.log(`✅ Create ${missions.length} missioni di default.`);
+    console.log(`✅ Create ${missions.length} missioni legacy.`);
+  }
+
+  // Mission templates (nuovo sistema: daily, weekly, chapter, skill)
+  const templateCount = await prisma.missionTemplate.count();
+  if (templateCount === 0) {
+    console.log('📋 Creazione mission templates...');
+    for (const t of MISSION_TEMPLATES_SEED) {
+      await prisma.missionTemplate.create({
+        data: {
+          code: t.code,
+          title: t.title,
+          description: t.description,
+          type: t.type,
+          category: t.category,
+          difficulty: t.difficulty,
+          chapterLevel: t.chapterLevel ?? undefined,
+          progressMetric: t.progressMetric,
+          targetValue: t.targetValue,
+          constraints: t.constraints ?? undefined,
+          rewards: t.rewards,
+          isActive: true,
+          sortOrder: t.sortOrder ?? undefined,
+        },
+      });
+    }
+    console.log(`✅ Creati ${MISSION_TEMPLATES_SEED.length} mission templates.`);
+  } else {
+    // Aggiungi eventuali nuovi template (es. CH1_FIRST_EVENT) senza svuotare la tabella
+    let added = 0;
+    for (const t of MISSION_TEMPLATES_SEED) {
+      const existing = await prisma.missionTemplate.findUnique({
+        where: { code: t.code },
+      });
+      if (!existing) {
+        await prisma.missionTemplate.create({
+          data: {
+            code: t.code,
+            title: t.title,
+            description: t.description,
+            type: t.type,
+            category: t.category,
+            difficulty: t.difficulty,
+            chapterLevel: t.chapterLevel ?? undefined,
+            progressMetric: t.progressMetric,
+            targetValue: t.targetValue,
+            constraints: t.constraints ?? undefined,
+            rewards: t.rewards,
+            isActive: true,
+            sortOrder: t.sortOrder ?? undefined,
+          },
+        });
+        added++;
+      }
+    }
+    if (added > 0) {
+      console.log(`✅ Aggiunti ${added} nuovi mission templates.`);
+    }
   }
 
   // Shop: prodotti esempio (solo crediti virtuali)

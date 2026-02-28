@@ -24,13 +24,15 @@ export async function GET(request: NextRequest) {
       take: limit,
       include: {
         createdBy: { select: { id: true, name: true, image: true } },
-        _count: { select: { Prediction: true, comments: true } },
+        _count: { select: { Prediction: true, Trade: true, comments: true } },
         ammState: { select: { qYesMicros: true, qNoMicros: true, bMicros: true } },
       },
     });
 
+    const predCount = (c: { Prediction: number; Trade: number }) => (c.Prediction ?? 0) + (c.Trade ?? 0);
     const eventsWithCount = events.map((e) => {
       const { ammState, ...rest } = e;
+      const count = predCount(e._count as { Prediction: number; Trade: number });
       const probability =
         e.tradingMode === "AMM" && ammState
           ? Number((priceYesMicros(ammState.qYesMicros, ammState.qNoMicros, ammState.bMicros) * 100n) / SCALE)
@@ -38,7 +40,7 @@ export async function GET(request: NextRequest) {
       return {
         ...rest,
         probability,
-        _count: { predictions: e._count.Prediction, comments: e._count.comments },
+        _count: { predictions: count, comments: e._count.comments },
       };
     });
 

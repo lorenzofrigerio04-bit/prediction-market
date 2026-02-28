@@ -64,7 +64,7 @@ export default function SeguitiSection({
 
   useEffect(() => {
     if (topEvents.length === 0) return;
-    setVisibleIndices(new Set());
+    queueMicrotask(() => setVisibleIndices(new Set()));
     const timeouts: ReturnType<typeof setTimeout>[] = [];
     topEvents.forEach((_, i) => {
       timeouts.push(

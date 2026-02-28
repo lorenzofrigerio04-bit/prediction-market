@@ -27,9 +27,11 @@ export default function PublishPhoneModal({
 
   useEffect(() => {
     if (!open) {
-      setSecondMessageVisible(false);
-      setPhone("");
-      setAcceptTerms(false);
+      queueMicrotask(() => {
+        setSecondMessageVisible(false);
+        setPhone("");
+        setAcceptTerms(false);
+      });
       return;
     }
     const t = setTimeout(() => setSecondMessageVisible(true), 3500);

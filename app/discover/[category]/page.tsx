@@ -152,6 +152,19 @@ export default function DiscoverCategoryPage() {
     }
   }, [fetchEvents, slug, categoryName]);
 
+  /** Aggiornamento in tempo reale del numero previsioni nelle card (polling quando tab visibile). */
+  const DISCOVER_CATEGORY_POLL_MS = 30_000;
+  useEffect(() => {
+    if (slug !== "tutti" && categoryName === undefined) return;
+    const poll = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        fetchEvents();
+      }
+    };
+    const id = setInterval(poll, DISCOVER_CATEGORY_POLL_MS);
+    return () => clearInterval(id);
+  }, [slug, categoryName, fetchEvents]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearch(searchInput.trim());

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { use, useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -79,8 +79,11 @@ interface EventResponse {
 export default function EventDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const resolvedParams = use(params);
+  const eventId = resolvedParams?.id ?? "";
+
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -122,24 +125,37 @@ export default function EventDetailPage({
     !!session;
 
   useEffect(() => {
-    if (params?.id) {
+    if (eventId) {
       fetchEvent();
       if (session?.user?.id) {
         fetchUserCredits();
       }
     }
-  }, [params?.id, session]);
+  }, [eventId, session]);
 
   useEffect(() => {
     const onVisibilityChange = () => {
-      if (typeof document !== "undefined" && document.visibilityState === "visible" && params?.id) {
+      if (typeof document !== "undefined" && document.visibilityState === "visible" && eventId) {
         fetchEvent();
         if (session?.user?.id) fetchUserCredits();
       }
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => document.removeEventListener("visibilitychange", onVisibilityChange);
-  }, [params?.id, session?.user?.id]);
+  }, [eventId, session?.user?.id]);
+
+  // Aggiornamento in tempo reale del conteggio previsioni e probabilità (polling quando tab visibile)
+  const PREDICTION_COUNT_POLL_MS = 20_000;
+  useEffect(() => {
+    if (!eventId || !event) return;
+    const poll = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        fetchEvent();
+      }
+    };
+    const id = setInterval(poll, PREDICTION_COUNT_POLL_MS);
+    return () => clearInterval(id);
+  }, [eventId, event?.id]);
 
   useEffect(() => {
     if (!event) return;
@@ -212,9 +228,9 @@ export default function EventDetailPage({
   }, [event?.id, userPosition, sellOutcome, sellShares]);
 
   const fetchEvent = async () => {
-    if (!params?.id) return;
+    if (!eventId) return;
     try {
-      const response = await fetch(`/api/events/${params.id}`, { cache: "no-store" });
+      const response = await fetch(`/api/events/${eventId}`, { cache: "no-store" });
       if (!response.ok) {
         if (response.status === 404) {
           if (typeof window !== "undefined" && window.history.length > 1) {
@@ -438,7 +454,7 @@ export default function EventDetailPage({
             const yesPct = displayProbability;
             return (
               <>
-                <div className="grid grid-cols-2 gap-3 mb-3">
+                <div id="prediction-section" className="grid grid-cols-2 gap-3 mb-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -857,7 +873,7 @@ export default function EventDetailPage({
 
         {/* Box 2: Grafico — centrato nella pagina, titolo e assi bilanciati */}
         <section className="event-detail-box event-detail-box-neon event-detail-box-chart transition-all duration-ds-normal p-4 md:p-6 mb-4" aria-labelledby="chart-heading">
-          <EventProbabilityChart eventId={event.id} range="7d" refetchTrigger={event._count.predictions} layout="standalone" />
+          <EventProbabilityChart eventId={event.id} range="7d" refetchTrigger={event._count.predictions} layout="standalone" predictionsCount={event._count.predictions} />
         </section>
       </main>
 

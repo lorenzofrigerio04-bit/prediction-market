@@ -2,11 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import {
-  getNextDailyBonusAmount,
-  getDailyBonusMultiplier,
-  getDisplayCredits,
-} from "@/lib/credits-config";
+import { getDisplayCredits } from "@/lib/credits-config";
 
 export const dynamic = "force-dynamic";
 
@@ -44,28 +40,18 @@ export async function GET() {
     const todayStart = new Date();
     todayStart.setUTCHours(0, 0, 0, 0);
 
-    const alreadyClaimedBonusToday = await prisma.transaction.findFirst({
-      where: {
-        userId,
-        type: "DAILY_BONUS",
-        createdAt: { gte: todayStart },
-      },
-    });
-    const canClaimDailyBonus = !alreadyClaimedBonusToday;
-    const nextBonusAmount = getNextDailyBonusAmount(
-      user.streakCount,
-      canClaimDailyBonus
-    );
-    const bonusMultiplier = getDailyBonusMultiplier(user.streakCount);
-
     const spinToday = await prisma.transaction.findFirst({
       where: {
         userId,
         type: "SPIN_REWARD",
         createdAt: { gte: todayStart },
       },
+      select: { amount: true },
     });
     const canSpinToday = !spinToday;
+    const canClaimDailyBonus = canSpinToday;
+    const nextBonusAmount = canSpinToday ? 50 : 0;
+    const todaySpinCredits = spinToday ? spinToday.amount : null;
     const hasActiveBoost = false; // boostExpiresAt e boostMultiplier non esistono nello schema
 
     const totalSpentResult = await prisma.transaction.aggregate({
@@ -90,8 +76,8 @@ export async function GET() {
       streakCount: user.streakCount,
       canClaimDailyBonus,
       nextBonusAmount,
-      bonusMultiplier,
       canSpinToday,
+      todaySpinCredits,
       boostMultiplier: 0,
       boostExpiresAt: null,
       hasActiveBoost,

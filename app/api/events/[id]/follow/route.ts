@@ -4,15 +4,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { track } from "@/lib/analytics";
 import { updateMissionProgress } from "@/lib/missions";
+import { handleMissionEvent } from "@/lib/missions/mission-progress-service";
 
 /**
  * GET /api/events/[id]/follow — returns { isFollowing }
  */
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: eventId } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -25,7 +27,7 @@ export async function GET(
       where: {
         userId_eventId: {
           userId: session.user.id,
-          eventId: params.id,
+          eventId,
         },
       },
     });
@@ -47,9 +49,10 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: eventId } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -57,8 +60,6 @@ export async function POST(
         { status: 401 }
       );
     }
-
-    const eventId = params.id;
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
@@ -97,6 +98,9 @@ export async function POST(
       });
       updateMissionProgress(prisma, session.user.id, "FOLLOW_EVENTS", 1).catch((e) =>
         console.error("Mission progress update error:", e)
+      );
+      handleMissionEvent(prisma, session.user.id, "FOLLOW_EVENT", { eventId }).catch((e) =>
+        console.error("Mission event (follow) error:", e)
       );
       track("EVENT_FOLLOWED", { userId: session.user.id, eventId }, { request });
       return NextResponse.json({

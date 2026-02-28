@@ -9,10 +9,10 @@ import { DEFAULT_B } from "@/lib/pricing/initialization";
  */
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const eventId = params.id;
+    const { id: eventId } = await params;
     if (!eventId) {
       return NextResponse.json({ error: "Event ID required" }, { status: 400 });
     }

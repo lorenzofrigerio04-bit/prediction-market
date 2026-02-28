@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { track, type AnalyticsEvent } from "@/lib/analytics";
 import { persistMarketAnalyticsRaw } from "@/lib/analytics/persist-raw";
+import { prisma } from "@/lib/prisma";
+import { handleMissionEvent } from "@/lib/missions/mission-progress-service";
 
 /**
  * POST /api/analytics/track
@@ -62,6 +64,13 @@ export async function POST(request: NextRequest) {
         userId: session?.user?.id ?? undefined,
         eventType: event === "EVENT_VIEWED" ? "impression" : "click",
       }).catch((e) => console.error("[analytics] persist raw error:", e));
+    }
+
+    if (event === "EVENT_VIEWED" && session?.user?.id && eventId && typeof eventId === "string") {
+      handleMissionEvent(prisma, session.user.id, "VIEW_EVENT_DETAILS", {
+        eventId,
+        category: properties.category as string | undefined,
+      }).catch((e) => console.error("[analytics] mission event (view details) error:", e));
     }
 
     return NextResponse.json({ ok: true });

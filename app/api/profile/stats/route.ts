@@ -101,7 +101,7 @@ export async function GET() {
 
     // Calculate ROI (Return on Investment)
     const totalInvested = totalSpent;
-    const totalReturn = user.totalEarned;
+    const totalReturn = user.totalEarned ?? 0;
     const roi = totalInvested > 0 
       ? ((totalReturn - totalInvested) / totalInvested) * 100 
       : 0;
@@ -121,10 +121,10 @@ export async function GET() {
       },
       stats: {
         credits: getDisplayCredits({
-          credits: user.credits,
-          creditsMicros: user.creditsMicros,
+          credits: user.credits ?? 0,
+          creditsMicros: user.creditsMicros ?? null,
         }),
-        totalEarned: user.totalEarned,
+        totalEarned: user.totalEarned ?? 0,
         totalSpent,
         streak: user.streakCount ?? 0,
         activePredictions,
@@ -144,9 +144,13 @@ export async function GET() {
       followedEvents: user.eventFollows.map((ef) => ef.event),
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Errore sconosciuto";
     console.error("Error fetching profile stats:", error);
     return NextResponse.json(
-      { error: "Errore nel caricamento delle statistiche del profilo" },
+      {
+        error: "Errore nel caricamento delle statistiche del profilo",
+        details: process.env.NODE_ENV === "development" ? message : undefined,
+      },
       { status: 500 }
     );
   }

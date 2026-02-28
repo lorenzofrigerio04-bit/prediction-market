@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getCategoryImagePath, getCategoryFallbackGradient } from "@/lib/category-slug";
 
@@ -19,8 +19,9 @@ export interface HomeEventTileProps {
   onNavigate?: () => void;
 }
 
-function formatTimeLeftShort(closesAt: string): string {
-  const ms = new Date(closesAt).getTime() - Date.now();
+function formatTimeLeftShort(closesAt: string, nowMs: number): string {
+  if (nowMs <= 0) return "—";
+  const ms = new Date(closesAt).getTime() - nowMs;
   if (ms <= 0) return "Chiuso";
   const h = Math.floor(ms / (1000 * 60 * 60));
   const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
@@ -39,11 +40,21 @@ export default function HomeEventTile({
   resolved,
   onNavigate,
 }: HomeEventTileProps) {
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    const update = () => setNow(Date.now());
+    queueMicrotask(update);
+    const id = setInterval(update, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   const noPct = 100 - yesPct;
   const imagePath = getCategoryImagePath(category);
   const fallbackGradient = getCategoryFallbackGradient(category);
   const [imageFailed, setImageFailed] = useState(false);
   const useImage = imagePath && !imageFailed;
+  const closesAtMs = new Date(closesAt).getTime();
+  const isClosedOrClosing = variant === "closing" || (now > 0 && closesAtMs <= now);
 
   return (
     <Link
@@ -74,9 +85,9 @@ export default function HomeEventTile({
           <span className="inline-flex w-fit rounded-md border border-white/30 bg-black/70 px-2 py-0.5 text-xs font-semibold text-white shadow-[0_2px_6px_rgba(0,0,0,0.9)] backdrop-blur-sm sm:text-ds-micro">
             {category}
           </span>
-          {(variant === "closing" || new Date(closesAt).getTime() <= Date.now()) && (
+          {isClosedOrClosing && (
             <span className="rounded-lg border border-amber-400/50 bg-amber-500/40 px-2 py-1 text-xs font-bold text-amber-100 shadow-[0_0_12px_-2px_rgba(251,191,36,0.5),0_1px_3px_rgba(0,0,0,0.8)] sm:text-ds-micro w-fit">
-              {formatTimeLeftShort(closesAt)}
+              {formatTimeLeftShort(closesAt, now)}
             </span>
           )}
         </div>

@@ -44,10 +44,20 @@ export async function GET(request: Request) {
       prisma.transaction.count({ where }),
     ]);
 
-    const serialized = transactions.map((t) => ({
-      ...t,
-      amountMicros: t.amountMicros != null ? t.amountMicros.toString() : null,
-    }));
+    // Build JSON-safe response: no BigInt, shape expected by client (amount, balanceAfter, description).
+    const serialized = transactions.map((t) => {
+      const amount =
+        t.amountMicros != null ? Number(t.amountMicros) / 1_000_000 : t.amount;
+      return {
+        id: t.id,
+        type: t.type,
+        amount,
+        description: null,
+        balanceAfter: 0,
+        createdAt: t.createdAt.toISOString(),
+        referenceType: t.referenceType,
+      };
+    });
 
     return NextResponse.json({
       transactions: serialized,

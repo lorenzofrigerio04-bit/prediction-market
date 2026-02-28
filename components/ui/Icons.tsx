@@ -260,6 +260,16 @@ export function IconLock({ className, ...props }: SVGProps<SVGSVGElement>) {
   );
 }
 
+/** Lucchetto aperto / sbloccato */
+export function IconLockOpen({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon className={className} {...props}>
+      <path d="M8 11V7a4 4 0 1 1 8 0v4" />
+      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+    </Icon>
+  );
+}
+
 export function IconClock({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <Icon className={className} {...props}>
@@ -393,6 +403,40 @@ export function IconArrowRight({ className, ...props }: SVGProps<SVGSVGElement>)
     <Icon className={className} {...props}>
       <path d="M5 12h14" />
       <path d="m12 5 7 7-7 7" />
+    </Icon>
+  );
+}
+
+/** Icona informativa "i" minimal (per tooltip/popup) */
+export function IconInfo({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon className={className} {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4" />
+      <path d="M12 8h.01" />
+    </Icon>
+  );
+}
+
+/** Icone livelli progressione (stile futuristico) */
+export function IconLevelGem({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon className={className} {...props}>
+      <path d="M12 2 8 8l4 6 4-6-4-6Z" />
+      <path d="m8 8 4 6 4-6" />
+      <path d="M12 14v4" />
+      <path d="m12 8-4-6" />
+      <path d="m12 8 4-6" />
+    </Icon>
+  );
+}
+
+export function IconLevelCrystalBall({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon className={className} {...props}>
+      <circle cx="12" cy="10" r="6" />
+      <circle cx="12" cy="10" r="2.5" strokeWidth={1.5} />
+      <path d="M8 16c0-2.2 1.8-4 4-4s4 1.8 4 4" />
     </Icon>
   );
 }

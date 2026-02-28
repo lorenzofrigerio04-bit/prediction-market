@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 
@@ -32,10 +32,15 @@ export default function CreateEventModal({
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>("idle");
   const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [minDate, setMinDate] = useState("");
 
-  const minDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 16);
+  useEffect(() => {
+    queueMicrotask(() =>
+      setMinDate(
+        new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16)
+      )
+    );
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

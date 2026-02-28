@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState, useEffect } from "react";
 import Link from "next/link";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { IconClock, IconArrowRight } from "@/components/ui/Icons";
@@ -33,12 +33,21 @@ interface MarketCardProps {
 }
 
 function MarketCard({ event, index = 0 }: MarketCardProps) {
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    const update = () => setNow(Date.now());
+    queueMicrotask(update);
+    const id = setInterval(update, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   const closesAt = new Date(event.closesAt);
-  const timeUntilClose = closesAt.getTime() - Date.now();
+  const timeUntilClose = now !== null ? closesAt.getTime() - now : 0;
   const hoursUntilClose = Math.floor(timeUntilClose / (1000 * 60 * 60));
   const daysUntilClose = Math.floor(hoursUntilClose / 24);
 
   const getTimeRemaining = (): string => {
+    if (now === null) return "—";
     if (timeUntilClose <= 0) return "Chiuso";
     if (daysUntilClose > 0) return `${daysUntilClose}g`;
     if (hoursUntilClose > 0) return `${hoursUntilClose}h`;
