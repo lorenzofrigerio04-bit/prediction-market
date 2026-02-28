@@ -48,7 +48,7 @@ function toMissionDTO(um: {
 }): MissionDTO | null {
   if (!um.missionTemplate) return null;
   const t = um.missionTemplate;
-  let rewards = { credits: 0, xp: 0 };
+  let rewards: { credits: number; xp: number; badgeCode?: string } = { credits: 0, xp: 0 };
   try {
     rewards = JSON.parse(t.rewards) as { credits: number; xp: number; badgeCode?: string };
   } catch {

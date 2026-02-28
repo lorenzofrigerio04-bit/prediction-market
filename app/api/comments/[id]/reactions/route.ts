@@ -7,7 +7,7 @@ import { track } from "@/lib/analytics";
 // POST - Add or toggle a reaction
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,7 +19,7 @@ export async function POST(
       );
     }
 
-    const commentId = params.id;
+    const { id: commentId } = await params;
     const body = await request.json();
     const { type } = body;
 
@@ -114,7 +114,7 @@ export async function POST(
 // DELETE - Remove a reaction
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -126,7 +126,7 @@ export async function DELETE(
       );
     }
 
-    const commentId = params.id;
+    const { id: commentId } = await params;
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type");
 

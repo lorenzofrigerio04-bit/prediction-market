@@ -94,10 +94,33 @@ export default function WalletPage() {
   const [pagination, setPagination] = useState<TransactionsResponse["pagination"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [claimingBonus, setClaimingBonus] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const TRANSACTION_PAGE_SIZE = 20;
+
+  const handleClaimDailyBonus = async () => {
+    setClaimingBonus(true);
+    setError(null);
+    setSuccessMessage(null);
+    try {
+      const res = await fetch("/api/wallet/daily-bonus", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError((data as { error?: string }).error ?? "Errore nel riscatto del bonus");
+        return;
+      }
+      setSuccessMessage(
+        (data as { message?: string }).message ?? `Bonus riscattato! +${(data as { bonusAmount?: number }).bonusAmount ?? "?"} crediti`
+      );
+      fetchWalletData();
+    } catch {
+      setError("Errore di connessione");
+    } finally {
+      setClaimingBonus(false);
+    }
+  };
 
   useEffect(() => {
     if (status === "unauthenticated") {

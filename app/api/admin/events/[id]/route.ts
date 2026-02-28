@@ -13,12 +13,13 @@ const COHERENCE_TOLERANCE_MS = 48 * 60 * 60 * 1000;
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await requireAdmin();
+    const { id } = await params;
     const event = await prisma.event.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         createdBy: { select: { id: true, name: true, email: true } },
       },
@@ -41,11 +42,11 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const admin = await requireAdmin();
-    const eventId = params.id;
+    const { id: eventId } = await params;
     const body = await request.json();
     const {
       title,

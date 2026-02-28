@@ -119,15 +119,17 @@ export async function ensureUserMissionsForPeriod(
     orderBy: { periodStart: "asc" },
   });
 
-  return userMissions.map((um) => ({
-    id: um.id,
-    missionId: um.missionId,
-    progress: um.progress,
-    completed: um.completed,
-    completedAt: um.completedAt,
-    periodStart: um.periodStart,
-    mission: um.mission,
-  }));
+  return userMissions
+    .filter((um): um is typeof um & { missionId: string; mission: NonNullable<typeof um.mission> } => um.missionId != null && um.mission != null)
+    .map((um) => ({
+      id: um.id,
+      missionId: um.missionId,
+      progress: um.progress,
+      completed: um.completed,
+      completedAt: um.completedAt,
+      periodStart: um.periodStart,
+      mission: um.mission,
+    }));
 }
 
 /**

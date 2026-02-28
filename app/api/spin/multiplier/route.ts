@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { pickMultiplier, getMultiplierSegmentIndex } from "@/lib/spin-config";
 import { applyCreditTransaction } from "@/lib/apply-credit-transaction";
 
 export const dynamic = "force-dynamic";
@@ -69,8 +68,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const segment = pickMultiplier();
-    const totalCredits = Math.round(baseCredits * segment.multiplier);
+    // Moltiplicatore rimosso: incasso = base (equivalente a multiplier 1)
+    const multiplier = 1;
+    const totalCredits = baseCredits;
 
     await prisma.$transaction(async (tx) => {
       await applyCreditTransaction(tx, userId, "SPIN_REWARD", totalCredits, {
@@ -80,10 +80,10 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({
-      multiplier: segment.multiplier,
+      multiplier,
       baseCredits,
       totalCredits,
-      segmentIndex: getMultiplierSegmentIndex(segment.multiplier),
+      segmentIndex: 0,
     });
   } catch (error) {
     console.error("Error:", error);

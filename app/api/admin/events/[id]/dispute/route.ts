@@ -19,11 +19,11 @@ function isInDisputeWindow(resolvedAt: Date | null): boolean {
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const admin = await requireAdmin();
-    const eventId = params.id;
+    const { id: eventId } = await params;
     const body = await request.json();
     const { action, newOutcome } = body;
 

@@ -40,6 +40,10 @@ export function getCreditsSegmentIndex(credits: number): number {
 
 export const CREDITS_SEGMENT_COUNT = CREDITS_WHEEL_SEGMENTS.length;
 
+// —— Ruota moltiplicatrice: rimossa (sempre 1x); stub per compatibilità con MultiplierWheel ——
+export const MULTIPLIER_WHEEL_SEGMENTS: { multiplier: number; label: string }[] = [{ multiplier: 1, label: "1x" }];
+export const MULTIPLIER_SEGMENT_COUNT = MULTIPLIER_WHEEL_SEGMENTS.length;
+
 // —— Payload storico (compatibilità) ——
 export type SpinPayloadStatus = "CASHED";
 

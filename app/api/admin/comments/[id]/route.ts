@@ -9,11 +9,11 @@ import { createAuditLog } from "@/lib/audit";
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const admin = await requireAdmin();
-    const commentId = params.id;
+    const { id: commentId } = await params;
     const body = await request.json().catch(() => ({}));
     const { hidden, reason } = body;
 
@@ -53,11 +53,11 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const admin = await requireAdmin();
-    const commentId = params.id;
+    const { id: commentId } = await params;
     const reason = request.nextUrl.searchParams.get("reason") ?? undefined;
 
     const comment = await prisma.comment.findUnique({
