@@ -17,6 +17,7 @@ if (
 
 import { getServerSession } from 'next-auth';
 import type { NextAuthOptions, Account } from 'next-auth';
+import type { JWT } from 'next-auth/jwt';
 import type { AdapterUser } from 'next-auth/adapters';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
@@ -150,7 +151,7 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
-    jwt: async ({ token, user }) => {
+    jwt: async ({ token, user }): Promise<JWT> => {
       // JWT minimo (solo sub + role) per evitare REQUEST_HEADER_TOO_LARGE (494) su Safari/Vercel
       if (user) {
         const dbUser = await prisma.user.findUnique({
@@ -158,18 +159,21 @@ export const authOptions: NextAuthOptions = {
           select: { role: true },
         });
         return {
+          id: user.id,
           sub: user.id,
           role: dbUser?.role ?? null,
           iat: Math.floor(Date.now() / 1000),
           exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
-        };
+        } as JWT;
       }
+      const t = token as { sub?: string; id?: string; role?: string; iat?: number; exp?: number };
       return {
-        sub: token.sub,
-        role: (token as { role?: string }).role ?? null,
-        iat: (token as { iat?: number }).iat ?? Math.floor(Date.now() / 1000),
-        exp: (token as { exp?: number }).exp ?? Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
-      };
+        id: (t.id ?? t.sub ?? '') as string,
+        sub: t.sub,
+        role: t.role ?? null,
+        iat: t.iat ?? Math.floor(Date.now() / 1000),
+        exp: t.exp ?? Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+      } as JWT;
     },
   },
   pages: {
