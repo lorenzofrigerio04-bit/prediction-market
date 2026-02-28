@@ -90,7 +90,7 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Bottom nav mobile: overlay sopra il background, glass; altezza --bottom-nav-h + safe-area */}
+      {/* Bottom nav mobile: pill flottante stile Apple, staccata dai bordi */}
       <nav
         className="nav-bottom-neon md:hidden"
         aria-label="Navigazione principale"

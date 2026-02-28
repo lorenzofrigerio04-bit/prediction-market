@@ -48,13 +48,23 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const ok = hasSecret && hasUrl && hasDatabase && urlMatches;
+  const hasGoogleId = Boolean(
+    process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_ID.trim().length > 10
+  );
+  const hasGoogleSecret = Boolean(
+    process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_CLIENT_SECRET.trim().length > 10
+  );
+  const googleOk = hasGoogleId && hasGoogleSecret;
+
+  const ok = hasSecret && hasUrl && hasDatabase && urlMatches && googleOk;
 
   return NextResponse.json({
     ok: ok ? "Configurazione auth OK." : "Controlla le variabili d'ambiente su Vercel (vedi sotto).",
     checks: {
       NEXTAUTH_SECRET: hasSecret ? "impostato" : "mancante o troppo corto",
       NEXTAUTH_URL: hasUrl ? "impostato" : "mancante o non valido",
+      GOOGLE_CLIENT_ID: hasGoogleId ? "impostato" : "mancante o troppo corto (serve per login Google)",
+      GOOGLE_CLIENT_SECRET: hasGoogleSecret ? "impostato" : "mancante o troppo corto (serve per login Google)",
       DATABASE_URL: databaseCheck,
       databaseRegion,
       urlMatch: urlMatches

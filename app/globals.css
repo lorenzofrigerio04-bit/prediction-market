@@ -1,5 +1,5 @@
 /* @import deve stare in cima, prima di @tailwind (altrimenti dopo la compilazione finisce dopo altre regole) */
-@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@500;600;700&family=Oswald:wght@500;600;700&family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Orbitron:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Nunito:wght@600;700;800&family=Space+Grotesk:wght@500;600;700&family=Rubik:wght@500;600;700&family=Oswald:wght@500;600;700&family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Orbitron:wght@600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -9,7 +9,7 @@
 :root {
   --font-sans: 'Outfit', system-ui, sans-serif;
   --font-display: 'Syne', 'Outfit', system-ui, sans-serif;
-  --font-logo: 'Rubik', 'Outfit', system-ui, sans-serif;
+  --font-logo: 'Orbitron', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-cta: 'Plus Jakarta Sans', 'Outfit', system-ui, sans-serif;
   --font-eyebrow: 'Oswald', 'Outfit', system-ui, sans-serif;
   --space-0: 0;
@@ -105,10 +105,12 @@
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
   --bottom-nav-h: 56px;
+  --bottom-nav-gap: 20px;
+  --bottom-nav-total: calc(var(--bottom-nav-h) + var(--bottom-nav-gap) + var(--safe-area-inset-bottom));
   --header-height: 3.5rem;
   --discover-tab-bar-h: 52px;
   /* Landing: altezza area sopra la fold (header + main pt + bottom nav esclusi) */
-  --landing-hero-min-h: calc(100dvh - var(--header-height) - var(--safe-area-inset-top) - var(--bottom-nav-h) - var(--safe-area-inset-bottom) - 0.75rem);
+  --landing-hero-min-h: calc(100dvh - var(--header-height) - var(--safe-area-inset-top) - var(--bottom-nav-total) - 0.75rem);
   /* Legacy aliases for components using --color-* (eventi page, modals, etc.) */
   --color-bg: rgb(var(--bg));
   --color-bg-secondary: rgb(var(--background-secondary));
@@ -211,7 +213,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   min-height: 100dvh;
   min-height: 100vh; /* fallback */
-  padding-bottom: calc(var(--bottom-nav-h) + var(--safe-area-inset-bottom));
+  padding-bottom: var(--bottom-nav-total);
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
@@ -487,20 +489,32 @@ textarea:focus-visible {
   );
 }
 
-/* —— Brand logo: Prediction neutro, Master in tinta palette (premium, tech) —— */
-/* Logo: Bebas Neue (stile Impact — condensato, bold, moderno) */
+/* —— Brand logo: PredictionMaster (spesso, compatto, solo iniziali maiuscole) —— */
 .brand-logo__text {
-  font-family: var(--font-logo), 'Impact', system-ui, sans-serif !important;
+  font-family: var(--font-logo) !important;
+  font-weight: 800 !important;
+  font-size: inherit;
   letter-spacing: 0.02em;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: baseline;
+}
+.brand-logo__word--prediction,
+.brand-logo__word--master {
+  font-family: inherit;
+  font-weight: 800 !important;
+  font-size: 1em !important;
+  line-height: 1;
+  vertical-align: baseline;
 }
 .brand-logo__word--prediction {
   color: rgb(15 23 42);
-  font-weight: 700;
 }
 .brand-logo__word--master {
   color: rgb(37 99 235);
-  font-weight: 600;
-  font-size: 0.92em;
 }
 .dark .brand-logo__word--prediction {
   color: rgb(248 250 252);
@@ -516,12 +530,9 @@ textarea:focus-visible {
 }
 .landing-page .header-neon .brand-logo__word--prediction {
   color: rgb(255 255 255);
-  font-weight: 700;
 }
 .landing-page .header-neon .brand-logo__word--master {
   color: rgb(59 130 246);
-  font-weight: 600;
-  font-size: 0.92em;
 }
 
 /* —— Landing prelogin: sfondo a tutto schermo con foto categorie evento in blur e crossfade —— */
@@ -1476,7 +1487,7 @@ textarea:focus-visible {
     padding-top: 1.5rem;
   }
   :root {
-    --landing-hero-min-h: calc(100dvh - var(--header-height) - var(--safe-area-inset-top) - var(--bottom-nav-h) - var(--safe-area-inset-bottom) - 1.5rem);
+    --landing-hero-min-h: calc(100dvh - var(--header-height) - var(--safe-area-inset-top) - var(--bottom-nav-total) - 1.5rem);
   }
 }
 
@@ -2696,34 +2707,79 @@ textarea:focus-visible {
   border-bottom-color: rgb(255 255 255 / 0.04);
 }
 
-/* Bottom nav: overlay sopra il background, glassmorphism per leggibilità su qualsiasi sfondo */
+/* Bottom nav: pill/ellisse flottante stile Apple, staccata dai bordi */
 .nav-bottom-neon {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 40;
-  height: var(--bottom-nav-h);
-  min-height: var(--bottom-nav-h);
-  padding-bottom: env(safe-area-inset-bottom);
-  box-sizing: content-box;
-  background: linear-gradient(to top, rgba(11, 18, 32, 0.72), rgba(11, 18, 32, 0.25));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: none;
-  border-left: none;
-  border-right: none;
-  border-radius: 0;
-  box-shadow: none;
-}
-.dark .nav-bottom-neon {
-  background: linear-gradient(to top, rgba(11, 18, 32, 0.72), rgba(11, 18, 32, 0.25));
-  border-top-color: rgba(255, 255, 255, 0.08);
+  padding: 0 var(--bottom-nav-gap) calc(var(--bottom-nav-gap) + env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
 }
 .nav-bottom-neon .nav-bottom-neon-inner {
+  position: relative;
+  pointer-events: auto;
+  width: 100%;
+  max-width: min(420px, calc(100vw - 2 * var(--bottom-nav-gap)));
   height: var(--bottom-nav-h);
   min-height: var(--bottom-nav-h);
+  border-radius: 9999px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.05) 35%,
+    rgba(11, 18, 32, 0.5) 70%,
+    rgba(11, 18, 32, 0.82) 100%
+  );
+  backdrop-filter: blur(20px) saturate(1.15);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.2) inset,
+    0 -1px 0 0 rgba(0, 0, 0, 0.08) inset,
+    0 4px 24px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+.nav-bottom-neon .nav-bottom-neon-inner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.25) 0%,
+    rgba(255, 255, 255, 0.06) 25%,
+    transparent 55%
+  );
+  pointer-events: none;
+}
+.dark .nav-bottom-neon .nav-bottom-neon-inner {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.03) 35%,
+    rgba(11, 18, 32, 0.55) 70%,
+    rgba(11, 18, 32, 0.88) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.15) inset,
+    0 -1px 0 0 rgba(0, 0, 0, 0.15) inset,
+    0 4px 24px rgba(0, 0, 0, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.2);
+}
+.dark .nav-bottom-neon .nav-bottom-neon-inner::before {
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.04) 25%,
+    transparent 55%
+  );
 }
 /* Default: icone e label leggibili su sfondo scuro/chiaro */
 .nav-bottom-neon a {
@@ -2736,11 +2792,13 @@ textarea:focus-visible {
 .nav-bottom-neon .nav-item-neon-active,
 .dark .nav-bottom-neon .nav-item-neon-active {
   color: rgb(var(--primary)) !important;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  border-color: transparent;
 }
 .nav-bottom-neon .nav-item-neon-active:hover {
   color: rgb(var(--primary-hover)) !important;
+  background: transparent;
+  border-color: transparent;
 }
 .nav-bottom-neon svg {
   opacity: 0.9;
@@ -2760,13 +2818,12 @@ body.discover-consigliati-active .header-neon {
   -webkit-backdrop-filter: blur(14px) saturate(1.1);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
-body.discover-consigliati-active .nav-bottom-neon {
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  border: none;
-  box-shadow: none;
-  border-radius: 0;
+body.discover-consigliati-active .nav-bottom-neon .nav-bottom-neon-inner {
+  background: rgba(11, 18, 32, 0.35);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 /* Icone e testo immersi nella foto: niente box, niente contorno */
 body.discover-consigliati-active .nav-bottom-neon a {
@@ -3516,7 +3573,7 @@ body.discover-consigliati-active {
 }
 @media (max-width: 767px) {
   .discover-feed-fullviewport {
-    --consigliati-feed-height: calc(100dvh - var(--bottom-nav-h) - var(--safe-area-inset-bottom));
+    --consigliati-feed-height: calc(100dvh - var(--bottom-nav-total));
   }
 }
 
@@ -3533,7 +3590,7 @@ body.discover-consigliati-active {
 /* Mobile: feed Consigliati non deve andare sotto la bottom nav */
 @media (max-width: 767px) {
   .discover-feed-main {
-    --discover-bottom-nav-offset: calc(var(--bottom-nav-h) + var(--safe-area-inset-bottom));
+    --discover-bottom-nav-offset: var(--bottom-nav-total);
   }
 }
 

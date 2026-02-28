@@ -226,7 +226,7 @@ export default function EsploraPage() {
       <Header />
       <main
         id="main-content"
-        className="flex-1 mx-auto w-full px-3 sm:px-6 py-4 sm:py-6 md:py-8 max-w-6xl pb-[calc(var(--bottom-nav-h)+var(--safe-area-inset-bottom))] md:pb-8"
+        className="flex-1 mx-auto w-full px-3 sm:px-6 py-4 sm:py-6 md:py-8 max-w-6xl pb-[var(--bottom-nav-total)] md:pb-8"
       >
         <PageHeader
           title="ESPLORA"

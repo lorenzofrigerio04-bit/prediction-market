@@ -158,7 +158,7 @@ export function PredictionMasterLogo() {
         "transition duration-ds-normal ease-ds-ease",
       ].join(" ")}
     >
-      <span className="brand-logo__text font-display text-xl md:text-2xl font-bold tracking-tight">
+      <span className="brand-logo__text text-base md:text-lg tracking-tight">
         <span className="brand-logo__word brand-logo__word--prediction">Prediction</span>
         <span className="brand-logo__word brand-logo__word--master">Master</span>
       </span>

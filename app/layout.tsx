@@ -74,7 +74,7 @@ export default async function RootLayout({
             className="py-3 text-center text-fg-muted text-ds-micro bg-transparent relative z-10"
             aria-hidden
           >
-            <span className="brand-logo__text font-display font-extrabold tracking-tight inline-block text-sm md:text-base">
+            <span className="brand-logo__text tracking-tight inline-block text-xs md:text-sm">
               <span className="brand-logo__word brand-logo__word--prediction">Prediction</span>
               <span className="brand-logo__word brand-logo__word--master">Master</span>
             </span>

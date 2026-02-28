@@ -269,7 +269,18 @@ export default function EventiPrevistiTab({
             const total = subs.length + events.length;
             if (total === 0) {
               return (
-                <p className="py-2 text-ds-body-sm text-fg-muted">Non hai ancora creato eventi.</p>
+                <div className="flex flex-col items-center gap-4 py-6 sm:py-8">
+                  <p className="text-ds-body-sm text-fg-muted text-center">Non hai ancora creato eventi.</p>
+                  <Link
+                    href="/crea"
+                    className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-primary bg-primary/15 px-6 py-3 text-ds-body-sm font-semibold tracking-[0.02em] text-primary shadow-[0_0_20px_-6px_rgba(var(--primary-glow),0.28)] transition-[border-color,box-shadow,background-color] duration-200 hover:bg-primary/25 hover:shadow-[0_0_24px_-6px_rgba(var(--primary-glow),0.4)] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg dark:border-primary dark:text-fg dark:shadow-[0_0_16px_-6px_rgba(var(--primary-glow),0.22)] dark:hover:bg-primary/20 dark:hover:shadow-[0_0_20px_-6px_rgba(var(--primary-glow),0.32)]"
+                  >
+                    <svg className="h-4 w-4 opacity-90" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Crea il tuo primo evento
+                  </Link>
+                </div>
               );
             }
             const items: ({ type: "submission"; data: (typeof subs)[0] } | { type: "event"; data: CreatedEvent })[] = [
