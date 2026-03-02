@@ -12,6 +12,7 @@ export interface HomeEventTileData {
   closesAt: string;
   yesPct: number;
   predictionsCount?: number;
+  aiImageUrl?: string | null;
 }
 
 interface HomeCarouselBoxProps {
@@ -94,6 +95,7 @@ export default function HomeCarouselBox({
                   predictionsCount={event.predictionsCount}
                   variant={variant}
                   onNavigate={onEventNavigate}
+                  imageUrl={event.aiImageUrl}
                 />
               </div>
             );

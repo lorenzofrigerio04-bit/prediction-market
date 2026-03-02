@@ -17,6 +17,9 @@ export interface HomeEventTileProps {
   /** Se true, l’evento è risolto con esito */
   resolved?: boolean;
   onNavigate?: () => void;
+  compact?: boolean;
+  /** Foto AI generata per l'evento (da Post AI_IMAGE). Se presente, usata come sfondo invece della categoria. */
+  imageUrl?: string | null;
 }
 
 function formatTimeLeftShort(closesAt: string, nowMs: number): string {
@@ -39,6 +42,8 @@ export default function HomeEventTile({
   variant,
   resolved,
   onNavigate,
+  compact = false,
+  imageUrl,
 }: HomeEventTileProps) {
   const [now, setNow] = useState(0);
   useEffect(() => {
@@ -49,40 +54,56 @@ export default function HomeEventTile({
   }, []);
 
   const noPct = 100 - yesPct;
-  const imagePath = getCategoryImagePath(category);
+  const categoryImagePath = getCategoryImagePath(category);
   const fallbackGradient = getCategoryFallbackGradient(category);
-  const [imageFailed, setImageFailed] = useState(false);
-  const useImage = imagePath && !imageFailed;
+  const [aiImageFailed, setAiImageFailed] = useState(false);
+  const [categoryImageFailed, setCategoryImageFailed] = useState(false);
+  const useAiImage = imageUrl?.trim() && !aiImageFailed;
+  const useCategoryImage = categoryImagePath && !categoryImageFailed && !useAiImage;
+  const useImage = useAiImage || useCategoryImage;
   const closesAtMs = new Date(closesAt).getTime();
   const isClosedOrClosing = variant === "closing" || (now > 0 && closesAtMs <= now);
+
+  const minH = compact ? "min-h-0" : "min-h-[175px] sm:min-h-[195px]";
+  const pClass = compact ? "p-3 sm:p-3" : "p-4 sm:p-5";
+  const flexFill = compact ? "flex-1 h-full min-h-0" : "";
 
   return (
     <Link
       href={`/events/${id}`}
       onClick={onNavigate}
-      className="home-event-tile group relative block min-h-[175px] overflow-hidden rounded-lg border-0 bg-transparent transition-all duration-300 hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg active:scale-[0.99] sm:min-h-[195px]"
+      className={`home-event-tile group relative block ${minH} ${flexFill} overflow-hidden rounded-2xl border border-white/20 dark:border-white/10 bg-white/5 dark:bg-black/20 backdrop-blur-sm transition-all duration-300 hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg active:scale-[0.99] shadow-[0_2px_12px_rgba(0,0,0,0.08)]`}
     >
-      {/* Sfondo: img categoria (come pagina eventi/categorie), fallback gradiente se assente o errore */}
+      {/* Sfondo: foto AI se disponibile, altrimenti img categoria, fallback gradiente */}
       <div
         className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
         style={{
           background: useImage ? undefined : fallbackGradient,
         }}
       />
-      {useImage && (
+      {useAiImage && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={imagePath}
+          src={imageUrl!}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          onError={() => setImageFailed(true)}
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-110 contrast-105"
+          onError={() => setAiImageFailed(true)}
         />
       )}
-      {/* Overlay scuro per massima leggibilità del testo */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-black/40" />
-      <div className="relative z-10 flex h-full min-h-[175px] flex-col justify-between p-3 sm:min-h-[195px] sm:p-4">
+      {useCategoryImage && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={categoryImagePath}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-110 contrast-105"
+          onError={() => setCategoryImageFailed(true)}
+        />
+      )}
+      {/* Overlay scuro per leggibilità testo (ridotto per far risaltare la foto) */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/30" />
+      <div className={`relative z-10 flex h-full flex-col justify-between ${pClass}`}>
         <div className={variant === "closing" ? "flex flex-col items-start gap-1" : ""}>
-          <span className="inline-flex w-fit rounded-md border border-white/30 bg-black/70 px-2 py-0.5 text-xs font-semibold text-white shadow-[0_2px_6px_rgba(0,0,0,0.9)] backdrop-blur-sm sm:text-ds-micro">
+          <span className="inline-flex w-fit rounded-xl border border-white/30 bg-black/60 px-2.5 py-1 text-xs font-semibold text-white shadow-[0_2px_6px_rgba(0,0,0,0.9)] backdrop-blur-sm sm:text-ds-micro">
             {category}
           </span>
           {isClosedOrClosing && (
@@ -92,16 +113,16 @@ export default function HomeEventTile({
           )}
         </div>
         <div>
-          <h3 className="mb-2 line-clamp-2 text-sm font-semibold leading-snug text-white sm:text-ds-body-sm" style={{ textShadow: "0 2px 8px rgba(0,0,0,1), 0 0 1px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9)" }}>
+          <h3 className={`line-clamp-2 font-semibold leading-snug text-white ${compact ? "mb-1 text-xs sm:text-xs" : "mb-2 text-sm sm:text-ds-body-sm"}`} style={{ textShadow: "0 2px 8px rgba(0,0,0,1), 0 0 1px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9)" }}>
             {title}
           </h3>
-          {variant === "popular" && predictionsCount != null && (
+          {variant === "popular" && predictionsCount != null && !compact && (
             <p className="mb-1.5 text-xs font-medium text-white sm:text-ds-micro" style={{ textShadow: "0 1px 4px rgba(0,0,0,1), 0 0 1px rgba(0,0,0,0.8)" }}>
               {predictionsCount} previsioni
             </p>
           )}
           <div
-            className="flex h-1.5 w-full overflow-hidden rounded-full bg-black/60 shadow-inner backdrop-blur-[1px]"
+            className="flex h-2 w-full overflow-hidden rounded-full bg-black/50 shadow-inner backdrop-blur-[1px]"
             role="presentation"
           >
             <div

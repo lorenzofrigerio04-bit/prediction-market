@@ -5,6 +5,7 @@ import SessionProvider from "@/components/providers/SessionProvider";
 import { authOptions } from "@/lib/auth";
 import ThemeScript from "./ThemeScript";
 import AppBackground from "@/components/AppBackground";
+import AgentSphere from "@/components/AgentSphere";
 import { LandingBackgroundProviderWithRoute } from "@/components/landing/LandingBackgroundCarousel";
 
 /* Colore barre sistema: status bar + barra browser (Android Chrome, iOS). Stesso valore in manifest.json. */
@@ -59,10 +60,20 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-title" content="PredictionMaster" />
       </head>
       <body className="font-sans antialiased min-h-screen bg-transparent text-fg flex flex-col">
+        {/* ClipPath per bottom nav: contorno con mezza luna al centro */}
+        <svg width="0" height="0" aria-hidden>
+          <defs>
+            <clipPath id="nav-bar-halfmoon-clip" clipPathUnits="objectBoundingBox">
+              {/* Barra full-width, lati attaccati: angoli top arrotondati + convesso al centro */}
+              <path d="M.06 0 L.44 0 Q.5 -.1 .56 0 L.94 0 Q1 0 1 .5 L1 1 L0 1 L0 .5 Q0 0 .06 0Z" />
+            </clipPath>
+          </defs>
+        </svg>
         <ThemeScript />
         <LandingBackgroundProviderWithRoute>
           <AppBackground />
           <SessionProvider session={session}>
+          <AgentSphere />
           <a
             href="#main-content"
             className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-surface focus:text-fg focus:border focus:border-border focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg"

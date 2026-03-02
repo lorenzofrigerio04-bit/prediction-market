@@ -4,18 +4,18 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Header from "@/components/Header";
-import { LoadingBlock, EmptyState } from "@/components/ui";
-import { FeedPostCard } from "@/components/feed/FeedPostCard";
+import { DiscoverFeedX } from "@/components/feed/DiscoverFeedX";
+import type { HomeFeedItem } from "@/components/home/HomeFeed";
+import { EmptyState } from "@/components/ui";
 import { PublishCommentModal } from "@/components/feed/PublishCommentModal";
 import { PostCommentsDrawer } from "@/components/feed/PostCommentsDrawer";
-import type { FeedPost } from "@/types/feed";
 
-const FEED_PAGE_SIZE = 10;
+const FEED_PAGE_SIZE = 20;
 
 export default function DiscoverPage() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
-  const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [items, setItems] = useState<HomeFeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -24,7 +24,6 @@ export default function DiscoverPage() {
   const [repostLoading, setRepostLoading] = useState(false);
   const [commentsDrawerPostId, setCommentsDrawerPostId] = useState<string | null>(null);
   const [shareToast, setShareToast] = useState(false);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
   const deepLinkAppliedRef = useRef(false);
 
   useEffect(() => {
@@ -33,41 +32,34 @@ export default function DiscoverPage() {
     return () => clearTimeout(t);
   }, [shareToast]);
 
-  const fetchPosts = useCallback(
-    async (append = false) => {
-      const offset = append ? posts.length : 0;
-      if (append) setLoadingMore(true);
-      else setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch(
-          `/api/feed/posts?limit=${FEED_PAGE_SIZE}&offset=${offset}&type=AI_IMAGE`
-        );
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          const message = data.detail
-            ? `${data.error}: ${data.detail}`
-            : data.error || "Errore di caricamento";
-          throw new Error(message);
-        }
-        const data = await res.json();
-        const next = (data.posts ?? []) as FeedPost[];
-        if (append) {
-          setPosts((prev) => [...prev, ...next]);
-        } else {
-          setPosts(next);
-        }
-        setHasMore(data.hasMore === true);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Errore di rete");
-        if (!append) setPosts([]);
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
+  const fetchFeed = useCallback(async (offset = 0) => {
+    const append = offset > 0;
+    if (append) setLoadingMore(true);
+    else setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/feed/discover?limit=${FEED_PAGE_SIZE}&offset=${offset}`);
+      if (!res.ok) throw new Error("Errore di caricamento");
+      const data = await res.json();
+      const next = (data.items ?? []) as HomeFeedItem[];
+      if (append) {
+        setItems((prev) => [...prev, ...next]);
+      } else {
+        setItems(next);
       }
-    },
-    [posts.length]
-  );
+      setHasMore(data.hasMore === true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Errore di rete");
+      if (!append) setItems([]);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFeed(0);
+  }, [fetchFeed]);
 
   const handleRepostSubmit = useCallback(
     async (content: string) => {
@@ -83,10 +75,9 @@ export default function DiscoverPage() {
             source: "REPOST",
           }),
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Errore");
+        if (!res.ok) throw new Error("Errore");
         setRepostModalEventId(null);
-        fetchPosts(false);
+        fetchFeed(0);
       } catch (e) {
         console.error(e);
         throw e;
@@ -94,7 +85,7 @@ export default function DiscoverPage() {
         setRepostLoading(false);
       }
     },
-    [repostModalEventId, fetchPosts]
+    [repostModalEventId, fetchFeed]
   );
 
   const handleLike = useCallback(async (postId: string) => {
@@ -103,14 +94,10 @@ export default function DiscoverPage() {
       const res = await fetch(`/api/posts/${postId}/like`, { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Errore");
-      setPosts((prev) =>
+      setItems((prev) =>
         prev.map((p) =>
-          p.id === postId
-            ? {
-                ...p,
-                likeCount: data.likeCount ?? p.likeCount,
-                isLikedByCurrentUser: data.isLiked ?? false,
-              }
+          p.type === "post" && p.data.id === postId
+            ? { ...p, data: { ...p.data, likeCount: data.likeCount ?? p.data.likeCount, isLikedByCurrentUser: data.isLiked ?? false } }
             : p
         )
       );
@@ -120,20 +107,12 @@ export default function DiscoverPage() {
   }, [session]);
 
   const handleCommentCountUpdate = useCallback((postId: string, count: number) => {
-    setPosts((prev) =>
-      prev.map((p) => (p.id === postId ? { ...p, commentCount: count } : p))
+    setItems((prev) =>
+      prev.map((p) =>
+        p.type === "post" && p.data.id === postId ? { ...p, data: { ...p.data, commentCount: count } } : p
+      )
     );
   }, []);
-
-  const handleFollow = useCallback(async (eventId: string) => {
-    if (!session) return;
-    try {
-      await fetch(`/api/events/${eventId}/follow`, { method: "POST" });
-      // Optional: show brief "Seguito" feedback; Step 7 does not require isFollowing in card
-    } catch (e) {
-      console.error("Follow error:", e);
-    }
-  }, [session]);
 
   const handleShare = useCallback(async (eventId: string) => {
     try {
@@ -146,115 +125,77 @@ export default function DiscoverPage() {
   }, []);
 
   useEffect(() => {
-    fetchPosts(false);
-  }, []);
-
-  /** Deep link: /discover?postId=xxx — dopo il primo caricamento, apri il drawer commenti per quel post se presente nella lista. */
-  useEffect(() => {
-    if (loading || posts.length === 0 || deepLinkAppliedRef.current) return;
+    if (loading || items.length === 0 || deepLinkAppliedRef.current) return;
     const postId = searchParams.get("postId");
     if (!postId) return;
-    if (posts.some((p) => p.id === postId)) {
+    if (items.some((p) => p.type === "post" && p.data.id === postId)) {
       deepLinkAppliedRef.current = true;
       setCommentsDrawerPostId(postId);
       if (typeof window !== "undefined") {
         window.history.replaceState({}, "", window.location.pathname);
       }
     }
-  }, [loading, posts, searchParams]);
-
-  /** Infinite scroll: sentinel in fondo, carica altra pagina quando entra in view. */
-  useEffect(() => {
-    if (!hasMore || loadingMore || loading || posts.length === 0) return;
-    const sentinel = loadMoreRef.current;
-    if (!sentinel) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) fetchPosts(true);
-      },
-      { rootMargin: "200px", threshold: 0 }
-    );
-    io.observe(sentinel);
-    return () => io.disconnect();
-  }, [hasMore, loadingMore, loading, posts.length, fetchPosts]);
+  }, [loading, items, searchParams]);
 
   return (
-    <div className="min-h-screen discover-page">
+    <div className="min-h-screen discover-page bg-[rgb(var(--bg))]">
       <Header />
 
       <main
         id="main-content"
-        className="relative mx-auto px-4 sm:px-6 py-5 md:py-8 max-w-2xl pb-[calc(5rem+var(--safe-area-inset-bottom))]"
+        className="relative mx-auto max-w-2xl pb-[calc(5rem+var(--safe-area-inset-bottom))] md:pb-8"
       >
-        <h1 className="sr-only">Feed eventi</h1>
-
-        {loading ? (
-          <LoadingBlock message="Caricamento feed…" />
-        ) : error ? (
+        <div className="px-4 sm:px-6 py-4 md:py-6" role="feed" aria-label="Post della community">
+          {error ? (
           <EmptyState
             title="Errore"
             description={error}
-            action={{ label: "Riprova", onClick: () => fetchPosts(false) }}
-          />
-        ) : posts.length === 0 ? (
-          <EmptyState
-            title="Nessun post"
-            description="Non ci sono ancora post nel feed."
+            action={{ label: "Riprova", onClick: () => fetchFeed(0) }}
           />
         ) : (
-          <>
-            <ul className="flex flex-col gap-4 list-none p-0 m-0" role="feed" aria-label="Feed eventi">
-              {posts
-                .filter((post) => post.type === "AI_IMAGE")
-                .map((post) => (
-                <li key={post.id}>
-                  <FeedPostCard
-                    post={post}
-                    onLike={session ? handleLike : undefined}
-                    onComment={(postId) => setCommentsDrawerPostId(postId)}
-                    onRepost={session ? (eventId) => setRepostModalEventId(eventId) : undefined}
-                    onFollow={session ? handleFollow : undefined}
-                    onShare={handleShare}
-                  />
-                </li>
-              ))}
+          <DiscoverFeedX
+            items={items}
+            loading={loading}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            onLoadMore={() => fetchFeed(items.length)}
+            onRefreshFeed={() => fetchFeed(0)}
+            onLike={session ? handleLike : undefined}
+            onComment={(postId) => setCommentsDrawerPostId(postId)}
+            onRepost={session ? (eventId) => setRepostModalEventId(eventId) : undefined}
+            onFollow={async () => {}}
+            onShare={handleShare}
+            isAuthenticated={!!session}
+          />
+        )}
+        </div>
 
-            </ul>
-            <div ref={loadMoreRef} className="min-h-[1px]" aria-hidden />
-            {loadingMore && (
-              <div className="flex justify-center py-6">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              </div>
-            )}
-          </>
+        <PublishCommentModal
+          isOpen={repostModalEventId !== null}
+          onClose={() => setRepostModalEventId(null)}
+          onSubmit={handleRepostSubmit}
+          title="Ripubblica con commento"
+          submitLabel="Ripubblica"
+          loading={repostLoading}
+        />
+
+        <PostCommentsDrawer
+          postId={commentsDrawerPostId}
+          isOpen={commentsDrawerPostId !== null}
+          onClose={() => setCommentsDrawerPostId(null)}
+          onCommentCountUpdate={handleCommentCountUpdate}
+        />
+
+        {shareToast && (
+          <div
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[1001] px-4 py-2 rounded-xl bg-fg text-bg text-sm font-medium shadow-lg animate-in fade-in duration-200"
+            role="status"
+            aria-live="polite"
+          >
+            Link copiato
+          </div>
         )}
       </main>
-
-      <PublishCommentModal
-        isOpen={repostModalEventId !== null}
-        onClose={() => setRepostModalEventId(null)}
-        onSubmit={handleRepostSubmit}
-        title="Ripubblica con commento"
-        submitLabel="Ripubblica"
-        loading={repostLoading}
-      />
-
-      <PostCommentsDrawer
-        postId={commentsDrawerPostId}
-        isOpen={commentsDrawerPostId !== null}
-        onClose={() => setCommentsDrawerPostId(null)}
-        onCommentCountUpdate={handleCommentCountUpdate}
-      />
-
-      {shareToast && (
-        <div
-          className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[1001] px-4 py-2 rounded-xl bg-fg text-bg text-sm font-medium shadow-lg animate-in fade-in duration-200"
-          role="status"
-          aria-live="polite"
-        >
-          Link copiato
-        </div>
-      )}
     </div>
   );
 }

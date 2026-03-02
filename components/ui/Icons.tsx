@@ -440,3 +440,13 @@ export function IconLevelCrystalBall({ className, ...props }: SVGProps<SVGSVGEle
     </Icon>
   );
 }
+
+/** Sfera di cristallo per bottom nav (crea eventi) */
+export function IconNavCrystalBall({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <NavIcon className={className} {...props}>
+      <circle cx="12" cy="10" r="6" />
+      <circle cx="11" cy="9" r="1.5" fill="currentColor" opacity={0.4} />
+    </NavIcon>
+  );
+}

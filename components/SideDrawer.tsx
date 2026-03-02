@@ -14,7 +14,22 @@ import {
   IconLogout,
   IconLock,
   IconClose,
+  IconNavHome,
+  IconNavDiscover,
+  IconNavExplore,
+  IconNavCrystalBall,
+  IconNavTrophy,
+  IconNavProfile,
 } from "@/components/ui/Icons";
+
+const MAIN_NAV_ITEMS = [
+  { href: "/", label: "Home", icon: IconNavHome },
+  { href: "/discover", label: "Eventi", icon: IconNavDiscover },
+  { href: "/esplora", label: "Esplora", icon: IconNavExplore },
+  { href: "/crea", label: "Crea evento", icon: IconNavCrystalBall },
+  { href: "/leaderboard", label: "Classifica", icon: IconNavTrophy },
+  { href: "/profile", label: "Profilo", icon: IconNavProfile },
+] as const;
 
 const DRAWER_LINK =
   "flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl text-fg hover:bg-surface/50 transition-colors text-left font-medium min-h-[48px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none border border-transparent";
@@ -106,7 +121,7 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
         ref={panelRef}
         role="dialog"
         aria-label="Menu utility"
-        className="side-drawer-panel fixed top-0 right-0 h-full w-[min(320px,85vw)] shadow-overlay flex flex-col transition-transform duration-200 ease-out"
+        className="side-drawer-panel fixed top-0 left-0 h-full w-[min(320px,85vw)] shadow-overlay flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
         style={{ paddingTop: "var(--safe-area-inset-top)" }}
       >
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
@@ -121,7 +136,30 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-4 flex flex-col gap-4" aria-label="Menu utility">
+        <nav className="flex-1 overflow-y-auto p-4 flex flex-col gap-4" aria-label="Menu principale">
+          {/* Navigazione principale (stile X) */}
+          <div className="flex flex-col gap-1">
+            {MAIN_NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+              const linkHref =
+                href === "/profile" && !isAuthenticated
+                  ? `/auth/login?callbackUrl=${encodeURIComponent(pathname || "/")}`
+                  : (href === "/crea" && !isAuthenticated)
+                    ? `/auth/login?callbackUrl=${encodeURIComponent("/crea")}`
+                    : href;
+              return (
+                <DrawerLink
+                  key={href}
+                  href={linkHref}
+                  icon={Icon}
+                  active={isActive(linkHref)}
+                  onClick={onClose}
+                >
+                  {label}
+                </DrawerLink>
+              );
+            })}
+          </div>
+
           {isAuthenticated && (
             <>
               {/* Sezione: Impegnati (wallet, missioni, notifiche) — uso meno frequente */}

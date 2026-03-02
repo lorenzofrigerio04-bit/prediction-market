@@ -11,6 +11,8 @@ export interface FeedPostCardProps {
   onRepost?: (eventId: string) => void;
   onFollow?: (eventId: string) => void;
   onShare?: (eventId: string) => void;
+  onRefreshFeed?: () => void;
+  compact?: boolean;
 }
 
 export function FeedPostCard({
@@ -20,6 +22,8 @@ export function FeedPostCard({
   onRepost,
   onFollow,
   onShare,
+  onRefreshFeed,
+  compact = false,
 }: FeedPostCardProps) {
   const event = post.event;
   if (!event) return null;
@@ -60,6 +64,7 @@ export function FeedPostCard({
   if (post.type === "AI_IMAGE") {
     return (
       <FeedCardAIImage
+        compact={compact}
         post={{
           id: post.id,
           content: post.content,
@@ -82,6 +87,7 @@ export function FeedPostCard({
         onRepost={handleRepost}
         onFollow={handleFollow}
         onShare={handleShare}
+        onRefreshFeed={onRefreshFeed}
       />
     );
   }

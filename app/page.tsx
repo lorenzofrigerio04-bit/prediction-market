@@ -6,82 +6,16 @@ import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import OnboardingTour from "@/components/OnboardingTour";
-import HomeEventTile from "@/components/home/HomeEventTile";
+import { HomeFeedByCategory, type HomeSection } from "@/components/home/HomeFeedByCategory";
+import { HomeUnifiedFeed } from "@/components/home/HomeUnifiedFeed";
 import LandingHeroStats from "@/components/landing/LandingHeroStats";
 import LandingHeroTitle from "@/components/landing/LandingHeroTitle";
 import LandingWhyFlip from "@/components/landing/LandingWhyFlip";
-import HomeHeaderPostLogin from "@/components/home/HomeHeaderPostLogin";
-import HomeCarouselBox, { type HomeEventTileData } from "@/components/home/HomeCarouselBox";
-import type { HomeEventTileVariant } from "@/components/home/HomeEventTile";
 import { EmptyState, LoadingBlock } from "@/components/ui";
 import { getDisplayTitle, isDebugTitle } from "@/lib/debug-display";
-import type { EventFomoStats } from "@/lib/fomo/event-stats";
-import { getEventProbability } from "@/lib/pricing/price-display";
 import { generateNotificationsOnDemand } from "@/lib/notifications/client";
 
-function eventToTileData(e: Event): HomeEventTileData {
-  const yesPct =
-    e.q_yes != null && e.q_no != null && e.b != null
-      ? Math.round(getEventProbability({ q_yes: e.q_yes, q_no: e.q_no, b: e.b }))
-      : Math.round(e.probability ?? 50);
-  return {
-    id: e.id,
-    title: e.title,
-    category: e.category,
-    closesAt: e.closesAt,
-    yesPct,
-    predictionsCount: e._count?.predictions,
-  };
-}
-
 const ONBOARDING_STORAGE_KEY = "prediction-market-onboarding-completed";
-
-interface Event {
-  id: string;
-  title: string;
-  description: string | null;
-  category: string;
-  createdAt: string;
-  closesAt: string;
-  resolved: boolean;
-  probability: number;
-  totalCredits: number;
-  q_yes?: number | null;
-  q_no?: number | null;
-  b?: number | null;
-  createdBy: {
-    id: string;
-    name: string | null;
-    image: string | null;
-  };
-  _count: {
-    predictions: number;
-    comments: number;
-  };
-  /** Statistiche FOMO */
-  fomo?: EventFomoStats;
-}
-
-interface EventsResponse {
-  events: Event[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-interface Mission {
-  id: string;
-  name: string;
-  description: string | null;
-  type: string;
-  target: number;
-  reward: number;
-  progress: number;
-  completed: boolean;
-}
 
 export default function Home() {
   const pathname = usePathname();
@@ -96,20 +30,22 @@ export default function Home() {
   const [sessionSynced, setSessionSynced] = useState(false);
   const sessionSyncDone = useRef(false);
 
-  const [credits, setCredits] = useState<number | null>(null);
-  const [creditsLoading, setCreditsLoading] = useState(true);
+  const [homeSections, setHomeSections] = useState<HomeSection[]>([]);
+  const [homeFeedLoading, setHomeFeedLoading] = useState(false);
 
-  const [mostPredicted, setMostPredicted] = useState<HomeEventTileData[]>([]);
-  const [loadingMostPredicted, setLoadingMostPredicted] = useState(true);
-  const [closingSoon, setClosingSoon] = useState<HomeEventTileData[]>([]);
-  const [loadingClosingSoon, setLoadingClosingSoon] = useState(true);
-  const [forYouEvents, setForYouEvents] = useState<HomeEventTileData[]>([]);
-  const [loadingForYou, setLoadingForYou] = useState(true);
-
-  const [missions, setMissions] = useState<Mission[]>([]);
-  const [missionsLoading, setMissionsLoading] = useState(false);
-  const [canSpinToday, setCanSpinToday] = useState<boolean | null>(null);
-  const [weeklyRank, setWeeklyRank] = useState<number | undefined>(undefined);
+  const fetchHomeFeed = useCallback(async () => {
+    setHomeFeedLoading(true);
+    try {
+      const res = await fetch("/api/feed/home");
+      if (!res.ok) throw new Error("Feed error");
+      const data = await res.json();
+      setHomeSections((data.sections ?? []) as HomeSection[]);
+    } catch {
+      setHomeSections([]);
+    } finally {
+      setHomeFeedLoading(false);
+    }
+  }, []);
 
   const whySectionRef = useRef<HTMLElement>(null);
   const [whySectionInView, setWhySectionInView] = useState(false);
@@ -127,7 +63,6 @@ export default function Home() {
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
-  const [spinLoading, setSpinLoading] = useState(false);
   const [debugInfo, setDebugInfo] = useState<{ version?: { commit: string; env: string; baseUrl: string }; health?: { dbConnected: boolean; markets_count: number } } | null>(null);
 
   useEffect(() => {
@@ -177,94 +112,49 @@ export default function Home() {
     })();
   }, [updateSession]);
 
-  useEffect(() => {
-    if (status !== "authenticated") return;
-    setCreditsLoading(true);
-    fetch("/api/user/credits")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => data != null && typeof data.credits === "number" && setCredits(data.credits))
-      .catch(() => {})
-      .finally(() => setCreditsLoading(false));
-  }, [status]);
-
-  const fetchMostPredicted = useCallback(() => {
-    setLoadingMostPredicted(true);
-    fetch("/api/events?sort=popular&limit=8&status=open")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        const list = (data?.events ?? []).map((e: Event) => eventToTileData(e));
-        setMostPredicted(list);
-      })
-      .catch(() => setMostPredicted([]))
-      .finally(() => setLoadingMostPredicted(false));
-  }, []);
-
-  const fetchClosingSoon = useCallback(() => {
-    setLoadingClosingSoon(true);
-    fetch("/api/events/closing-soon?limit=8")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        const list = (data?.events ?? []).map((e: Event) => eventToTileData(e));
-        setClosingSoon(list);
-      })
-      .catch(() => setClosingSoon([]))
-      .finally(() => setLoadingClosingSoon(false));
-  }, []);
-
-  const fetchForYou = useCallback(() => {
-    setLoadingForYou(true);
-    fetch("/api/feed/for-you?limit=16")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        const list = (data?.events ?? []).map((e: Event) => eventToTileData(e));
-        setForYouEvents(list);
-      })
-      .catch(() => setForYouEvents([]))
-      .finally(() => setLoadingForYou(false));
-  }, []);
-
-  const refetchHomeFeeds = useCallback(() => {
-    fetchMostPredicted();
-    fetchClosingSoon();
-    fetchForYou();
-  }, [fetchMostPredicted, fetchClosingSoon, fetchForYou]);
-
   const prevPathnameRef = useRef(pathname);
 
-  // Carica feed alla mount e quando si torna sulla home (visibility o pathname)
+  // Nasconde scrollbar laterale sulla homepage
   useEffect(() => {
-    if (status !== "authenticated") return;
-    refetchHomeFeeds();
-  }, [status, refetchHomeFeeds]);
+    if (pathname === "/") {
+      document.documentElement.classList.add("scrollbar-hide");
+      document.body.classList.add("scrollbar-hide");
+    } else {
+      document.documentElement.classList.remove("scrollbar-hide");
+      document.body.classList.remove("scrollbar-hide");
+    }
+    return () => {
+      document.documentElement.classList.remove("scrollbar-hide");
+      document.body.classList.remove("scrollbar-hide");
+    };
+  }, [pathname]);
 
-  // Al ritorno dalla pagina evento (o da qualsiasi altra pagina) aggiorna i feed così il numero previsioni è aggiornato
+  // Al ritorno sulla home (pathname o visibility) aggiorna il feed
   useEffect(() => {
-    if (status !== "authenticated") return;
     if (pathname === "/" && prevPathnameRef.current !== "/") {
-      refetchHomeFeeds();
+      fetchHomeFeed();
     }
     prevPathnameRef.current = pathname;
-  }, [pathname, status, refetchHomeFeeds]);
+  }, [pathname, fetchHomeFeed]);
 
   useEffect(() => {
-    if (status !== "authenticated" || pathname !== "/") return;
-    const onVisible = () => refetchHomeFeeds();
+    if (pathname !== "/") return;
+    const onVisible = () => fetchHomeFeed();
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [status, pathname, refetchHomeFeeds]);
+  }, [pathname, fetchHomeFeed]);
 
-  // Aggiornamento in tempo reale del numero previsioni sulle tile (polling quando in home e tab visibile)
   const HOME_FEEDS_POLL_MS = 30_000;
   useEffect(() => {
     if (status !== "authenticated" || pathname !== "/") return;
     const poll = () => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        refetchHomeFeeds();
+        fetchHomeFeed();
       }
     };
     const id = setInterval(poll, HOME_FEEDS_POLL_MS);
     return () => clearInterval(id);
-  }, [status, pathname, refetchHomeFeeds]);
+  }, [status, pathname, fetchHomeFeed]);
 
   // Ripristino scroll quando si torna indietro da un evento (solo se salvataggio recente)
   useEffect(() => {
@@ -294,37 +184,6 @@ export default function Home() {
     }
   }, []);
 
-  useEffect(() => {
-    if (status !== "authenticated") return;
-    setMissionsLoading(true);
-    fetch("/api/missions")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        const list = data?.missions;
-        setMissions(Array.isArray(list) ? list : []);
-      })
-      .catch(() => setMissions([]))
-      .finally(() => setMissionsLoading(false));
-  }, [status]);
-
-  useEffect(() => {
-    if (status !== "authenticated") return;
-    setSpinLoading(true);
-    fetch("/api/spin/status")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => (data?.canSpin != null ? setCanSpinToday(data.canSpin) : setCanSpinToday(null)))
-      .catch(() => setCanSpinToday(null))
-      .finally(() => setSpinLoading(false));
-  }, [status]);
-
-  useEffect(() => {
-    if (status !== "authenticated") return;
-    fetch("/api/leaderboard?period=weekly")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => (data?.myRank != null ? setWeeklyRank(data.myRank) : setWeeklyRank(undefined)))
-      .catch(() => setWeeklyRank(undefined));
-  }, [status]);
-
   // Genera notifiche on-demand quando utente apre Home (best-effort)
   useEffect(() => {
     if (status === "authenticated") {
@@ -333,26 +192,12 @@ export default function Home() {
   }, [status]);
 
   const showLanding = status === "unauthenticated";
-  const [landingEvents, setLandingEvents] = useState<Event[]>([]);
-  const [landingEventsLoading, setLandingEventsLoading] = useState(false);
-  const fetchLandingEvents = useCallback(async () => {
-    if (!showLanding) return;
-    setLandingEventsLoading(true);
-    try {
-      const res = await fetch("/api/events?sort=recent&limit=10&status=open");
-      if (res.ok) {
-        const data: EventsResponse = await res.json();
-        setLandingEvents(data.events ?? []);
-      }
-    } catch {
-      setLandingEvents([]);
-    } finally {
-      setLandingEventsLoading(false);
-    }
-  }, [showLanding]);
+
   useEffect(() => {
-    if (showLanding) fetchLandingEvents();
-  }, [showLanding, fetchLandingEvents]);
+    if (showLanding || status === "authenticated") {
+      fetchHomeFeed();
+    }
+  }, [showLanding, status, fetchHomeFeed]);
 
   if (status === "loading") {
     return (
@@ -410,38 +255,18 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="mb-8 md:mb-12 pt-6 md:pt-8" aria-label="Eventi in corso">
+          <section className="mb-8 md:mb-12 pt-6 md:pt-8" aria-label="Eventi per categoria">
             <h2 className="landing-section-title landing-section-title--no-underline text-ds-h2 font-bold text-fg mb-3 sm:mb-4">
-              <span className="landing-section-title__text">Eventi in corso</span>
+              <span className="landing-section-title__text">Eventi per categoria</span>
             </h2>
-            {landingEventsLoading ? (
-              <LoadingBlock message="Caricamento…" />
-            ) : landingEvents.length === 0 ? (
-              <EmptyState
-                title="Nessun evento aperto per ora."
-                description="Torna più tardi o esplora le categorie."
-                action={{ label: "Esplora categorie", href: "/discover" }}
-              />
-            ) : (
-              <div className="grid grid-cols-2 gap-1 sm:gap-1.5" role="list" aria-label="Anteprima eventi">
-                {(debugMode ? landingEvents : landingEvents.filter((e) => !isDebugTitle(e.title))).map((event) => {
-                  const tile = eventToTileData(event);
-                  return (
-                    <div key={event.id} role="listitem">
-                      <HomeEventTile
-                        id={tile.id}
-                        title={getDisplayTitle(tile.title, debugMode)}
-                        category={tile.category}
-                        closesAt={tile.closesAt}
-                        yesPct={tile.yesPct}
-                        predictionsCount={tile.predictionsCount}
-                        variant={"popular" satisfies HomeEventTileVariant}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <HomeFeedByCategory
+              sections={homeSections}
+              loading={homeFeedLoading}
+              variant="popular"
+              onEventNavigate={handleEventClick}
+              filterEvent={(title) => debugMode || !isDebugTitle(title)}
+              getDisplayTitle={(t) => getDisplayTitle(t, debugMode)}
+            />
           </section>
 
           <section ref={whySectionRef} className="mb-8 md:mb-12">
@@ -467,8 +292,6 @@ export default function Home() {
     );
   }
 
-  const displayName = session?.user?.name || session?.user?.email || "utente";
-
   return (
     <div className="min-h-screen bg-bg">
       {showOnboarding && (
@@ -480,56 +303,12 @@ export default function Home() {
         {debugMode && (
           <div className="text-ds-micro text-fg-muted mb-2 p-2 rounded bg-white/5" aria-hidden>
             <p>debug: commit={debugInfo?.version?.commit ?? "—"} env={debugInfo?.version?.env ?? "—"} baseUrl={debugInfo?.version?.baseUrl ? `${debugInfo.version.baseUrl.slice(0, 40)}…` : "—"}</p>
-            <p>dbConnected={String(debugInfo?.health?.dbConnected ?? "—")} forYou={forYouEvents.length} closingSoon={closingSoon.length} mostPredicted={mostPredicted.length}</p>
+            <p>dbConnected={String(debugInfo?.health?.dbConnected ?? "—")}</p>
           </div>
         )}
 
-        <HomeHeaderPostLogin
-          displayName={displayName}
-          userImage={session?.user?.image ?? null}
-          credits={credits}
-          creditsLoading={creditsLoading}
-          weeklyRank={weeklyRank}
-          canSpinToday={canSpinToday}
-          spinLoading={spinLoading}
-          missions={missions}
-          missionsLoading={missionsLoading}
-        />
-
-        <div className="pt-4 sm:pt-5">
-          <HomeCarouselBox
-            title="Più previsti ora"
-            viewAllHref="/esplora?category=tutti&status=open&sort=popular"
-            viewAllLabel="Vedi tutti"
-            events={debugMode ? mostPredicted : mostPredicted.filter((e) => !isDebugTitle(e.title))}
-            loading={loadingMostPredicted}
-            variant="popular"
-            onEventNavigate={handleEventClick}
-          />
-        </div>
-
-        <div className="border-t border-white/10 pt-4 sm:pt-5">
-          <HomeCarouselBox
-            title="Eventi in scadenza"
-            viewAllHref="/esplora?category=tutti&status=open&sort=expiring"
-            viewAllLabel="Vedi tutti"
-            events={debugMode ? closingSoon : closingSoon.filter((e) => !isDebugTitle(e.title))}
-            loading={loadingClosingSoon}
-            variant="closing"
-            onEventNavigate={handleEventClick}
-          />
-        </div>
-
-        <div className="border-t border-white/10 pt-4 sm:pt-5">
-          <HomeCarouselBox
-            title="Potrebbe piacerti"
-            viewAllHref="/esplora?category=tutti&status=open&sort=popular"
-            viewAllLabel="Vedi tutti"
-            events={debugMode ? forYouEvents : forYouEvents.filter((e) => !isDebugTitle(e.title))}
-            loading={loadingForYou}
-            variant="foryou"
-            onEventNavigate={handleEventClick}
-          />
+        <div className="pt-4 sm:pt-5 px-4 sm:px-6 max-w-2xl mx-auto">
+          <HomeUnifiedFeed onEventNavigate={handleEventClick} />
         </div>
 
         <section className="text-center pt-8 pb-6" aria-label="Invito a esplorare">

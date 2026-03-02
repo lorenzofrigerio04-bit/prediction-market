@@ -49,6 +49,8 @@ Riferimento variabili: `.env.example`.
 - `npm run db:migrate` - Crea una nuova migrazione
 - `npm run db:studio` - Apre Prisma Studio
 - `npm run db:seed` - Popola il database con dati di esempio (admin + 3 eventi)
+- `npx tsx scripts/seed-100-eventi-feed.ts` - Crea 100 eventi nel feed Discover con foto AI e commenti LLM (richiede `OPENAI_API_KEY`, `BLOB_READ_WRITE_TOKEN`; vedi commenti nello script)
+- `npx tsx scripts/sync-blob-images-to-db.ts` - Sincronizza le immagini già presenti nel Blob (cartella `ai-images/`) con il DB: aggiorna `Post.aiImageUrl` per i post che non ce l'hanno. Utile se le foto sono nel Blob ma il DB è stato resettato (richiede `BLOB_READ_WRITE_TOKEN`).
 
 ## Sistema di Risoluzione Eventi
 

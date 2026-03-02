@@ -165,3 +165,23 @@ export function PredictionMasterLogo() {
     </Link>
   );
 }
+
+/** Logo P.M. per header: testo "PredictionMaster" centrato, professionale, premium */
+export function PredictionMasterLogoCompact() {
+  return (
+    <Link
+      href="/"
+      aria-label="PredictionMaster"
+      className={[
+        "pm-logo-header inline-flex items-center justify-center min-h-[44px] px-2",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-xl",
+        "transition-opacity duration-200 hover:opacity-95 active:opacity-90",
+      ].join(" ")}
+    >
+      <span className="pm-logo-header__text text-[0.9375rem] md:text-base uppercase leading-none select-none">
+        <span className="pm-logo-header__prediction">Prediction</span>
+        <span className="pm-logo-header__master">Master</span>
+      </span>
+    </Link>
+  );
+}
