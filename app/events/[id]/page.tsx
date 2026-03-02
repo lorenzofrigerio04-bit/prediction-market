@@ -7,6 +7,7 @@ import Link from "next/link";
 import { getDisplayTitle } from "@/lib/debug-display";
 import Header from "@/components/Header";
 import PredictionModal from "@/components/PredictionModal";
+import { PublishCommentModal } from "@/components/feed/PublishCommentModal";
 import CommentsSection from "@/components/CommentsSection";
 import EventProbabilityChart from "@/components/events/EventProbabilityChart";
 import { trackView } from "@/lib/analytics-client";
@@ -96,6 +97,8 @@ export default function EventDetailPage({
   const [userCredits, setUserCredits] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showPredictionModal, setShowPredictionModal] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [publishLoading, setPublishLoading] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
@@ -308,6 +311,7 @@ export default function EventDetailPage({
       }
     } catch (err) {
       if (err instanceof Error && err.name !== "AbortError") {
+        console.error(err);
         try {
           await navigator.clipboard.writeText(url);
           setShareCopied(true);
@@ -316,6 +320,30 @@ export default function EventDetailPage({
           // ignore
         }
       }
+    }
+  };
+
+  const handlePublishToFeed = async (content?: string | null) => {
+    if (!event?.id || !session) return;
+    setPublishLoading(true);
+    try {
+      const res = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: event.id,
+          content: content?.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Errore");
+      setShowPublishModal(false);
+      router.push("/discover");
+    } catch (e) {
+      console.error(e);
+      throw e;
+    } finally {
+      setPublishLoading(false);
     }
   };
 
@@ -385,18 +413,36 @@ export default function EventDetailPage({
           </BackLink>
           <div className="flex items-center gap-1.5">
             {session && (
-              <button
-                type="button"
-                onClick={handleFollowToggle}
-                disabled={followLoading}
-                className={`event-toolbar-btn min-h-[32px] px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-colors border border-white/20 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
-                  isFollowing
-                    ? "bg-primary/20 text-primary border-primary/40 hover:bg-primary/30"
-                    : "bg-transparent text-slate-200 hover:text-white"
-                }`}
-              >
-                {followLoading ? "..." : isFollowing ? "Non seguire" : "Segui"}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => handlePublishToFeed()}
+                  disabled={publishLoading}
+                  className="event-toolbar-btn min-h-[32px] px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-transparent text-slate-200 border border-white/20 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50"
+                >
+                  {publishLoading ? "..." : "Pubblica"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPublishModal(true)}
+                  disabled={publishLoading}
+                  className="event-toolbar-btn min-h-[32px] px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-transparent text-slate-200 border border-white/20 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50"
+                >
+                  Con commento
+                </button>
+                <button
+                  type="button"
+                  onClick={handleFollowToggle}
+                  disabled={followLoading}
+                  className={`event-toolbar-btn min-h-[32px] px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-colors border border-white/20 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
+                    isFollowing
+                      ? "bg-primary/20 text-primary border-primary/40 hover:bg-primary/30"
+                      : "bg-transparent text-slate-200 hover:text-white"
+                  }`}
+                >
+                  {followLoading ? "..." : isFollowing ? "Non seguire" : "Segui"}
+                </button>
+              </>
             )}
             <button
               type="button"
@@ -1024,6 +1070,14 @@ export default function EventDetailPage({
           initialOutcome={predictionOutcome}
         />
       )}
+      <PublishCommentModal
+        isOpen={showPublishModal}
+        onClose={() => setShowPublishModal(false)}
+        onSubmit={(content) => handlePublishToFeed(content)}
+        title="Pubblica con commento"
+        submitLabel="Pubblica"
+        loading={publishLoading}
+      />
     </div>
   );
 }

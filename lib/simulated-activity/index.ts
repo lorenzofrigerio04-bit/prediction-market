@@ -12,6 +12,7 @@ export {
   MAX_COMMENTS_PER_RUN,
   MAX_REACTIONS_PER_RUN,
   MAX_FOLLOWS_PER_RUN,
+  MAX_POSTS_PER_RUN,
 } from "./config";
 
 export {
@@ -39,6 +40,17 @@ export {
   REPLY_PROBABILITY,
   type CommentTemplate,
 } from "./comment-templates";
+
+export {
+  generateContextualComment,
+  ENABLE_LLM_COMMENTS,
+  type CommentTone,
+} from "./contextual-comment";
+
+export {
+  runSimulatedPosts,
+  type RunSimulatedPostsResult,
+} from "./posts";
 
 export {
   createSimulatedReaction,

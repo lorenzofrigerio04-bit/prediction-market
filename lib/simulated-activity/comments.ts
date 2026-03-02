@@ -7,6 +7,7 @@
 
 import type { PrismaClient } from "@prisma/client";
 import { COMMENT_TEMPLATES, REPLY_PROBABILITY } from "./comment-templates";
+import { generateContextualComment, type CommentTone } from "./contextual-comment";
 import { MAX_COMMENTS_PER_RUN } from "./config";
 
 export interface CreateSimulatedCommentParams {
@@ -133,7 +134,7 @@ export async function runSimulatedComments(
       resolved: false,
       closesAt: { gt: now },
     },
-    select: { id: true, category: true },
+    select: { id: true, category: true, title: true },
   });
 
   if (openEvents.length === 0) {
@@ -147,14 +148,25 @@ export async function runSimulatedComments(
     const event = openEvents[Math.floor(Math.random() * openEvents.length)];
     const userId = botUserIds[Math.floor(Math.random() * botUserIds.length)];
 
-    const eligibleTemplates = COMMENT_TEMPLATES.filter(
-      (t) => !t.category || t.category === event.category
+    let content: string;
+    const tone: CommentTone = Math.random() < 0.5 ? "serious" : "light";
+    const contextual = await generateContextualComment(
+      event.title ?? "",
+      event.category ?? "",
+      tone
     );
-    if (eligibleTemplates.length === 0) {
-      continue;
+    if (contextual && contextual.length > 0) {
+      content = contextual.length > 2000 ? contextual.slice(0, 2000) : contextual;
+    } else {
+      const eligibleTemplates = COMMENT_TEMPLATES.filter(
+        (t) => !t.category || t.category === event.category
+      );
+      if (eligibleTemplates.length === 0) {
+        continue;
+      }
+      const template = eligibleTemplates[Math.floor(Math.random() * eligibleTemplates.length)];
+      content = template.text;
     }
-    const template = eligibleTemplates[Math.floor(Math.random() * eligibleTemplates.length)];
-    const content = template.text;
 
     let parentId: string | undefined;
     if (Math.random() < replyProbability) {

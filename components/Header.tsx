@@ -29,7 +29,7 @@ const MAIN_NAV_ITEMS = [
 ] as const;
 
 const bottomLinkClass =
-  "flex flex-col items-center justify-center gap-0.5 min-w-[52px] min-h-[48px] rounded-2xl transition-colors touch-manipulation active:scale-[0.98]";
+  "flex flex-col items-center justify-center gap-0.5 min-w-[48px] min-h-[36px] rounded-xl transition-colors duration-200 touch-manipulation active:scale-[0.97]";
 
 const SCROLL_THRESHOLD = 24;
 
@@ -113,12 +113,12 @@ export default function Header() {
               <Link
                 key={href}
                 href={linkHref}
-                className={`${bottomLinkClass} rounded-xl mx-0.5 border transition-all ${
-                  active ? "nav-item-neon-active" : "text-fg-muted hover:text-fg border-transparent hover:bg-white/5 dark:hover:bg-white/5 hover:border-primary/15"
+                className={`${bottomLinkClass} mx-0.5 ${
+                  active ? "nav-item-neon-active" : "opacity-90 hover:opacity-100"
                 }`}
               >
-                <NavIcon className="w-6 h-6" />
-                <span className="text-ds-micro font-semibold uppercase tracking-label">{label}</span>
+                <NavIcon className="w-5 h-5 shrink-0" />
+                <span className="text-ds-micro">{label}</span>
               </Link>
             );
           })}

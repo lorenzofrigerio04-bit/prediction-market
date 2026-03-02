@@ -26,6 +26,12 @@ const getNotificationIcon = (type: string) => {
       return "💬";
     case "BADGE_AWARDED":
       return "🏆";
+    case "POST_COMMENT":
+      return "💬";
+    case "POST_LIKE":
+      return "❤️";
+    case "POST_REPOST":
+      return "🔄";
     default:
       return "🔔";
   }

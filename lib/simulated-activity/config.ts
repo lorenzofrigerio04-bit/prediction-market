@@ -28,3 +28,6 @@ export const MAX_REACTIONS_PER_RUN = 90;
 
 /** Massimo numero di follow a eventi per singola esecuzione */
 export const MAX_FOLLOWS_PER_RUN = 45;
+
+/** Massimo numero di post (feed) creati dai bot per singola esecuzione (Step 10) */
+export const MAX_POSTS_PER_RUN = 10;

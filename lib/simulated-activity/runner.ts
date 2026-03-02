@@ -9,6 +9,7 @@ import { runSimulatedPredictions } from "./predictions";
 import { runSimulatedComments } from "./comments";
 import { runSimulatedReactions } from "./reactions";
 import { runSimulatedFollows } from "./followers";
+import { runSimulatedPosts } from "./posts";
 
 /** Numero di bot attivi: obiettivo sensazione 100–200 utenti (azioni distribuite su più run) */
 const BOT_COUNT = 80;
@@ -19,6 +20,7 @@ export interface RunSimulatedActivityResult {
   comments: { created: number; errors: number };
   reactions: { created: number; errors: number };
   follows: { created: number; errors: number };
+  posts: { created: number; errors: number };
   botsToppedUp: number;
   timestamp: string;
 }
@@ -35,11 +37,12 @@ export async function runSimulatedActivity(
 
   const topped = await ensureBotsHaveCredits(prisma);
 
-  const [predictions, comments, reactions, follows] = await Promise.all([
+  const [predictions, comments, reactions, follows, posts] = await Promise.all([
     runSimulatedPredictions(prisma, botUserIds),
     runSimulatedComments(prisma, botUserIds),
     runSimulatedReactions(prisma, botUserIds),
     runSimulatedFollows(prisma, botUserIds),
+    runSimulatedPosts(prisma, botUserIds),
   ]);
 
   return {
@@ -48,6 +51,7 @@ export async function runSimulatedActivity(
     comments: { created: comments.created, errors: comments.errors.length },
     reactions: { created: reactions.created, errors: reactions.errors.length },
     follows: { created: follows.created, errors: follows.errors.length },
+    posts: { created: posts.created, errors: posts.errors.length },
     botsToppedUp: topped.length,
     timestamp: new Date().toISOString(),
   };

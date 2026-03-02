@@ -81,6 +81,15 @@ Il sistema gestisce automaticamente gli eventi chiusi:
 - **Risoluzione eventi chiusi**: `GET /api/cron/resolve-events` – richiede header `Authorization: Bearer CRON_SECRET`.
 - **Generazione eventi (pipeline)**: `GET /api/cron/generate-events` – richiede `Authorization: Bearer CRON_SECRET` o `EVENT_GENERATOR_SECRET`. Esegue fetch trending → verifica → generazione LLM → creazione in DB. In `vercel.json` è configurato con schedule `0 8,20 * * *` (due run al giorno alle 08:00 e 20:00 UTC).
 - **Generazione mercati (pipeline)**: `GET /api/cron/generate-markets` – richiede **`CRON_SECRET`** (`Authorization: Bearer CRON_SECRET`). Esegue ingestion/trend → draft (LLM) → validator → publish. In `vercel.json` è configurato con schedule `*/30 * * * *` (ogni 30 minuti; per ogni 15 minuti usa `*/15 * * * *` se i rate limit lo consentono).
+- **Attività simulata (Feed 2.0)**: `GET|POST /api/cron/simulate-activity` – richiede **`CRON_SECRET`** e **`ENABLE_SIMULATED_ACTIVITY=true`**. I bot creano previsioni, commenti, reazioni, follow e **post nel feed** (tab Eventi). In locale: nessun cron; usa **Admin → Esegui attività simulata** per popolare il feed. In prod il cron è in `vercel.json` (`30 * * * *`, ogni ora al minuto 30).
+- **Generazione immagini post (Feed 2.0)**: `GET|POST /api/cron/generate-post-images` – richiede **`CRON_SECRET`**. Processa post con tipo AI_IMAGE e `aiImageUrl` ancora null (es. per recuperare fallimenti del trigger in background). In `vercel.json` è configurato con schedule `15 * * * *` (ogni ora al minuto 15).
+
+#### Variabili d’ambiente per Feed 2.0 (attività simulata e immagini AI)
+
+- **ENABLE_SIMULATED_ACTIVITY** – `true` o `1` per abilitare il cron simulate-activity e il pulsante admin.
+- **CRON_SECRET** – obbligatorio in prod per l’autenticazione del cron (incluso simulate-activity).
+- **OPENAI_API_KEY** e **BLOB_READ_WRITE_TOKEN** – richiesti per la generazione delle immagini AI nelle card feed (post tipo AI_IMAGE). Senza questi, le card mostrano un placeholder.
+- **NEXTAUTH_URL** – in prod serve per il trigger in background delle immagini (fetch verso `/api/ai/generate-event-image`). Vedi `.env.example`.
 
 #### Variabili d’ambiente per generate-markets
 

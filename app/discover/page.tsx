@@ -1,201 +1,259 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
-import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Header from "@/components/Header";
-import EventiPrevistiTab from "@/components/discover/EventiPrevistiTab";
-import ConsigliatiFeed, { getBackdropClass } from "@/components/discover/ConsigliatiFeed";
+import { LoadingBlock, EmptyState } from "@/components/ui";
+import { FeedPostCard } from "@/components/feed/FeedPostCard";
+import { PublishCommentModal } from "@/components/feed/PublishCommentModal";
+import { PostCommentsDrawer } from "@/components/feed/PostCommentsDrawer";
+import type { FeedPost } from "@/types/feed";
 
-type DiscoverTab = "per-te" | "seguiti";
+const FEED_PAGE_SIZE = 10;
 
 export default function DiscoverPage() {
-  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const tabFromUrl = searchParams.get("tab") === "seguiti" ? "seguiti" : "per-te";
-  const [activeTab, setActiveTab] = useState<DiscoverTab>(tabFromUrl);
-  /** Classe sfondo della slide corrente: stessa foto dell’evento dietro header, tab e strip */
-  const [currentBackdropClass, setCurrentBackdropClass] = useState<string>(() =>
-    getBackdropClass("Sport")
+  const { data: session } = useSession();
+  const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [repostModalEventId, setRepostModalEventId] = useState<string | null>(null);
+  const [repostLoading, setRepostLoading] = useState(false);
+  const [commentsDrawerPostId, setCommentsDrawerPostId] = useState<string | null>(null);
+  const [shareToast, setShareToast] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const deepLinkAppliedRef = useRef(false);
+
+  useEffect(() => {
+    if (!shareToast) return;
+    const t = setTimeout(() => setShareToast(false), 2000);
+    return () => clearTimeout(t);
+  }, [shareToast]);
+
+  const fetchPosts = useCallback(
+    async (append = false) => {
+      const offset = append ? posts.length : 0;
+      if (append) setLoadingMore(true);
+      else setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(
+          `/api/feed/posts?limit=${FEED_PAGE_SIZE}&offset=${offset}&type=AI_IMAGE`
+        );
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          const message = data.detail
+            ? `${data.error}: ${data.detail}`
+            : data.error || "Errore di caricamento";
+          throw new Error(message);
+        }
+        const data = await res.json();
+        const next = (data.posts ?? []) as FeedPost[];
+        if (append) {
+          setPosts((prev) => [...prev, ...next]);
+        } else {
+          setPosts(next);
+        }
+        setHasMore(data.hasMore === true);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Errore di rete");
+        if (!append) setPosts([]);
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [posts.length]
   );
 
-  const [categories, setCategories] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const mainRef = useRef<HTMLElement>(null);
-
-  // Sync tab with URL
-  useEffect(() => {
-    setActiveTab(tabFromUrl);
-  }, [tabFromUrl]);
-
-  // Scroll to #creati quando si arriva da crea evento (dopo Pubblica) o profilo → "I tuoi eventi creati" in fondo
-  useEffect(() => {
-    if (tabFromUrl !== "seguiti") return;
-    const hash = typeof window !== "undefined" ? window.location.hash : "";
-    if (hash !== "#creati") return;
-    const scrollToCreati = () => {
-      const el = document.getElementById("creati");
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    };
-    const delays = [100, 400, 800, 1200, 1800];
-    const timers = delays.map((ms) => setTimeout(scrollToCreati, ms));
-    return () => timers.forEach((t) => clearTimeout(t));
-  }, [tabFromUrl, pathname]);
-
-  // Header, tab bar e strip glass + theme-color: derivati dall’URL reale (pathname + window.location)
-  // così tornando da altre sezioni la pagina si mostra subito corretta senza dipendere dallo state.
-  useLayoutEffect(() => {
-    const defaultThemeColor = "#161a26";
-    const consigliatiThemeColor = "#0d0e14";
-    const isDiscover = pathname === "/discover";
-    const tabFromWindow =
-      typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tab") === "seguiti"
-        ? "seguiti"
-        : "per-te";
-    const isConsigliati = isDiscover && tabFromWindow === "per-te";
-
-    if (isConsigliati) {
-      document.body.classList.add("discover-consigliati-active");
-      const meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute("content", consigliatiThemeColor);
-    } else {
-      document.body.classList.remove("discover-consigliati-active");
-      const meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute("content", defaultThemeColor);
-    }
-    return () => {
-      document.body.classList.remove("discover-consigliati-active");
-      const meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute("content", defaultThemeColor);
-    };
-  }, [pathname, tabFromUrl]);
-
-  const scrollToTop = useCallback(() => {
-    mainRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
-
-  const handleTornaATuttiGliEventi = useCallback(() => {
-    setActiveTab("per-te");
-    window.history.replaceState(null, "", "/discover");
-    setTimeout(scrollToTop, 100);
-  }, [scrollToTop]);
-
-  const fetchCategories = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/events/categories");
-      if (res.ok) {
+  const handleRepostSubmit = useCallback(
+    async (content: string) => {
+      if (!repostModalEventId) return;
+      setRepostLoading(true);
+      try {
+        const res = await fetch("/api/posts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            eventId: repostModalEventId,
+            content: content.trim() || undefined,
+            source: "REPOST",
+          }),
+        });
         const data = await res.json();
-        setCategories(data.categories || []);
-      } else {
-        setCategories([]);
+        if (!res.ok) throw new Error(data.error || "Errore");
+        setRepostModalEventId(null);
+        fetchPosts(false);
+      } catch (e) {
+        console.error(e);
+        throw e;
+      } finally {
+        setRepostLoading(false);
       }
-    } catch {
-      setError("Impossibile caricare le categorie.");
-      setCategories([]);
-    } finally {
-      setLoading(false);
+    },
+    [repostModalEventId, fetchPosts]
+  );
+
+  const handleLike = useCallback(async (postId: string) => {
+    if (!session) return;
+    try {
+      const res = await fetch(`/api/posts/${postId}/like`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Errore");
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? {
+                ...p,
+                likeCount: data.likeCount ?? p.likeCount,
+                isLikedByCurrentUser: data.isLiked ?? false,
+              }
+            : p
+        )
+      );
+    } catch (e) {
+      console.error("Like error:", e);
+    }
+  }, [session]);
+
+  const handleCommentCountUpdate = useCallback((postId: string, count: number) => {
+    setPosts((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, commentCount: count } : p))
+    );
+  }, []);
+
+  const handleFollow = useCallback(async (eventId: string) => {
+    if (!session) return;
+    try {
+      await fetch(`/api/events/${eventId}/follow`, { method: "POST" });
+      // Optional: show brief "Seguito" feedback; Step 7 does not require isFollowing in card
+    } catch (e) {
+      console.error("Follow error:", e);
+    }
+  }, [session]);
+
+  const handleShare = useCallback(async (eventId: string) => {
+    try {
+      const url = `${typeof window !== "undefined" ? window.location.origin : ""}/events/${eventId}`;
+      await navigator.clipboard.writeText(url);
+      setShareToast(true);
+    } catch (e) {
+      console.error("Share error:", e);
     }
   }, []);
 
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    fetchPosts(false);
+  }, []);
 
-  const setTab = (tab: DiscoverTab) => {
-    setActiveTab(tab);
-    const url = tab === "seguiti" ? "/discover?tab=seguiti" : "/discover";
-    window.history.replaceState(null, "", url);
-  };
+  /** Deep link: /discover?postId=xxx — dopo il primo caricamento, apri il drawer commenti per quel post se presente nella lista. */
+  useEffect(() => {
+    if (loading || posts.length === 0 || deepLinkAppliedRef.current) return;
+    const postId = searchParams.get("postId");
+    if (!postId) return;
+    if (posts.some((p) => p.id === postId)) {
+      deepLinkAppliedRef.current = true;
+      setCommentsDrawerPostId(postId);
+      if (typeof window !== "undefined") {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    }
+  }, [loading, posts, searchParams]);
 
-  // Per layout e stili usiamo tabFromUrl (URL) così la pagina è corretta anche al ritorno da altre sezioni
-  const showConsigliati = tabFromUrl === "per-te";
+  /** Infinite scroll: sentinel in fondo, carica altra pagina quando entra in view. */
+  useEffect(() => {
+    if (!hasMore || loadingMore || loading || posts.length === 0) return;
+    const sentinel = loadMoreRef.current;
+    if (!sentinel) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) fetchPosts(true);
+      },
+      { rootMargin: "200px", threshold: 0 }
+    );
+    io.observe(sentinel);
+    return () => io.disconnect();
+  }, [hasMore, loadingMore, loading, posts.length, fetchPosts]);
 
   return (
-    <div
-      className={`min-h-screen relative overflow-x-hidden discover-page${showConsigliati ? " discover-consigliati-strip-visible" : ""}`}
-    >
-      {/* Sfondo unico: foto della slide corrente a tutta pagina (dietro header, tab, strip e feed) */}
-      {showConsigliati && (
-        <div
-          className={`discover-consigliati-bg-layer ${currentBackdropClass}`}
-          aria-hidden
-        />
-      )}
+    <div className="min-h-screen discover-page">
       <Header />
 
-      {/* Tab bar + strip: Seguiti | Consigliati; sotto il link passa alla visione generale / visione verticale */}
-      <div className="discover-tab-bar-wrapper sticky top-[var(--header-height,3.5rem)] z-30">
-        <div className="discover-tab-bar">
-          <div className="mx-auto px-4 max-w-2xl">
-            <div className="flex">
-              <button
-                type="button"
-                onClick={() => setTab("seguiti")}
-                className={`flex-1 py-3.5 text-center text-sm font-semibold transition-colors border-b-2 ${
-                  activeTab === "seguiti"
-                    ? "discover-tab-active border-primary"
-                    : "border-transparent"
-                }`}
-              >
-                Seguiti
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab("per-te")}
-                className={`flex-1 py-3.5 text-center text-sm font-semibold transition-colors border-b-2 ${
-                  activeTab === "per-te"
-                    ? "discover-tab-active border-primary"
-                    : "border-transparent"
-                }`}
-              >
-                Consigliati
-              </button>
-            </div>
-          </div>
-        </div>
-        {showConsigliati && (
-          <div className="discover-consigliati-strip-zone md:hidden">
-            <Link
-              href="/discover/consigliati"
-              className="discover-consigliati-strip flex items-center justify-center py-3 px-4"
-              aria-label="Passa alla visione generale degli eventi consigliati"
-            >
-              <span className="discover-consigliati-strip-text font-medium uppercase text-white/80">
-                -passa alla visione generale-
-              </span>
-            </Link>
-          </div>
-        )}
-      </div>
+      <main
+        id="main-content"
+        className="relative mx-auto px-4 sm:px-6 py-5 md:py-8 max-w-2xl pb-[calc(5rem+var(--safe-area-inset-bottom))]"
+      >
+        <h1 className="sr-only">Feed eventi</h1>
 
-      {showConsigliati ? (
-        <>
-          {/* Feed sotto header, tab bar e strip: non li copre mai */}
-          <div
-            id="main-content"
-            className="discover-feed-fullviewport discover-feed-below-chrome fixed left-0 right-0 flex flex-col"
-            style={{
-              top: "calc(var(--header-height, 3.5rem) + var(--discover-tab-bar-h, 52px) + var(--discover-consigliati-strip-zone-h, 0px))",
-              height: "calc(100dvh - (var(--header-height, 3.5rem) + var(--discover-tab-bar-h, 52px) + var(--discover-consigliati-strip-zone-h, 0px)))",
-            }}
-          >
-            <ConsigliatiFeed onSlideChange={setCurrentBackdropClass} />
-          </div>
-        </>
-      ) : (
-        <main
-          ref={mainRef}
-          id="main-content"
-          className="relative mx-auto px-4 sm:px-6 py-5 md:py-8 max-w-2xl"
-        >
-          <EventiPrevistiTab
-            onTornaATuttiGliEventi={handleTornaATuttiGliEventi}
-            categoriesFromPerTe={categories}
+        {loading ? (
+          <LoadingBlock message="Caricamento feed…" />
+        ) : error ? (
+          <EmptyState
+            title="Errore"
+            description={error}
+            action={{ label: "Riprova", onClick: () => fetchPosts(false) }}
           />
-        </main>
+        ) : posts.length === 0 ? (
+          <EmptyState
+            title="Nessun post"
+            description="Non ci sono ancora post nel feed."
+          />
+        ) : (
+          <>
+            <ul className="flex flex-col gap-4 list-none p-0 m-0" role="feed" aria-label="Feed eventi">
+              {posts
+                .filter((post) => post.type === "AI_IMAGE")
+                .map((post) => (
+                <li key={post.id}>
+                  <FeedPostCard
+                    post={post}
+                    onLike={session ? handleLike : undefined}
+                    onComment={(postId) => setCommentsDrawerPostId(postId)}
+                    onRepost={session ? (eventId) => setRepostModalEventId(eventId) : undefined}
+                    onFollow={session ? handleFollow : undefined}
+                    onShare={handleShare}
+                  />
+                </li>
+              ))}
+
+            </ul>
+            <div ref={loadMoreRef} className="min-h-[1px]" aria-hidden />
+            {loadingMore && (
+              <div className="flex justify-center py-6">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              </div>
+            )}
+          </>
+        )}
+      </main>
+
+      <PublishCommentModal
+        isOpen={repostModalEventId !== null}
+        onClose={() => setRepostModalEventId(null)}
+        onSubmit={handleRepostSubmit}
+        title="Ripubblica con commento"
+        submitLabel="Ripubblica"
+        loading={repostLoading}
+      />
+
+      <PostCommentsDrawer
+        postId={commentsDrawerPostId}
+        isOpen={commentsDrawerPostId !== null}
+        onClose={() => setCommentsDrawerPostId(null)}
+        onCommentCountUpdate={handleCommentCountUpdate}
+      />
+
+      {shareToast && (
+        <div
+          className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[1001] px-4 py-2 rounded-xl bg-fg text-bg text-sm font-medium shadow-lg animate-in fade-in duration-200"
+          role="status"
+          aria-live="polite"
+        >
+          Link copiato
+        </div>
       )}
     </div>
   );

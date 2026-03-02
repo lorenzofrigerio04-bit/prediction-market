@@ -9,6 +9,9 @@ export enum NotificationType {
   COMMENT_REPLY = 'COMMENT_REPLY',
   BADGE_AWARDED = 'BADGE_AWARDED',
   MISSION_COMPLETED = 'MISSION_COMPLETED',
+  POST_COMMENT = 'POST_COMMENT',
+  POST_LIKE = 'POST_LIKE',
+  POST_REPOST = 'POST_REPOST',
 }
 
 /**
@@ -49,6 +52,24 @@ export interface NotificationData {
     missionId: string;
     missionName: string;
     reward: number;
+  };
+  POST_COMMENT: {
+    postId: string;
+    eventId?: string;
+    eventTitle?: string;
+    commenterName: string;
+  };
+  POST_LIKE: {
+    postId: string;
+    eventId?: string;
+    eventTitle?: string;
+    likerName: string;
+  };
+  POST_REPOST: {
+    postId: string;
+    eventId: string;
+    eventTitle: string;
+    reposterName: string;
   };
 }
 

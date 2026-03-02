@@ -45,6 +45,12 @@ export function getNotificationTitle(
       return "Badge sbloccato! 🎉";
     case NotificationType.MISSION_COMPLETED:
       return "Missione completata";
+    case NotificationType.POST_COMMENT:
+      return "Commento al post";
+    case NotificationType.POST_LIKE:
+      return "Like al post";
+    case NotificationType.POST_REPOST:
+      return "Ripubblicazione";
     default:
       return "Nuova notifica";
   }
@@ -72,6 +78,12 @@ export function getNotificationMessage(
       return `Hai sbloccato il badge "${data?.badgeName || 'Badge'}: ${data?.badgeDescription || ''}"`;
     case NotificationType.MISSION_COMPLETED:
       return `Missione completata: +${data?.reward || 0} crediti.`;
+    case NotificationType.POST_COMMENT:
+      return `${data?.commenterName || 'Qualcuno'} ha commentato il tuo post`;
+    case NotificationType.POST_LIKE:
+      return `${data?.likerName || 'Qualcuno'} ha messo like al tuo post`;
+    case NotificationType.POST_REPOST:
+      return `${data?.reposterName || 'Qualcuno'} ha ripubblicato un evento che avevi pubblicato`;
     default:
       return 'Nuova notifica';
   }
@@ -95,6 +107,10 @@ export function getNotificationLink(
       return '/profile';
     case NotificationType.STREAK_RISK:
       return '/wallet';
+    case NotificationType.POST_COMMENT:
+    case NotificationType.POST_LIKE:
+    case NotificationType.POST_REPOST:
+      return data?.postId ? `/discover?postId=${data.postId}` : '/discover';
     default:
       return null;
   }

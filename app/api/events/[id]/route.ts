@@ -46,8 +46,13 @@ export async function GET(
     const amm = await prisma.ammState.findUnique({ where: { eventId: event.id } });
     let probability = 50;
     if (amm) {
-      const yesMicros = priceYesMicros(amm.qYesMicros, amm.qNoMicros, amm.bMicros);
-      probability = Number((yesMicros * 100n) / SCALE);
+      try {
+        const yesMicros = priceYesMicros(amm.qYesMicros, amm.qNoMicros, amm.bMicros);
+        probability = Number((yesMicros * 100n) / SCALE);
+      } catch (ammError) {
+        console.warn("AMM state invalid for event", event.id, ammError);
+        probability = 50;
+      }
     }
     setCachedPrice(eventId, { eventId: event.id, probability, q_yes: 0, q_no: 0, b: DEFAULT_B }).catch(() => {});
     (event as { probability?: number }).probability = probability;

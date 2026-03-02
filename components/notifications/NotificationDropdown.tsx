@@ -4,25 +4,21 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useNotifications, useMarkAsRead } from '@/hooks/useNotifications';
 import type { Notification } from '@/lib/notifications/types';
-import { NotificationType } from '@/lib/notifications/types';
+import { getNotificationMessage, getNotificationLink } from '@/lib/notification-templates';
 
 interface NotificationDropdownProps {
   onClose?: () => void;
 }
 
-function formatNotificationMessage(notification: Notification): string {
-  switch (notification.type) {
-    case NotificationType.EVENT_CLOSING_SOON:
-      return `"${(typeof notification.data === "string" ? JSON.parse(notification.data) : notification.data || {}).eventTitle}" chiude tra poco!`;
-    case NotificationType.EVENT_RESOLVED:
-      return `"${(typeof notification.data === "string" ? JSON.parse(notification.data) : notification.data || {}).eventTitle}" è stato risolto: ${(typeof notification.data === "string" ? JSON.parse(notification.data) : notification.data || {}).outcome === 'yes' ? 'Sì' : 'No'}`;
-    case NotificationType.RANK_UP:
-      return `Sei salito dalla posizione ${(typeof notification.data === "string" ? JSON.parse(notification.data) : notification.data || {}).oldRank} alla ${(typeof notification.data === "string" ? JSON.parse(notification.data) : notification.data || {}).newRank}! 🎉`;
-    case NotificationType.STREAK_RISK:
-      return `Attenzione! La tua streak di ${(typeof notification.data === "string" ? JSON.parse(notification.data) : notification.data || {}).currentStreak} giorni rischia di finire. Fai una previsione entro ${(typeof notification.data === "string" ? JSON.parse(notification.data) : notification.data || {}).hoursUntilMidnight} ore!`;
-    default:
-      return 'Nuova notifica';
+function getNotificationData(notification: Notification): Record<string, unknown> {
+  if (typeof notification.data === 'string') {
+    try {
+      return JSON.parse(notification.data) as Record<string, unknown>;
+    } catch {
+      return {};
+    }
   }
+  return (notification.data as Record<string, unknown>) || {};
 }
 
 function formatNotificationTime(createdAt: string): string {
@@ -99,21 +95,19 @@ export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
             <p>Nessuna notifica</p>
           </div>
         ) : (
-          notifications.map((notification) => (
+          notifications.map((notification) => {
+            const data = getNotificationData(notification);
+            const href = getNotificationLink(notification.type, data) ?? '/notifiche';
+            return (
             <Link
               key={notification.id}
-              href={
-                notification.type === NotificationType.EVENT_CLOSING_SOON ||
-                notification.type === NotificationType.EVENT_RESOLVED
-                  ? `/eventi/${(typeof notification.data === "string" ? JSON.parse(notification.data) : notification.data || {})?.eventId || ""}`
-                  : '/notifiche'
-              }
+              href={href}
               className={`notification-dropdown-item ${notification.readAt ? 'read' : 'unread'}`}
               onClick={() => handleNotificationClick(notification)}
             >
               <div className="notification-dropdown-item-content">
                 <p className="notification-dropdown-item-message">
-                  {formatNotificationMessage(notification)}
+                  {getNotificationMessage(notification.type, data)}
                 </p>
                 <span className="notification-dropdown-item-time">
                   {formatNotificationTime(notification.createdAt)}
@@ -123,7 +117,8 @@ export function NotificationDropdown({ onClose }: NotificationDropdownProps) {
                 <span className="notification-dropdown-item-dot" aria-label="Non letta" />
               )}
             </Link>
-          ))
+            );
+          })
         )}
       </div>
 

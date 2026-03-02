@@ -538,7 +538,7 @@ export default function Home() {
               Non sai da dove iniziare?
             </p>
             <Link
-              href="/discover/consigliati"
+              href="/discover"
               className="landing-cta-primary w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body-sm inline-flex items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
             >
               Esplora tutti gli eventi →
