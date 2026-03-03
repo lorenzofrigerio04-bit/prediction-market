@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
@@ -9,6 +10,10 @@ import {
   IconBell,
   IconUser,
 } from "@/components/ui/Icons";
+
+const SCROLL_UP_THRESHOLD = 20;
+const GESTURE_VISIBLE_MS = 1500;
+const EASE_FLUID = "cubic-bezier(0.32, 0.72, 0, 1)";
 
 const BOTTOM_NAV_LEFT = [
   { href: "/", label: "Home", NavIcon: IconNavHome },
@@ -25,6 +30,42 @@ const bottomLinkClass =
 export default function OracleBottomNav() {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const [navVisible, setNavVisible] = useState(false);
+  const [transitionMs, setTransitionMs] = useState(250);
+  const gestureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isGestureShowRef = useRef(false);
+
+  useEffect(() => {
+    const handleOracleScroll = (e: Event) => {
+      if (isGestureShowRef.current) return;
+      const { scrollTop, scrollingUp } = (e as CustomEvent<{ scrollTop: number; scrollingUp: boolean }>).detail;
+      if (scrollingUp && scrollTop > SCROLL_UP_THRESHOLD) {
+        setTransitionMs(250);
+        setNavVisible(true);
+      } else {
+        setNavVisible(false);
+      }
+    };
+    const handleShowNav = () => {
+      if (gestureTimerRef.current) clearTimeout(gestureTimerRef.current);
+      isGestureShowRef.current = true;
+      setTransitionMs(250);
+      setNavVisible(true);
+      gestureTimerRef.current = setTimeout(() => {
+        gestureTimerRef.current = null;
+        setTransitionMs(450);
+        setNavVisible(false);
+        isGestureShowRef.current = false;
+      }, GESTURE_VISIBLE_MS);
+    };
+    window.addEventListener("oracle-chat-scroll", handleOracleScroll);
+    window.addEventListener("oracle-show-nav", handleShowNav);
+    return () => {
+      window.removeEventListener("oracle-chat-scroll", handleOracleScroll);
+      window.removeEventListener("oracle-show-nav", handleShowNav);
+      if (gestureTimerRef.current) clearTimeout(gestureTimerRef.current);
+    };
+  }, [pathname]);
 
   const isActive = (path: string) =>
     pathname === path || (path !== "/" && pathname.startsWith(path));
@@ -41,7 +82,12 @@ export default function OracleBottomNav() {
 
   return (
     <nav
-      className="nav-bottom-neon md:hidden fixed bottom-0 left-0 right-0 z-40 translate-y-0"
+      className={`nav-bottom-neon fixed bottom-0 left-0 right-0 z-40 ${
+        navVisible ? "translate-y-0" : "translate-y-full"
+      }`}
+      style={{
+        transition: `transform ${transitionMs}ms ${EASE_FLUID}`,
+      }}
       aria-label="Navigazione principale"
     >
       <div className="nav-bottom-neon-inner flex items-center justify-between px-3 relative z-[1]">

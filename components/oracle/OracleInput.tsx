@@ -41,7 +41,7 @@ export default function OracleInput({
 
   return (
     <div
-      className="fixed left-0 right-0 bottom-0 z-30 flex flex-col items-center px-4 pt-2 pb-[calc(5rem+var(--safe-area-inset-bottom,0px))] md:pb-[calc(1rem+var(--safe-area-inset-bottom,0px))] bg-gradient-to-t from-[#171717] via-[#171717]/98 to-transparent"
+      className="fixed left-0 right-0 bottom-0 z-30 flex flex-col items-center px-2 pt-1 pb-[calc(var(--safe-area-inset-bottom,0px)+0.5rem)] bg-gradient-to-t from-[#171717] via-[#171717]/98 to-transparent"
     >
       {showDisclaimer && (
         <p className="mb-2 text-[11px] text-gray-500 text-center max-w-3xl transition-opacity duration-200">

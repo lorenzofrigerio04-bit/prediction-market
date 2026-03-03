@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import ReactMarkdown from "react-markdown";
 
 interface OracleMessageProps {
@@ -8,7 +9,7 @@ interface OracleMessageProps {
   isStreaming?: boolean;
 }
 
-export default function OracleMessage({
+function OracleMessage({
   role,
   content,
   isStreaming = false,
@@ -44,3 +45,5 @@ export default function OracleMessage({
     </div>
   );
 }
+
+export default memo(OracleMessage);
