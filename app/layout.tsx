@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import ThemeScript from "./ThemeScript";
 import AppBackground from "@/components/AppBackground";
 import AgentSphere from "@/components/AgentSphere";
+import ConditionalFooter from "@/components/ConditionalFooter";
 import { LandingBackgroundProviderWithRoute } from "@/components/landing/LandingBackgroundCarousel";
 
 /* Colore barre sistema: status bar + barra browser (Android Chrome, iOS). Stesso valore in manifest.json. */
@@ -81,15 +82,7 @@ export default async function RootLayout({
             Vai al contenuto
           </a>
           <div className="flex-1 platform-content">{children}</div>
-          <footer
-            className="py-3 text-center text-fg-muted text-ds-micro bg-transparent relative z-10"
-            aria-hidden
-          >
-            <span className="brand-logo__text tracking-tight inline-block text-xs md:text-sm">
-              <span className="brand-logo__word brand-logo__word--prediction">Prediction</span>
-              <span className="brand-logo__word brand-logo__word--master">Master</span>
-            </span>
-          </footer>
+          <ConditionalFooter />
         </SessionProvider>
         </LandingBackgroundProviderWithRoute>
       </body>

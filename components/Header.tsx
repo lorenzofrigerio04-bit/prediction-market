@@ -71,9 +71,9 @@ export default function Header() {
   const notificationsHref = session
     ? "/notifications"
     : `/auth/login?callbackUrl=${encodeURIComponent("/notifications")}`;
-  const creaHref = session
-    ? "/crea"
-    : `/auth/login?callbackUrl=${encodeURIComponent("/crea")}`;
+  const oracleHref = session
+    ? "/oracle"
+    : `/auth/login?callbackUrl=${encodeURIComponent("/oracle")}`;
 
   return (
     <>
@@ -168,9 +168,9 @@ export default function Header() {
 
           {/* Centro: sfera cristallo grossa, mezza luna sul contorno */}
           <Link
-            href={creaHref}
+            href={oracleHref}
             className="nav-crystal-ball block touch-manipulation active:scale-[0.98] transition-transform duration-200"
-            aria-label="Crea evento"
+            aria-label="Oracle Assistant"
           />
 
           {/* Destra: Campanella, Profilo */}

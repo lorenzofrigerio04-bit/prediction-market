@@ -433,6 +433,27 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {/* CTA Crea evento */}
+        <Link
+          href="/crea"
+          className="block mb-6"
+        >
+          <Card className="p-4 md:p-5 bg-gradient-to-br from-primary/20 to-accent-700/20 border-primary/30 hover:border-primary/50 transition-all group">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/30 flex items-center justify-center text-2xl group-hover:scale-105 transition-transform">
+                🔮
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-ds-body font-bold text-fg">Crea evento</h2>
+                <p className="text-ds-body-sm text-fg-muted mt-0.5">
+                  Proponi un nuovo evento per il prediction market
+                </p>
+              </div>
+              <span className="text-fg-muted text-sm" aria-hidden>→</span>
+            </div>
+          </Card>
+        </Link>
+
         <SectionContainer title="Statistiche">
           <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6">
             <StatsCard

@@ -3169,6 +3169,15 @@ textarea:focus-visible {
   animation: agent-panel-slide-in 0.2s ease-out forwards;
 }
 
+/* Oracle: drawer slide-in da sinistra */
+@keyframes oracle-drawer-slide-in {
+  from { transform: translateX(-100%); opacity: 0.98; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.oracle-drawer-slide-in {
+  animation: oracle-drawer-slide-in 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
 /* Consigliati: header e bottom nav ben leggibili su foto sfondo */
 body.discover-consigliati-active .header-neon {
   background: rgba(0, 0, 0, 0.9);

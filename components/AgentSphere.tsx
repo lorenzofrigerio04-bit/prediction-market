@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 
 const HOME_SEEN_KEY = "pm_home_seen";
 const MESSAGE_DURATION_MS = 5000;
@@ -32,7 +33,6 @@ function easeOutRise(t: number): number {
 export default function AgentSphere() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
-  const [panelOpen, setPanelOpen] = useState(false);
   const [welcomeWord, setWelcomeWord] = useState<"Benvenuto" | "Bentornato">("Benvenuto");
   const [messageVisible, setMessageVisible] = useState(false);
   const [scrollBottom, setScrollBottom] = useState(BOTTOM_NAV_VISIBLE);
@@ -135,6 +135,7 @@ export default function AgentSphere() {
     };
   }, [status, pathname]);
 
+  if (pathname === "/oracle") return null;
   if (status !== "authenticated") return null;
 
   const displayName = session?.user?.name || session?.user?.email || "utente";
@@ -142,8 +143,8 @@ export default function AgentSphere() {
   const isReturning = welcomeWord === "Bentornato";
   const messageLine1 = isReturning ? `Bentornato, ${nameCapitalized}.` : `Benvenuto, ${nameCapitalized}.`;
   const messageLine2 = isReturning
-    ? "Sono qui per aiutarti. Clicca quando hai bisogno."
-    : "Sono il tuo assistente. Clicca quando hai bisogno di supporto.";
+    ? "Clicca per Oracle Assistant e le previsioni."
+    : "Clicca per Oracle Assistant e le previsioni.";
 
   return (
     <>
@@ -176,52 +177,12 @@ export default function AgentSphere() {
             <span className="agent-message-tail" aria-hidden />
           </div>
         )}
-        <button
-          type="button"
-          onClick={() => setPanelOpen(true)}
-          className="agent-sphere agent-sphere-chill touch-manipulation active:scale-[0.98] transition-transform duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-full"
-          aria-label="Apri assistente"
+        <Link
+          href="/oracle"
+          className="agent-sphere agent-sphere-chill block touch-manipulation active:scale-[0.98] transition-transform duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-full"
+          aria-label="Oracle Assistant"
         />
       </div>
-
-      {panelOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm"
-            aria-hidden
-            onClick={() => setPanelOpen(false)}
-          />
-          <div
-            className="fixed top-0 right-0 bottom-0 z-[61] w-full max-w-sm bg-bg border-l border-border shadow-xl flex flex-col agent-panel-slide-in"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Pannello assistente"
-          >
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <h2 className="text-ds-h3 font-bold text-fg">Assistente</h2>
-              <button
-                type="button"
-                onClick={() => setPanelOpen(false)}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-fg-muted hover:text-fg hover:bg-surface transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-                aria-label="Chiudi"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-              <div className="agent-sphere w-16 h-16 mb-4 rounded-full" aria-hidden />
-              <p className="text-ds-body text-fg-muted">
-                Il tuo assistente è in arrivo.
-              </p>
-              <p className="mt-2 text-ds-body-sm text-fg-subtle">
-                Prossimamente potrai consultare l&apos;agente per consigli e suggerimenti.
-              </p>
-            </div>
-          </div>
-        </>
-      )}
     </>
   );
 }

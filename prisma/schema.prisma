@@ -59,6 +59,7 @@ model User {
   posts        Post[]
   postLikes    PostLike[]
   postComments PostComment[]
+  oracleChats  OracleChat[]
 
   @@map("users")
 }
@@ -660,4 +661,32 @@ model IngestionLog {
   @@index([sourceType])
   @@index([createdAt])
   @@map("ingestion_logs")
+}
+
+// Oracle Assistant: chat e report di previsioni
+model OracleChat {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reports OracleReport[]
+
+  @@index([userId])
+  @@map("oracle_chats")
+}
+
+model OracleReport {
+  id         String   @id @default(cuid())
+  chatId     String   @map("chat_id")
+  userQuery  String   @map("user_query") @db.Text
+  reportText String   @map("report_text") @db.Text
+  topic      String?
+  createdAt  DateTime @default(now())
+
+  chat OracleChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId])
+  @@map("oracle_reports")
 }

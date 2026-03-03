@@ -18,6 +18,7 @@ import {
   IconNavDiscover,
   IconNavExplore,
   IconNavCrystalBall,
+  IconNavCreate,
   IconNavTrophy,
   IconNavProfile,
 } from "@/components/ui/Icons";
@@ -26,7 +27,7 @@ const MAIN_NAV_ITEMS = [
   { href: "/", label: "Home", icon: IconNavHome },
   { href: "/discover", label: "Eventi", icon: IconNavDiscover },
   { href: "/esplora", label: "Esplora", icon: IconNavExplore },
-  { href: "/crea", label: "Crea evento", icon: IconNavCrystalBall },
+  { href: "/oracle", label: "Oracle Assistant", icon: IconNavCrystalBall },
   { href: "/leaderboard", label: "Classifica", icon: IconNavTrophy },
   { href: "/profile", label: "Profilo", icon: IconNavProfile },
 ] as const;
@@ -143,8 +144,8 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
               const linkHref =
                 href === "/profile" && !isAuthenticated
                   ? `/auth/login?callbackUrl=${encodeURIComponent(pathname || "/")}`
-                  : (href === "/crea" && !isAuthenticated)
-                    ? `/auth/login?callbackUrl=${encodeURIComponent("/crea")}`
+                  : (href === "/oracle" && !isAuthenticated)
+                    ? `/auth/login?callbackUrl=${encodeURIComponent("/oracle")}`
                     : href;
               return (
                 <DrawerLink
@@ -167,6 +168,9 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
                 <span className="text-ds-micro font-semibold uppercase tracking-label text-fg-muted px-4 py-1">
                   Personale
                 </span>
+                <DrawerLink href="/crea" icon={IconNavCreate} active={isActive("/crea")} onClick={onClose}>
+                  Crea evento
+                </DrawerLink>
                 <DrawerLink href="/wallet" icon={IconWallet} active={isActive("/wallet")} onClick={onClose}>
                   Wallet
                 </DrawerLink>
