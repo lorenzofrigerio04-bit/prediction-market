@@ -1,47 +1,79 @@
-import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import {
+  getSessionTokenCookieName,
+  purgeLegacyNextAuthCookies,
+} from "@/lib/auth-session-cookie";
 
-const AUTH_LOGIN_LIMIT = 10; // richieste login per IP per minuto
+const AUTH_LOGIN_LIMIT = 10;
 
-/**
- * Rate limit su login (POST a callback credentials).
- * withAuth protegge le route nel matcher e gestisce redirect a signIn.
- */
-export default withAuth(
-  function middleware(req) {
-    const pathname = req.nextUrl.pathname;
-    if (
-      pathname === "/api/auth/callback/credentials" &&
-      req.method === "POST"
-    ) {
-      const ip = getClientIp(req as Parameters<typeof getClientIp>[0]);
-      const result = rateLimit(`login:${ip}`, AUTH_LOGIN_LIMIT);
-      if (result) {
-        return NextResponse.json(
-          { error: "Troppe richieste di accesso. Riprova tra un minuto." },
-          { status: 429 }
-        );
-      }
+function isProtectedPath(pathname: string): boolean {
+  if (pathname.startsWith("/admin")) return true;
+  if (pathname === "/profile" || pathname.startsWith("/profile/")) return true;
+  if (pathname === "/wallet" || pathname.startsWith("/wallet/")) return true;
+  if (pathname === "/notifications" || pathname.startsWith("/notifications/"))
+    return true;
+  if (pathname === "/missions" || pathname.startsWith("/missions/")) return true;
+  return false;
+}
+
+export async function middleware(request: NextRequest) {
+  const res = NextResponse.next();
+  purgeLegacyNextAuthCookies(res);
+
+  const pathname = request.nextUrl.pathname;
+
+  if (
+    pathname === "/api/auth/callback/credentials" &&
+    request.method === "POST"
+  ) {
+    const ip = getClientIp(request as Parameters<typeof getClientIp>[0]);
+    const limited = rateLimit(`login:${ip}`, AUTH_LOGIN_LIMIT);
+    if (limited) {
+      const json = NextResponse.json(
+        { error: "Troppe richieste di accesso. Riprova tra un minuto." },
+        { status: 429 }
+      );
+      purgeLegacyNextAuthCookies(json);
+      return json;
     }
-    return NextResponse.next();
-  },
-  {
-    pages: { signIn: "/auth/login" },
+    return res;
   }
-);
+
+  if (!isProtectedPath(pathname)) {
+    return res;
+  }
+
+  const secret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET;
+  if (!secret) {
+    return res;
+  }
+
+  const token = await getToken({
+    req: request,
+    secret,
+    cookieName: getSessionTokenCookieName(),
+  });
+
+  if (token) {
+    return res;
+  }
+
+  const signIn = new URL("/auth/login", request.url);
+  signIn.searchParams.set(
+    "callbackUrl",
+    `${pathname}${request.nextUrl.search}`
+  );
+  const redirect = NextResponse.redirect(signIn);
+  purgeLegacyNextAuthCookies(redirect);
+  return redirect;
+}
 
 export const config = {
   matcher: [
-    "/api/auth/callback/credentials",
-    "/admin/:path*",
-    "/profile",
-    "/profile/:path*",
-    "/wallet",
-    "/wallet/:path*",
-    "/notifications",
-    "/notifications/:path*",
-    "/missions",
-    "/missions/:path*",
+    "/",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

@@ -23,6 +23,7 @@ import GoogleProvider from 'next-auth/providers/google';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import { getSessionTokenCookieName } from '@/lib/auth-session-cookie';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -156,6 +157,18 @@ export const authOptions: NextAuthOptions = {
     strategy: 'database',
     maxAge: 30 * 24 * 60 * 60,
     updateAge: 24 * 60 * 60,
+  },
+  /** Nome cookie dedicato: evita conflitto con JWT legacy; accoppiato a purge nel middleware. */
+  cookies: {
+    sessionToken: {
+      name: getSessionTokenCookieName(),
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production' || process.env.VERCEL === '1',
+      },
+    },
   },
   secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
 };
