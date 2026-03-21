@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, getSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import Header from "@/components/Header";
 import BackLink from "@/components/ui/BackLink";
@@ -19,7 +19,7 @@ interface PublicProfile {
 }
 
 export default function PublicProfilePage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
   const params = useParams();
   const userId = params?.userId as string;
@@ -29,8 +29,23 @@ export default function PublicProfilePage() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/auth/login");
-      return;
+      let cancelled = false;
+      void (async () => {
+        const s = await getSession();
+        if (cancelled) return;
+        if (s?.user?.id) {
+          try {
+            await updateSession();
+          } catch {
+            /* ignore */
+          }
+          return;
+        }
+        router.push("/auth/login");
+      })();
+      return () => {
+        cancelled = true;
+      };
     }
     if (!userId) return;
     if (session?.user?.id === userId) {
@@ -48,7 +63,7 @@ export default function PublicProfilePage() {
       })
       .catch(() => setError("Profilo non trovato"))
       .finally(() => setLoading(false));
-  }, [userId, session?.user?.id, status, router]);
+  }, [userId, session?.user?.id, status, router, updateSession]);
 
   if (status === "loading" || loading) {
     return (

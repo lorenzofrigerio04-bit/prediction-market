@@ -48,12 +48,15 @@ export default function Header() {
   const isActive = (path: string) =>
     pathname === path || (path !== "/" && pathname.startsWith(path));
 
-  const profileHref = session
-    ? "/profile"
-    : `/auth/login?callbackUrl=${encodeURIComponent(pathname || "/")}`;
-  const notificationsHref = session
-    ? "/notifications"
-    : `/auth/login?callbackUrl=${encodeURIComponent("/notifications")}`;
+  /* Solo "unauthenticated" → login. Con loading o sessione non ancora idratata, link a /profile evita di mostrare login con cookie già valido. */
+  const profileHref =
+    status === "unauthenticated"
+      ? `/auth/login?callbackUrl=${encodeURIComponent(pathname || "/")}`
+      : "/profile";
+  const notificationsHref =
+    status === "unauthenticated"
+      ? `/auth/login?callbackUrl=${encodeURIComponent("/notifications")}`
+      : "/notifications";
 
   return (
     <>
@@ -159,7 +162,7 @@ export default function Header() {
       <SideDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        isAuthenticated={status === "authenticated" && !!session}
+        isAuthenticated={status === "authenticated"}
         isAdmin={session?.user?.role === "ADMIN"}
       />
     </>

@@ -18,12 +18,14 @@ if (
 import { getServerSession } from 'next-auth';
 import type { NextAuthOptions, Account } from 'next-auth';
 import type { AdapterUser } from 'next-auth/adapters';
-import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
-import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-import { getSessionTokenCookieName } from '@/lib/auth-session-cookie';
+import {
+  getSessionTokenCookieName,
+  AUTH_SESSION_MAX_AGE_SECONDS,
+  useSecureAuthCookie,
+} from '@/lib/auth-session-cookie';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -33,63 +35,12 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
       allowDangerousEmailAccountLinking: true,
     }),
-    CredentialsProvider({
-      name: 'Credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
-      },
-      async authorize(credentials) {
-        try {
-          if (!credentials?.email || !credentials?.password) {
-            return null;
-          }
-          
-          let user;
-          try {
-            user = await prisma.user.findUnique({
-              where: { email: credentials.email },
-              select: { id: true, email: true, name: true, password: true, role: true },
-            });
-          } catch (dbError: any) {
-            if (dbError?.code === 'P2022' || dbError?.code === 'P2021' || 
-                dbError?.message?.includes('does not exist') || 
-                dbError?.message?.includes('password')) {
-              console.error('[CredentialsProvider] Database schema non aggiornato:', dbError);
-              user = await prisma.user.findUnique({
-                where: { email: credentials.email },
-                select: { id: true, email: true, name: true, role: true },
-              });
-              if (user) {
-                throw new Error('Database non configurato: esegui "npx prisma migrate deploy" e "npx prisma db seed"');
-              }
-            }
-            throw dbError;
-          }
-          
-          if (!user) {
-            return null;
-          }
-          
-          if (!user.password) {
-            return null;
-          }
-          
-          const ok = await bcrypt.compare(credentials.password, user.password);
-          if (!ok) {
-            return null;
-          }
-          
-          return { id: user.id, email: user.email ?? '', name: user.name ?? null, image: null };
-        } catch (error: any) {
-          console.error('[CredentialsProvider] Errore durante authorize:', error);
-          if (error?.message && error.message.includes('Database non configurato')) {
-            throw error;
-          }
-          return null;
-        }
-      },
-    }),
+    /**
+     * Login email/password: non usiamo CredentialsProvider qui.
+     * Con `session: { strategy: "database" }`, NextAuth per le credenziali emette ancora un JWT
+     * (`next-auth.session-token`), mentre il middleware e la purge accettano solo `pm.sid` (sessione DB).
+     * Vedi `POST /api/auth/login-credentials`.
+     */
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
@@ -155,7 +106,7 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'database',
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: AUTH_SESSION_MAX_AGE_SECONDS,
     updateAge: 24 * 60 * 60,
   },
   /** Nome cookie dedicato: evita conflitto con JWT legacy; accoppiato a purge nel middleware. */
@@ -166,7 +117,7 @@ export const authOptions: NextAuthOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production' || process.env.VERCEL === '1',
+        secure: useSecureAuthCookie(),
       },
     },
   },

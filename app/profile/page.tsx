@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
@@ -171,10 +171,29 @@ export default function ProfilePage() {
   }, [router]);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      syncedUserIdRef.current = null;
-      router.push("/auth/login");
+    if (status === "loading") {
       return;
+    }
+    if (status === "unauthenticated") {
+      let cancelled = false;
+      void (async () => {
+        /* useSession può essere indietro rispetto al cookie; evita redirect al form credenziali se la sessione c'è. */
+        const s = await getSession();
+        if (cancelled) return;
+        if (s?.user?.id) {
+          try {
+            await updateSession();
+          } catch {
+            /* ignore */
+          }
+          return;
+        }
+        syncedUserIdRef.current = null;
+        router.push("/auth/login");
+      })();
+      return () => {
+        cancelled = true;
+      };
     }
     if (status !== "authenticated" || !session?.user?.id) {
       return;
@@ -190,7 +209,6 @@ export default function ProfilePage() {
         } catch {
           /* ignore */
         }
-        if (!cancelled) router.refresh();
       }
       if (cancelled) return;
       trackView("PROFILE_VIEWED", { userId: session.user.id });
@@ -201,7 +219,7 @@ export default function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [status, router, session?.user?.id, updateSession]);
+  }, [status, router, session?.user?.id, updateSession, fetchProfileData]);
 
   const fetchAllBadges = async () => {
     try {
@@ -316,6 +334,18 @@ export default function ProfilePage() {
           >
             Riprova
           </button>
+        </main>
+      </div>
+    );
+  }
+
+  /** Sessione ok ma dati profilo non ancora caricati: evita schermata vuota o flash del redirect login. */
+  if (status === "authenticated" && session?.user && !profileData && !error) {
+    return (
+      <div className="min-h-screen bg-bg">
+        <Header />
+        <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
+          <LoadingBlock message="Caricamento profilo..." />
         </main>
       </div>
     );

@@ -37,7 +37,7 @@ export default function EventDetailHeader() {
       <SideDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        isAuthenticated={status === "authenticated" && !!session}
+        isAuthenticated={status === "authenticated"}
         isAdmin={session?.user?.role === "ADMIN"}
       />
     </>

@@ -60,14 +60,15 @@ export default function SignupPage() {
         return;
       }
 
-      // Dopo la registrazione, fai login automatico
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
+      // Dopo la registrazione, fai login automatico (sessione DB + pm.sid)
+      const loginRes = await fetch("/api/auth/login-credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        credentials: "same-origin",
       });
 
-      if (result?.error) {
+      if (!loginRes.ok) {
         setError("Registrazione completata, ma errore durante il login");
       } else {
         await new Promise((r) => setTimeout(r, 300));

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import {
   getSessionTokenCookieName,
@@ -26,7 +25,8 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   if (
-    pathname === "/api/auth/callback/credentials" &&
+    (pathname === "/api/auth/callback/credentials" ||
+      pathname === "/api/auth/login-credentials") &&
     request.method === "POST"
   ) {
     const ip = getClientIp(request as Parameters<typeof getClientIp>[0]);
@@ -51,13 +51,11 @@ export async function middleware(request: NextRequest) {
     return res;
   }
 
-  const token = await getToken({
-    req: request,
-    secret,
-    cookieName: getSessionTokenCookieName(),
-  });
-
-  if (token) {
+  /* Session strategy "database": il cookie contiene un session token opaco, non un JWT.
+     getToken() decodifica solo JWT → restituiva sempre null e reindirizzava a /auth/login
+     anche con sessione valida (pagina credenziali dopo login Google). */
+  const sessionCookie = request.cookies.get(getSessionTokenCookieName())?.value;
+  if (sessionCookie && sessionCookie.length > 0) {
     return res;
   }
 

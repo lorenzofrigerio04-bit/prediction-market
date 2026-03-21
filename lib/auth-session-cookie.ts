@@ -11,6 +11,25 @@ const isProdHttps =
   (typeof process.env.NEXTAUTH_URL === "string" &&
     process.env.NEXTAUTH_URL.startsWith("https://"));
 
+/** Allineato a `authOptions.cookies.sessionToken.options.secure` (cookie `__Secure-` richiede Secure). */
+export function useSecureAuthCookie(): boolean {
+  return isProdHttps;
+}
+
+/** Stessa durata di `authOptions.session.maxAge`. */
+export const AUTH_SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+
+/** Opzioni Set-Cookie per `pm.sid` (sessione DB NextAuth). */
+export function getSessionCookieWriteOptions() {
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    path: "/",
+    secure: useSecureAuthCookie(),
+    maxAge: AUTH_SESSION_MAX_AGE_SECONDS,
+  };
+}
+
 /** Nome attuale del cookie di sessione (deve coincidere con authOptions.cookies.sessionToken.name). */
 export function getSessionTokenCookieName(): string {
   return isProdHttps ? "__Secure-pm.sid" : "pm.sid";

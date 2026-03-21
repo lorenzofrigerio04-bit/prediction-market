@@ -1,21 +1,11 @@
 "use client";
 
 import { SessionProvider as NextAuthSessionProvider } from "next-auth/react";
-import type { Session } from "next-auth";
 
-export default function SessionProvider({
-  children,
-  session,
-}: {
-  children: React.ReactNode;
-  session?: Session | null;
-}) {
+/** Non passare `session` da SSR: il client deve chiamare GET /api/auth/session così useSession() è allineato al cookie dopo OAuth. */
+export default function SessionProvider({ children }: { children: React.ReactNode }) {
   return (
-    <NextAuthSessionProvider
-      session={session}
-      refetchOnWindowFocus={true}
-      refetchInterval={0}
-    >
+    <NextAuthSessionProvider refetchOnWindowFocus={true} refetchInterval={0}>
       {children}
     </NextAuthSessionProvider>
   );

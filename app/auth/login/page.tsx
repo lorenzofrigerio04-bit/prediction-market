@@ -51,22 +51,20 @@ export default function LoginPage() {
     setRedirecting(false);
 
     try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
+      const loginRes = await fetch("/api/auth/login-credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        credentials: "same-origin",
       });
+      const loginData = await loginRes.json().catch(() => ({}));
 
-      if (result?.error) {
-        const errorMsg = result.error === 'undefined' || !result.error 
-          ? ERROR_MESSAGES.Default 
-          : ERROR_MESSAGES[result.error] || result.error;
-        setError(errorMsg);
-        setIsLoading(false);
-        return;
-      }
-      if (!result?.ok) {
-        setError("Email o password non corretti. Riprova.");
+      if (!loginRes.ok) {
+        const msg =
+          typeof loginData?.error === "string"
+            ? loginData.error
+            : ERROR_MESSAGES.CredentialsSignin;
+        setError(loginRes.status === 401 ? ERROR_MESSAGES.CredentialsSignin : msg);
         setIsLoading(false);
         return;
       }
