@@ -17,7 +17,6 @@ if (
 
 import { getServerSession } from 'next-auth';
 import type { NextAuthOptions, Account } from 'next-auth';
-import type { JWT } from 'next-auth/jwt';
 import type { AdapterUser } from 'next-auth/adapters';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
@@ -134,46 +133,19 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
-    session: async ({ session, token }) => {
-      if (session.user && token.sub) {
-        (session.user as any).id = token.sub;
-        (session.user as any).role = token.role ?? null;
-        // JWT minimo non include name/email: recuperali dal DB (evita cookie troppo grandi → 494 Safari)
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.sub },
-          select: { name: true, email: true, image: true },
-        });
-        if (dbUser) {
-          session.user.name = dbUser.name ?? session.user.name ?? null;
-          session.user.email = dbUser.email ?? session.user.email ?? null;
-          session.user.image = dbUser.image ?? session.user.image ?? null;
-        }
+    // Session strategy: database — cookie con solo sessionToken (piccolo). Evita JWT grossi o
+    // cookie frammentati (.0, .1, …) che superano il limite header Vercel (494) su mobile/Safari.
+    session: async ({ session, user }) => {
+      if (session.user && user) {
+        session.user.id = user.id;
+        session.user.email = user.email ?? '';
+        session.user.name = user.name ?? null;
+        session.user.image = user.image ?? null;
+        const u = user as { role?: string | null };
+        session.user.role = u.role ?? undefined;
+        session.user.emailVerified = user.emailVerified ?? null;
       }
       return session;
-    },
-    jwt: async ({ token, user }): Promise<JWT> => {
-      // JWT minimo (solo sub + role) per evitare REQUEST_HEADER_TOO_LARGE (494) su Safari/Vercel
-      if (user) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { role: true },
-        });
-        return {
-          id: user.id,
-          sub: user.id,
-          role: dbUser?.role ?? null,
-          iat: Math.floor(Date.now() / 1000),
-          exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
-        } as JWT;
-      }
-      const t = token as { sub?: string; id?: string; role?: string; iat?: number; exp?: number };
-      return {
-        id: (t.id ?? t.sub ?? '') as string,
-        sub: t.sub,
-        role: t.role ?? null,
-        iat: t.iat ?? Math.floor(Date.now() / 1000),
-        exp: t.exp ?? Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
-      } as JWT;
     },
   },
   pages: {
@@ -181,11 +153,9 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/login', // così gli errori di login mostrano la pagina di login invece della generica "Error"
   },
   session: {
-    strategy: 'jwt',
+    strategy: 'database',
     maxAge: 30 * 24 * 60 * 60,
-  },
-  jwt: {
-    maxAge: 30 * 24 * 60 * 60,
+    updateAge: 24 * 60 * 60,
   },
   secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
 };

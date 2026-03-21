@@ -1,6 +1,3 @@
-// Schema Prisma per Prediction Market (PostgreSQL)
-// Database: PostgreSQL - usare DATABASE_URL con connection string valida
-
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "darwin-arm64"]
@@ -11,92 +8,82 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Feed 2.0: tipo e sorgente del post
-enum PostType {
-  SLIDE
-  AI_IMAGE
-}
-
-enum PostSource {
-  CREATED_BY_ME
-  REPOST
-  BOT
-}
-
-// Utente: auth, crediti, streak, relazioni con eventi/previsioni/notifiche/badge/follow
 model User {
-  id            String    @id @default(cuid())
-  email         String?   @unique
+  id            String          @id @default(cuid())
+  email         String?         @unique
   name          String?
-  emailVerified DateTime? @map("email_verified")
+  emailVerified DateTime?       @map("email_verified")
   image         String?
-  password      String?   // Hash bcrypt per login con email/password
-  role          String?   @default("USER") // USER, ADMIN, BOT
-  streakCount   Int       @default(0) @map("streak_count")
-  credits       Int       @default(100)
-  creditsMicros BigInt   @default(0) @map("credits_micros") // AMM trading balance (1 credit = 1_000_000)
-  totalEarned   Int       @default(0) @map("total_earned") // Totale crediti guadagnati
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Relazione con Notification
+  password      String?
+  role          String?         @default("USER")
+  streakCount   Int             @default(0) @map("streak_count")
+  credits       Int             @default(100)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  totalEarned   Int             @default(0) @map("total_earned")
+  creditsMicros BigInt          @default(0) @map("credits_micros")
+  accounts      Account[]
+  reactions     Reaction[]
+  comments      Comment[]
+  eventFollows  EventFollower[]
+  events        Event[]         @relation("EventCreator")
   notifications Notification[]
-
-  // Relazioni con Event, Comment, Reaction
-  events      Event[]       @relation("EventCreator")
-  comments    Comment[]
-  reactions   Reaction[]
-  Prediction  Prediction[]
-  Transaction Transaction[]
-  userBadges  UserBadge[]
-  eventFollows EventFollower[]
-  userMissions UserMission[]
-  userXP       UserXP?
-  accounts     Account[]
-  Position     Position[]
-  Trade        Trade[]
-  // Feed 2.0: post, like e commenti su post
-  posts        Post[]
-  postLikes    PostLike[]
-  postComments PostComment[]
-  oracleChats  OracleChat[]
+  oracleChats   OracleChat[]
+  Position      Position[]
+  postComments  PostComment[]
+  postLikes     PostLike[]
+  posts         Post[]
+  Prediction    Prediction[]
+  Trade         Trade[]
+  Transaction   Transaction[]
+  userBadges    UserBadge[]
+  userMissions  UserMission[]
+  userXP        UserXP?
+  sessions      Session[]
 
   @@map("users")
 }
 
-// Account OAuth per NextAuth (Google, etc.)
 model Account {
   id                String  @id @default(cuid())
   userId            String  @map("user_id")
   type              String
   provider          String
   providerAccountId String  @map("provider_account_id")
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@index([userId])
   @@map("accounts")
 }
 
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
 model Notification {
   id        String    @id @default(cuid())
   userId    String
-  type      String // EVENT_CLOSING_SOON | EVENT_RESOLVED | RANK_UP | STREAK_RISK
-  data      String? // Dati aggiuntivi in formato JSON (es: { eventId, eventTitle, oldRank, newRank, etc })
-  message   String? // Campo legacy - i messaggi sono generati da type+data
+  type      String
+  data      String?
+  message   String?
   readAt    DateTime?
   createdAt DateTime  @default(now())
-
-  // Relazione con User
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, readAt])
@@ -106,11 +93,11 @@ model Notification {
 
 model AuditLog {
   id         String   @id @default(cuid())
-  userId     String? // Null se azione di sistema
-  action     String // Es: EVENT_CREATE, EVENT_RESOLVE, COMMENT_HIDE, etc.
-  entityType String // Es: "event", "comment", "user", etc.
-  entityId   String? // ID dell'entità su cui è stata eseguita l'azione
-  payload    String? // Dati aggiuntivi in formato JSON
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  payload    String?
   createdAt  DateTime @default(now())
 
   @@index([userId])
@@ -120,14 +107,13 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-// Event Gen v2.0: run-level audit for pipeline metrics and dashboards
 model PipelineRun {
   id                    String    @id @default(cuid())
   runId                 String    @unique @map("run_id")
   startedAt             DateTime  @default(now()) @map("started_at")
   completedAt           DateTime? @map("completed_at")
   dryRun                Boolean   @default(false) @map("dry_run")
-  source                String // "storyline" | "trend"
+  source                String
   eligibleCount         Int       @map("eligible_count")
   candidatesCount       Int       @map("candidates_count")
   rulebookValidCount    Int       @map("rulebook_valid_count")
@@ -138,7 +124,7 @@ model PipelineRun {
   skippedCount          Int       @map("skipped_count")
   reasonsCount          Json?     @map("reasons_count")
   eventIds              String[]  @map("event_ids")
-  avgQualityScore       Float?     @map("avg_quality_score")
+  avgQualityScore       Float?    @map("avg_quality_score")
   errorMessage          String?   @map("error_message")
 
   @@index([startedAt])
@@ -153,12 +139,12 @@ model EventSubmission {
   closesAt         DateTime
   resolutionSource String?
   submittedById    String
-  status           String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  status           String    @default("PENDING")
   reviewedAt       DateTime?
   reviewedById     String?
   reviewNotes      String?
-  eventId          String?   // ID dell'evento creato se approvato
-  notifyPhone      String?   // Numero per avviso quando l'evento viene approvato (con consenso termini)
+  eventId          String?
+  notifyPhone      String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -169,95 +155,84 @@ model EventSubmission {
 }
 
 model Event {
-  id                    String    @id @default(cuid())
-  title                 String
-  description           String?
-  category              String
-  closesAt              DateTime
-  resolutionSourceUrl   String?
-  resolutionNotes       String?
-  createdById           String
-  resolutionStatus      String    @default("PENDING") // PENDING, NEEDS_REVIEW, RESOLVED
-  b                     Float // Parameter for LMSR pricing
-  resolutionBufferHours Int       @default(24)
-  resolved              Boolean   @default(false)
-  resolvedAt            DateTime? // Data di risoluzione
-  outcome               String? // YES o NO - risultato quando risolto
-  resolutionDisputedAt  DateTime? // Data di disputa della risoluzione
-  resolutionDisputedBy  String? // ID utente che ha disputato
-  // Campi legacy/computed per compatibilità (calcolati dalle predictions o da LMSR)
-  probability           Float?
-  yesCredits            Int?
-  noCredits             Int?
-  totalCredits          Int?
-  yesPredictions        Int?
-  noPredictions         Int?
-  q_yes                 Float?
-  q_no                  Float?
-  p_init                Float?
-  realWorldEventTime    DateTime?
-  resolutionTimeExpected DateTime?
-  // Campi per BLOCCO 5 (Event Publishing)
-  status                String    @default("OPEN") // OPEN, CLOSED, RESOLVED
-  dedupKey              String    @unique // Chiave deterministica per deduplicazione (obbligatorio)
-  resolutionAuthorityHost String? // Host della fonte di risoluzione (es. "www.governo.it")
-  resolutionAuthorityType String? // OFFICIAL | REPUTABLE
-  resolutionCriteriaYes  String?  // Criterio formale per risoluzione YES (binario/threshold)
-  resolutionCriteriaNo   String?  // Criterio formale per risoluzione NO (binario/threshold)
-  // Tipi di mercato: BINARY | MULTIPLE_CHOICE | SCALAR | RANGE | THRESHOLD | LADDER | TIME_TO_EVENT | COUNT_VOLUME | RANKING
-  marketType             String   @default("BINARY") @map("market_type")
-  // Per MULTIPLE_CHOICE, RANGE, TIME_TO_EVENT, COUNT_VOLUME, RANKING: [{ "key": "id", "label": "Etichetta" }]
-  outcomes               Json?    @map("outcomes")
-  // Per SCALAR: { "min": number, "max": number, "unit": string }
-  scalarConfig           Json?    @map("scalar_config")
-  sourceStorylineId      String?  // ID della storyline sorgente (da BLOCCO 3)
-  templateId             String?   // ID del template usato per generazione
-  tradingMode            String    @default("AMM") @map("trading_mode") // Solo AMM (Polymarket-style)
-  // Rulebook: unique market ID format PM-YYYY-NNNNN
-  marketId               String?   @unique @map("market_id")
-  // Eventi da The Odds API (affiliate/comparatore)
-  sourceType             String?   @map("source_type") // ODDS_API | FREE | NEWS
-  oddsApiEventId         String?   @map("odds_api_event_id") // ID evento The Odds API per dedup
-  // football-data.org: ID partita per calendario e risoluzione automatica
-  footballDataMatchId    Int?      @map("football_data_match_id")
-  matchStatus            String?   @map("match_status") // SCHEDULED | IN_PLAY | PAUSED | FINISHED (da API)
-  bestBookmakerKey       String?   @map("best_bookmaker_key")
-  bestBookmakerTitle     String?   @map("best_bookmaker_title")
-  bestYesOdds            Float?    @map("best_yes_odds")
-  bestNoOdds             Float?    @map("best_no_odds")
-  // Event Gen v2.0: timezone, resolution sources, generation metadata, image assets
-  timezone                    String    @default("Europe/Rome")
-  resolutionSourceSecondary   String?   @map("resolution_source_secondary")
-  resolutionSourceTertiary    String?   @map("resolution_source_tertiary")
-  resolutionCriteria          String?   @db.Text @map("resolution_criteria")
-  edgeCasePolicyRef           String?   @map("edge_case_policy_ref")
-  generatorVersion            String?   @map("generator_version")
-  generationScores            Json?     @map("generation_scores")
-  creationMetadata            Json?     @map("creation_metadata")
-  imageUrl                    String?   @map("image_url")
-  imagePrompt                 String?   @db.Text @map("image_prompt")
-  imageStyle                  String?   @map("image_style")
-  imageSeedOrRequestId        String?   @map("image_seed_or_request_id")
-  imageAltText                String?   @map("image_alt_text")
-  imageGenerationStatus       String    @default("PENDING") @map("image_generation_status")
-  imageProvider               String?   @map("image_provider")
-  imageVersion                String?   @map("image_version")
-  imageBrief                  Json?     @map("image_brief")
-  imageProviderMetadata       Json?     @map("image_provider_metadata")
-  hidden                      Boolean   @default(false) // nascosto dalla piattaforma (solo admin)
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @default(now()) @updatedAt
-
-  // Relazioni
-  createdBy  User         @relation("EventCreator", fields: [createdById], references: [id])
-  comments   Comment[]
-  Prediction Prediction[]
-  followers  EventFollower[]
-  posts      Post[]
-  probabilitySnapshots EventProbabilitySnapshot[]
-  ammState   AmmState?
-  Position   Position[]
-  Trade      Trade[]
+  id                        String                     @id @default(cuid())
+  title                     String
+  description               String?
+  category                  String
+  closesAt                  DateTime
+  resolutionSourceUrl       String?
+  resolutionNotes           String?
+  createdById               String
+  resolved                  Boolean                    @default(false)
+  resolvedAt                DateTime?
+  outcome                   String?
+  probability               Float?
+  yesCredits                Int?
+  noCredits                 Int?
+  totalCredits              Int?
+  yesPredictions            Int?
+  noPredictions             Int?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @default(now()) @updatedAt
+  p_init                    Float?
+  b                         Float
+  q_yes                     Float?
+  q_no                      Float?
+  realWorldEventTime        DateTime?
+  resolutionTimeExpected    DateTime?
+  resolutionBufferHours     Int                        @default(24)
+  resolutionStatus          String                     @default("PENDING")
+  status                    String                     @default("OPEN")
+  dedupKey                  String                     @unique
+  resolutionAuthorityHost   String?
+  resolutionAuthorityType   String?
+  resolutionCriteriaYes     String?
+  resolutionCriteriaNo      String?
+  sourceStorylineId         String?
+  templateId                String?
+  tradingMode               String                     @default("AMM") @map("trading_mode")
+  sourceType                String?                    @map("source_type")
+  oddsApiEventId            String?                    @map("odds_api_event_id")
+  bestBookmakerKey          String?                    @map("best_bookmaker_key")
+  bestBookmakerTitle        String?                    @map("best_bookmaker_title")
+  bestYesOdds               Float?                     @map("best_yes_odds")
+  bestNoOdds                Float?                     @map("best_no_odds")
+  marketId                  String?                    @unique @map("market_id")
+  timezone                  String                     @default("Europe/Rome")
+  resolutionSourceSecondary String?                    @map("resolution_source_secondary")
+  resolutionSourceTertiary  String?                    @map("resolution_source_tertiary")
+  resolutionCriteria        String?                    @map("resolution_criteria")
+  edgeCasePolicyRef         String?                    @map("edge_case_policy_ref")
+  generatorVersion          String?                    @map("generator_version")
+  generationScores          Json?                      @map("generation_scores")
+  creationMetadata          Json?                      @map("creation_metadata")
+  imageUrl                  String?                    @map("image_url")
+  imagePrompt               String?                    @map("image_prompt")
+  imageStyle                String?                    @map("image_style")
+  imageSeedOrRequestId      String?                    @map("image_seed_or_request_id")
+  imageAltText              String?                    @map("image_alt_text")
+  imageGenerationStatus     String                     @default("PENDING") @map("image_generation_status")
+  imageProvider             String?                    @map("image_provider")
+  imageVersion              String?                    @map("image_version")
+  imageBrief                Json?                      @map("image_brief")
+  imageProviderMetadata     Json?                      @map("image_provider_metadata")
+  resolutionDisputedAt      DateTime?
+  resolutionDisputedBy      String?
+  hidden                    Boolean                    @default(false)
+  marketType                String                     @default("BINARY") @map("market_type")
+  outcomes                  Json?                      @map("outcomes")
+  scalarConfig              Json?                      @map("scalar_config")
+  footballDataMatchId       Int?                       @map("football_data_match_id")
+  matchStatus               String?                    @map("match_status")
+  ammState                  AmmState?
+  comments                  Comment[]
+  followers                 EventFollower[]
+  probabilitySnapshots      EventProbabilitySnapshot[]
+  createdBy                 User                       @relation("EventCreator", fields: [createdById], references: [id])
+  Position                  Position[]
+  posts                     Post[]
+  Prediction                Prediction[]
+  Trade                     Trade[]
 
   @@index([createdById])
   @@index([closesAt])
@@ -271,39 +246,36 @@ model Event {
   @@index([oddsApiEventId])
   @@index([imageGenerationStatus])
   @@index([generatorVersion])
-  @@index([hidden])
   @@index([marketType])
+  @@index([hidden], map: "idx_events_hidden")
   @@map("events")
 }
 
 model EventProbabilitySnapshot {
   id        String   @id @default(cuid())
   eventId   String   @map("event_id")
-  yesPct    Float    @map("yes_pct") // 0–100
+  yesPct    Float    @map("yes_pct")
   createdAt DateTime @default(now()) @map("created_at")
-
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([eventId, createdAt])
   @@map("event_probability_snapshots")
 }
 
 model Comment {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   eventId   String
   userId    String
-  parentId  String? // Per risposte/thread
+  parentId  String?
   content   String
-  hidden    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relazioni
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hidden    Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  reactions Reaction[]
   event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
   parent    Comment?   @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[]  @relation("CommentReplies")
-  reactions Reaction[]
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([eventId])
   @@index([userId])
@@ -317,38 +289,33 @@ model Reaction {
   id        String   @id @default(cuid())
   commentId String
   userId    String
-  type      String // thumbs_up, fire, heart, etc.
+  type      String
   createdAt DateTime @default(now())
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relazioni
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
-
-  @@unique([commentId, userId, type]) // Un utente può avere solo una reazione di ogni tipo per commento
+  @@unique([commentId, userId, type])
   @@index([commentId])
   @@index([userId])
   @@map("comment_reactions")
 }
 
-// Previsione: un utente per evento, amount e credits devono restare uguali (sempre impostare entrambi in create/update)
 model Prediction {
   id        String   @id @default(cuid())
   eventId   String
   userId    String
-  outcome   String // YES o NO
-  amount    Int    @default(0) // Crediti scommessi (sempre uguale a credits) - default temporaneo per migration
-  credits   Int // Alias per amount: mantenere uguale a amount per compatibilità lettura
-  won       Boolean? // true se ha vinto, false se ha perso, null se non ancora risolto
-  payout    Int? // Crediti vinti (se ha vinto)
-  resolved  Boolean  @default(false) // Se l'evento è stato risolto
+  outcome   String
+  amount    Int      @default(0)
+  credits   Int
+  won       Boolean?
+  payout    Int?
+  resolved  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relazioni
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-
-  @@unique([eventId, userId]) // Un utente può fare una sola previsione per evento
+  @@unique([eventId, userId])
   @@index([eventId])
   @@index([userId])
   @@index([resolved])
@@ -356,34 +323,30 @@ model Prediction {
   @@map("predictions")
 }
 
-// AMM state per market (1:1 with Event when tradingMode=AMM)
 model AmmState {
-  id          String   @id @default(cuid())
-  eventId     String   @unique @map("event_id")
-  qYesMicros  BigInt   @map("q_yes_micros")
-  qNoMicros   BigInt   @map("q_no_micros")
-  bMicros     BigInt   @map("b_micros")
-  version     Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  eventId    String   @unique @map("event_id")
+  qYesMicros BigInt   @map("q_yes_micros")
+  qNoMicros  BigInt   @map("q_no_micros")
+  bMicros    BigInt   @map("b_micros")
+  version    Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@map("amm_state")
 }
 
-// User position in an AMM market (share balances)
 model Position {
-  id              String   @id @default(cuid())
-  eventId         String   @map("event_id")
-  userId          String   @map("user_id")
-  yesShareMicros  BigInt   @default(0) @map("yes_share_micros")
-  noShareMicros   BigInt   @default(0) @map("no_share_micros")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String   @id @default(cuid())
+  eventId        String   @map("event_id")
+  userId         String   @map("user_id")
+  yesShareMicros BigInt   @default(0) @map("yes_share_micros")
+  noShareMicros  BigInt   @default(0) @map("no_share_micros")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([eventId, userId])
   @@index([eventId])
@@ -391,21 +354,19 @@ model Position {
   @@map("positions")
 }
 
-// Immutable AMM trade record (buy/sell)
 model Trade {
-  id                String   @id @default(cuid())
-  eventId           String   @map("event_id")
-  userId            String   @map("user_id")
-  side              String   // BUY | SELL
-  outcome           String   // YES | NO
-  shareMicros       BigInt   @map("share_micros")
-  costMicros        BigInt   @map("cost_micros") // negative = cost paid, positive = proceeds
-  realizedPlMicros  BigInt?  @map("realized_pl_micros") // solo per SELL: P&L realizzato (proceeds - cost basis)
-  idempotencyKey    String   @map("idempotency_key")
-  createdAt         DateTime @default(now())
-
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  eventId          String   @map("event_id")
+  userId           String   @map("user_id")
+  side             String
+  outcome          String
+  shareMicros      BigInt   @map("share_micros")
+  costMicros       BigInt   @map("cost_micros")
+  idempotencyKey   String   @map("idempotency_key")
+  createdAt        DateTime @default(now())
+  realizedPlMicros BigInt?  @map("realized_pl_micros")
+  event            Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, idempotencyKey])
   @@index([eventId])
@@ -417,15 +378,13 @@ model Trade {
 model Transaction {
   id            String   @id @default(cuid())
   userId        String
-  type          String // PREDICTION_WIN, PREDICTION_LOSS, DAILY_BONUS, SHARE_BUY, SHARE_SELL, SHARE_PAYOUT, etc.
-  amount        Int // Legacy: signed credits (positive = credit, negative = debit)
-  amountMicros  BigInt?  @map("amount_micros") // AMM: signed micros (1 credit = 1_000_000)
+  type          String
+  amount        Int
   referenceId   String?
-  referenceType String?  @map("reference_type") // "trade" | "event" | etc.
   createdAt     DateTime @default(now())
-
-  // Relazioni
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amountMicros  BigInt?  @map("amount_micros")
+  referenceType String?  @map("reference_type")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([type])
@@ -434,21 +393,18 @@ model Transaction {
 }
 
 model Badge {
-  id          String     @id @default(cuid())
+  id          String      @id @default(cuid())
   name        String
   description String
   icon        String
-  rarity      String // COMMON, RARE, EPIC, LEGENDARY
-  criteria    String? // JSON string con criteri per sbloccare il badge
-  code        String?   @unique // Stable code for mission rewards (e.g. STREAK_3, ACCURACY_60)
-  effect      String?   // JSON: { type, value, durationDays? } BONUS_MULTIPLIER | PROFILE_BORDER | DAILY_BONUS
-  createdAt   DateTime  @default(now())
-
-  // Relazioni
-  userBadges UserBadge[]
+  rarity      String
+  criteria    String?
+  createdAt   DateTime    @default(now())
+  code        String?   @unique
+  effect      String?
+  userBadges  UserBadge[]
 
   @@index([rarity])
-  @@index([code])
   @@map("badges")
 }
 
@@ -457,10 +413,8 @@ model UserBadge {
   userId     String
   badgeId    String
   unlockedAt DateTime @default(now())
-
-  // Relazioni
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  badge      Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, badgeId])
   @@index([userId])
@@ -470,7 +424,7 @@ model UserBadge {
 
 model VerificationToken {
   token      String   @id
-  identifier String // Email address
+  identifier String
   expires    DateTime
 
   @@index([identifier])
@@ -479,14 +433,12 @@ model VerificationToken {
 }
 
 model EventFollower {
-  id      String   @id @default(cuid())
-  userId  String
-  eventId String
+  id        String   @id @default(cuid())
+  userId    String
+  eventId   String
   createdAt DateTime @default(now())
-
-  // Relazioni
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, eventId])
   @@index([userId])
@@ -495,23 +447,21 @@ model EventFollower {
   @@map("event_followers")
 }
 
-// Feed 2.0: post nel feed (slide o immagine AI), collegato a evento e utente
 model Post {
-  id         String     @id @default(cuid())
-  userId     String     @map("user_id")
-  eventId    String     @map("event_id")
-  content    String?    @db.Text
-  type       PostType
-  aiImageUrl String?   @map("ai_image_url")
-  source     PostSource
-  hidden     Boolean    @default(false)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
-  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event    Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  postLikes    PostLike[]
+  id           String        @id @default(cuid())
+  userId       String        @map("user_id")
+  eventId      String        @map("event_id")
+  content      String?
+  type         PostType
+  aiImageUrl   String?       @map("ai_image_url")
+  source       PostSource
+  hidden       Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   postComments PostComment[]
+  postLikes    PostLike[]
+  event        Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([eventId])
@@ -525,9 +475,8 @@ model PostLike {
   postId    String   @map("post_id")
   userId    String   @map("user_id")
   createdAt DateTime @default(now())
-
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
   @@index([postId])
@@ -536,19 +485,18 @@ model PostLike {
 }
 
 model PostComment {
-  id        String    @id @default(cuid())
-  postId    String    @map("post_id")
-  userId    String    @map("user_id")
-  parentId  String?   @map("parent_id")
-  content   String    @db.Text
-  hidden    Boolean   @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  post    Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent  PostComment? @relation("PostCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies PostComment[] @relation("PostCommentReplies")
+  id        String        @id @default(cuid())
+  postId    String        @map("post_id")
+  userId    String        @map("user_id")
+  parentId  String?       @map("parent_id")
+  content   String
+  hidden    Boolean       @default(false)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  parent    PostComment?  @relation("PostCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   PostComment[] @relation("PostCommentReplies")
+  post      Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([postId])
   @@index([userId])
@@ -558,19 +506,17 @@ model PostComment {
   @@map("post_comments")
 }
 
-// Template missioni (daily/weekly): target, reward, tipo — legacy, prefer MissionTemplate
 model Mission {
-  id          String   @id @default(cuid())
-  name        String
-  description String
-  type        String   // MAKE_PREDICTIONS, WIN_PREDICTIONS, DAILY_LOGIN, FOLLOW_EVENTS
-  target      Int      // obiettivo (es. 3 previsioni)
-  reward      Int      // crediti ricompensa
-  period      String   // DAILY | WEEKLY
-  category    String?  // categoria opzionale per filtrare (es. Tech)
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-
+  id           String        @id @default(cuid())
+  name         String
+  description  String
+  type         String
+  target       Int
+  reward       Int
+  period       String
+  category     String?
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
   userMissions UserMission[]
 
   @@index([period])
@@ -578,25 +524,23 @@ model Mission {
   @@map("missions")
 }
 
-// Template missioni nuovo sistema: DAILY | WEEKLY | CHAPTER | SKILL
 model MissionTemplate {
-  id             String   @id @default(cuid())
-  code           String   @unique
+  id             String        @id @default(cuid())
+  code           String        @unique
   title          String
   description    String
-  type           String   // DAILY | WEEKLY | CHAPTER | SKILL
-  category       String   // HABIT | EXPLORATION | SKILL | PERFORMANCE | SOCIAL
-  difficulty     String   // EASY | MEDIUM | HARD
-  chapterLevel   Int?     // per CHAPTER (1-5)
-  progressMetric String   // LOGIN_STREAK_DAYS, PREDICTIONS_COUNT, WINS_COUNT, WIN_STREAK, etc.
+  type           String
+  category       String
+  difficulty     String
+  chapterLevel   Int?
+  progressMetric String
   targetValue    Int
-  constraints    String?  // JSON: minProbability, categories[], sameCategory, underusedCategory, etc.
-  rewards        String   // JSON: { credits, xp, badgeCode?, multiplier? }
-  isActive       Boolean  @default(true)
+  constraints    String?
+  rewards        String
+  isActive       Boolean       @default(true)
   sortOrder      Int?
-  createdAt      DateTime @default(now())
-
-  userMissions UserMission[]
+  createdAt      DateTime      @default(now())
+  userMissions   UserMission[]
 
   @@index([type])
   @@index([isActive])
@@ -604,41 +548,37 @@ model MissionTemplate {
   @@map("mission_templates")
 }
 
-// XP e livello utente (1-5)
 model UserXP {
   id           String   @id @default(cuid())
   userId       String   @unique
   xpTotal      Int      @default(0)
-  currentLevel Int      @default(1) // 1..5
+  currentLevel Int      @default(1)
   updatedAt    DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_xp")
 }
 
-// Progresso utente per una missione (legacy: missionId + periodStart; nuovo: missionTemplateId + periodStart)
 model UserMission {
-  id                String    @id @default(cuid())
+  id                String           @id @default(cuid())
   userId            String
-  missionId         String?   // legacy
-  missionTemplateId String?   @map("mission_template_id")
-  periodStart       DateTime  // inizio giorno/settimana o epoch per CHAPTER/SKILL
-  progress          Int       @default(0) // legacy
-  progressValue     Int       @default(0) @map("progress_value") // nuovo
-  targetValue       Int?      @map("target_value") // snapshot da template
-  status            String    @default("ACTIVE") // ACTIVE | COMPLETED | EXPIRED | CLAIMED
-  expiresAt         DateTime? @map("expires_at")
-  metadata          String?   // JSON snapshot (assignedCategory, etc.)
-  completed         Boolean   @default(false) // legacy
+  periodStart       DateTime
+  progress          Int              @default(0)
+  completed         Boolean          @default(false)
   completedAt       DateTime?
-  claimedAt         DateTime? @map("claimed_at")
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  mission         Mission?        @relation(fields: [missionId], references: [id], onDelete: Cascade)
-  missionTemplate MissionTemplate? @relation(fields: [missionTemplateId], references: [id], onDelete: Cascade)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  missionTemplateId String?          @map("mission_template_id")
+  progressValue     Int              @default(0) @map("progress_value")
+  targetValue       Int?             @map("target_value")
+  status            String           @default("ACTIVE")
+  expiresAt         DateTime?        @map("expires_at")
+  metadata          String?
+  claimedAt         DateTime?        @map("claimed_at")
+  missionId         String?
+  mission           Mission?         @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  missionTemplate   MissionTemplate? @relation(fields: [missionTemplateId], references: [id], onDelete: Cascade)
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, missionId, periodStart])
   @@unique([userId, missionTemplateId, periodStart])
@@ -650,51 +590,47 @@ model UserMission {
   @@map("user_missions")
 }
 
-// Prodotti negozio (solo crediti virtuali)
 model ShopItem {
-  id            String   @id @default(cuid())
-  name          String
-  type          String   @default("CREDIT_BUNDLE") // CREDIT_BUNDLE, COSMETIC, TICKET - default temporaneo per migration
-  priceCredits  Int
-  description   String?
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(cuid())
+  name         String
+  type         String   @default("CREDIT_BUNDLE")
+  priceCredits Int
+  description  String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([active])
   @@map("shop_items")
 }
 
-// Stagioni/tornei (per leaderboard o eventi futuri)
 model Season {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
   startAt   DateTime
   endAt     DateTime
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@index([startAt])
   @@index([endAt])
   @@map("seasons")
 }
 
-// Ingestion models per Source Mesh Deterministico
 model SourceArticle {
-  id            String   @id @default(cuid())
-  canonicalUrl  String   @unique
-  sourceType    String   // NEWSAPI | RSS_MEDIA | RSS_OFFICIAL | CALENDAR_SPORT | CALENDAR_EARNINGS
-  sourceId      String?  // ID specifico della fonte (feed URL, calendar name, etc.)
-  title         String
-  content       String?  // Testo estratto (opzionale, solo per clustering)
-  publishedAt   DateTime?
-  fetchedAt     DateTime @default(now())
-  rawData       String   // JSON con dati originali
-  clusterId     String?  // ID del cluster Jaccard
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  cluster       SourceCluster? @relation(fields: [clusterId], references: [id])
-  
+  id           String         @id @default(cuid())
+  canonicalUrl String         @unique
+  sourceType   String
+  sourceId     String?
+  title        String
+  content      String?
+  publishedAt  DateTime?
+  fetchedAt    DateTime       @default(now())
+  rawData      String
+  clusterId    String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  cluster      SourceCluster? @relation(fields: [clusterId], references: [id])
+
   @@index([sourceType])
   @@index([canonicalUrl])
   @@index([clusterId])
@@ -703,14 +639,13 @@ model SourceArticle {
 }
 
 model SourceCluster {
-  id            String   @id @default(cuid())
-  jaccardScore  Float    // Score medio del cluster
-  articleCount  Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  articles      SourceArticle[]
-  
+  id           String          @id @default(cuid())
+  jaccardScore Float
+  articleCount Int             @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  articles     SourceArticle[]
+
   @@index([jaccardScore])
   @@map("source_clusters")
 }
@@ -726,36 +661,44 @@ model IngestionLog {
   success         Boolean
   errorMessage    String?
   createdAt       DateTime @default(now())
-  
+
   @@index([sourceType])
   @@index([createdAt])
   @@map("ingestion_logs")
 }
 
-// Oracle Assistant: chat e report di previsioni
 model OracleChat {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reports OracleReport[]
+  id        String         @id @default(cuid())
+  userId    String         @map("user_id")
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reports   OracleReport[]
 
   @@index([userId])
   @@map("oracle_chats")
 }
 
 model OracleReport {
-  id         String   @id @default(cuid())
-  chatId     String   @map("chat_id")
-  userQuery  String   @map("user_query") @db.Text
-  reportText String   @map("report_text") @db.Text
+  id         String     @id @default(cuid())
+  chatId     String     @map("chat_id")
+  userQuery  String     @map("user_query")
+  reportText String     @map("report_text")
   topic      String?
-  createdAt  DateTime @default(now())
-
-  chat OracleChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  createdAt  DateTime   @default(now())
+  chat       OracleChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
 
   @@index([chatId])
   @@map("oracle_reports")
+}
+
+enum PostType {
+  SLIDE
+  AI_IMAGE
+}
+
+enum PostSource {
+  CREATED_BY_ME
+  REPOST
+  BOT
 }
