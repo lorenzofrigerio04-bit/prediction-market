@@ -4,6 +4,9 @@
 
 import type { PrismaClient } from '@prisma/client';
 
+/** Transaction client or full Prisma client (solo `event` è usato). */
+type PrismaForMarketId = Pick<PrismaClient, "event">;
+
 /**
  * Generates a market ID in format PM-YYYY-NNNNN
  * @param year - 4-digit year (e.g. 2025)
@@ -24,7 +27,7 @@ export function generateMarketId(year: number, seq: number): string {
 /**
  * Gets the next market ID for the given year by querying existing marketIds
  */
-export async function getNextMarketId(prisma: PrismaClient, year: number): Promise<string> {
+export async function getNextMarketId(prisma: PrismaForMarketId, year: number): Promise<string> {
   const prefix = `PM-${year}-`;
   const existing = await prisma.event.findMany({
     where: {

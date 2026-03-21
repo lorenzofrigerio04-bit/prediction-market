@@ -107,16 +107,22 @@ export function runMdePipelineFromObservation(
   });
 
   const contractSelector = new DeterministicContractTypeSelector();
+  const preferredOperative: ContractType.BINARY | ContractType.MULTI_OUTCOME | ContractType.SCALAR_BRACKET =
+    preferredContractType === ContractType.MULTI_OUTCOME
+      ? ContractType.MULTI_OUTCOME
+      : preferredContractType === ContractType.SCALAR_BRACKET
+        ? ContractType.SCALAR_BRACKET
+        : ContractType.BINARY;
   const contractSelection = contractSelector.select({
     canonical_event: canonicalEvent,
-    preferred_contract_type: preferredContractType,
+    preferred_contract_type: preferredOperative,
     contract_type_reason: "Single-observation deterministic path.",
     selection_confidence: 0.8,
   });
 
   const outcomeGenerator = new DeterministicOutcomeGenerator();
   const outcomeGenerationResult = outcomeGenerator.generate({
-    contract_type: contractSelection.selected_contract_type,
+    contract_type: preferredOperative,
     generation_confidence: 0.85,
     binary_input: { yes_label: "Yes", no_label: "No" },
   });

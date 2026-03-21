@@ -192,7 +192,7 @@ export async function runDiscoveryLeadSupplier(
                 ? result.message
                 : result.outcome === "invalid_input"
                   ? result.message
-                  : String(result.outcome);
+                  : String((result as { outcome: string }).outcome);
         report.sourceFailures.push({ sourceKey, reason });
       }
     } catch (err) {

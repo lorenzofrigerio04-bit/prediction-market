@@ -5,6 +5,7 @@
 import type { MarketTypeId } from "@/lib/market-types";
 
 export {
+  ALL_MARKET_TYPES as MARKET_TYPES,
   MARKET_TYPE_IDS,
   isMarketTypeId,
 } from "@/lib/market-types";

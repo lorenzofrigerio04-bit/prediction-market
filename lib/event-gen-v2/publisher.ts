@@ -16,7 +16,10 @@ import { MULTI_OPTION_MARKET_TYPES, deriveOutcomesFromTitle, isMarketTypeId } fr
 import { getNextMarketId } from './market-id';
 import { generateImageBrief } from '../image-brief-engine';
 import { checkImageCompliance } from './rulebook-validator/image-rules';
-import { toPublishableCandidateContract } from '../integration/adapters/publication-action-adapter';
+import {
+  toPublishableCandidateContract,
+  type LegacySelectedCandidate,
+} from '../integration/adapters/publication-action-adapter';
 
 /** Candidate with v2 fields (resolution sources, generation scores, marketType, footballDataMatchId, etc.) */
 type CandidateWithV2 = ScoredCandidate & {
@@ -97,7 +100,9 @@ export async function publishSelectedV2(
   return publishSelected(prisma, selected, now, {
     createdById,
     getV2Data: async (candidate, tx) => {
-      const publishable = toPublishableCandidateContract(candidate);
+      const publishable = toPublishableCandidateContract(
+        candidate as unknown as LegacySelectedCandidate
+      );
       const marketId = await getNextMarketId(tx, year);
       const c = candidate as CandidateWithV2;
       const imageBrief = generateImageBrief(

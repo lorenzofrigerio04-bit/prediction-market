@@ -7,9 +7,16 @@ import { handleMissionEvent } from "@/lib/missions/mission-progress-service";
 import { checkAndAwardBadges } from "@/lib/badges";
 import { rateLimit } from "@/lib/rate-limit";
 import { track } from "@/lib/analytics";
-import { executeBuyShares, AmmError } from "@/lib/amm/engine";
+import {
+  executeBuyShares,
+  AmmError,
+  type ExecuteBuySharesResult,
+} from "@/lib/amm/engine";
 import { ensureAmmStateForEvent } from "@/lib/amm/ensure-amm-state";
-import { executeBuySharesMultiOutcome } from "@/lib/amm/multi-outcome-engine";
+import {
+  executeBuySharesMultiOutcome,
+  type ExecuteBuyMultiOutcomeResult,
+} from "@/lib/amm/multi-outcome-engine";
 import { updateUserProfileFromTrade } from "@/lib/personalization";
 import { invalidatePriceCache } from "@/lib/cache/price";
 import { invalidateTrendingCache } from "@/lib/cache/trending";
@@ -133,28 +140,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let tradeResult:
-      | Awaited<ReturnType<typeof executeBuyShares>>
-      | Awaited<ReturnType<typeof executeBuySharesMultiOutcome>>;
+    let tradeResult: ExecuteBuySharesResult | ExecuteBuyMultiOutcomeResult;
     try {
-      tradeResult = await prisma.$transaction((tx) => {
-        if (isMultiOutcomeMarket) {
-          return executeBuySharesMultiOutcome(tx, {
+      tradeResult = await prisma.$transaction(
+        async (
+          tx
+        ): Promise<ExecuteBuySharesResult | ExecuteBuyMultiOutcomeResult> => {
+          if (isMultiOutcomeMarket) {
+            return executeBuySharesMultiOutcome(tx, {
+              eventId,
+              userId: session.user.id,
+              outcome,
+              maxCostMicros,
+              idempotencyKey,
+            });
+          }
+          return executeBuyShares(tx, {
             eventId,
             userId: session.user.id,
-            outcome,
+            outcome: outcome as "YES" | "NO",
             maxCostMicros,
             idempotencyKey,
           });
         }
-        return executeBuyShares(tx, {
-          eventId,
-          userId: session.user.id,
-          outcome: outcome as "YES" | "NO",
-          maxCostMicros,
-          idempotencyKey,
-        });
-      });
+      );
     } catch (err) {
       if (err instanceof AmmError) {
         const status =

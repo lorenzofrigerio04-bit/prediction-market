@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { executeSellShares, AmmError } from "@/lib/amm/engine";
-import { executeSellSharesMultiOutcome } from "@/lib/amm/multi-outcome-engine";
+import {
+  executeSellShares,
+  AmmError,
+  type ExecuteSellSharesResult,
+} from "@/lib/amm/engine";
+import {
+  executeSellSharesMultiOutcome,
+  type ExecuteSellMultiOutcomeResult,
+} from "@/lib/amm/multi-outcome-engine";
 import {
   isMarketTypeId,
   MULTI_OPTION_MARKET_TYPES,
@@ -163,26 +170,30 @@ export async function POST(request: NextRequest) {
         ? (costForOutcome * shareMicros) / totalShareMicrosForOutcome
         : 0n;
 
-    const result = await prisma.$transaction((tx) => {
-      if (isMultiOutcomeMarket) {
-        return executeSellSharesMultiOutcome(tx, {
+    const result = await prisma.$transaction(
+      async (
+        tx
+      ): Promise<ExecuteSellSharesResult | ExecuteSellMultiOutcomeResult> => {
+        if (isMultiOutcomeMarket) {
+          return executeSellSharesMultiOutcome(tx, {
+            eventId,
+            userId,
+            outcome,
+            shareMicros,
+            minProceedsMicros,
+            idempotencyKey,
+          });
+        }
+        return executeSellShares(tx, {
           eventId,
           userId,
-          outcome,
+          outcome: outcome as "YES" | "NO",
           shareMicros,
           minProceedsMicros,
           idempotencyKey,
         });
       }
-      return executeSellShares(tx, {
-        eventId,
-        userId,
-        outcome: outcome as "YES" | "NO",
-        shareMicros,
-        minProceedsMicros,
-        idempotencyKey,
-      });
-    });
+    );
 
     const proceedsMicros = result.proceedsMicros;
     const realizedPlMicros = proceedsMicros - costBasisMicros;

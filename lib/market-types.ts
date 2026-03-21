@@ -3,6 +3,8 @@
  * Supports binary (YES/NO) and multi-option markets.
  */
 
+import { getEventDisplayTitle as displayTitleFromOutcomesJson } from "./market-types/outcome-schemas";
+
 export const ALL_MARKET_TYPES = [
   "BINARY",
   "MULTIPLE_CHOICE",
@@ -86,14 +88,14 @@ export function getValidOutcomeKeys(outcomes: unknown): string[] {
 /**
  * For multi-option markets, the display title strips the options portion.
  * E.g. "Quanti gol segnerà Lautaro? | 0 | 1 | 2 | 3+" → "Quanti gol segnerà Lautaro?"
+ * Also delegates to outcome-schemas for " : opt1 | opt2" titles when outcomes JSON is set.
  */
-export function getEventDisplayTitle(
-  title: string,
-  _marketType?: string | null
-): string {
-  const pipeIdx = title.indexOf(" | ");
-  if (pipeIdx > 0) return title.slice(0, pipeIdx).trim();
-  return title;
+export function getEventDisplayTitle(title: string, outcomesJson?: unknown): string {
+  const t = title.trim();
+  if (t.includes(" | ") && t.indexOf(" | ") > 0) {
+    return t.slice(0, t.indexOf(" | ")).trim();
+  }
+  return displayTitleFromOutcomesJson(title, outcomesJson);
 }
 
 /**

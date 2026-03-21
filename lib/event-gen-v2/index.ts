@@ -38,7 +38,6 @@ export type {
   CandidateEvent,
   ValidatedCandidate,
   ValidatedMarket,
-  ScoredCandidate,
   TrendObject,
   TrendSignal,
   GenerationScores,
@@ -46,5 +45,6 @@ export type {
   ImageAsset,
   MarketDraft,
 } from './types';
+export type { ScoredCandidate } from '../event-publishing/types';
 export { EdgeCasePolicyRef } from './edge-case-policy';
 export type { EdgeCasePolicyRef as EdgeCasePolicyRefType } from './edge-case-policy';
