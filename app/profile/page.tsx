@@ -129,6 +129,8 @@ const LOCKED_BADGE_STYLE =
 export default function ProfilePage() {
   const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
+  /** Evita doppio updateSession; reset su logout (unauthenticated). */
+  const syncedUserIdRef = useRef<string | null>(null);
   const [profileData, setProfileData] = useState<ProfileStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -170,15 +172,36 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
+      syncedUserIdRef.current = null;
       router.push("/auth/login");
       return;
     }
-    if (status === "authenticated") {
-      trackView("PROFILE_VIEWED", { userId: session?.user?.id });
+    if (status !== "authenticated" || !session?.user?.id) {
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      /* Dopo Google OAuth useSession può restare indietro rispetto al cookie: prima sync, poi dati profilo */
+      if (syncedUserIdRef.current !== session.user.id) {
+        syncedUserIdRef.current = session.user.id;
+        try {
+          await updateSession();
+        } catch {
+          /* ignore */
+        }
+        if (!cancelled) router.refresh();
+      }
+      if (cancelled) return;
+      trackView("PROFILE_VIEWED", { userId: session.user.id });
       fetchProfileData();
       fetchAllBadges();
-    }
-  }, [status, router, session?.user?.id]);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status, router, session?.user?.id, updateSession]);
 
   const fetchAllBadges = async () => {
     try {
@@ -275,7 +298,30 @@ export default function ProfilePage() {
     );
   }
 
-  if (!session || !profileData) {
+  if (status === "authenticated" && session?.user && !loading && !profileData && error) {
+    return (
+      <div className="min-h-screen bg-bg">
+        <Header />
+        <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
+          <div className="mb-6 p-4 bg-danger/15 border border-danger/40 rounded-2xl text-danger text-ds-body-sm">
+            {error}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setError(null);
+              fetchProfileData();
+            }}
+            className="px-4 py-2 rounded-xl bg-primary text-white font-medium"
+          >
+            Riprova
+          </button>
+        </main>
+      </div>
+    );
+  }
+
+  if (!session?.user || !profileData) {
     return null;
   }
 

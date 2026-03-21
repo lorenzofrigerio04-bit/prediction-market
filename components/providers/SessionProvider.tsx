@@ -11,7 +11,7 @@ export default function SessionProvider({
   session?: Session | null;
 }) {
   return (
-    <NextAuthSessionProvider 
+    <NextAuthSessionProvider
       session={session}
       refetchOnWindowFocus={true}
       refetchInterval={0}
