@@ -1,0 +1,1 @@
+export { type AdminGovernanceCompatibilityView as GovernanceCompatibilityView, createAdminGovernanceCompatibilityView as createGovernanceCompatibilityView } from "./admin-governance-compatibility-view.entity.js";

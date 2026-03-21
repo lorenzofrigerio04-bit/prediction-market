@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { HOME_FEED_SOURCE_TYPE } from "@/lib/event-visibility";
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/events/trending-now
- * Eventi aperti ordinati per totalCredits (popolarità).
+ * Eventi aperti ordinati per totalCredits (popolarità). Eventi visibili (non nascosti, NEWS o pipeline).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -14,9 +15,9 @@ export async function GET(request: NextRequest) {
 
     const events = await prisma.event.findMany({
       where: {
+        ...HOME_FEED_SOURCE_TYPE,
         resolved: false,
         closesAt: { gt: now },
-        category: { not: "News" },
       },
       orderBy: { totalCredits: "desc" },
       take: limit,

@@ -11,8 +11,7 @@ dotenv.config();
 dotenv.config({ path: ".env.local", override: true });
 
 import { PrismaClient } from "@prisma/client";
-import { parseOutcomeDateFromText } from "../lib/event-generation/closes-at";
-import { getClosureRules } from "../lib/event-generation/config";
+import { parseOutcomeDateFromText, getClosureRules } from "../lib/event-utils";
 
 const prisma = new PrismaClient();
 

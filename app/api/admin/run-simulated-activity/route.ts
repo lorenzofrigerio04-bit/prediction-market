@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin";
+import { requireAdminCapability } from "@/lib/admin";
 import { runSimulatedActivity } from "@/lib/simulated-activity";
 import { ENABLE_SIMULATED_ACTIVITY } from "@/lib/simulated-activity/config";
 
@@ -11,11 +11,11 @@ import { ENABLE_SIMULATED_ACTIVITY } from "@/lib/simulated-activity/config";
  */
 export async function POST() {
   try {
-    await requireAdmin();
+    await requireAdminCapability("pipeline:run");
   } catch {
     return NextResponse.json(
       { error: "Accesso negato: richiesti privilegi admin" },
-      { status: 401 }
+      { status: 403 }
     );
   }
 

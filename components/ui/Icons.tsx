@@ -178,12 +178,83 @@ export function IconNavExplore({ className, ...props }: SVGProps<SVGSVGElement>)
   );
 }
 
+/** Sport: pallone da calcio classico — pallone piccolo e centrato (r=5) così resta intero anche se il contenitore taglia i bordi; preserveAspectRatio e dimensioni fisse per evitare schiacciamento. */
+export function IconNavSport({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      preserveAspectRatio="xMidYMid meet"
+      className={`${iconClass} ${className ?? ""}`}
+      aria-hidden
+      style={{ overflow: "visible", display: "block", width: 24, height: 24 }}
+      {...props}
+    >
+      {/* Pallone centrato (12,12) r=5 → y 7–17, margine 7 sopra/sotto; resta intero anche con taglio. */}
+      <circle cx="12" cy="12" r="5" fill="none" />
+      {/* Esagono centrale (bianco, solo contorno) */}
+      <path
+        d="M12 9.4 L14 10.3 L14 12.1 L12 13 L10 12.1 L10 10.3 Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.2}
+      />
+      {/* Tre pentagoni neri */}
+      <path
+        d="M12 7.8 L10 10.3 L12 9.4 L14 10.3 L12.4 8.4 Z"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth={1.2}
+      />
+      <path
+        d="M14 10.3 L14 12.1 L15.2 11.2 L14.9 9.8 L13.4 9.6 Z"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth={1.2}
+      />
+      <path
+        d="M10 10.3 L10 12.1 L8.8 11.2 L9.1 9.8 L10.6 9.6 Z"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth={1.2}
+      />
+    </svg>
+  );
+}
+
+/** Exchange: grafico primo quadrante — assi a L + linea rialzista */
+export function IconNavExchange({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <NavIcon className={className} {...props}>
+      <path d="M5 19V5" strokeLinecap="round" />
+      <path d="M5 19H19" strokeLinecap="round" />
+      <path d="M5 16L9 13L12 14.5L16 10L19 7" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </NavIcon>
+  );
+}
+
 export function IconMenu({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <Icon className={className} {...props}>
       <path d="M4 6h16" />
       <path d="M4 12h16" />
       <path d="M4 18h16" />
+    </Icon>
+  );
+}
+
+/** Tre puntini verticali (menu overflow) */
+export function IconDotsVertical({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon className={className} {...props}>
+      <circle cx="12" cy="6" r="1.5" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+      <circle cx="12" cy="18" r="1.5" fill="currentColor" />
     </Icon>
   );
 }

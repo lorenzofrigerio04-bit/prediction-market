@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin";
+import { requireAdminCapability } from "@/lib/admin";
 
 /**
  * GET /api/admin/comments
@@ -8,7 +8,7 @@ import { requireAdmin } from "@/lib/admin";
  */
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin();
+    await requireAdminCapability("events:moderate_comments");
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: "desc" },
         include: {
           user: { select: { id: true, name: true, email: true } },
+          event: { select: { id: true, title: true } },
           _count: { select: { reactions: true, replies: true } },
         },
       }),

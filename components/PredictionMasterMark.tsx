@@ -166,6 +166,23 @@ export function PredictionMasterLogo() {
   );
 }
 
+/** Stesso wordmark dell’header (senza link), es. schermate di caricamento */
+export function PredictionMasterWordmark({ className }: { className?: string }) {
+  return (
+    <span
+      className={[
+        "pm-logo-header__text text-[2rem] sm:text-[2.2rem] md:text-[2.75rem] leading-none select-none whitespace-nowrap",
+        className ?? "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <span className="pm-logo-header__prediction">Prediction</span>
+      <span className="pm-logo-header__master">Master</span>
+    </span>
+  );
+}
+
 /** Logo P.M. per header: testo "PredictionMaster" centrato, professionale, premium */
 export function PredictionMasterLogoCompact() {
   return (
@@ -173,12 +190,12 @@ export function PredictionMasterLogoCompact() {
       href="/"
       aria-label="PredictionMaster"
       className={[
-        "pm-logo-header inline-flex items-center justify-center min-h-[44px] px-2",
+        "pm-logo-header inline-flex h-full min-h-[44px] max-w-[min(100%,54dvw)] min-w-0 shrink items-center justify-start overflow-hidden px-1 md:px-1.5",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-xl",
-        "transition-opacity duration-200 hover:opacity-95 active:opacity-90",
+        "transition-all duration-200 hover:opacity-95 active:opacity-90",
       ].join(" ")}
     >
-      <span className="pm-logo-header__text text-[0.9375rem] md:text-base uppercase leading-none select-none">
+      <span className="pm-logo-header__text text-[2rem] sm:text-[2.2rem] md:text-[2.75rem] leading-none select-none whitespace-nowrap">
         <span className="pm-logo-header__prediction">Prediction</span>
         <span className="pm-logo-header__master">Master</span>
       </span>

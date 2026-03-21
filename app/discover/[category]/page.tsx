@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useEffect, useCallback, useDeferredValue } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import EventCard from "@/components/EventCard";
-import MarketCardSkeleton from "@/components/discover/MarketCardSkeleton";
 import type { EventCardEvent } from "@/components/EventCard";
 import {
   PageHeader,
   EmptyState,
   FilterChips,
+  LoadingBlock,
 } from "@/components/ui";
 import { getDisplayTitle, isDebugTitle } from "@/lib/debug-display";
 import { getCategoryNameFromSlug } from "@/lib/category-slug";
@@ -78,8 +78,6 @@ const DEADLINE_OPTIONS: { id: DeadlineType; label: string }[] = [
   { id: "7d", label: "Prossimi 7 giorni" },
 ];
 
-const SKELETON_COUNT = 6;
-
 export default function DiscoverCategoryPage() {
   const params = useParams();
   const router = useRouter();
@@ -98,6 +96,8 @@ export default function DiscoverCategoryPage() {
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<EventsResponse["pagination"] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const [debugMode, setDebugMode] = useState(false);
 
   useEffect(() => {
     fetch("/api/events/categories")
@@ -171,15 +171,18 @@ export default function DiscoverCategoryPage() {
     setPage(1);
   };
 
+  useEffect(() => {
+    setDebugMode(
+      searchParams.get("debug") === "1" ||
+        process.env.NEXT_PUBLIC_DEBUG_MODE === "true"
+    );
+  }, [searchParams]);
+
   const totalPages = pagination?.totalPages ?? 0;
   const total = pagination?.total ?? 0;
   const hasFilters = !!search || status !== "open" || !!deadline;
   const isEmptyCatalog = !loading && !error && events.length === 0;
   const pageTitle = categoryName ?? "Tutti gli eventi";
-  const debugMode =
-    typeof window !== "undefined" &&
-    (new URLSearchParams(window.location.search).get("debug") === "1" ||
-      process.env.NEXT_PUBLIC_DEBUG_MODE === "true");
 
   return (
     <div className="min-h-screen bg-bg">
@@ -272,11 +275,7 @@ export default function DiscoverCategoryPage() {
             action={{ label: "Riprova", onClick: () => fetchEvents() }}
           />
         ) : loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-            {Array.from({ length: SKELETON_COUNT }, (_, i) => (
-              <MarketCardSkeleton key={i} index={i} />
-            ))}
-          </div>
+          <LoadingBlock message="Caricamento eventi…" />
         ) : isEmptyCatalog ? (
           <EmptyState
             title="Nessun evento aperto per ora."

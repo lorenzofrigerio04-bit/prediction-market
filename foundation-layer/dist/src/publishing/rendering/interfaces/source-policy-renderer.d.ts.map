@@ -1,0 +1,1 @@
+{"version":3,"file":"source-policy-renderer.d.ts","sourceRoot":"","sources":["../../../../../src/publishing/rendering/interfaces/source-policy-renderer.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,wBAAwB,EAAE,MAAM,uFAAuF,CAAC;AACtI,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,4CAA4C,CAAC;AAErF,MAAM,WAAW,oBAAoB;IACnC,MAAM,CAAC,KAAK,EAAE,wBAAwB,GAAG,kBAAkB,CAAC;CAC7D"}

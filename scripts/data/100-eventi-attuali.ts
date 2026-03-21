@@ -4,7 +4,7 @@
  * Ogni evento ha title, description, category; resolutionSourceUrl e resolutionNotes sono impostati nello script.
  */
 
-import type { AllowedCategory } from "../../lib/event-generation/types";
+import type { AllowedCategory } from "../../lib/event-utils";
 
 export interface EventoDefSeed {
   title: string;

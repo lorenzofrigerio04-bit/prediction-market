@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getEventsWithStats } from "@/lib/fomo/event-stats";
+import { SPORT_CATEGORY_FILTER } from "@/lib/sport-categories";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
       resolved: false,
       status: "OPEN" as const,
       closesAt: { gt: now },
-      category: { not: "News" as const },
+      ...SPORT_CATEGORY_FILTER,
     };
 
     const select = {

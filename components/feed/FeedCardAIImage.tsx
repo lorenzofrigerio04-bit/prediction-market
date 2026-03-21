@@ -86,11 +86,11 @@ export function FeedCardAIImage({
   onRefreshFeed,
   compact = false,
 }: FeedCardAIImageProps) {
-  const hasAiImage = Boolean(post.aiImageUrl?.trim());
+  // Solo immagine categoria standard, nessuna generazione AI
   const categoryImagePath = getCategoryImagePath(event.category?.trim() || "Cultura");
   const fallbackGradient = getCategoryFallbackGradient(event.category?.trim() || "Cultura");
   const [categoryImageFailed, setCategoryImageFailed] = useState(false);
-  const useCategoryFallback = !hasAiImage && categoryImagePath && !categoryImageFailed;
+  const useCategoryImage = categoryImagePath && !categoryImageFailed;
 
   const displayName = post.user.name?.trim() || "Utente";
   const avatarUrl =
@@ -101,17 +101,6 @@ export function FeedCardAIImage({
     () => event.predictionsCount ?? 0
   );
   const [commentExpanded, setCommentExpanded] = useState(false);
-
-  useEffect(() => {
-    if (hasAiImage) return;
-    fetch("/api/ai/generate-event-image", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ postId: post.id }),
-    }).catch(() => {});
-    const t = setTimeout(() => onRefreshFeed?.(), 50_000);
-    return () => clearTimeout(t);
-  }, [post.id, hasAiImage, onRefreshFeed]);
 
   useEffect(() => {
     const eventId = event.id;
@@ -192,15 +181,9 @@ export function FeedCardAIImage({
         href={`/events/${event.id}`}
         className={`lente-event-visual block mx-4 mb-4 overflow-hidden rounded-2xl border border-black/[0.06] dark:border-white/[0.08] bg-neutral-100 dark:bg-neutral-900/50 transition-all duration-200 hover:border-black/[0.1] dark:hover:border-white/[0.12] hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.25)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--bg))] ${compact ? "aspect-[16/9] min-h-[140px]" : "aspect-[16/9] min-h-[200px] sm:min-h-[240px]"}`}
       >
-        {/* Immagine full-width, hero */}
+        {/* Immagine categoria standard (nessuna generazione AI) */}
         <div className="relative w-full h-full">
-          {hasAiImage ? (
-            <img
-              src={post.aiImageUrl!}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          ) : useCategoryFallback ? (
+          {useCategoryImage ? (
             <>
               <div
                 className="absolute inset-0 bg-cover bg-center"

@@ -1,0 +1,4 @@
+export {
+  IMPROVEMENT_ARTIFACT_SCHEMA_ID as GENERATOR_IMPROVEMENT_ARTIFACT_SCHEMA_ID,
+  improvementArtifactSchema as generatorImprovementArtifactSchema,
+} from "./improvement-artifact.schema.js";

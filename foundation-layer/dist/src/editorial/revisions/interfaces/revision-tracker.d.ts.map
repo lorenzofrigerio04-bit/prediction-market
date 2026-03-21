@@ -1,0 +1,1 @@
+{"version":3,"file":"revision-tracker.d.ts","sourceRoot":"","sources":["../../../../../src/editorial/revisions/interfaces/revision-tracker.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,uCAAuC,CAAC;AAE5E,MAAM,WAAW,eAAe;IAC9B,MAAM,CAAC,MAAM,EAAE,cAAc,GAAG,cAAc,CAAC;IAC/C,aAAa,CAAC,UAAU,EAAE,MAAM,EAAE,QAAQ,EAAE,MAAM,GAAG,SAAS,cAAc,EAAE,CAAC;CAChF"}

@@ -12,13 +12,12 @@
  */
 
 export type Category =
-  | "Sport"
-  | "Politica"
-  | "Economia"
-  | "Tecnologia"
-  | "Cultura"
-  | "Scienza"
-  | "Intrattenimento";
+  | "Calcio"
+  | "Tennis"
+  | "Pallacanestro"
+  | "Pallavolo"
+  | "Formula 1"
+  | "MotoGP";
 
 export type HypeLevel = "High" | "Medium" | "Low";
 
@@ -29,13 +28,12 @@ const LIQUIDITY_MULTIPLIER = 25;
  * Base b parameter values by category (prima del moltiplicatore liquidità)
  */
 const BASE_B_PARAMETERS: Record<Category, number> = {
-  Sport: 500,
-  Politica: 750,
-  Economia: 1000,
-  Tecnologia: 600,
-  Cultura: 400,
-  Scienza: 650,
-  Intrattenimento: 400,
+  Calcio: 500,
+  Tennis: 500,
+  Pallacanestro: 500,
+  Pallavolo: 500,
+  "Formula 1": 500,
+  MotoGP: 500,
 };
 
 /**

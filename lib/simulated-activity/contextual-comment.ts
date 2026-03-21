@@ -23,6 +23,7 @@ export async function generateContextualComment(
   category: string,
   tone: CommentTone = "serious"
 ): Promise<string | null> {
+  if (process.env.DISABLE_OPENAI === "true" || process.env.DISABLE_OPENAI === "1") return null;
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey || !ENABLE_LLM_COMMENTS) {
     return null;

@@ -1,0 +1,1 @@
+{"version":3,"file":"editorial-feedback-adapter.d.ts","sourceRoot":"","sources":["../../../../../src/learning-feedback/editorial/interfaces/editorial-feedback-adapter.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,iBAAiB,EAAE,MAAM,0CAA0C,CAAC;AAElF,MAAM,WAAW,wBAAwB,CAAC,MAAM,GAAG,iBAAiB;IAClE,KAAK,CAAC,KAAK,EAAE,MAAM,GAAG,iBAAiB,CAAC;CACzC"}

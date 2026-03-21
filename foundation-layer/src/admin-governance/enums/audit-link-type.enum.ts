@@ -1,0 +1,6 @@
+export enum AuditLinkType {
+  DECISION = "DECISION",
+  OVERRIDE = "OVERRIDE",
+  EMERGENCY = "EMERGENCY",
+  FEATURE_FLAG = "FEATURE_FLAG",
+}

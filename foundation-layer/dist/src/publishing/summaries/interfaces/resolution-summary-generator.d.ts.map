@@ -1,0 +1,1 @@
+{"version":3,"file":"resolution-summary-generator.d.ts","sourceRoot":"","sources":["../../../../../src/publishing/summaries/interfaces/resolution-summary-generator.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,mBAAmB,EAAE,MAAM,0EAA0E,CAAC;AACpH,OAAO,KAAK,EAAE,iBAAiB,EAAE,MAAM,0CAA0C,CAAC;AAElF,MAAM,WAAW,0BAA0B;IACzC,QAAQ,CAAC,KAAK,EAAE,mBAAmB,GAAG,iBAAiB,CAAC;CACzD"}

@@ -1,0 +1,6 @@
+export enum PackageStatus {
+  DRAFT = "DRAFT",
+  VALIDATED = "VALIDATED",
+  READY_FOR_HANDOFF = "READY_FOR_HANDOFF",
+  INVALID = "INVALID",
+}

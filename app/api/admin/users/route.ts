@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin";
-import { getDisplayCredits } from "@/lib/credits-config";
+import { requireAdminCapability } from "@/lib/admin";
+import { toCreditsReadModel } from "@/lib/integration/adapters/credits-read-model-adapter";
 
 /**
  * GET /api/admin/users
@@ -9,7 +9,7 @@ import { getDisplayCredits } from "@/lib/credits-config";
  */
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin();
+    await requireAdminCapability("users:read");
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = Math.min(parseInt(searchParams.get("limit") || "30"), 100);
@@ -49,10 +49,10 @@ export async function GET(request: NextRequest) {
         email: u.email,
         name: u.name,
         role: u.role || "USER",
-        credits: getDisplayCredits({
+        credits: toCreditsReadModel({
           credits: u.credits,
           creditsMicros: u.creditsMicros,
-        }),
+        }).displayCredits,
         createdAt: u.createdAt.toISOString(),
       })),
       pagination: {

@@ -1,0 +1,1 @@
+{"version":3,"file":"approval-gate.d.ts","sourceRoot":"","sources":["../../../../../src/editorial/decisions/interfaces/approval-gate.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,gBAAgB,EAAE,MAAM,yCAAyC,CAAC;AAChF,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,mDAAmD,CAAC;AAEzF,MAAM,WAAW,YAAY;IAC3B,OAAO,CAAC,MAAM,EAAE,eAAe,EAAE,QAAQ,EAAE,gBAAgB,GAAG,gBAAgB,CAAC;CAChF"}

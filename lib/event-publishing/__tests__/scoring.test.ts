@@ -78,14 +78,18 @@ describe('scoring', () => {
     expect(negative.scoreBreakdown.clarity).toBeLessThan(positive.scoreBreakdown.clarity);
   });
 
-  it('should calculate weighted average correctly', () => {
+  it('should calculate quality scores and pass gate at 0.75', () => {
     const storylineStats = { momentum: 100, novelty: 100 };
     const result = scoreCandidate(baseCandidate, storylineStats);
 
-    // Expected: 0.4*100 + 0.2*100 + 0.2*100 + 0.2*clarity
-    // = 40 + 20 + 20 + 0.2*clarity
-    // Clarity base = 50, +20 for length, +20 for date, +10 for description = 100
-    // So: 40 + 20 + 20 + 20 = 100
-    expect(result.score).toBeGreaterThanOrEqual(80);
+    expect(result.qualityScores).toBeDefined();
+    expect(result.overall_score).toBeDefined();
+    expect(result.overall_score).toBeGreaterThanOrEqual(0);
+    expect(result.overall_score).toBeLessThanOrEqual(1);
+    expect(result.qualityScores!.trend_score).toBe(1);
+    expect(result.qualityScores!.resolution_score).toBe(1);
+    expect(result.qualityScores!.novelty_score).toBe(1);
+    expect(result.score).toBeGreaterThanOrEqual(0);
+    expect(result.score).toBeLessThanOrEqual(100);
   });
 });

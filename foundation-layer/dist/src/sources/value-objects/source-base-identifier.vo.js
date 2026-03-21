@@ -1,0 +1,13 @@
+import { ValidationError } from "../../common/errors/validation-error.js";
+import { deepFreeze } from "../../common/utils/deep-freeze.js";
+export const createSourceBaseIdentifier = (kind, value) => {
+    const normalizedValue = value.trim();
+    if (normalizedValue.length === 0) {
+        throw new ValidationError("INVALID_SOURCE_BASE_IDENTIFIER", "SourceBaseIdentifier value must be non-empty", { value });
+    }
+    return deepFreeze({
+        kind,
+        value: normalizedValue,
+    });
+};
+//# sourceMappingURL=source-base-identifier.vo.js.map

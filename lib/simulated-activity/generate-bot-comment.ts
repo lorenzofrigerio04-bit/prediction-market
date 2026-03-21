@@ -46,6 +46,7 @@ export async function generateEventPostComment(
   event: EventForComment,
   personaId?: PersonaId
 ): Promise<string | null> {
+  if (process.env.DISABLE_OPENAI === "true" || process.env.DISABLE_OPENAI === "1") return null;
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) return null;
 

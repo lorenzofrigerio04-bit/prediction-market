@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { HOME_FEED_SOURCE_TYPE } from "@/lib/event-visibility";
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/feed
- * Feed eventi per utente loggato (limit, offset). Se non loggato: 401.
+ * Feed eventi per utente loggato (limit, offset). Solo notizie (no eventi sport).
+ * Se non loggato: 401.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -22,9 +24,9 @@ export async function GET(request: NextRequest) {
     const now = new Date();
 
     const where = {
+      ...HOME_FEED_SOURCE_TYPE,
       resolved: false,
       closesAt: { gt: now },
-      category: { not: "News" as const },
     };
 
     const [items, total] = await Promise.all([

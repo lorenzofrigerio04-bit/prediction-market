@@ -1,0 +1,270 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Header from "@/components/Header";
+import HomeEventTile from "@/components/home/HomeEventTile";
+import { LoadingBlock } from "@/components/ui";
+import { SportCategoryStrip } from "@/components/sport/SportCategoryStrip";
+import {
+  getSportPageDisplayName,
+  sortCalcioLeagues,
+  type SportPageCategory,
+} from "@/lib/sport-page-categories";
+
+interface SportEvent {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  closesAt: string | Date;
+  probability: number;
+  totalCredits: number;
+  sportLeague?: string | null;
+  matchStatus?: string | null;
+  marketType?: string | null;
+  outcomes?: Array<{ key: string; label: string }> | null;
+  _count: { predictions: number; comments: number };
+  fomo?: {
+    countdownMs: number;
+    participantsCount: number;
+    votesVelocity: number;
+    pointsMultiplier: number;
+    isClosingSoon: boolean;
+  };
+}
+
+type EventsByCategory = Record<string, SportEvent[]>;
+
+/** Data e ora partita: closesAt è fine match, mostriamo inizio (closesAt - 90 min). */
+function formatMatchDate(closesAt: string | Date): string {
+  const d = new Date(closesAt);
+  d.setMinutes(d.getMinutes() - 90);
+  const date = d.toLocaleDateString("it-IT", { day: "numeric", month: "short" });
+  const time = d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+  return `${date}, ${time}`;
+}
+
+export default function SportPage() {
+  const [eventsByCategory, setEventsByCategory] = useState<EventsByCategory>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<SportPageCategory>("Calcio");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchSportEvents() {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetch("/api/events/sport", { cache: "no-store" });
+        if (!res.ok) throw new Error("Errore nel caricamento");
+        const data = await res.json();
+        if (cancelled) return;
+        setEventsByCategory(data.eventsByCategory ?? {});
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Errore di rete");
+          setEventsByCategory({});
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchSportEvents();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const rawEvents = eventsByCategory[activeTab] ?? [];
+  /** In tab Calcio: Live (IN_PLAY/PAUSED) + In programma per lega */
+  const isLive = (e: SportEvent) =>
+    e.matchStatus === "IN_PLAY" || e.matchStatus === "PAUSED";
+  const calcioLive =
+    activeTab === "Calcio"
+      ? rawEvents.filter(isLive)
+      : [];
+  const calcioScheduled =
+    activeTab === "Calcio"
+      ? rawEvents.filter((e) => !isLive(e))
+      : [];
+  const calcioByLeague =
+    activeTab === "Calcio"
+      ? (() => {
+          const map = new Map<string, SportEvent[]>();
+          for (const e of calcioScheduled) {
+            const key = e.sportLeague ?? "Altro";
+            if (!map.has(key)) map.set(key, []);
+            map.get(key)!.push(e);
+          }
+          return sortCalcioLeagues([...map.keys()]).map((league) => ({
+            league,
+            events: map.get(league) ?? [],
+          }));
+        })()
+      : null;
+  const events = rawEvents;
+  const hasAnyEvents = Object.values(eventsByCategory).some(
+    (arr) => Array.isArray(arr) && arr.length > 0
+  );
+
+  return (
+    <div className="min-h-screen bg-bg sport-page">
+      <Header />
+
+      {/* Strip sotto l’header, sopra le leghe/eventi: scorre con la pagina (nessun fixed) */}
+      <div className="px-4 max-w-4xl mx-auto py-2">
+        <SportCategoryStrip
+          activeCategory={activeTab}
+          onSelect={setActiveTab}
+        />
+      </div>
+
+      <main className="pt-4 pb-28 px-4 max-w-4xl mx-auto">
+        {loading ? (
+          <LoadingBlock message="Caricamento eventi…" />
+        ) : error ? (
+          <div className="sport-empty text-center py-12 px-4 rounded-2xl bg-white/5 border border-white/10">
+            <p className="text-fg-muted mb-4">{error}</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 rounded-xl bg-primary text-white font-semibold hover:opacity-90"
+            >
+              Riprova
+            </button>
+          </div>
+        ) : events.length === 0 ? (
+          <div className="sport-empty text-center py-12 px-4 rounded-2xl bg-white/5 border border-white/10">
+            <p className="text-fg-muted mb-2">
+              Nessun evento in tempo reale per{" "}
+              <strong className="text-fg">{getSportPageDisplayName(activeTab)}</strong>.
+            </p>
+            <p className="text-ds-body-sm text-fg-subtle">
+              Torna più tardi o esplora le altre categorie.
+            </p>
+          </div>
+        ) : activeTab === "Calcio" && (calcioLive.length > 0 || calcioByLeague?.length) ? (
+          <div className="space-y-10">
+            {calcioLive.length > 0 && (
+              <section key="live" aria-labelledby="calcio-live" className="calcio-section">
+                <h2
+                  id="calcio-live"
+                  className="calcio-section-title text-lg font-bold text-fg mb-4 flex items-center gap-2"
+                >
+                  <span className="inline-flex h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" aria-hidden />
+                  In diretta
+                </h2>
+                <div
+                  className="grid grid-cols-2 gap-3 sm:gap-4"
+                  role="list"
+                >
+                  {calcioLive.map((event) => (
+                    <HomeEventTile
+                      key={event.id}
+                      id={event.id}
+                      title={event.title}
+                      category={event.category}
+                      closesAt={typeof event.closesAt === "string" ? event.closesAt : event.closesAt.toISOString()}
+                      yesPct={event.probability}
+                      predictionsCount={event._count?.predictions}
+                      variant="popular"
+                      compact={true}
+                      topRightLabel={formatMatchDate(event.closesAt)}
+                      marketType={event.marketType}
+                      outcomes={event.outcomes}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+            {calcioByLeague?.map(({ league, events: leagueEvents }) => (
+              <section
+                key={league}
+                aria-labelledby={`calcio-${league.replace(/\s/g, "-")}`}
+                className="calcio-section calcio-section--league"
+              >
+                <h2
+                  id={`calcio-${league.replace(/\s/g, "-")}`}
+                  className="calcio-section-title calcio-section-title--league font-kalshi font-bold text-fg leading-[1.1] tracking-[0.01em] text-[1.65rem] sm:text-[2rem] md:text-[2.35rem] mb-3"
+                >
+                  {league}
+                </h2>
+                <div
+                  className="grid grid-cols-2 gap-3 sm:gap-4"
+                  role="list"
+                >
+                  {leagueEvents.map((event) => (
+                    <HomeEventTile
+                      key={event.id}
+                      id={event.id}
+                      title={event.title}
+                      category={event.category}
+                      closesAt={typeof event.closesAt === "string" ? event.closesAt : event.closesAt.toISOString()}
+                      yesPct={event.probability}
+                      predictionsCount={event._count?.predictions}
+                      variant="popular"
+                      compact={true}
+                      topRightLabel={formatMatchDate(event.closesAt)}
+                      marketType={event.marketType}
+                      outcomes={event.outcomes}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        ) : (
+          <div
+            className="grid grid-cols-2 gap-3 sm:gap-4"
+            role="list"
+          >
+            {events.map((event) => (
+              <HomeEventTile
+                key={event.id}
+                id={event.id}
+                title={event.title}
+                category={event.category}
+                closesAt={typeof event.closesAt === "string" ? event.closesAt : event.closesAt.toISOString()}
+                yesPct={event.probability}
+                predictionsCount={event._count?.predictions}
+                variant="popular"
+                compact={true}
+                marketType={event.marketType}
+                outcomes={event.outcomes}
+              />
+            ))}
+          </div>
+        )}
+
+        {!loading && !error && hasAnyEvents && (
+          <p className="text-ds-caption text-fg-subtle text-center mt-8">
+            Solo mercati aperti. Le previsioni si chiudono alla scadenza dell’evento.
+          </p>
+        )}
+      </main>
+
+      <style jsx>{`
+        .sport-page {
+          background: linear-gradient(
+            180deg,
+            rgb(var(--background-primary)) 0%,
+            rgb(var(--background-secondary) / 0.6) 100%
+          );
+        }
+        .calcio-section {
+          padding-bottom: 0.5rem;
+        }
+        .calcio-section--league {
+          padding-top: 0.25rem;
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .calcio-section--league:first-of-type {
+          border-top: none;
+        }
+      `}</style>
+    </div>
+  );
+}

@@ -37,7 +37,7 @@ export default function AdminSimulatePage() {
   const hasError = result && !result.ok;
 
   return (
-    <div className="min-h-screen bg-bg text-fg p-6 md:p-8">
+    <div className="min-h-screen bg-admin-bg text-fg p-6 md:p-8">
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-fg mb-2">
           Simulazione bot

@@ -1,0 +1,1 @@
+{"version":3,"file":"payload-validation-result.d.ts","sourceRoot":"","sources":["../../../../src/sources/interfaces/payload-validation-result.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,sDAAsD,CAAC;AAE/F,MAAM,MAAM,uBAAuB,GAAG,QAAQ,CAAC;IAC7C,OAAO,EAAE,OAAO,CAAC;IACjB,MAAM,EAAE,SAAS,kBAAkB,EAAE,CAAC;CACvC,CAAC,CAAC"}

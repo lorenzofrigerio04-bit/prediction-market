@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { HOME_FEED_SOURCE_TYPE } from "@/lib/event-visibility";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ export async function GET() {
     const [closingSoonEvents, trendingEvents] = await Promise.all([
       prisma.event.findMany({
         where: {
+          ...HOME_FEED_SOURCE_TYPE,
           resolved: false,
           closesAt: { gte: now, lte: inSixHours },
         },
@@ -34,6 +36,7 @@ export async function GET() {
       }),
       prisma.event.findMany({
         where: {
+          ...HOME_FEED_SOURCE_TYPE,
           resolved: false,
           closesAt: { gt: now },
         },

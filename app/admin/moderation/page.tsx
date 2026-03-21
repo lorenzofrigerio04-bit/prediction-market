@@ -92,7 +92,7 @@ export default function AdminModerationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-fg p-6 md:p-8">
+    <div className="min-h-screen bg-admin-bg text-fg p-6 md:p-8">
       <h1 className="text-2xl font-bold text-fg mb-2">
         Moderazione commenti
       </h1>
@@ -234,7 +234,7 @@ export default function AdminModerationPage() {
 
       {modalComment && modalAction && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-bg border border-border dark:border-white/10 rounded-2xl shadow-overlay max-w-md w-full p-6">
+          <div className="bg-admin-bg border border-border dark:border-white/10 rounded-2xl shadow-overlay max-w-md w-full p-6">
             <h3 className="font-semibold text-lg text-fg mb-2">
               {modalAction === "hide" ? "Nascondi commento" : "Elimina commento"}
             </h3>

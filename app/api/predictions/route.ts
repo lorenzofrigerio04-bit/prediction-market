@@ -9,10 +9,16 @@ import { rateLimit } from "@/lib/rate-limit";
 import { track } from "@/lib/analytics";
 import { executeBuyShares, AmmError } from "@/lib/amm/engine";
 import { ensureAmmStateForEvent } from "@/lib/amm/ensure-amm-state";
+import { executeBuySharesMultiOutcome } from "@/lib/amm/multi-outcome-engine";
 import { updateUserProfileFromTrade } from "@/lib/personalization";
 import { invalidatePriceCache } from "@/lib/cache/price";
 import { invalidateTrendingCache } from "@/lib/cache/trending";
 import { invalidateFeedCache } from "@/lib/feed-cache";
+import {
+  getValidOutcomeKeys,
+  isMarketTypeId,
+  MULTI_OPTION_MARKET_TYPES,
+} from "@/lib/market-types";
 
 const PREDICTIONS_LIMIT = 15; // previsioni per user per minuto
 const SCALE = 1_000_000;
@@ -40,7 +46,9 @@ export async function POST(request: NextRequest) {
     const eventId =
       typeof body.eventId === "string" ? body.eventId.trim() : null;
     const outcome =
-      body.outcome === "YES" || body.outcome === "NO" ? body.outcome : null;
+      typeof body.outcome === "string" && body.outcome.trim() !== ""
+        ? body.outcome.trim()
+        : null;
     const credits = typeof body.credits === "number" ? body.credits : Number(body.credits);
     const maxCostMicrosRaw = body.maxCostMicros != null ? body.maxCostMicros : null;
     const idempotencyKey = typeof body.idempotencyKey === "string" ? body.idempotencyKey.trim() : null;
@@ -62,6 +70,8 @@ export async function POST(request: NextRequest) {
         resolved: true,
         closesAt: true,
         tradingMode: true,
+        marketType: true,
+        outcomes: true,
         b: true,
         q_yes: true,
         q_no: true,
@@ -82,7 +92,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await ensureAmmStateForEvent(prisma, eventId);
+    const marketType = event.marketType ?? "BINARY";
+    const isMultiOutcomeMarket =
+      isMarketTypeId(marketType) &&
+      MULTI_OPTION_MARKET_TYPES.includes(marketType);
+    if (isMultiOutcomeMarket) {
+      const validOutcomeKeys = getValidOutcomeKeys(event.outcomes);
+      if (!validOutcomeKeys.includes(outcome)) {
+        return NextResponse.json(
+          {
+            error: `Outcome non valido. Opzioni ammesse: ${validOutcomeKeys.join(", ")}`,
+          },
+          { status: 400 }
+        );
+      }
+    } else if (outcome !== "YES" && outcome !== "NO") {
+      return NextResponse.json(
+        { error: "Per mercati binari l'outcome deve essere YES o NO" },
+        { status: 400 }
+      );
+    }
+
+    if (!isMultiOutcomeMarket) {
+      await ensureAmmStateForEvent(prisma, eventId);
+    }
     const maxCostMicros =
       maxCostMicrosRaw != null
         ? BigInt(typeof maxCostMicrosRaw === "string" ? maxCostMicrosRaw : Math.floor(maxCostMicrosRaw))
@@ -100,17 +133,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let ammResult: Awaited<ReturnType<typeof executeBuyShares>>;
+    let tradeResult:
+      | Awaited<ReturnType<typeof executeBuyShares>>
+      | Awaited<ReturnType<typeof executeBuySharesMultiOutcome>>;
     try {
-      ammResult = await prisma.$transaction((tx) =>
-        executeBuyShares(tx, {
+      tradeResult = await prisma.$transaction((tx) => {
+        if (isMultiOutcomeMarket) {
+          return executeBuySharesMultiOutcome(tx, {
+            eventId,
+            userId: session.user.id,
+            outcome,
+            maxCostMicros,
+            idempotencyKey,
+          });
+        }
+        return executeBuyShares(tx, {
           eventId,
           userId: session.user.id,
           outcome: outcome as "YES" | "NO",
           maxCostMicros,
           idempotencyKey,
-        })
-      );
+        });
+      });
     } catch (err) {
       if (err instanceof AmmError) {
         const status =
@@ -141,7 +185,7 @@ export async function POST(request: NextRequest) {
       category: event.category,
       probability: event.probability ?? undefined,
       outcome,
-      amount: Number(ammResult.actualCostMicros) / SCALE,
+      amount: Number(tradeResult.actualCostMicros) / SCALE,
     }).catch((e) => console.error("Mission event (place prediction) error:", e));
     checkAndAwardBadges(prisma, userId).catch((e) =>
       console.error("Badge check error:", e)
@@ -154,7 +198,7 @@ export async function POST(request: NextRequest) {
       {
         userId,
         eventId: event.id,
-        amount: Number(ammResult.actualCostMicros) / SCALE,
+        amount: Number(tradeResult.actualCostMicros) / SCALE,
         outcome,
         category: event.category,
       },
@@ -170,19 +214,30 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         trade: {
-          id: ammResult.trade.id,
-          side: ammResult.trade.side,
-          outcome: ammResult.trade.outcome,
-          shareMicros: ammResult.trade.shareMicros.toString(),
-          costMicros: ammResult.trade.costMicros.toString(),
-          createdAt: ammResult.trade.createdAt,
+          id: tradeResult.trade.id,
+          side: tradeResult.trade.side,
+          outcome: tradeResult.trade.outcome,
+          shareMicros: tradeResult.trade.shareMicros.toString(),
+          costMicros: tradeResult.trade.costMicros.toString(),
+          createdAt: tradeResult.trade.createdAt,
         },
-        position: {
-          yesShareMicros: ammResult.position.yesShareMicros.toString(),
-          noShareMicros: ammResult.position.noShareMicros.toString(),
-        },
-        actualCostMicros: ammResult.actualCostMicros.toString(),
-        shareMicros: ammResult.shareMicros.toString(),
+        position:
+          "positionByOutcomeMicros" in tradeResult
+            ? {
+                yesShareMicros: "0",
+                noShareMicros: "0",
+                outcomeSharesMicros: Object.fromEntries(
+                  Object.entries(tradeResult.positionByOutcomeMicros).map(
+                    ([k, v]) => [k, v.toString()]
+                  )
+                ),
+              }
+            : {
+                yesShareMicros: tradeResult.position.yesShareMicros.toString(),
+                noShareMicros: tradeResult.position.noShareMicros.toString(),
+              },
+        actualCostMicros: tradeResult.actualCostMicros.toString(),
+        shareMicros: tradeResult.shareMicros.toString(),
       },
       { status: 201 }
     );

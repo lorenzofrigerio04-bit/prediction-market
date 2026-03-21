@@ -1,8 +1,9 @@
 /**
- * Source configuration for ingestion pipeline
- * 
+ * Source configuration for ingestion pipeline.
+ *
  * This file contains configuration for RSS feeds and calendar events.
- * These will be populated with actual sources as needed.
+ * @deprecated Canonical source list is the Discovery Source Registry (foundation-layer discovery-news-engine).
+ * These exports are kept for the legacy pipeline until ingest cutover. See LEGACY_DISCOVERY_COMPONENTS.md.
  */
 
 export interface RSSFeed {
@@ -227,6 +228,10 @@ export interface SourceConfigs {
   calendarEvents: CalendarEvent[];
 }
 
+/**
+ * Returns legacy source config (RSS + calendar). Prefer Discovery Source Registry for new code.
+ * @deprecated Use discovery source registry/catalog as source of truth. Kept for legacy pipeline until ingest cutover.
+ */
 export function getSourceConfigs(): SourceConfigs {
   return {
     rssMediaFeeds: RSS_MEDIA_FEEDS,

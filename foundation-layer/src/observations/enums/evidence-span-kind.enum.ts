@@ -1,0 +1,6 @@
+export enum EvidenceSpanKind {
+  RAW_TEXT = "RAW_TEXT",
+  STRUCTURED_FIELD = "STRUCTURED_FIELD",
+  METADATA = "METADATA",
+  OTHER = "OTHER",
+}

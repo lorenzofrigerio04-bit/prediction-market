@@ -1,0 +1,1 @@
+{"version":3,"file":"rate-limit-profile.vo.d.ts","sourceRoot":"","sources":["../../../../src/sources/value-objects/rate-limit-profile.vo.ts"],"names":[],"mappings":"AAGA,MAAM,MAAM,gBAAgB,GAAG,QAAQ,CAAC;IACtC,WAAW,EAAE,MAAM,CAAC;IACpB,UAAU,EAAE,MAAM,CAAC;CACpB,CAAC,CAAC;AAEH,eAAO,MAAM,sBAAsB,GAAI,OAAO,gBAAgB,KAAG,gBAmBhE,CAAC"}

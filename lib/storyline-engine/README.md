@@ -26,7 +26,10 @@ Variabili d'ambiente (con default):
 - `STORYLINE_MAX_AGE_HOURS=72` - Età massima in ore
 - `STORYLINE_MIN_MOMENTUM=15` - Momentum minimo (0-100)
 - `STORYLINE_MIN_NOVELTY=20` - Novelty minima (0-100)
+- `STORYLINE_FRESHNESS_MINUTES=30` - Se > 0: preferenza notizie "nuove" (articoli con fetch negli ultimi N min). Se ce ne sono, si usano solo quelle; altrimenti si usano tutte le elegibili escluse quelle già pubblicate. 0 = nessuna preferenza.
 - `STORYLINE_DEBUG=true` - Abilita logging debug
+
+Comportamento "notizie nuove" e "no ripetizioni": le storyline (cluster) già usate per un evento pubblicato (`Event.sourceStorylineId`) vengono sempre escluse. Se `STORYLINE_FRESHNESS_MINUTES` > 0, si preferiscono storyline con almeno un articolo fetched negli ultimi N min; se non ce ne sono, si usano le restanti (sempre escluse le già pubblicate).
 
 ## Utilizzo
 

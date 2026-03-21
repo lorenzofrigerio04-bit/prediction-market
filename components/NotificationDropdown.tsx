@@ -82,8 +82,8 @@ export default function NotificationDropdown({
     const icon = getNotificationIcon(notification.type);
     const content = (
       <div
-        className={`p-3 hover:bg-gray-50 transition-colors cursor-pointer ${
-          !notification.readAt ? "bg-blue-50" : ""
+        className={`p-3 hover:bg-surface/80 transition-colors cursor-pointer ${
+          !notification.readAt ? "bg-primary/10" : ""
         }`}
         onClick={() => handleNotificationClick(notification)}
       >
@@ -93,19 +93,19 @@ export default function NotificationDropdown({
             <div className="flex items-start justify-between gap-2">
               <h4
                 className={`text-sm font-medium ${
-                  !notification.readAt ? "text-gray-900" : "text-gray-700"
+                  !notification.readAt ? "text-fg" : "text-fg-muted"
                 }`}
               >
                 {getNotificationTitle(notification.type, notification.data)}
               </h4>
               {!notification.readAt && (
-                <span className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1.5"></span>
+                <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1.5"></span>
               )}
             </div>
-            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+            <p className="text-sm text-fg-muted mt-1 line-clamp-2">
               {getNotificationMessage(notification.type, notification.data)}
             </p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-fg-subtle mt-1">
               {formatDate(notification.createdAt)}
             </p>
           </div>
@@ -115,32 +115,32 @@ export default function NotificationDropdown({
 
     if (link) {
       return (
-        <Link href={link} className="block border-b border-gray-100 last:border-0">
+        <Link href={link} className="block border-b border-border/50 last:border-0">
           {content}
         </Link>
       );
     }
 
-    return <div className="border-b border-gray-100 last:border-0">{content}</div>;
+    return <div className="border-b border-border/50 last:border-0">{content}</div>;
   };
 
   return (
-    <div className="absolute right-0 mt-2 w-96 glass rounded-2xl border border-border dark:border-white/10 shadow-xl z-50 max-h-[600px] flex flex-col">
+    <div className="absolute right-0 mt-2 w-96 glass rounded-2xl border border-border/60 shadow-xl z-50 max-h-[600px] flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">Notifiche</h3>
+      <div className="flex items-center justify-between p-4 border-b border-border/60">
+        <h3 className="text-lg font-semibold text-fg">Notifiche</h3>
         <div className="flex items-center gap-2">
           {unreadCount > 0 && (
             <button
               onClick={onMarkAllAsRead}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+              className="text-xs text-primary hover:text-primary-hover font-medium"
             >
               Segna tutte come lette
             </button>
           )}
           <button
             onClick={onRefresh}
-            className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+            className="p-1 text-fg-subtle hover:text-fg-muted rounded transition-colors"
             title="Aggiorna"
           >
             <svg
@@ -164,13 +164,13 @@ export default function NotificationDropdown({
       <div className="overflow-y-auto flex-1">
         {loading ? (
           <div className="p-8 text-center">
-            <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-sm text-gray-500">Caricamento...</p>
+            <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            <p className="mt-2 text-sm text-fg-muted">Caricamento...</p>
           </div>
         ) : notifications.length === 0 ? (
           <div className="p-8 text-center">
-            <p className="text-gray-500">Nessuna notifica</p>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-fg-muted">Nessuna notifica</p>
+            <p className="text-sm text-fg-subtle mt-1">
               Riceverai notifiche per eventi risolti, commenti e badge
             </p>
           </div>
@@ -185,10 +185,10 @@ export default function NotificationDropdown({
 
       {/* Footer */}
       {notifications.length > 0 && (
-        <div className="p-3 border-t border-gray-200 text-center">
+        <div className="p-3 border-t border-border/60 text-center">
           <Link
             href="/notifications"
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            className="text-sm text-primary hover:text-primary-hover font-medium"
           >
             Vedi tutte le notifiche
           </Link>

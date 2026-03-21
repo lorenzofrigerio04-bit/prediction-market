@@ -1,0 +1,1 @@
+{"version":3,"file":"range-definition.vo.d.ts","sourceRoot":"","sources":["../../../../src/market-design/value-objects/range-definition.vo.ts"],"names":[],"mappings":"AAGA,MAAM,MAAM,eAAe,GAAG,QAAQ,CAAC;IACrC,aAAa,EAAE,MAAM,CAAC;IACtB,aAAa,EAAE,MAAM,CAAC;IACtB,cAAc,EAAE,MAAM,GAAG,IAAI,CAAC;CAC/B,CAAC,CAAC;AAEH,eAAO,MAAM,qBAAqB,GAAI,OAAO,eAAe,KAAG,eAe9D,CAAC"}

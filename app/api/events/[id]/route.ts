@@ -5,6 +5,13 @@ import { authOptions } from "@/lib/auth";
 import { setCachedPrice } from "@/lib/cache/price";
 import { DEFAULT_B } from "@/lib/pricing/initialization";
 import { priceYesMicros, SCALE } from "@/lib/amm/fixedPointLmsr";
+import {
+  isMarketTypeId,
+  MULTI_OPTION_MARKET_TYPES,
+  parseOutcomesJson,
+} from "@/lib/market-types";
+import { pricesByOutcomeMicros } from "@/lib/amm/fixedPointLmsr";
+import { getEventMarketSharesByOutcome } from "@/lib/amm/multi-outcome-engine";
 
 export const dynamic = "force-dynamic";
 
@@ -43,8 +50,18 @@ export async function GET(
       );
     }
 
-    const amm = await prisma.ammState.findUnique({ where: { eventId: event.id } });
+    const marketType = event.marketType ?? "BINARY";
+    const isMultiOutcomeMarket =
+      isMarketTypeId(marketType) &&
+      MULTI_OPTION_MARKET_TYPES.includes(marketType);
+    const outcomeOptions = parseOutcomesJson(event.outcomes) ?? [];
+    const amm = !isMultiOutcomeMarket
+      ? await prisma.ammState.findUnique({ where: { eventId: event.id } })
+      : null;
     let probability = 50;
+    let outcomeProbabilities:
+      | Array<{ key: string; label: string; probabilityPct: number }>
+      | null = null;
     if (amm) {
       try {
         const yesMicros = priceYesMicros(amm.qYesMicros, amm.qNoMicros, amm.bMicros);
@@ -53,11 +70,38 @@ export async function GET(
         console.warn("AMM state invalid for event", event.id, ammError);
         probability = 50;
       }
+    } else if (isMultiOutcomeMarket && outcomeOptions.length > 0) {
+      try {
+        const outcomeKeys = outcomeOptions.map((o) => o.key);
+        const qByOutcome = await getEventMarketSharesByOutcome(prisma, event.id, outcomeKeys);
+        const bMicros = BigInt(Math.max(1, Math.round((event.b ?? 1) * 1_000_000)));
+        const prices = pricesByOutcomeMicros(outcomeKeys, qByOutcome, bMicros);
+        outcomeProbabilities = outcomeOptions.map((opt) => ({
+          key: opt.key,
+          label: opt.label,
+          probabilityPct: Number((prices[opt.key] * 100n) / SCALE),
+        }));
+      } catch (multiErr) {
+        console.warn("Multi-outcome price computation failed", event.id, multiErr);
+        outcomeProbabilities = outcomeOptions.map((opt) => ({
+          key: opt.key,
+          label: opt.label,
+          probabilityPct: Math.round(100 / Math.max(1, outcomeOptions.length)),
+        }));
+      }
     }
     setCachedPrice(eventId, { eventId: event.id, probability, q_yes: 0, q_no: 0, b: DEFAULT_B }).catch(() => {});
     (event as { probability?: number }).probability = probability;
 
-    let userPosition: { yesShareMicros: string; noShareMicros: string; positionCostMicros?: string; positionYesCostMicros?: string; positionNoCostMicros?: string } | null = null;
+    let userPosition: {
+      yesShareMicros: string;
+      noShareMicros: string;
+      positionCostMicros?: string;
+      positionYesCostMicros?: string;
+      positionNoCostMicros?: string;
+      outcomeSharesMicros?: Record<string, string>;
+      outcomeCostMicros?: Record<string, string>;
+    } | null = null;
     let tradeHistory: { id: string; side: string; outcome: string; shareMicros: string; costMicros: string; createdAt: string; realizedPlMicros: string | null }[] = [];
     let isFollowing = false;
     if (session?.user?.id) {
@@ -109,10 +153,23 @@ export async function GET(
         realizedPlMicros: t.realizedPlMicros != null ? t.realizedPlMicros.toString() : null,
       }));
 
-      // Cost basis residuo: sottrae il cost basis già "consumato" nelle vendite parziali,
-      // così "HAI: X quote acquistate per Y crediti" e P&L si riferiscono solo alle quote ancora possedute.
+      // Cost basis residuo: sottrae il cost basis già "consumato" nelle vendite parziali.
       let remainingYesCostMicros = costBySide.yesCost;
       let remainingNoCostMicros = costBySide.noCost;
+      const remainingCostByOutcome = new Map<string, bigint>();
+      const sharesByOutcome = new Map<string, bigint>();
+      for (const t of history) {
+        const outcomeKey = t.outcome;
+        if (!remainingCostByOutcome.has(outcomeKey)) remainingCostByOutcome.set(outcomeKey, 0n);
+        if (!sharesByOutcome.has(outcomeKey)) sharesByOutcome.set(outcomeKey, 0n);
+        if (t.side === "BUY") {
+          const abs = t.costMicros < 0n ? -t.costMicros : t.costMicros;
+          remainingCostByOutcome.set(outcomeKey, (remainingCostByOutcome.get(outcomeKey) ?? 0n) + abs);
+          sharesByOutcome.set(outcomeKey, (sharesByOutcome.get(outcomeKey) ?? 0n) + t.shareMicros);
+        } else if (t.side === "SELL") {
+          sharesByOutcome.set(outcomeKey, (sharesByOutcome.get(outcomeKey) ?? 0n) - t.shareMicros);
+        }
+      }
       for (const t of history) {
         if (t.side !== "SELL" || t.realizedPlMicros == null) continue;
         const proceedsMicros = t.costMicros > 0n ? t.costMicros : -t.costMicros;
@@ -128,6 +185,11 @@ export async function GET(
               ? remainingNoCostMicros - costBasisUsedMicros
               : 0n;
         }
+        const curr = remainingCostByOutcome.get(t.outcome) ?? 0n;
+        remainingCostByOutcome.set(
+          t.outcome,
+          curr - costBasisUsedMicros > 0n ? curr - costBasisUsedMicros : 0n
+        );
       }
       const totalRemainingCostMicros = remainingYesCostMicros + remainingNoCostMicros;
 
@@ -139,6 +201,24 @@ export async function GET(
           positionYesCostMicros: remainingYesCostMicros.toString(),
           positionNoCostMicros: remainingNoCostMicros.toString(),
         };
+      } else if (isMultiOutcomeMarket) {
+        const outcomeSharesMicros = Object.fromEntries(
+          [...sharesByOutcome.entries()]
+            .map(([k, v]) => [k, v > 0n ? v.toString() : "0"])
+        );
+        const outcomeCostMicros = Object.fromEntries(
+          [...remainingCostByOutcome.entries()]
+            .map(([k, v]) => [k, v > 0n ? v.toString() : "0"])
+        );
+        userPosition = {
+          yesShareMicros: "0",
+          noShareMicros: "0",
+          positionCostMicros: "0",
+          positionYesCostMicros: "0",
+          positionNoCostMicros: "0",
+          outcomeSharesMicros,
+          outcomeCostMicros,
+        };
       }
     }
 
@@ -146,6 +226,7 @@ export async function GET(
     const predictionsCount = (_count.Prediction ?? 0) + ((_count as { Trade?: number }).Trade ?? 0);
     const eventForClient = {
       ...eventRest,
+      outcomeProbabilities,
       _count: { predictions: predictionsCount, comments: _count.comments },
     };
 

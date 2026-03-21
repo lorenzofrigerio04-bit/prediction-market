@@ -68,8 +68,7 @@ Il sistema gestisce automaticamente gli eventi chiusi:
 - `POST /api/events/resolve-closed` - Elenco eventi chiusi in attesa di risoluzione (admin/cron)
 - `POST /api/admin/events/[id]/resolve` - Risolve un evento AMM (outcome YES/NO, payout 1 per share ai vincenti)
 - `GET /api/cron/resolve-events` - Endpoint per cron job esterni (richiede `CRON_SECRET`)
-- `GET /api/cron/generate-events` - Pipeline generazione eventi (fetch → verify → generate → create); richiede `CRON_SECRET` o `EVENT_GENERATOR_SECRET`
-- `GET|POST /api/cron/generate-markets` - Pipeline generazione mercati (ingestion → LLM → validator → publish); richiede `CRON_SECRET`
+- `GET|POST /api/cron/generate-events` - Pipeline generazione eventi (ingestion → storyline → rulebook → publish); richiede `CRON_SECRET`. Con `EVENT_GEN_V2=true` usa pipeline v2.0 (marketId PM-YYYY-NNNNN, sourceType=NEWS)
 
 ### Come Funziona
 
@@ -81,8 +80,7 @@ Il sistema gestisce automaticamente gli eventi chiusi:
 ### Configurazione Cron Job (Produzione)
 
 - **Risoluzione eventi chiusi**: `GET /api/cron/resolve-events` – richiede header `Authorization: Bearer CRON_SECRET`.
-- **Generazione eventi (pipeline)**: `GET /api/cron/generate-events` – richiede `Authorization: Bearer CRON_SECRET` o `EVENT_GENERATOR_SECRET`. Esegue fetch trending → verifica → generazione LLM → creazione in DB. In `vercel.json` è configurato con schedule `0 8,20 * * *` (due run al giorno alle 08:00 e 20:00 UTC).
-- **Generazione mercati (pipeline)**: `GET /api/cron/generate-markets` – richiede **`CRON_SECRET`** (`Authorization: Bearer CRON_SECRET`). Esegue ingestion/trend → draft (LLM) → validator → publish. In `vercel.json` è configurato con schedule `*/30 * * * *` (ogni 30 minuti; per ogni 15 minuti usa `*/15 * * * *` se i rate limit lo consentono).
+- **Generazione eventi (pipeline)**: `GET|POST /api/cron/generate-events` – richiede `Authorization: Bearer CRON_SECRET`. Esegue ingestion → storyline → rulebook validator → publish. Con `EVENT_GEN_V2=true` usa pipeline v2.0 (marketId, sourceType=NEWS). In `vercel.json` schedule `0 8,20 * * *` (due run al giorno alle 08:00 e 20:00 UTC).
 - **Attività simulata (Feed 2.0)**: `GET|POST /api/cron/simulate-activity` – richiede **`CRON_SECRET`** e **`ENABLE_SIMULATED_ACTIVITY=true`**. I bot creano previsioni, commenti, reazioni, follow e **post nel feed** (tab Eventi). In locale: nessun cron; usa **Admin → Esegui attività simulata** per popolare il feed. In prod il cron è in `vercel.json` (`30 * * * *`, ogni ora al minuto 30).
 - **Generazione immagini post (Feed 2.0)**: `GET|POST /api/cron/generate-post-images` – richiede **`CRON_SECRET`**. Processa post con tipo AI_IMAGE e `aiImageUrl` ancora null (es. per recuperare fallimenti del trigger in background). In `vercel.json` è configurato con schedule `15 * * * *` (ogni ora al minuto 15).
 
@@ -93,24 +91,24 @@ Il sistema gestisce automaticamente gli eventi chiusi:
 - **OPENAI_API_KEY** e **BLOB_READ_WRITE_TOKEN** – richiesti per la generazione delle immagini AI nelle card feed (post tipo AI_IMAGE). Senza questi, le card mostrano un placeholder.
 - **NEXTAUTH_URL** – in prod serve per il trigger in background delle immagini (fetch verso `/api/ai/generate-event-image`). Vedi `.env.example`.
 
-#### Variabili d’ambiente per generate-markets
+#### Variabili d’ambiente per generate-events
 
 - **CRON_SECRET** (obbligatorio) – usato da Vercel Cron e per trigger manuale.
-- **DATABASE_URL**, **NEWS_API_KEY**, **OPENAI_API_KEY** (o **ANTHROPIC_API_KEY** se `GENERATION_PROVIDER=anthropic`) – richieste dalla pipeline (vedi `.env.example`).
+- **DATABASE_URL** – richiesto. **EVENT_GEN_V2** (opzionale) – se `true` usa pipeline v2.0 con marketId e sourceType=NEWS.
 
 #### Come funziona il cron (Vercel)
 
-Vercel invoca l’URL del cron (es. `https://tuo-progetto.vercel.app/api/cron/generate-markets`) con metodo **GET** e aggiunge automaticamente l’header `Authorization: Bearer <CRON_SECRET>` se `CRON_SECRET` è impostato nelle Environment Variables del progetto. Non serve configurare nulla oltre a `vercel.json` e le variabili d’ambiente.
+Vercel invoca l’URL del cron (es. `https://tuo-progetto.vercel.app/api/cron/generate-events`) con metodo **GET** e aggiunge automaticamente l’header `Authorization: Bearer <CRON_SECRET>` se `CRON_SECRET` è impostato nelle Environment Variables del progetto. Non serve configurare nulla oltre a `vercel.json` e le variabili d’ambiente.
 
 #### Trigger manuale
 
 ```bash
 # GET (stesso comportamento del cron; publishCount = 5)
-curl -X GET "https://tuo-progetto.vercel.app/api/cron/generate-markets" \
+curl -X GET "https://tuo-progetto.vercel.app/api/cron/generate-events" \
   -H "Authorization: Bearer YOUR_CRON_SECRET"
 
 # POST con numero di mercati da pubblicare (opzionale)
-curl -X POST "https://tuo-progetto.vercel.app/api/cron/generate-markets" \
+curl -X POST "https://tuo-progetto.vercel.app/api/cron/generate-events" \
   -H "Authorization: Bearer YOUR_CRON_SECRET" \
   -H "Content-Type: application/json" \
   -d '{"publishCount": 10}'
@@ -118,8 +116,8 @@ curl -X POST "https://tuo-progetto.vercel.app/api/cron/generate-markets" \
 
 #### Verificare che il cron sia eseguito
 
-- **Log**: In Vercel → Project → Logs (o Runtime Logs), filtra per la funzione `/api/cron/generate-markets`. In caso di successo vedrai log tipo `[cron/generate-markets] summary` con `candidates`, `approved`, `published`, `errors`.
-- **Risposta HTTP**: La risposta JSON contiene `ok`, `candidates`, `approved`, `rejected`, `published`, `errors`. Controlla che `ok === true` e eventualmente `published > 0`.
+- **Log**: In Vercel → Project → Logs, filtra per `/api/cron/generate-events`. In caso di successo vedrai `eventGenV2`, `createdCount`, ecc.
+- **Risposta HTTP**: La risposta JSON contiene `success`, `eventGenV2`, `result` con `createdCount`, `eligibleStorylinesCount`, ecc.
 - **Database**: Verifica che il numero di eventi/mercati creati aumenti dopo una run (es. conta i record creati dopo l’orario dell’ultimo cron, o usa Prisma Studio / query SQL sulla tabella degli eventi con `createdAt` recente).
 
 Variabili d’ambiente e flusso dettagliato: **[docs/PIPELINE_CRON.md](docs/PIPELINE_CRON.md)**.

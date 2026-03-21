@@ -3,6 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { executeSellShares, AmmError } from "@/lib/amm/engine";
+import { executeSellSharesMultiOutcome } from "@/lib/amm/multi-outcome-engine";
+import {
+  isMarketTypeId,
+  MULTI_OPTION_MARKET_TYPES,
+  getValidOutcomeKeys,
+} from "@/lib/market-types";
 
 /**
  * POST /api/trades/sell
@@ -21,7 +27,10 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const eventId = typeof body.eventId === "string" ? body.eventId.trim() : null;
-    const outcome = body.outcome === "YES" || body.outcome === "NO" ? body.outcome : null;
+    const outcome =
+      typeof body.outcome === "string" && body.outcome.trim() !== ""
+        ? body.outcome.trim()
+        : null;
     const shareMicrosRaw = body.shareMicros;
     const shareMicros =
       typeof shareMicrosRaw === "string"
@@ -59,7 +68,36 @@ export async function POST(request: NextRequest) {
 
     const userId = session.user.id;
 
-    const [position, buyTradesForOutcome] = await Promise.all([
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { marketType: true, outcomes: true },
+    });
+    if (!event) {
+      return NextResponse.json(
+        { error: "Evento non trovato" },
+        { status: 404 }
+      );
+    }
+    const marketType = event.marketType ?? "BINARY";
+    const isMultiOutcomeMarket =
+      isMarketTypeId(marketType) &&
+      MULTI_OPTION_MARKET_TYPES.includes(marketType);
+    if (isMultiOutcomeMarket) {
+      const validKeys = getValidOutcomeKeys(event.outcomes);
+      if (!validKeys.includes(outcome)) {
+        return NextResponse.json(
+          { error: `Outcome non valido. Opzioni ammesse: ${validKeys.join(", ")}` },
+          { status: 400 }
+        );
+      }
+    } else if (outcome !== "YES" && outcome !== "NO") {
+      return NextResponse.json(
+        { error: "Per mercati binari outcome deve essere YES o NO" },
+        { status: 400 }
+      );
+    }
+
+    const [position, buyTradesForOutcome, sellTradesForOutcome] = await Promise.all([
       prisma.position.findUnique({
         where: { eventId_userId: { eventId, userId } },
         select: { yesShareMicros: true, noShareMicros: true },
@@ -71,21 +109,44 @@ export async function POST(request: NextRequest) {
           side: "BUY",
           outcome,
         },
-        select: { costMicros: true },
+        select: { costMicros: true, shareMicros: true },
+      }),
+      prisma.trade.findMany({
+        where: {
+          eventId,
+          userId,
+          side: "SELL",
+          outcome,
+        },
+        select: { shareMicros: true },
       }),
     ]);
 
-    if (!position) {
+    if (!position && !isMultiOutcomeMarket) {
       return NextResponse.json(
         { error: "Nessuna posizione su questo evento" },
         { status: 400 }
       );
     }
 
-    // Normalizza a BigInt (Prisma può restituire bigint o in alcuni casi valori da serializzare)
-    const yesMicros = BigInt(position.yesShareMicros.toString());
-    const noMicros = BigInt(position.noShareMicros.toString());
-    const totalShareMicrosForOutcome = outcome === "YES" ? yesMicros : noMicros;
+    const totalBoughtSharesForOutcome = buyTradesForOutcome.reduce(
+      (acc, t) => acc + (t.shareMicros ?? 0n),
+      0n
+    );
+    const totalSoldSharesForOutcome = sellTradesForOutcome.reduce(
+      (acc, t) => acc + (t.shareMicros ?? 0n),
+      0n
+    );
+    const netFromTrades = totalBoughtSharesForOutcome - totalSoldSharesForOutcome;
+    const totalShareMicrosForOutcome = isMultiOutcomeMarket
+      ? netFromTrades > 0n
+        ? netFromTrades
+        : 0n
+      : (() => {
+          const yesMicros = BigInt((position?.yesShareMicros ?? 0n).toString());
+          const noMicros = BigInt((position?.noShareMicros ?? 0n).toString());
+          return outcome === "YES" ? yesMicros : noMicros;
+        })();
     if (totalShareMicrosForOutcome < shareMicros) {
       return NextResponse.json(
         { error: "Quote insufficienti da vendere" },
@@ -102,16 +163,26 @@ export async function POST(request: NextRequest) {
         ? (costForOutcome * shareMicros) / totalShareMicrosForOutcome
         : 0n;
 
-    const result = await prisma.$transaction((tx) =>
-      executeSellShares(tx, {
+    const result = await prisma.$transaction((tx) => {
+      if (isMultiOutcomeMarket) {
+        return executeSellSharesMultiOutcome(tx, {
+          eventId,
+          userId,
+          outcome,
+          shareMicros,
+          minProceedsMicros,
+          idempotencyKey,
+        });
+      }
+      return executeSellShares(tx, {
         eventId,
         userId,
         outcome: outcome as "YES" | "NO",
         shareMicros,
         minProceedsMicros,
         idempotencyKey,
-      })
-    );
+      });
+    });
 
     const proceedsMicros = result.proceedsMicros;
     const realizedPlMicros = proceedsMicros - costBasisMicros;
@@ -137,8 +208,24 @@ export async function POST(request: NextRequest) {
           createdAt: result.trade.createdAt,
         },
         position: {
-          yesShareMicros: result.position.yesShareMicros.toString(),
-          noShareMicros: result.position.noShareMicros.toString(),
+          yesShareMicros:
+            "positionByOutcomeMicros" in result
+              ? "0"
+              : result.position.yesShareMicros.toString(),
+          noShareMicros:
+            "positionByOutcomeMicros" in result
+              ? "0"
+              : result.position.noShareMicros.toString(),
+          ...("positionByOutcomeMicros" in result
+            ? {
+                outcomeSharesMicros: Object.fromEntries(
+                  Object.entries(result.positionByOutcomeMicros).map(([k, v]) => [
+                    k,
+                    v.toString(),
+                  ])
+                ),
+              }
+            : {}),
         },
         proceedsMicros: result.proceedsMicros.toString(),
         costBasisMicros: costBasisMicros.toString(),

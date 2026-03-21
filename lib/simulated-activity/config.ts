@@ -12,10 +12,16 @@ export const BOT_EMAIL_DOMAIN = "simulation.internal";
 /** Crediti iniziali assegnati a ogni bot alla creazione / al top-up simulato */
 export const BOT_INITIAL_CREDITS = 10_000;
 
-/** Abilita l'esecuzione dell'attività simulata (da env: "true" | "1" = true) */
+/** Disabilita forzatamente l'attività simulata (da env: "true" | "1" = bot fermi) */
+const DISABLE_SIMULATED_ACTIVITY =
+  process.env.DISABLE_SIMULATED_ACTIVITY === "true" ||
+  process.env.DISABLE_SIMULATED_ACTIVITY === "1";
+
+/** Abilita l'esecuzione dell'attività simulata (da env: "true" | "1" = true). Se DISABLE_SIMULATED_ACTIVITY=true i bot restano fermi. */
 export const ENABLE_SIMULATED_ACTIVITY =
-  process.env.ENABLE_SIMULATED_ACTIVITY === "true" ||
-  process.env.ENABLE_SIMULATED_ACTIVITY === "1";
+  !DISABLE_SIMULATED_ACTIVITY &&
+  (process.env.ENABLE_SIMULATED_ACTIVITY === "true" ||
+    process.env.ENABLE_SIMULATED_ACTIVITY === "1");
 
 /** Massimo numero di previsioni per singola esecuzione (obiettivo: piattaforma viva, 100–200 utenti) */
 export const MAX_PREDICTIONS_PER_RUN = 55;

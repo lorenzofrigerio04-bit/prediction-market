@@ -1,0 +1,22 @@
+import type { Branded } from "../../common/types/branded.js";
+export type AdminFeatureFlagId = Branded<string, "AdminFeatureFlagId">;
+export type GovernanceModuleId = Branded<string, "GovernanceModuleId">;
+export type GovernanceSourceId = Branded<string, "GovernanceSourceId">;
+export type GuardrailPolicyId = Branded<string, "GuardrailPolicyId">;
+export type EmergencyControlId = Branded<string, "EmergencyControlId">;
+export type OverrideRequestId = Branded<string, "OverrideRequestId">;
+export type GovernanceEnvironmentId = Branded<string, "GovernanceEnvironmentId">;
+export type GovernanceDecisionId = Branded<string, "GovernanceDecisionId">;
+export type GovernanceAuditLinkId = Branded<string, "GovernanceAuditLinkId">;
+export type GovernanceCompatibilityViewId = Branded<string, "GovernanceCompatibilityViewId">;
+export declare const createAdminFeatureFlagId: (value: string) => AdminFeatureFlagId;
+export declare const createGovernanceModuleId: (value: string) => GovernanceModuleId;
+export declare const createGovernanceSourceId: (value: string) => GovernanceSourceId;
+export declare const createGuardrailPolicyId: (value: string) => GuardrailPolicyId;
+export declare const createEmergencyControlId: (value: string) => EmergencyControlId;
+export declare const createOverrideRequestId: (value: string) => OverrideRequestId;
+export declare const createGovernanceEnvironmentId: (value: string) => GovernanceEnvironmentId;
+export declare const createGovernanceDecisionId: (value: string) => GovernanceDecisionId;
+export declare const createGovernanceAuditLinkId: (value: string) => GovernanceAuditLinkId;
+export declare const createGovernanceCompatibilityViewId: (value: string) => GovernanceCompatibilityViewId;
+//# sourceMappingURL=admin-governance-ids.vo.d.ts.map

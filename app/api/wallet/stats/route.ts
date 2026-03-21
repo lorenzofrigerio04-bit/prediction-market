@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getDisplayCredits } from "@/lib/credits-config";
+import { toCreditsReadModel } from "@/lib/integration/adapters/credits-read-model-adapter";
 
 export const dynamic = "force-dynamic";
 
@@ -63,17 +63,17 @@ export async function GET() {
     });
     const totalSpent = Math.abs(totalSpentResult._sum.amount ?? 0);
 
-    const credits = getDisplayCredits({
+    const creditsReadModel = toCreditsReadModel({
       credits: user.credits,
       creditsMicros: user.creditsMicros,
     });
     return NextResponse.json({
-      credits,
-      creditsMicros: user.creditsMicros != null ? user.creditsMicros.toString() : null,
+      credits: creditsReadModel.displayCredits,
+      creditsMicros: creditsReadModel.microsBalance,
       totalEarned: user.totalEarned,
       totalSpent,
       streak: user.streakCount ?? 0,
-      streakCount: user.streakCount,
+      streakCount: user.streakCount ?? 0,
       canClaimDailyBonus,
       nextBonusAmount,
       canSpinToday,

@@ -1,0 +1,2 @@
+export { type AdminGovernanceCompatibilityView as GovernanceCompatibilityView, createAdminGovernanceCompatibilityView as createGovernanceCompatibilityView } from "./admin-governance-compatibility-view.entity.js";
+//# sourceMappingURL=governance-compatibility-view.entity.d.ts.map

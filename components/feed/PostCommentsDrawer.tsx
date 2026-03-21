@@ -190,7 +190,7 @@ export function PostCommentsDrawer({
       aria-labelledby="post-comments-drawer-title"
     >
       <div
-        className="w-full sm:max-w-md max-h-[85vh] sm:max-h-[80vh] rounded-t-2xl sm:rounded-2xl border border-black/15 dark:border-white/15 border-b-0 sm:border-b bg-bg shadow-xl flex flex-col"
+        className="w-full sm:max-w-md max-h-[85vh] sm:max-h-[80vh] rounded-t-2xl sm:rounded-2xl border border-white/10 border-b-0 sm:border-b bg-admin-bg shadow-xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-4 border-b border-black/10 dark:border-white/10 shrink-0">

@@ -1,0 +1,1 @@
+{"version":3,"file":"canonical-event-builder.d.ts","sourceRoot":"","sources":["../../../../../src/event-intelligence/canonicalization/interfaces/canonical-event-builder.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,qDAAqD,CAAC;AAC1F,OAAO,KAAK,EAAE,0BAA0B,EAAE,MAAM,uCAAuC,CAAC;AAExF,MAAM,WAAW,qBAAqB;IACpC,KAAK,CAAC,UAAU,EAAE,SAAS,cAAc,EAAE,GAAG,0BAA0B,CAAC;CAC1E"}

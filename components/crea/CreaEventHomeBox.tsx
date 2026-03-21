@@ -10,12 +10,12 @@ const DEFAULT_CATEGORIES = ["Sport", "Politica", "Economia", "Tecnologia", "Cult
 const BOX_SIZE = "w-[7.25rem] min-w-[7.25rem] h-[2rem] min-h-[2rem]";
 /** Stile unico per tutti i box (come CATEGORIA): titolo maiuscolo, stesso colore (text-white), stesso font */
 const BADGE_BOX_CLASS =
-  "inline-flex items-center justify-center rounded-md border border-white/30 bg-black/70 px-2 py-0.5 font-sans text-xs font-semibold uppercase tracking-wide text-white shadow-[0_2px_6px_rgba(0,0,0,0.9)] backdrop-blur-sm sm:text-ds-micro";
+  "inline-flex items-center justify-center rounded-md border border-border/80 bg-bg/80 px-2 py-0.5 font-sans text-xs font-semibold uppercase tracking-wide text-fg shadow-[0_2px_6px_rgb(0_0_0_/_0.7)] backdrop-blur-sm sm:text-ds-micro";
 const INPUT_BOX_CLASS =
-  "flex items-center rounded-md border border-white/30 bg-black/70 px-2 py-0.5 font-sans text-xs font-semibold uppercase tracking-wide text-white shadow-[0_2px_6px_rgba(0,0,0,0.9)] backdrop-blur-sm sm:text-ds-micro placeholder:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent text-center truncate";
+  "flex items-center rounded-md border border-border/80 bg-bg/80 px-2 py-0.5 font-sans text-xs font-semibold uppercase tracking-wide text-fg shadow-[0_2px_6px_rgb(0_0_0_/_0.7)] backdrop-blur-sm sm:text-ds-micro placeholder:text-fg-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent text-center truncate";
 /** Come INPUT_BOX_CLASS ma testo inserito minuscolo; solo placeholder maiuscolo (per Titolo e Descrizione) */
 const INPUT_BOX_CLASS_NORMAL_CASE =
-  "flex items-center rounded-md border border-white/30 bg-black/70 px-2 py-0.5 font-sans text-xs font-semibold tracking-wide text-white shadow-[0_2px_6px_rgba(0,0,0,0.9)] backdrop-blur-sm sm:text-ds-micro placeholder:uppercase placeholder:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent text-center truncate normal-case";
+  "flex items-center rounded-md border border-border/80 bg-bg/80 px-2 py-0.5 font-sans text-xs font-semibold tracking-wide text-fg shadow-[0_2px_6px_rgb(0_0_0_/_0.7)] backdrop-blur-sm sm:text-ds-micro placeholder:uppercase placeholder:text-fg-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent text-center truncate normal-case";
 
 function formatScadenzaDisplay(value: string): string {
   if (!value) return "SCADENZA";
@@ -37,7 +37,7 @@ function toDateInputValue(closesAt: string): string {
 const TITLE_STYLE = { textShadow: "0 2px 8px rgba(0,0,0,1), 0 0 1px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9)" };
 const DESC_STYLE = { textShadow: "0 1px 4px rgba(0,0,0,1), 0 0 1px rgba(0,0,0,0.8)" };
 
-const BOX_DONE_GLOW = "!border-emerald-400/90 !shadow-[0_0_14px_rgba(52,211,153,0.5)]";
+const BOX_DONE_GLOW = "!border-success/90 !shadow-[0_0_14px_rgb(var(--success)/0.5)]";
 const BOX_TRANSITION = "transition-all duration-300";
 
 export interface CreaEventHomeBoxProps {
@@ -126,7 +126,7 @@ export default function CreaEventHomeBox({
           <button
             type="button"
             onClick={() => setCategoryOpen((o) => !o)}
-            className={`${BADGE_BOX_CLASS} ${BOX_SIZE} hover:bg-black/80 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${BOX_TRANSITION} ${categoryDone ? BOX_DONE_GLOW : ""}`}
+            className={`${BADGE_BOX_CLASS} ${BOX_SIZE} hover:bg-bg/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${BOX_TRANSITION} ${categoryDone ? BOX_DONE_GLOW : ""}`}
             aria-expanded={categoryOpen}
             aria-haspopup="listbox"
           >
@@ -135,7 +135,7 @@ export default function CreaEventHomeBox({
           {categoryOpen && (
             <>
               <div
-                className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm crea-category-overlay-fade"
+                className="fixed inset-0 z-[100] bg-bg/70 backdrop-blur-sm crea-category-overlay-fade"
                 aria-hidden
                 onClick={() => setCategoryOpen(false)}
               />
@@ -143,14 +143,14 @@ export default function CreaEventHomeBox({
                 id="crea-category-list"
                 role="listbox"
                 aria-label="Opzioni categoria"
-                className="fixed left-4 right-4 top-1/2 -translate-y-1/2 z-[101] flex flex-col rounded-2xl border border-white/15 bg-black/95 backdrop-blur-xl shadow-2xl overflow-hidden crea-category-modal-anim max-h-[min(280px,70vh)] sm:left-0 sm:right-auto sm:top-full sm:translate-y-0 sm:absolute sm:mt-1.5 sm:min-w-[200px] sm:max-h-[min(320px,70vh)]"
+                className="fixed left-4 right-4 top-1/2 -translate-y-1/2 z-[101] flex flex-col rounded-2xl border border-border/70 bg-bg/95 backdrop-blur-xl shadow-2xl overflow-hidden crea-category-modal-anim max-h-[min(280px,70vh)] sm:left-0 sm:right-auto sm:top-full sm:translate-y-0 sm:absolute sm:mt-1.5 sm:min-w-[200px] sm:max-h-[min(320px,70vh)]"
               >
-                <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/10">
-                  <span className="text-sm font-semibold text-white/90 uppercase tracking-wide">Categoria</span>
+                <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border/60">
+                  <span className="text-sm font-semibold text-fg uppercase tracking-wide">Categoria</span>
                   <button
                     type="button"
                     onClick={() => setCategoryOpen(false)}
-                    className="p-2 -m-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                    className="p-2 -m-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface/70 transition-colors"
                     aria-label="Chiudi"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -178,7 +178,7 @@ export default function CreaEventHomeBox({
                           });
                         }}
                         className={`w-full px-4 py-3 text-left text-sm font-medium transition-colors ${
-                          isSelected ? "bg-primary/25 text-primary" : "text-white hover:bg-white/10 active:bg-white/15"
+                          isSelected ? "bg-primary/25 text-primary" : "text-fg hover:bg-surface/70 active:bg-surface"
                         }`}
                       >
                         {opt}
@@ -196,7 +196,7 @@ export default function CreaEventHomeBox({
           <button
             type="button"
             onClick={() => setScadenzaModalOpen(true)}
-            className={`${BADGE_BOX_CLASS} w-full h-full cursor-pointer hover:bg-black/80 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${BOX_TRANSITION} ${!dateInputValue ? "text-white/80" : ""} ${scadenzaDone ? BOX_DONE_GLOW : ""}`}
+            className={`${BADGE_BOX_CLASS} w-full h-full cursor-pointer hover:bg-bg/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${BOX_TRANSITION} ${!dateInputValue ? "text-fg-muted" : ""} ${scadenzaDone ? BOX_DONE_GLOW : ""}`}
             aria-label="Scadenza: apri calendario"
           >
             <span className="truncate">{scadenzaDisplay}</span>
@@ -204,7 +204,7 @@ export default function CreaEventHomeBox({
           {scadenzaModalOpen && (
             <>
               <div
-                className="fixed inset-0 z-[102] bg-black/60 backdrop-blur-sm"
+                className="fixed inset-0 z-[102] bg-bg/70 backdrop-blur-sm"
                 aria-hidden
                 onClick={() => setScadenzaModalOpen(false)}
               />
@@ -212,16 +212,16 @@ export default function CreaEventHomeBox({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="crea-scadenza-modal-title"
-                className="fixed left-4 right-4 top-1/2 -translate-y-1/2 z-[103] rounded-2xl border border-white/15 bg-black/95 backdrop-blur-xl shadow-2xl p-4 flex flex-col gap-4 max-w-sm mx-auto"
+                className="fixed left-4 right-4 top-1/2 -translate-y-1/2 z-[103] rounded-2xl border border-border/70 bg-bg/95 backdrop-blur-xl shadow-2xl p-4 flex flex-col gap-4 max-w-sm mx-auto"
               >
                 <div className="flex items-center justify-between">
-                  <h2 id="crea-scadenza-modal-title" className="text-sm font-semibold text-white/90 uppercase tracking-wide">
+                  <h2 id="crea-scadenza-modal-title" className="text-sm font-semibold text-fg uppercase tracking-wide">
                     Scadenza
                   </h2>
                   <button
                     type="button"
                     onClick={() => setScadenzaModalOpen(false)}
-                    className="p-2 -m-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                    className="p-2 -m-2 rounded-lg text-fg-muted hover:text-fg hover:bg-surface/70 transition-colors"
                     aria-label="Chiudi"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -242,14 +242,14 @@ export default function CreaEventHomeBox({
                       requestAnimationFrame(() => resolutionInputRef.current?.focus());
                     }
                   }}
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 min-h-[48px] text-base"
+                  className="w-full px-4 py-3 rounded-xl bg-surface/85 border border-border/70 text-fg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 min-h-[48px] text-base"
                   style={{ colorScheme: "dark" }}
                   aria-label="Data di scadenza"
                 />
                 <button
                   type="button"
                   onClick={() => setScadenzaModalOpen(false)}
-                  className="w-full py-2.5 rounded-xl bg-primary text-white font-medium hover:opacity-90 transition-opacity"
+                  className="w-full py-2.5 rounded-xl bg-primary text-bg font-medium hover:opacity-90 transition-opacity"
                 >
                   Fatto
                 </button>
@@ -320,22 +320,22 @@ export default function CreaEventHomeBox({
               }
             }}
             placeholder="risoluzione (link o testo)"
-            className={`${BOX_SIZE} shrink-0 crea-home-input-scroll-margin ${BOX_TRANSITION} ${resolutionDone ? BOX_DONE_GLOW : ""} flex items-center rounded-md border border-white/30 bg-black/70 px-2 py-0.5 font-sans text-xs font-semibold tracking-wide text-white shadow-[0_2px_6px_rgba(0,0,0,0.9)] backdrop-blur-sm sm:text-ds-micro placeholder:text-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent text-center truncate normal-case lowercase`}
+            className={`${BOX_SIZE} shrink-0 crea-home-input-scroll-margin ${BOX_TRANSITION} ${resolutionDone ? BOX_DONE_GLOW : ""} flex items-center rounded-md border border-border/80 bg-bg/80 px-2 py-0.5 font-sans text-xs font-semibold tracking-wide text-fg shadow-[0_2px_6px_rgb(0_0_0_/_0.7)] backdrop-blur-sm sm:text-ds-micro placeholder:text-fg-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent text-center truncate normal-case lowercase`}
             style={{ ...DESC_STYLE, textTransform: "lowercase" }}
             aria-label="Link o testo per risoluzione dell'evento"
           />
         </div>
         <div
-          className="flex h-1.5 w-full overflow-hidden rounded-full bg-black/60 shadow-inner backdrop-blur-[1px] mt-2"
+          className="flex h-1.5 w-full overflow-hidden rounded-full bg-bg/60 shadow-inner backdrop-blur-[1px] mt-2"
           role="presentation"
         >
           <div
             className="h-full w-1/2 shrink-0 rounded-l-full"
-            style={{ background: "linear-gradient(90deg, rgb(20 148 132) 0%, rgb(13 148 136) 100%)" }}
+            style={{ background: "linear-gradient(90deg, rgb(var(--prediction-si-from)) 0%, rgb(var(--prediction-si-to)) 100%)" }}
           />
           <div
             className="h-full w-1/2 shrink-0 rounded-r-full"
-            style={{ background: "linear-gradient(90deg, rgb(239 68 68) 0%, rgb(244 63 94) 100%)" }}
+            style={{ background: "linear-gradient(90deg, rgb(var(--prediction-no-from)) 0%, rgb(var(--prediction-no-to)) 100%)" }}
           />
         </div>
       </div>

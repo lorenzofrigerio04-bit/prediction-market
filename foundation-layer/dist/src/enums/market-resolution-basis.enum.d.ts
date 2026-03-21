@@ -1,0 +1,7 @@
+export declare enum MarketResolutionBasis {
+    OFFICIAL_SOURCE = "OFFICIAL_SOURCE",
+    MULTI_SOURCE_CONSENSUS = "MULTI_SOURCE_CONSENSUS",
+    DATA_PROVIDER = "DATA_PROVIDER",
+    MANUAL_REVIEW = "MANUAL_REVIEW"
+}
+//# sourceMappingURL=market-resolution-basis.enum.d.ts.map

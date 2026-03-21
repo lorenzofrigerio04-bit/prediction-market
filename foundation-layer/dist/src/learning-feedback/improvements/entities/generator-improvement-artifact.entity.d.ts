@@ -1,0 +1,2 @@
+export { createImprovementArtifact as createGeneratorImprovementArtifact, type ImprovementArtifact as GeneratorImprovementArtifact, } from "./improvement-artifact.entity.js";
+//# sourceMappingURL=generator-improvement-artifact.entity.d.ts.map

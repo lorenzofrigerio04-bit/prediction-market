@@ -1,0 +1,1 @@
+{"version":3,"file":"workspace-reader.d.ts","sourceRoot":"","sources":["../../../../../src/platform-access/workspaces/interfaces/workspace-reader.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,iCAAiC,CAAC;AACjE,OAAO,KAAK,EAAE,WAAW,EAAE,MAAM,+CAA+C,CAAC;AAEjF,MAAM,WAAW,eAAe;IAC9B,OAAO,CAAC,WAAW,EAAE,WAAW,GAAG,SAAS,GAAG,IAAI,CAAC;CACrD"}

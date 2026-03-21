@@ -1,0 +1,22 @@
+import type { Branded } from "../../common/types/branded.js";
+export type MarketFamilyId = Branded<string, "MarketFamilyId">;
+export type ExpansionStrategyId = Branded<string, "ExpansionStrategyId">;
+export type FlagshipMarketSelectionId = Branded<string, "FlagshipMarketSelectionId">;
+export type SatelliteMarketDefinitionId = Branded<string, "SatelliteMarketDefinitionId">;
+export type DerivativeMarketDefinitionId = Branded<string, "DerivativeMarketDefinitionId">;
+export type MarketRelationshipId = Branded<string, "MarketRelationshipId">;
+export type ExpansionValidationReportId = Branded<string, "ExpansionValidationReportId">;
+export type FamilyGenerationResultId = Branded<string, "FamilyGenerationResultId">;
+export type CannibalizationCheckResultId = Branded<string, "CannibalizationCheckResultId">;
+export type MarketFamilyCompatibilityResultId = Branded<string, "MarketFamilyCompatibilityResultId">;
+export declare const createMarketFamilyId: (value: string) => MarketFamilyId;
+export declare const createExpansionStrategyId: (value: string) => ExpansionStrategyId;
+export declare const createFlagshipMarketSelectionId: (value: string) => FlagshipMarketSelectionId;
+export declare const createSatelliteMarketDefinitionId: (value: string) => SatelliteMarketDefinitionId;
+export declare const createDerivativeMarketDefinitionId: (value: string) => DerivativeMarketDefinitionId;
+export declare const createMarketRelationshipId: (value: string) => MarketRelationshipId;
+export declare const createExpansionValidationReportId: (value: string) => ExpansionValidationReportId;
+export declare const createFamilyGenerationResultId: (value: string) => FamilyGenerationResultId;
+export declare const createCannibalizationCheckResultId: (value: string) => CannibalizationCheckResultId;
+export declare const createMarketFamilyCompatibilityResultId: (value: string) => MarketFamilyCompatibilityResultId;
+//# sourceMappingURL=market-expansion-ids.vo.d.ts.map

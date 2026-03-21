@@ -1,0 +1,1 @@
+{"version":3,"file":"time-policy-renderer.d.ts","sourceRoot":"","sources":["../../../../../src/publishing/rendering/interfaces/time-policy-renderer.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,yEAAyE,CAAC;AAClH,OAAO,KAAK,EAAE,gBAAgB,EAAE,MAAM,0CAA0C,CAAC;AAEjF,MAAM,WAAW,kBAAkB;IACjC,MAAM,CAAC,KAAK,EAAE,kBAAkB,GAAG,gBAAgB,CAAC;CACrD"}

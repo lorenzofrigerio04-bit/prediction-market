@@ -7,6 +7,7 @@ export interface SistemaEvent {
   closesAt: string;
   yesPct: number;
   predictionsCount?: number;
+  aiImageUrl?: string | null;
 }
 
 export interface LentePost {

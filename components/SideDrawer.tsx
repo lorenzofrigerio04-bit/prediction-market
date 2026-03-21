@@ -16,8 +16,8 @@ import {
   IconClose,
   IconNavHome,
   IconNavDiscover,
-  IconNavExplore,
-  IconNavCrystalBall,
+  IconNavSport,
+  IconNavExchange,
   IconNavCreate,
   IconNavTrophy,
   IconNavProfile,
@@ -26,14 +26,14 @@ import {
 const MAIN_NAV_ITEMS = [
   { href: "/", label: "Home", icon: IconNavHome },
   { href: "/discover", label: "Eventi", icon: IconNavDiscover },
-  { href: "/esplora", label: "Esplora", icon: IconNavExplore },
-  { href: "/oracle", label: "Oracle Assistant", icon: IconNavCrystalBall },
+  { href: "/sport", label: "Sport", icon: IconNavSport },
+  { href: "/exchange", label: "Exchange", icon: IconNavExchange },
   { href: "/leaderboard", label: "Classifica", icon: IconNavTrophy },
   { href: "/profile", label: "Profilo", icon: IconNavProfile },
 ] as const;
 
 const DRAWER_LINK =
-  "flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl text-fg hover:bg-surface/50 transition-colors text-left font-medium min-h-[48px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg outline-none border border-transparent";
+  "flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl text-fg hover:bg-white/[0.08] transition-colors text-left font-medium min-h-[48px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg outline-none border border-transparent";
 
 function DrawerLink({
   href,
@@ -115,14 +115,14 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
     <div
       ref={overlayRef}
       onClick={handleOverlayClick}
-      className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm transition-opacity"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity"
       aria-hidden={!open}
     >
       <aside
         ref={panelRef}
         role="dialog"
         aria-label="Menu utility"
-        className="side-drawer-panel fixed top-0 left-0 h-full w-[min(320px,85vw)] shadow-overlay flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+        className="side-drawer-panel side-drawer-panel-right fixed top-0 right-0 h-full w-[min(320px,85vw)] shadow-overlay flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
         style={{ paddingTop: "var(--safe-area-inset-top)" }}
       >
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
@@ -130,7 +130,7 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
           <button
             type="button"
             onClick={onClose}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl text-fg-muted hover:bg-surface/50 hover:text-fg transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg active:scale-[0.98]"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl text-fg-muted hover:bg-white/[0.08] hover:text-fg transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg active:scale-[0.98]"
             aria-label="Chiudi menu"
           >
             <IconClose className="w-6 h-6" />
@@ -144,9 +144,7 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
               const linkHref =
                 href === "/profile" && !isAuthenticated
                   ? `/auth/login?callbackUrl=${encodeURIComponent(pathname || "/")}`
-                  : (href === "/oracle" && !isAuthenticated)
-                    ? `/auth/login?callbackUrl=${encodeURIComponent("/oracle")}`
-                    : href;
+                  : href;
               return (
                 <DrawerLink
                   key={href}

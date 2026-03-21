@@ -5,12 +5,11 @@ import SessionProvider from "@/components/providers/SessionProvider";
 import { authOptions } from "@/lib/auth";
 import ThemeScript from "./ThemeScript";
 import AppBackground from "@/components/AppBackground";
-import AgentSphere from "@/components/AgentSphere";
 import ConditionalFooter from "@/components/ConditionalFooter";
 import { LandingBackgroundProviderWithRoute } from "@/components/landing/LandingBackgroundCarousel";
 
 /* Colore barre sistema: status bar + barra browser (Android Chrome, iOS). Stesso valore in manifest.json. */
-const THEME_COLOR = "#161a26";
+const THEME_COLOR = "#001B51";
 
 export const metadata: Metadata = {
   title: "Prediction Market",
@@ -60,7 +59,7 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="PredictionMaster" />
       </head>
-      <body className="font-sans antialiased min-h-screen bg-transparent text-fg flex flex-col">
+      <body className="font-sans antialiased min-h-screen bg-admin-bg text-fg flex flex-col">
         {/* ClipPath per bottom nav: contorno con mezza luna al centro */}
         <svg width="0" height="0" aria-hidden>
           <defs>
@@ -74,14 +73,13 @@ export default async function RootLayout({
         <LandingBackgroundProviderWithRoute>
           <AppBackground />
           <SessionProvider session={session}>
-          <AgentSphere />
           <a
             href="#main-content"
             className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-surface focus:text-fg focus:border focus:border-border focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg"
           >
             Vai al contenuto
           </a>
-          <div className="flex-1 platform-content">{children}</div>
+          <div className="flex-1 platform-content" suppressHydrationWarning>{children}</div>
           <ConditionalFooter />
         </SessionProvider>
         </LandingBackgroundProviderWithRoute>

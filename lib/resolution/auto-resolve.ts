@@ -7,8 +7,7 @@
 import type { PrismaClient } from "@prisma/client";
 
 export type AutoResolveResult =
-  | { outcome: "YES" }
-  | { outcome: "NO" }
+  | { outcome: string }
   | { needsReview: true }
   | { error: string };
 
@@ -18,6 +17,11 @@ export type ClosedEventForResolve = {
   closesAt: Date;
   resolutionSourceUrl: string | null;
   resolutionStatus: string;
+  marketType: string | null;
+  outcomes: unknown;
+  templateId: string | null;
+  creationMetadata: unknown;
+  footballDataMatchId: number | null;
 };
 
 const OUTCOME_YES_PATTERNS = [
@@ -129,7 +133,8 @@ function parseOutcomeFromText(content: string): "YES" | "NO" | null {
 
 /**
  * Check resolution source for an event. Fetches URL and parses outcome.
- * Only returns YES/NO when confident; otherwise needsReview or error.
+ * For HTTP sources this auto-parser remains binary (YES/NO).
+ * For multi-outcome markets, use source-specific resolvers.
  */
 export async function checkResolutionSource(
   resolutionSourceUrl: string
@@ -167,6 +172,11 @@ export async function getClosedUnresolvedEvents(
       closesAt: true,
       resolutionSourceUrl: true,
       resolutionStatus: true,
+      marketType: true,
+      outcomes: true,
+      templateId: true,
+      creationMetadata: true,
+      footballDataMatchId: true,
     },
     orderBy: { closesAt: "asc" },
   });

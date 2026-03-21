@@ -1,0 +1,8 @@
+export declare enum EligibilityStatus {
+    ELIGIBLE = "ELIGIBLE",
+    INELIGIBLE = "INELIGIBLE",
+    ALREADY_CLAIMED = "ALREADY_CLAIMED",
+    BLOCKED = "BLOCKED",
+    PENDING_REVIEW = "PENDING_REVIEW"
+}
+//# sourceMappingURL=eligibility-status.enum.d.ts.map

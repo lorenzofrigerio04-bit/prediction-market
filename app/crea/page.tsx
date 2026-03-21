@@ -26,8 +26,8 @@ interface SubmitResult {
 }
 
 const inputClass =
-  "w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all";
-const labelClass = "block text-ds-body-sm font-semibold text-white/90 mb-1.5";
+  "w-full px-4 py-3 rounded-xl bg-surface/85 border border-border/70 text-fg placeholder:text-fg-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all";
+const labelClass = "block text-ds-body-sm font-semibold text-fg mb-1.5";
 
 export default function CreaPage() {
   const { data: session, status } = useSession();
@@ -301,8 +301,8 @@ export default function CreaPage() {
         <Header />
         <main id="main-content" className="mx-auto max-w-md px-page-x py-page-y md:py-8">
           <div className="crea-page-box create-event-modal rounded-2xl p-6 text-center">
-            <h1 className="text-ds-h2 font-bold text-white mb-2">Crea evento</h1>
-            <p className="text-ds-body text-white/80 mb-6">
+            <h1 className="text-ds-h2 font-bold text-fg mb-2">Crea evento</h1>
+            <p className="text-ds-body text-fg-muted mb-6">
               Accedi per proporre un nuovo evento alla community.
             </p>
             <Link
@@ -349,7 +349,7 @@ export default function CreaPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="absolute left-0 -ml-8 z-10 flex items-center gap-1.5 text-ds-body-sm font-medium text-white/80 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-lg py-2 pr-2"
+              className="absolute left-0 -ml-8 z-10 flex items-center gap-1.5 text-ds-body-sm font-medium text-fg-muted hover:text-fg transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-lg py-2 pr-2"
               aria-label="Indietro"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -357,15 +357,15 @@ export default function CreaPage() {
               </svg>
               Indietro
             </button>
-            <h1 className="text-sm sm:text-lg font-semibold text-white/90 tracking-tight uppercase whitespace-nowrap px-2 text-center">
+            <h1 className="text-sm sm:text-lg font-semibold text-fg tracking-tight uppercase whitespace-nowrap px-2 text-center">
               Crea il tuo evento
             </h1>
           </header>
           {editLoadError && (
-            <p className="text-sm text-red-400 mb-2" role="alert">{editLoadError}</p>
+            <p className="text-sm text-danger mb-2" role="alert">{editLoadError}</p>
           )}
           {loadingEdit && (
-            <p className="text-sm text-white/70 mb-2">Caricamento…</p>
+            <p className="text-sm text-fg-muted mb-2">Caricamento…</p>
           )}
           <div className="flex-1 flex flex-col min-h-0">
             <div className="flex-1 min-h-0" aria-hidden />
@@ -433,7 +433,7 @@ export default function CreaPage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="absolute left-0 -ml-8 z-10 flex items-center gap-1.5 text-ds-body-sm font-medium text-white/80 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-lg py-2 pr-2"
+              className="absolute left-0 -ml-8 z-10 flex items-center gap-1.5 text-ds-body-sm font-medium text-fg-muted hover:text-fg transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-lg py-2 pr-2"
               aria-label="Indietro"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -441,7 +441,7 @@ export default function CreaPage() {
               </svg>
               Indietro
             </button>
-            <h1 className="text-sm sm:text-lg font-semibold text-white/90 tracking-tight uppercase whitespace-nowrap px-2 text-center">
+            <h1 className="text-sm sm:text-lg font-semibold text-fg tracking-tight uppercase whitespace-nowrap px-2 text-center">
               Crea il tuo evento
             </h1>
           </header>
@@ -492,7 +492,7 @@ export default function CreaPage() {
                         setConfirmState("idle");
                         setSlideApplied(false);
                       }}
-                      className="text-sm font-medium text-white/70 hover:text-white transition-colors py-2"
+                      className="text-sm font-medium text-fg-muted hover:text-fg transition-colors py-2"
                     >
                       Modifica
                     </button>
@@ -526,17 +526,17 @@ export default function CreaPage() {
         <Header />
         <main id="main-content" className="mx-auto max-w-md px-page-x py-page-y md:py-8">
           <div className="crea-page-box create-event-modal rounded-2xl p-6 text-center animate-in-fade-up">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
-              <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/20 flex items-center justify-center">
+              <svg className="w-8 h-8 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="text-ds-h2 font-bold text-white mb-2">Evento pubblicato!</h1>
-            <p className="text-ds-body text-white/80 mb-6">
+            <h1 className="text-ds-h2 font-bold text-fg mb-2">Evento pubblicato!</h1>
+            <p className="text-ds-body text-fg-muted mb-6">
               Il tuo evento è stato approvato e pubblicato. Ora la community può fare previsioni!
             </p>
             {submitResult.warnings && submitResult.warnings.length > 0 && (
-              <div className="mb-4 p-3 rounded-lg bg-yellow-500/20 border border-yellow-500/30 text-yellow-200 text-ds-body-sm text-left">
+              <div className="mb-4 p-3 rounded-lg bg-warning/20 border border-warning/40 text-warning text-ds-body-sm text-left">
                 <p className="font-semibold mb-1">Suggerimenti:</p>
                 <ul className="list-disc list-inside space-y-1">
                   {submitResult.warnings.map((w, i) => (
@@ -555,7 +555,7 @@ export default function CreaPage() {
               <Link
                 href="/crea"
                 onClick={resetForm}
-                className="min-h-[44px] px-6 py-2.5 rounded-xl font-semibold text-ds-body-sm w-full bg-white/10 text-white hover:bg-white/20 transition-colors inline-flex items-center justify-center"
+                className="min-h-[44px] px-6 py-2.5 rounded-xl font-semibold text-ds-body-sm w-full bg-surface/80 text-fg hover:bg-surface transition-colors inline-flex items-center justify-center"
               >
                 Crea un altro evento
               </Link>
@@ -572,21 +572,21 @@ export default function CreaPage() {
         <Header />
         <main id="main-content" className="mx-auto max-w-md px-page-x py-page-y md:py-8">
           <div className="crea-page-box create-event-modal rounded-2xl p-6 text-center animate-in-fade-up">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
-              <svg className="w-8 h-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-danger/20 flex items-center justify-center">
+              <svg className="w-8 h-8 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <h1 className="text-ds-h2 font-bold text-white mb-2">Evento non approvato</h1>
-            <p className="text-ds-body text-white/80 mb-4">
+            <h1 className="text-ds-h2 font-bold text-fg mb-2">Evento non approvato</h1>
+            <p className="text-ds-body text-fg-muted mb-4">
               L&apos;evento non rispetta i criteri della piattaforma. Ecco cosa correggere:
             </p>
             {submitResult.errors && submitResult.errors.length > 0 && (
-              <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-left">
+              <div className="mb-6 p-4 rounded-lg bg-danger/15 border border-danger/40 text-left">
                 <ul className="space-y-2">
                   {submitResult.errors.map((err, i) => (
-                    <li key={i} className="flex items-start gap-2 text-ds-body-sm text-red-200">
-                      <span className="text-red-400 mt-0.5">•</span>
+                    <li key={i} className="flex items-start gap-2 text-ds-body-sm text-danger">
+                      <span className="text-danger mt-0.5">•</span>
                       <span>{err}</span>
                     </li>
                   ))}
@@ -603,7 +603,7 @@ export default function CreaPage() {
               </button>
               <Link
                 href="/discover"
-                className="min-h-[44px] px-6 py-2.5 rounded-xl font-semibold text-ds-body-sm w-full bg-white/10 text-white hover:bg-white/20 transition-colors inline-flex items-center justify-center"
+                className="min-h-[44px] px-6 py-2.5 rounded-xl font-semibold text-ds-body-sm w-full bg-surface/80 text-fg hover:bg-surface transition-colors inline-flex items-center justify-center"
               >
                 Torna agli eventi
               </Link>

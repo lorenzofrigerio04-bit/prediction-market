@@ -1,0 +1,1 @@
+export { type AdminGovernanceCompatibilityAdapter as GovernanceCompatibilityAdapter, type AdminGovernanceCompatibilityContext as GovernanceCompatibilityContext } from "./admin-governance-compatibility-adapter.js";

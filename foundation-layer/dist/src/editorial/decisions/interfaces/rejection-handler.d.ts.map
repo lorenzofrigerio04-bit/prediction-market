@@ -1,0 +1,1 @@
+{"version":3,"file":"rejection-handler.d.ts","sourceRoot":"","sources":["../../../../../src/editorial/decisions/interfaces/rejection-handler.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,iBAAiB,EAAE,MAAM,0CAA0C,CAAC;AAClF,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,mDAAmD,CAAC;AAEzF,MAAM,WAAW,gBAAgB;IAC/B,MAAM,CAAC,MAAM,EAAE,eAAe,EAAE,SAAS,EAAE,iBAAiB,GAAG,iBAAiB,CAAC;CAClF"}

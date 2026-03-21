@@ -79,13 +79,13 @@ export default function EventInRevisionModal({
   if (showTerms) {
     return (
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div className="bg-bg border border-white/10 rounded-2xl shadow-xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col">
+        <div className="bg-admin-bg border border-white/10 rounded-2xl shadow-xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col">
           <div className="flex items-center justify-between p-4 border-b border-white/10">
             <h2 className="text-ds-h2 font-bold text-fg">Termini e condizioni</h2>
             <button
               type="button"
               onClick={() => setShowTerms(false)}
-              className="p-2 rounded-xl text-fg-muted hover:text-fg hover:bg-white/10 transition-colors"
+              className="p-2 rounded-xl text-fg-muted hover:text-fg hover:bg-white/[0.08] transition-colors"
               aria-label="Chiudi"
             >
               <IconClose className="w-5 h-5" />
@@ -98,7 +98,7 @@ export default function EventInRevisionModal({
             <button
               type="button"
               onClick={() => setShowTerms(false)}
-              className="w-full py-3 rounded-xl font-semibold bg-white/10 text-white hover:bg-white/20 transition-colors"
+              className="w-full py-3 rounded-xl font-semibold bg-white/[0.08] text-fg hover:bg-white/[0.12] transition-colors"
             >
               Chiudi
             </button>
@@ -112,7 +112,7 @@ export default function EventInRevisionModal({
     return (
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div className="crea-page-box create-event-modal rounded-2xl p-6 max-w-md w-full text-center">
-          <p className="text-ds-body text-white/90 mb-6">
+          <p className="text-ds-body text-fg mb-6">
             Grazie! Ti avviseremo quando il tuo evento sarà approvato.
           </p>
           <button
@@ -130,19 +130,19 @@ export default function EventInRevisionModal({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="crea-page-box create-event-modal rounded-2xl p-6 sm:p-8 max-w-md w-full">
-        <h2 className="text-ds-h2 font-bold text-white mb-3 text-center">
+        <h2 className="text-ds-h2 font-bold text-fg mb-3 text-center">
           Evento in revisione
         </h2>
-        <p className="text-ds-body-sm text-white/85 text-center mb-6">
+        <p className="text-ds-body-sm text-fg-muted text-center mb-6">
           Il tuo evento è in revisione. Ti avviseremo appena verrà approvato.
         </p>
-        <p className="text-ds-body-sm text-white/80 mb-4">
+        <p className="text-ds-body-sm text-fg-muted mb-4">
           Lasciaci il tuo numero di telefono: ti avviseremo così non ti perderai il lancio dell&apos;evento!
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="crea-notify-phone" className="block text-ds-body-sm font-semibold text-white/90 mb-1.5">
+            <label htmlFor="crea-notify-phone" className="block text-ds-body-sm font-semibold text-fg mb-1.5">
               Numero di telefono
             </label>
             <input
@@ -151,7 +151,7 @@ export default function EventInRevisionModal({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="Es. +39 333 1234567"
-              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full px-4 py-3 rounded-xl bg-surface/85 border border-border/70 text-fg placeholder:text-fg-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
 
@@ -161,9 +161,9 @@ export default function EventInRevisionModal({
               type="checkbox"
               checked={acceptTerms}
               onChange={(e) => setAcceptTerms(e.target.checked)}
-              className="mt-1 w-5 h-5 rounded border-white/30 bg-white/10 text-primary focus:ring-primary"
+              className="mt-1 w-5 h-5 rounded border-border/70 bg-surface/85 text-primary focus:ring-primary"
             />
-            <label htmlFor="crea-accept-terms" className="text-ds-body-sm text-white/90">
+            <label htmlFor="crea-accept-terms" className="text-ds-body-sm text-fg">
               Accetto i{" "}
               <button
                 type="button"
@@ -176,14 +176,14 @@ export default function EventInRevisionModal({
           </div>
 
           {error && (
-            <p className="text-ds-body-sm text-red-400">{error}</p>
+            <p className="text-ds-body-sm text-danger">{error}</p>
           )}
 
           <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded-xl font-semibold bg-white/10 text-white hover:bg-white/20 transition-colors"
+              className="flex-1 py-3 rounded-xl font-semibold bg-surface/80 text-fg hover:bg-surface transition-colors"
             >
               Salta
             </button>

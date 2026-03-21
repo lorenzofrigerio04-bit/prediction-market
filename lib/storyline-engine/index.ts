@@ -17,6 +17,8 @@ export interface EligibleStoryline {
   clusterId: string;
   authorityType: 'OFFICIAL' | 'REPUTABLE';
   authorityHost: string;
+  /** Data di fetch più recente tra gli articoli del cluster (per preferenza notizie nuove) */
+  newestFetchedAt: Date;
 }
 
 export interface GetEligibleStorylinesParams {
@@ -144,6 +146,7 @@ export async function getEligibleStorylines(
     TOO_OLD: 0,
     NO_ARTICLES_IN_LOOKBACK: 0,
     AUTHORITY_NONE: 0,
+    ALREADY_PUBLISHED: 0,
   };
   const authorityCounts = { OFFICIAL: 0, REPUTABLE: 0, NONE: 0 };
   const unrecognizedHosts = new Map<string, number>();
@@ -218,6 +221,10 @@ export async function getEligibleStorylines(
       continue;
     }
 
+    const newestFetchedAt = relevantArticles.reduce(
+      (max, a) => (a.fetchedAt > max ? a.fetchedAt : max),
+      relevantArticles[0].fetchedAt
+    );
     eligible.push({
       id: cluster.id,
       momentum,
@@ -227,11 +234,37 @@ export async function getEligibleStorylines(
       clusterId: cluster.id,
       authorityType: authorityResult.type,
       authorityHost: authorityResult.host,
+      newestFetchedAt,
     });
   }
 
+  // Escludi storyline già usate per un evento pubblicato (stessa notizia = stesso cluster)
+  const publishedRows = await prisma.event.findMany({
+    where: { sourceStorylineId: { not: null } },
+    select: { sourceStorylineId: true },
+  });
+  const alreadyPublishedIds = new Set(
+    publishedRows.map((e) => e.sourceStorylineId).filter((id): id is string => id != null)
+  );
+  const beforeAlreadyPublished = eligible.length;
+  let eligibleNotPublished = eligible.filter((e) => !alreadyPublishedIds.has(e.clusterId));
+  exclusionReasons.ALREADY_PUBLISHED = beforeAlreadyPublished - eligibleNotPublished.length;
+
+  // Preferenza notizie "nuove" (fetch recente): se ci sono storyline con articoli fetched negli ultimi N min, usa solo quelle
+  const freshnessMinutes = parseInt(process.env.STORYLINE_FRESHNESS_MINUTES ?? '30', 10);
+  if (freshnessMinutes > 0) {
+    const freshCutoff = new Date(now.getTime() - freshnessMinutes * 60 * 1000);
+    const eligibleFresh = eligibleNotPublished.filter((e) => e.newestFetchedAt >= freshCutoff);
+    if (eligibleFresh.length > 0) {
+      eligibleNotPublished = eligibleFresh;
+      if (debug) {
+        console.log(`[Storyline Engine] Preferenza notizie nuove: ${eligibleNotPublished.length} storyline con fetch negli ultimi ${freshnessMinutes} min`);
+      }
+    }
+  }
+
   if (debug) {
-    console.log(`[Storyline Engine] ${eligible.length} eligible storylines after filtering`);
+    console.log(`[Storyline Engine] ${eligible.length} eligible after filters, ${eligibleNotPublished.length} after excluding already-published (${exclusionReasons.ALREADY_PUBLISHED} excluded)`);
     console.log(`[Storyline Engine] authority counts: OFFICIAL=${authorityCounts.OFFICIAL} REPUTABLE=${authorityCounts.REPUTABLE} NONE=${authorityCounts.NONE}`);
     const top20 = [...unrecognizedHosts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20);
     if (top20.length > 0) {
@@ -239,5 +272,5 @@ export async function getEligibleStorylines(
     }
   }
 
-  return { eligible, clustersLoadedCount, exclusionReasons };
+  return { eligible: eligibleNotPublished, clustersLoadedCount, exclusionReasons };
 }

@@ -1,9 +1,12 @@
+import dotenv from 'dotenv';
+dotenv.config();
+dotenv.config({ path: '.env.local', override: true });
+
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { DEFAULT_BADGES } from '../lib/badges';
 import { MISSION_TEMPLATES_SEED } from '../lib/missions/seed-templates';
-import { parseOutcomeDateFromText } from '../lib/event-generation/closes-at';
-import { getClosureRules } from '../lib/event-generation/config';
+import { parseOutcomeDateFromText, getClosureRules } from '../lib/event-utils';
 import { computeDedupKey } from '../lib/event-publishing/dedup';
 import { ensureAmmStateForEvent } from '../lib/amm/ensure-amm-state';
 import { getBParameterOrDefault } from '../lib/pricing/initialization';

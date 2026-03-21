@@ -1,0 +1,1 @@
+{"version":3,"file":"user-identity-reader.d.ts","sourceRoot":"","sources":["../../../../../src/platform-access/identities/interfaces/user-identity-reader.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,YAAY,EAAE,MAAM,qCAAqC,CAAC;AACxE,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,+CAA+C,CAAC;AAEpF,MAAM,WAAW,kBAAkB;IACjC,OAAO,CAAC,MAAM,EAAE,cAAc,GAAG,YAAY,GAAG,IAAI,CAAC;CACtD"}

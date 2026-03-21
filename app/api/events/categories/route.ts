@@ -1,24 +1,15 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { SPORT_CATEGORIES } from "@/lib/sport-categories";
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/events/categories
- * Restituisce l'elenco delle categorie distinte dagli eventi (esclusa solo News).
+ * Restituisce le categorie ammesse per la submission eventi (allineate al validator).
  */
 export async function GET() {
   try {
-    const rows = await prisma.event.findMany({
-      where: {
-        category: { not: "News" },
-      },
-      select: { category: true },
-      distinct: ["category"],
-      orderBy: { category: "asc" },
-    });
-
-    const categories = rows.map((r) => r.category).filter(Boolean);
+    const categories = [...SPORT_CATEGORIES];
     return NextResponse.json({ categories });
   } catch (error) {
     console.error("Error fetching categories:", error);

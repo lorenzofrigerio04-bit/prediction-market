@@ -88,14 +88,14 @@ export default function EditEventPage() {
 
   if (loadingData) {
     return (
-      <div className="min-h-screen bg-bg p-6 md:p-8 flex justify-center">
+      <div className="min-h-screen bg-admin-bg p-6 md:p-8 flex justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-bg text-fg p-6 md:p-8 max-w-3xl">
+    <div className="min-h-screen bg-admin-bg text-fg p-6 md:p-8 max-w-3xl">
       <div className="mb-8">
         <BackLink href="/admin" className="inline-flex items-center text-fg-muted hover:text-primary transition-colors mb-4">
           ← Indietro

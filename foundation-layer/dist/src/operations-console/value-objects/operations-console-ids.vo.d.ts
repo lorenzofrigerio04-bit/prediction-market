@@ -1,0 +1,22 @@
+import type { Branded } from "../../common/types/branded.js";
+export type QueuePanelViewId = Branded<string, "QueuePanelViewId">;
+export type CandidateListViewId = Branded<string, "CandidateListViewId">;
+export type CandidateDetailViewId = Branded<string, "CandidateDetailViewId">;
+export type ArtifactInspectionViewId = Branded<string, "ArtifactInspectionViewId">;
+export type AuditTimelineViewId = Branded<string, "AuditTimelineViewId">;
+export type ReadinessPanelViewId = Branded<string, "ReadinessPanelViewId">;
+export type ActionSurfaceId = Branded<string, "ActionSurfaceId">;
+export type ConsoleNavigationStateId = Branded<string, "ConsoleNavigationStateId">;
+export type PermissionAwareViewStateId = Branded<string, "PermissionAwareViewStateId">;
+export type OperationsConsoleCompatibilityResultId = Branded<string, "OperationsConsoleCompatibilityResultId">;
+export declare const createQueuePanelViewId: (value: string) => QueuePanelViewId;
+export declare const createCandidateListViewId: (value: string) => CandidateListViewId;
+export declare const createCandidateDetailViewId: (value: string) => CandidateDetailViewId;
+export declare const createArtifactInspectionViewId: (value: string) => ArtifactInspectionViewId;
+export declare const createAuditTimelineViewId: (value: string) => AuditTimelineViewId;
+export declare const createReadinessPanelViewId: (value: string) => ReadinessPanelViewId;
+export declare const createActionSurfaceId: (value: string) => ActionSurfaceId;
+export declare const createConsoleNavigationStateId: (value: string) => ConsoleNavigationStateId;
+export declare const createPermissionAwareViewStateId: (value: string) => PermissionAwareViewStateId;
+export declare const createOperationsConsoleCompatibilityResultId: (value: string) => OperationsConsoleCompatibilityResultId;
+//# sourceMappingURL=operations-console-ids.vo.d.ts.map

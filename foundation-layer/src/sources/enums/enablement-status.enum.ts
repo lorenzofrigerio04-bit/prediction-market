@@ -1,0 +1,6 @@
+export enum EnablementStatus {
+  ENABLED = "ENABLED",
+  DISABLED = "DISABLED",
+  RESTRICTED = "RESTRICTED",
+  EXPERIMENTAL = "EXPERIMENTAL",
+}

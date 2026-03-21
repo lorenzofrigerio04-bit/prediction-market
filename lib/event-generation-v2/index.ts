@@ -3,6 +3,9 @@
  * 
  * Questo modulo genera candidati eventi da storyline elegibili.
  * I candidati sono già verificati e pronti per scoring/dedup/publish.
+ *
+ * @deprecated Runtime migration in progress.
+ * Prefer `lib/event-gen-v2` + integration adapters for new integrations.
  */
 
 import { PrismaClient } from '@prisma/client';

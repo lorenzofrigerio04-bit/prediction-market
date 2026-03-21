@@ -1,0 +1,2 @@
+export { DeterministicEmergencyControlManager as DeterministicEmergencyStopManager } from "./deterministic-emergency-control-manager.js";
+//# sourceMappingURL=deterministic-emergency-stop-manager.js.map

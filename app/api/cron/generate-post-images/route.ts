@@ -12,8 +12,13 @@ const MAX_POSTS_PER_RUN = 5;
  * Richiede: GET o POST + header Authorization: Bearer <CRON_SECRET>.
  * Idempotente: generateEventImageForPost salta se il post ha già aiImageUrl.
  */
+const CRON_DISABLED_JSON = { error: "Cron automation disabled", code: "CRON_DISABLED" as const };
+
 async function handleGeneratePostImages(request: NextRequest) {
   try {
+    if (process.env.DISABLE_CRON_AUTOMATION === "true" || process.env.DISABLE_CRON_AUTOMATION === "1") {
+      return NextResponse.json(CRON_DISABLED_JSON, { status: 503 });
+    }
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET?.trim();
     const isProduction = process.env.VERCEL === "1";

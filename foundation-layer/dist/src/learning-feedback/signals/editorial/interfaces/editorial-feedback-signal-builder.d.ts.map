@@ -1,0 +1,1 @@
+{"version":3,"file":"editorial-feedback-signal-builder.d.ts","sourceRoot":"","sources":["../../../../../../src/learning-feedback/signals/editorial/interfaces/editorial-feedback-signal-builder.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,uBAAuB,EAAE,MAAM,iDAAiD,CAAC;AAE/F,MAAM,WAAW,8BAA8B;IAC7C,KAAK,CAAC,KAAK,EAAE,uBAAuB,GAAG,uBAAuB,CAAC;CAChE"}

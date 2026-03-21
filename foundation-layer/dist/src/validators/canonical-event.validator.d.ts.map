@@ -1,0 +1,1 @@
+{"version":3,"file":"canonical-event.validator.d.ts","sourceRoot":"","sources":["../../../src/validators/canonical-event.validator.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,uCAAuC,CAAC;AAC5E,OAAO,KAAK,EAAE,gBAAgB,EAAE,MAAM,yCAAyC,CAAC;AAEhF,OAAO,EAIL,KAAK,iBAAiB,EAEvB,MAAM,+BAA+B,CAAC;AAGvC,eAAO,MAAM,sBAAsB,GACjC,OAAO,cAAc,EACrB,UAAU,iBAAiB,KAC1B,gBAUF,CAAC"}

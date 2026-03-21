@@ -1,0 +1,22 @@
+import type { Branded } from "../../common/types/branded.js";
+export type ReviewQueueEntryId = Branded<string, "ReviewQueueEntryId">;
+export type EditorialReviewId = Branded<string, "EditorialReviewId">;
+export type ApprovalDecisionId = Branded<string, "ApprovalDecisionId">;
+export type RejectionDecisionId = Branded<string, "RejectionDecisionId">;
+export type ManualOverrideId = Branded<string, "ManualOverrideId">;
+export type AuditRecordId = Branded<string, "AuditRecordId">;
+export type RevisionRecordId = Branded<string, "RevisionRecordId">;
+export type PublicationReadyArtifactId = Branded<string, "PublicationReadyArtifactId">;
+export type ControlledStateTransitionId = Branded<string, "ControlledStateTransitionId">;
+export type EditorialActorId = Branded<string, "EditorialActorId">;
+export declare const createReviewQueueEntryId: (value: string) => ReviewQueueEntryId;
+export declare const createEditorialReviewId: (value: string) => EditorialReviewId;
+export declare const createApprovalDecisionId: (value: string) => ApprovalDecisionId;
+export declare const createRejectionDecisionId: (value: string) => RejectionDecisionId;
+export declare const createManualOverrideId: (value: string) => ManualOverrideId;
+export declare const createAuditRecordId: (value: string) => AuditRecordId;
+export declare const createRevisionRecordId: (value: string) => RevisionRecordId;
+export declare const createPublicationReadyArtifactId: (value: string) => PublicationReadyArtifactId;
+export declare const createControlledStateTransitionId: (value: string) => ControlledStateTransitionId;
+export declare const createEditorialActorId: (value: string) => EditorialActorId;
+//# sourceMappingURL=editorial-ids.vo.d.ts.map

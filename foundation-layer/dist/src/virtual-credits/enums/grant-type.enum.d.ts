@@ -1,0 +1,9 @@
+export declare enum GrantType {
+    WELCOME_BONUS = "WELCOME_BONUS",
+    ADMIN_AWARD = "ADMIN_AWARD",
+    PROMOTIONAL = "PROMOTIONAL",
+    RECOVERY = "RECOVERY",
+    MANUAL_COMPENSATION = "MANUAL_COMPENSATION",
+    SYSTEM_SEED = "SYSTEM_SEED"
+}
+//# sourceMappingURL=grant-type.enum.d.ts.map

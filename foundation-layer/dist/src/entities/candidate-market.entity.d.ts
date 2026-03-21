@@ -1,0 +1,32 @@
+import { MarketResolutionBasis } from "../enums/market-resolution-basis.enum.js";
+import { MarketType } from "../enums/market-type.enum.js";
+import type { CandidateMarketId } from "../value-objects/candidate-market-id.vo.js";
+import type { ClaimId } from "../value-objects/claim-id.vo.js";
+import type { ConfidenceScore } from "../value-objects/confidence-score.vo.js";
+import type { Description } from "../value-objects/description.vo.js";
+import type { EntityVersion } from "../value-objects/entity-version.vo.js";
+import type { EventId } from "../value-objects/event-id.vo.js";
+import type { ResolutionWindow } from "../value-objects/resolution-window.vo.js";
+import type { Slug } from "../value-objects/slug.vo.js";
+import type { Tag } from "../value-objects/tag.vo.js";
+import type { Title } from "../value-objects/title.vo.js";
+import type { MarketOutcome } from "./market-outcome.entity.js";
+export type CandidateMarket = Readonly<{
+    id: CandidateMarketId;
+    claimId: ClaimId;
+    canonicalEventId: EventId;
+    title: Title;
+    slug: Slug;
+    description: Description;
+    resolutionBasis: MarketResolutionBasis;
+    resolutionWindow: ResolutionWindow;
+    outcomes: readonly MarketOutcome[];
+    marketType: MarketType;
+    categories: readonly string[];
+    tags: readonly Tag[];
+    confidenceScore: ConfidenceScore;
+    draftNotes: string | null;
+    entityVersion: EntityVersion;
+}>;
+export declare const createCandidateMarket: (input: CandidateMarket) => CandidateMarket;
+//# sourceMappingURL=candidate-market.entity.d.ts.map

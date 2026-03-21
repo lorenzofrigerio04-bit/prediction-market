@@ -1,0 +1,63 @@
+export * from "./enums/user-type.enum.js";
+export * from "./enums/user-status.enum.js";
+export * from "./enums/workspace-type.enum.js";
+export * from "./enums/workspace-status.enum.js";
+export * from "./enums/role-scope-policy.enum.js";
+export * from "./enums/policy-status.enum.js";
+export * from "./enums/scope-type.enum.js";
+export * from "./enums/decision-status.enum.js";
+export * from "./enums/check-status.enum.js";
+export * from "./enums/action-key.enum.js";
+export * from "./enums/target-module.enum.js";
+
+export * from "./value-objects/platform-access-ids.vo.js";
+export * from "./value-objects/display-name.vo.js";
+export * from "./value-objects/workspace-key.vo.js";
+export * from "./value-objects/role-key.vo.js";
+export * from "./value-objects/policy-key.vo.js";
+export * from "./value-objects/action-permission.vo.js";
+export * from "./value-objects/blocking-reason.vo.js";
+export * from "./value-objects/module-scope.vo.js";
+export * from "./value-objects/entity-scope.vo.js";
+export * from "./value-objects/capability-flag-key.vo.js";
+export * from "./value-objects/governance-note.vo.js";
+export * from "./value-objects/version-tag.vo.js";
+
+export * from "./identities/entities/user-identity.entity.js";
+export * from "./identities/interfaces/user-identity-reader.js";
+export * from "./identities/implementations/deterministic-user-identity-reader.js";
+
+export * from "./workspaces/entities/workspace.entity.js";
+export * from "./workspaces/interfaces/workspace-reader.js";
+export * from "./workspaces/implementations/deterministic-workspace-reader.js";
+
+export * from "./roles/entities/role-definition.entity.js";
+export * from "./roles/entities/role-assignment.entity.js";
+export * from "./roles/interfaces/role-registry.js";
+export * from "./roles/interfaces/role-assignment-manager.js";
+export * from "./roles/implementations/deterministic-role-registry.js";
+export * from "./roles/implementations/deterministic-role-assignment-manager.js";
+
+export * from "./permissions/entities/permission-policy.entity.js";
+export * from "./permissions/interfaces/capability-policy-adapter.js";
+export * from "./permissions/interfaces/permission-evaluator.js";
+export * from "./permissions/implementations/deterministic-capability-policy-adapter.js";
+export * from "./permissions/implementations/deterministic-permission-evaluator.js";
+
+export * from "./scopes/entities/access-scope.entity.js";
+export * from "./scopes/interfaces/access-scope-resolver.js";
+export * from "./scopes/implementations/deterministic-access-scope-resolver.js";
+
+export * from "./authorization/entities/authorization-decision.entity.js";
+export * from "./authorization/entities/action-permission-check.entity.js";
+export * from "./authorization/interfaces/authorization-engine.js";
+export * from "./authorization/implementations/deterministic-authorization-engine.js";
+
+export * from "./capabilities/entities/admin-capability-flag.entity.js";
+
+export * from "./compatibility/interfaces/platform-compatibility-adapter.js";
+export * from "./compatibility/implementations/deterministic-platform-compatibility-adapter.js";
+export * from "./compatibility/entities/platform-action-compatibility.entity.js";
+
+export * from "./schemas/index.js";
+export * from "./validators/index.js";

@@ -2,16 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { priceYesMicros, SCALE } from "@/lib/amm/fixedPointLmsr";
 import { getEventProbability } from "@/lib/pricing/price-display";
+import { SPORT_CATEGORIES } from "@/lib/sport-categories";
 
-const CATEGORIES = [
-  "Sport",
-  "Politica",
-  "Tecnologia",
-  "Economia",
-  "Cultura",
-  "Scienza",
-  "Intrattenimento",
-];
+const CATEGORIES = [...SPORT_CATEGORIES];
 
 export async function GET() {
   try {

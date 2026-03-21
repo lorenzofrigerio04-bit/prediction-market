@@ -1,15 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { getHypeScore, rankByHypeAndItaly } from "./hype-scorer";
-import type { NewsCandidate } from "@/lib/event-sources/types";
+import { getHypeScore, rankByHypeAndItaly, type HypeCandidate } from "./hype-scorer";
 
 const recentPublishedAt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(); // 2h ago
 
 describe("getHypeScore", () => {
   it("returns higher score for recent news", () => {
     const old = new Date(Date.now() - 200 * 60 * 60 * 1000).toISOString();
-    const cRecent: NewsCandidate = {
-      title: "A",
-      snippet: "B",
+    const cRecent: HypeCandidate = {
       url: "https://reuters.com/a",
       sourceName: "Reuters",
       publishedAt: recentPublishedAt,
@@ -19,9 +16,7 @@ describe("getHypeScore", () => {
   });
 
   it("uses feedback sourceWeights when provided", () => {
-    const c: NewsCandidate = {
-      title: "A",
-      snippet: "B",
+    const c: HypeCandidate = {
       url: "https://reuters.com/article",
       sourceName: "Reuters",
       publishedAt: recentPublishedAt,
@@ -34,9 +29,7 @@ describe("getHypeScore", () => {
   });
 
   it("accepts custom recency/source weights", () => {
-    const c: NewsCandidate = {
-      title: "A",
-      snippet: "B",
+    const c: HypeCandidate = {
       url: "https://example.com/a",
       sourceName: "Example",
       publishedAt: recentPublishedAt,
@@ -50,24 +43,24 @@ describe("getHypeScore", () => {
 describe("rankByHypeAndItaly", () => {
   it("sorts by hype desc", () => {
     const old = new Date(Date.now() - 200 * 60 * 60 * 1000).toISOString();
-    const candidates: NewsCandidate[] = [
-      { title: "O", snippet: "", url: "https://x.com/o", sourceName: "X", publishedAt: old },
-      { title: "R", snippet: "", url: "https://y.com/r", sourceName: "Y", publishedAt: recentPublishedAt },
+    const candidates: HypeCandidate[] = [
+      { url: "https://x.com/o", sourceName: "X", publishedAt: old },
+      { url: "https://y.com/r", sourceName: "Y", publishedAt: recentPublishedAt },
     ];
     const ranked = rankByHypeAndItaly(candidates, { boostItaly: false });
-    expect(ranked[0].title).toBe("R");
+    expect(ranked[0].url).toContain("y.com");
   });
 
   it("prioritizes high-performing sources when sourceWeights provided", () => {
     const sameTime = recentPublishedAt;
-    const candidates: NewsCandidate[] = [
-      { title: "Low", snippet: "", url: "https://low-performer.com/a", sourceName: "Low", publishedAt: sameTime },
-      { title: "High", snippet: "", url: "https://high-performer.com/b", sourceName: "High", publishedAt: sameTime },
+    const candidates: HypeCandidate[] = [
+      { url: "https://low-performer.com/a", sourceName: "Low", publishedAt: sameTime },
+      { url: "https://high-performer.com/b", sourceName: "High", publishedAt: sameTime },
     ];
     const ranked = rankByHypeAndItaly(candidates, {
       boostItaly: false,
       sourceWeights: { "low-performer.com": 0.5, "high-performer.com": 1 },
     });
-    expect(ranked[0].title).toBe("High");
+    expect(ranked[0].url).toContain("high-performer");
   });
 });

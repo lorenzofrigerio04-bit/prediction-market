@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPostType } from "@/lib/feed/post-type";
-import { generateEventImageForPost } from "@/lib/ai-image-generation/generate";
 import { createNotification } from "@/lib/notifications/create";
 import { NotificationType } from "@/lib/notifications/types";
 
@@ -80,34 +79,6 @@ export async function POST(request: NextRequest) {
         aiImageUrl: type === "AI_IMAGE" ? null : undefined,
       },
     });
-
-    if (type === "AI_IMAGE") {
-      const isDev =
-        process.env.NODE_ENV === "development" || !process.env.VERCEL;
-      if (isDev) {
-        generateEventImageForPost(post.id).catch((err) =>
-          console.error("[POST /api/posts] generateEventImageForPost failed:", err)
-        );
-      } else {
-        const baseUrl =
-          process.env.NEXTAUTH_URL ||
-          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
-        if (baseUrl) {
-          const url = `${baseUrl.replace(/\/$/, "")}/api/ai/generate-event-image`;
-          fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ postId: post.id }),
-          }).catch((err) =>
-            console.error("[POST /api/posts] background image trigger failed:", err)
-          );
-        } else {
-          generateEventImageForPost(post.id).catch((err) =>
-            console.error("[POST /api/posts] generateEventImageForPost failed:", err)
-          );
-        }
-      }
-    }
 
     if (source === "REPOST") {
       const previousPublishers = await prisma.post.findMany({

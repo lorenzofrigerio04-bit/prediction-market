@@ -1,0 +1,13 @@
+export declare enum EventCategory {
+    POLITICS = "POLITICS",
+    ECONOMICS = "ECONOMICS",
+    CRYPTO = "CRYPTO",
+    SPORTS = "SPORTS",
+    ENTERTAINMENT = "ENTERTAINMENT",
+    TECH = "TECH",
+    LAW = "LAW",
+    WEATHER = "WEATHER",
+    SCIENCE = "SCIENCE",
+    GENERAL = "GENERAL"
+}
+//# sourceMappingURL=event-category.enum.d.ts.map

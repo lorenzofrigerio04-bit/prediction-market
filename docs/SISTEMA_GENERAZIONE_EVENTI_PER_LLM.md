@@ -177,9 +177,9 @@ Se `computeClosesAt` restituisce `ok: false`, l’evento generato per quel candi
 
 ### 9.2 POST /api/admin/run-generate-events
 
-- **Auth:** solo admin (`requireAdmin`).
-- **Body:** opzionale `{ maxTotal }` (1–20, default 10).
-- **Logica:** esegue `runPipeline` con limit 60, maxPerCategory 5, maxTotal dal body. Se **candidatesCount === 0 e created === 0**, riesegue la pipeline con `candidatesOverride: FALLBACK_CANDIDATES` e `verificationConfig: getFallbackVerificationConfig()` (così in assenza di notizie si usano comunque eventi di esempio con date future).
+- **Auth:** admin con capability `pipeline:run` (`requireAdminCapability("pipeline:run")`).
+- **Body:** opzionale `{ maxTotal?: number }` (range valido 1–50). Se presente, limita il numero di eventi creati in quella run (passato alla selezione come `maxNewPerRun`). Se assente, la pipeline usa la sua logica di default.
+- **Logica:** esegue `runEventGenV2Pipeline(prisma, now, dryRun: false, maxTotal?)`. Nessun fallback su candidati di esempio; path unico Event Gen v2 (storyline, trend o discovery-backed). Vedi `docs/OPERATIONS_COCKPIT.md` per dettagli.
 
 ---
 

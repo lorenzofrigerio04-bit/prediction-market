@@ -85,7 +85,7 @@ export default function AdminResolvePage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-fg p-6 md:p-8 max-w-5xl">
+    <div className="min-h-screen bg-admin-bg text-fg p-6 md:p-8 max-w-5xl">
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-fg">
           Risoluzione eventi

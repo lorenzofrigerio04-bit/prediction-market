@@ -1,0 +1,1 @@
+{"version":3,"file":"recommendation-builder.d.ts","sourceRoot":"","sources":["../../../../../src/learning-feedback/recommendations/interfaces/recommendation-builder.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,iBAAiB,EAAE,MAAM,0CAA0C,CAAC;AAElF,MAAM,WAAW,qBAAqB;IACpC,KAAK,CAAC,KAAK,EAAE,iBAAiB,GAAG,iBAAiB,CAAC;CACpD"}

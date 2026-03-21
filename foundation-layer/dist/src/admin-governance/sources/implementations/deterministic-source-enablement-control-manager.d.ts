@@ -1,0 +1,2 @@
+export { DeterministicGovernanceSourceRegistry as DeterministicSourceEnablementControlManager } from "./deterministic-governance-source-registry.js";
+//# sourceMappingURL=deterministic-source-enablement-control-manager.d.ts.map

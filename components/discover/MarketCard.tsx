@@ -2,8 +2,8 @@
 
 import { memo, useState, useEffect } from "react";
 import Link from "next/link";
-import { getCategoryIcon } from "@/lib/category-icons";
 import { IconClock, IconArrowRight } from "@/components/ui/Icons";
+import { OddsBadge } from "@/components/events/OddsBadge";
 import { getEventProbability } from "@/lib/pricing/price-display";
 
 export interface MarketCardEvent {
@@ -74,20 +74,14 @@ function MarketCard({ event, index = 0 }: MarketCardProps) {
         className="relative overflow-hidden rounded-2xl md:rounded-3xl box-raised hover-lift p-4 md:p-5 h-full flex flex-col transition-all duration-300 ease-out animate-feed-in opacity-0"
         style={{ animationDelay: `${Math.min(index * 60, 360)}ms` }}
       >
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <span className="inline-flex items-center gap-1.5 shrink-0 min-w-0 px-2.5 py-1 rounded-xl text-ds-caption font-semibold bg-surface/80 text-text-secondary border border-border dark:border-white/10">
-          <span className="text-primary shrink-0 [&>svg]:shrink-0">
-            {getCategoryIcon(event.category)}
-          </span>
-          <span className="truncate">{event.category}</span>
-        </span>
+      <div className="flex items-center justify-end gap-2 mb-3">
         <span
-          className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-ds-caption font-bold font-numeric ${
+          className={`shrink-0 inline-flex items-center gap-1.5 text-ds-caption font-bold font-numeric ${
             timeUntilClose <= 0
-              ? "bg-surface/80 text-text-muted border border-border dark:border-white/10"
+              ? "text-text-muted"
               : isUrgent
-                ? "bg-warning-bg/90 text-warning border border-warning/30 dark:bg-warning-bg/50 dark:text-warning dark:border-warning/40"
-                : "bg-surface/80 text-text-secondary border border-border dark:border-white/10"
+                ? "text-warning"
+                : "text-text-secondary"
           }`}
         >
           <IconClock className="w-3.5 h-3.5" />
@@ -95,9 +89,11 @@ function MarketCard({ event, index = 0 }: MarketCardProps) {
         </span>
       </div>
 
-      <h3 className="text-ds-h3 font-bold text-fg leading-snug line-clamp-2 mb-4 flex-grow group-hover:text-primary transition-colors tracking-title">
+      <h3 className="text-ds-h3 font-bold text-fg leading-snug line-clamp-2 mb-3 flex-grow group-hover:text-primary transition-colors tracking-title">
         {event.title}
       </h3>
+
+      <OddsBadge eventId={event.id} className="mb-4" />
 
       {/* Mini-grafico SI/NO + percentuali community */}
       <div className="mb-4">

@@ -43,3 +43,6 @@ next-env.d.ts
 # dump migrazione (non committare)
 *.bak
 neon-*.bak
+
+# backup (markets:purge)
+backups/

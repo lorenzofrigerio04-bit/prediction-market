@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -9,15 +9,16 @@ import { PredictionMasterLogoCompact } from "./PredictionMasterMark";
 import {
   IconMenu,
   IconNavHome,
-  IconNavDiscover,
+  IconNavSport,
+  IconNavExchange,
   IconBell,
   IconUser,
 } from "@/components/ui/Icons";
 
-// Bottom bar: Home, Lente, [Crystal Ball center], Campanella, Profilo
+// Bottom bar: Home, Sport, Exchange, Notifiche, Profilo
 const BOTTOM_NAV_LEFT = [
   { href: "/", label: "Home", NavIcon: IconNavHome },
-  { href: "/discover", label: "Post", NavIcon: IconNavDiscover },
+  { href: "/sport", label: "Sport", NavIcon: IconNavSport },
 ] as const;
 const BOTTOM_NAV_RIGHT = [
   { href: "/notifications", label: "Notifiche", NavIcon: IconBell },
@@ -25,42 +26,24 @@ const BOTTOM_NAV_RIGHT = [
 ] as const;
 
 const bottomLinkClass =
-  "flex flex-col items-center justify-center gap-0.5 min-w-[44px] min-h-[44px] rounded-xl transition-colors duration-200 touch-manipulation active:scale-[0.97]";
+  "flex flex-col items-center justify-center gap-1 min-w-[52px] min-h-[52px] py-1.5 rounded-xl transition-colors duration-200 touch-manipulation active:scale-[0.97] opacity-100";
 
 const SCROLL_TOP_THRESHOLD = 16;
-const SCROLL_HIDE_THRESHOLD = 60;
-
 export default function Header() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [headerVisible, setHeaderVisible] = useState(true);
   const [scrolled, setScrolled] = useState(false);
-  const lastScrollY = useRef(0);
 
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = typeof window !== "undefined" ? window.scrollY : 0;
       setScrolled(scrollY > SCROLL_TOP_THRESHOLD);
-      if (scrollY < SCROLL_TOP_THRESHOLD) {
-        setHeaderVisible(true);
-      } else if (scrollY > lastScrollY.current && scrollY > SCROLL_HIDE_THRESHOLD) {
-        setHeaderVisible(false);
-      } else if (scrollY < lastScrollY.current) {
-        setHeaderVisible(true);
-      }
-      lastScrollY.current = scrollY;
     };
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  // Al ritorno sulla home (o su qualsiasi sezione) mostra sempre header e nav,
-  // così le icone non spariscono dopo navigazione + ripristino scroll
-  useEffect(() => {
-    setHeaderVisible(true);
-  }, [pathname]);
 
   const isActive = (path: string) =>
     pathname === path || (path !== "/" && pathname.startsWith(path));
@@ -71,60 +54,37 @@ export default function Header() {
   const notificationsHref = session
     ? "/notifications"
     : `/auth/login?callbackUrl=${encodeURIComponent("/notifications")}`;
-  const oracleHref = session
-    ? "/oracle"
-    : `/auth/login?callbackUrl=${encodeURIComponent("/oracle")}`;
 
   return (
     <>
+      {/* Label sempre visibili anche con cache: selettore univoco data-nav-label */}
+      <style dangerouslySetInnerHTML={{
+        __html: `[data-nav-label]{display:block!important;visibility:visible!important;opacity:1!important;color:#fff!important;-webkit-text-fill-color:#fff!important;font-size:10px!important;line-height:1.2!important;min-height:14px!important;}.nav-bottom-neon .nav-bottom-neon-inner a svg{opacity:1!important;color:#fff!important;}`,
+      }} />
       <header
         className={`header-neon fixed top-0 left-0 right-0 z-40 transition-[transform,background,backdrop-filter,border-color] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform ${
           scrolled ? "header-neon-scrolled" : ""
-        } ${
-          headerVisible ? "translate-y-0" : "-translate-y-full"
         }`}
         style={{ paddingTop: "var(--safe-area-inset-top)" }}
       >
         <div className="mx-auto px-4 max-w-7xl">
-          <div className="flex items-center justify-between h-14 md:h-16 relative">
-            {/* Sinistra: hamburger menu (tre stanghette) */}
-            <div className="flex-shrink-0 w-12 flex items-center justify-start">
+          <div className="flex items-center justify-between h-14 md:h-16">
+            {/* Sinistra: PredictionMaster */}
+            <div className="flex h-full min-w-0 items-center">
+              <PredictionMasterLogoCompact />
+            </div>
+
+            {/* Destra: hamburger menu (al posto del profilo) */}
+            <div className="flex-shrink-0 w-12 flex items-center justify-end">
               <button
                 type="button"
                 onClick={() => setDrawerOpen(true)}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-fg-muted hover:text-fg hover:bg-white/10 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg touch-manipulation active:scale-[0.96]"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-fg-muted hover:text-fg hover:bg-surface/70 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg touch-manipulation active:scale-[0.96]"
                 aria-label="Apri menu"
                 aria-expanded={drawerOpen}
               >
                 <IconMenu className="w-6 h-6" />
               </button>
-            </div>
-
-            {/* Centro: P.m. logo stile X */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <PredictionMasterLogoCompact />
-            </div>
-
-            {/* Destra: immagine profilo in cerchio */}
-            <div className="flex-shrink-0 w-12 flex items-center justify-end">
-              <Link
-                href={profileHref}
-                className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-white/20 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg active:scale-[0.96]"
-                aria-label={session ? "Vai al profilo" : "Accedi"}
-              >
-                {session?.user?.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={session.user.image}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="w-full h-full flex items-center justify-center bg-white/10 text-fg-muted">
-                    <IconUser className="w-5 h-5" />
-                  </span>
-                )}
-              </Link>
             </div>
           </div>
         </div>
@@ -136,15 +96,13 @@ export default function Header() {
         aria-hidden
       />
 
-      {/* Bottom nav mobile: Apple/X style, sfera cristallo centrale a scomparsa */}
+      {/* Bottom nav: Home, Sport, Exchange, Notifiche, Profilo (visibile su mobile e desktop) */}
       <nav
-        className={`nav-bottom-neon md:hidden transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform ${
-          headerVisible ? "translate-y-0" : "translate-y-full"
-        }`}
+        className="nav-bottom-neon transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform translate-y-0"
         aria-label="Navigazione principale"
       >
         <div className="nav-bottom-neon-inner flex items-center justify-between px-3 relative z-[1]">
-          {/* Sinistra: Home, Lente */}
+          {/* Sinistra: Home, Sport — icona + label, icona sempre visibile */}
           <div className="flex items-center justify-center gap-2 flex-1 min-w-0">
             {BOTTOM_NAV_LEFT.map(({ href, label, NavIcon }) => {
               const active = isActive(href);
@@ -152,59 +110,45 @@ export default function Header() {
                 <Link
                   key={href}
                   href={href}
-                  className={`${bottomLinkClass} ${
-                    active ? "nav-item-neon-active" : "opacity-90 hover:opacity-100"
-                  }`}
+                  className={`${bottomLinkClass} ${active ? "nav-item-neon-active" : ""}`}
                   aria-label={label}
                 >
-                  <NavIcon className="w-6 h-6 shrink-0" strokeWidth={1.8} />
+                  <span className="inline-flex shrink-0 overflow-visible items-center justify-center w-6 h-6 min-w-[24px] min-h-[24px] aspect-square">
+                    <NavIcon className="w-6 h-6 min-w-[24px] min-h-[24px] flex-shrink-0 aspect-square" strokeWidth={1.8} />
+                  </span>
+                  <span className="nav-bottom-label shrink-0 opacity-100" data-nav-label style={{ display: 'block', visibility: 'visible', opacity: 1, color: '#ffffff', fontSize: 10, lineHeight: 1.2 }}>{label}</span>
                 </Link>
               );
             })}
           </div>
 
-          {/* Spacer centro per la sfera (la sfera è position absolute, 48px) */}
-          <div className="w-[52px] shrink-0" aria-hidden />
+          {/* Centro: Exchange — icona + label */}
+          <div className="flex items-center justify-center shrink-0">
+            <Link
+              href="/exchange"
+              className={`${bottomLinkClass} ${isActive("/exchange") ? "nav-item-neon-active" : ""}`}
+              aria-label="Exchange"
+            >
+              <IconNavExchange className="w-6 h-6 shrink-0 flex-shrink-0" strokeWidth={1.8} />
+              <span className="nav-bottom-label shrink-0 opacity-100" data-nav-label style={{ display: 'block', visibility: 'visible', opacity: 1, color: '#ffffff', fontSize: 10, lineHeight: 1.2 }}>Exchange</span>
+            </Link>
+          </div>
 
-          {/* Centro: sfera cristallo grossa, mezza luna sul contorno */}
-          <Link
-            href={oracleHref}
-            className="nav-crystal-ball block touch-manipulation active:scale-[0.98] transition-transform duration-200"
-            aria-label="Oracle Assistant"
-          />
-
-          {/* Destra: Campanella, Profilo */}
+          {/* Destra: Notifiche, Profilo — sempre icona + label */}
           <div className="flex items-center justify-center gap-2 flex-1 min-w-0">
             {BOTTOM_NAV_RIGHT.map(({ href, label, NavIcon }) => {
               const linkHref =
                 href === "/profile" ? profileHref : href === "/notifications" ? notificationsHref : href;
               const active = isActive(linkHref);
-              const isProfile = href === "/profile";
               return (
                 <Link
                   key={href}
                   href={linkHref}
-                  className={`${bottomLinkClass} ${
-                    active ? "nav-item-neon-active" : "opacity-90 hover:opacity-100"
-                  }`}
+                  className={`${bottomLinkClass} ${active ? "nav-item-neon-active" : ""}`}
                   aria-label={label}
                 >
-                  {isProfile && session?.user?.image ? (
-                    <span
-                      className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center shrink-0 ring-2 ${
-                        active ? "ring-primary" : "ring-transparent"
-                      }`}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={session.user.image}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    </span>
-                  ) : (
-                    <NavIcon className="w-6 h-6 shrink-0" strokeWidth={1.8} />
-                  )}
+                  <NavIcon className="w-6 h-6 shrink-0 flex-shrink-0" strokeWidth={1.8} />
+                  <span className="nav-bottom-label shrink-0 opacity-100" data-nav-label style={{ display: 'block', visibility: 'visible', opacity: 1, color: '#ffffff', fontSize: 10, lineHeight: 1.2 }}>{label}</span>
                 </Link>
               );
             })}

@@ -127,7 +127,7 @@ export default function CreateEventPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-fg p-6 md:p-8 max-w-3xl">
+    <div className="min-h-screen bg-admin-bg text-fg p-6 md:p-8 max-w-3xl">
         {/* Header */}
         <div className="mb-8">
           <BackLink
@@ -302,7 +302,7 @@ export default function CreateEventPage() {
               aria-labelledby="date-modal-title"
             >
               <div
-                className="bg-bg border border-border dark:border-white/10 rounded-2xl shadow-xl w-full max-w-md overflow-hidden"
+                className="bg-admin-bg border border-border dark:border-white/10 rounded-2xl shadow-xl w-full max-w-md overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="p-4 border-b border-border dark:border-white/10 flex items-center justify-between">

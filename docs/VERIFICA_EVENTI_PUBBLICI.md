@@ -20,6 +20,16 @@
 
 ---
 
+## Home e Esplora mostrano solo eventi con sourceType = NEWS
+
+Le API `/api/feed/home`, `/api/events`, `/api/feed/home-unified` ecc. filtrano per **`sourceType: "NEWS"`**. Solo gli eventi creati dalla pipeline **event-gen-v2** (discovery-backed o publishSelectedV2) hanno questo valore e compaiono in Home e in Esplora.
+
+- **Per generare eventi visibili:** imposta **`USE_DISCOVERY_BACKED_PIPELINE=true`** in `.env` o `.env.local`. Poi lancia "Generazione eventi" dall’admin (o il cron): la pipeline userà le fonti discovery (ANSA, AGI, ISTAT, ecc.) e creerà eventi con `sourceType=NEWS`.
+- Se `USE_DISCOVERY_BACKED_PIPELINE` non è `true`, la pipeline usa storyline/trend che spesso producono 0 lead → 0 eventi creati.
+- **Diagnostica:** `npx tsx scripts/check-events-visibility.ts` mostra quanti eventi in DB hanno `sourceType=NEWS` (quelli visibili in Home/Esplora).
+
+---
+
 ## Perché potresti non vedere nulla
 
 Se stai guardando il **sito deployato** (es. `https://xxx.vercel.app`):

@@ -120,6 +120,31 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+// Event Gen v2.0: run-level audit for pipeline metrics and dashboards
+model PipelineRun {
+  id                    String    @id @default(cuid())
+  runId                 String    @unique @map("run_id")
+  startedAt             DateTime  @default(now()) @map("started_at")
+  completedAt           DateTime? @map("completed_at")
+  dryRun                Boolean   @default(false) @map("dry_run")
+  source                String // "storyline" | "trend"
+  eligibleCount         Int       @map("eligible_count")
+  candidatesCount       Int       @map("candidates_count")
+  rulebookValidCount    Int       @map("rulebook_valid_count")
+  rulebookRejectedCount Int       @map("rulebook_rejected_count")
+  dedupedCount          Int       @map("deduped_count")
+  selectedCount         Int       @map("selected_count")
+  createdCount          Int       @map("created_count")
+  skippedCount          Int       @map("skipped_count")
+  reasonsCount          Json?     @map("reasons_count")
+  eventIds              String[]  @map("event_ids")
+  avgQualityScore       Float?     @map("avg_quality_score")
+  errorMessage          String?   @map("error_message")
+
+  @@index([startedAt])
+  @@map("pipeline_runs")
+}
+
 model EventSubmission {
   id               String    @id @default(cuid())
   title            String
@@ -177,11 +202,49 @@ model Event {
   dedupKey              String    @unique // Chiave deterministica per deduplicazione (obbligatorio)
   resolutionAuthorityHost String? // Host della fonte di risoluzione (es. "www.governo.it")
   resolutionAuthorityType String? // OFFICIAL | REPUTABLE
-  resolutionCriteriaYes  String?  // Criterio formale per risoluzione YES
-  resolutionCriteriaNo   String?  // Criterio formale per risoluzione NO
+  resolutionCriteriaYes  String?  // Criterio formale per risoluzione YES (binario/threshold)
+  resolutionCriteriaNo   String?  // Criterio formale per risoluzione NO (binario/threshold)
+  // Tipi di mercato: BINARY | MULTIPLE_CHOICE | SCALAR | RANGE | THRESHOLD | LADDER | TIME_TO_EVENT | COUNT_VOLUME | RANKING
+  marketType             String   @default("BINARY") @map("market_type")
+  // Per MULTIPLE_CHOICE, RANGE, TIME_TO_EVENT, COUNT_VOLUME, RANKING: [{ "key": "id", "label": "Etichetta" }]
+  outcomes               Json?    @map("outcomes")
+  // Per SCALAR: { "min": number, "max": number, "unit": string }
+  scalarConfig           Json?    @map("scalar_config")
   sourceStorylineId      String?  // ID della storyline sorgente (da BLOCCO 3)
   templateId             String?   // ID del template usato per generazione
   tradingMode            String    @default("AMM") @map("trading_mode") // Solo AMM (Polymarket-style)
+  // Rulebook: unique market ID format PM-YYYY-NNNNN
+  marketId               String?   @unique @map("market_id")
+  // Eventi da The Odds API (affiliate/comparatore)
+  sourceType             String?   @map("source_type") // ODDS_API | FREE | NEWS
+  oddsApiEventId         String?   @map("odds_api_event_id") // ID evento The Odds API per dedup
+  // football-data.org: ID partita per calendario e risoluzione automatica
+  footballDataMatchId    Int?      @map("football_data_match_id")
+  matchStatus            String?   @map("match_status") // SCHEDULED | IN_PLAY | PAUSED | FINISHED (da API)
+  bestBookmakerKey       String?   @map("best_bookmaker_key")
+  bestBookmakerTitle     String?   @map("best_bookmaker_title")
+  bestYesOdds            Float?    @map("best_yes_odds")
+  bestNoOdds             Float?    @map("best_no_odds")
+  // Event Gen v2.0: timezone, resolution sources, generation metadata, image assets
+  timezone                    String    @default("Europe/Rome")
+  resolutionSourceSecondary   String?   @map("resolution_source_secondary")
+  resolutionSourceTertiary    String?   @map("resolution_source_tertiary")
+  resolutionCriteria          String?   @db.Text @map("resolution_criteria")
+  edgeCasePolicyRef           String?   @map("edge_case_policy_ref")
+  generatorVersion            String?   @map("generator_version")
+  generationScores            Json?     @map("generation_scores")
+  creationMetadata            Json?     @map("creation_metadata")
+  imageUrl                    String?   @map("image_url")
+  imagePrompt                 String?   @db.Text @map("image_prompt")
+  imageStyle                  String?   @map("image_style")
+  imageSeedOrRequestId        String?   @map("image_seed_or_request_id")
+  imageAltText                String?   @map("image_alt_text")
+  imageGenerationStatus       String    @default("PENDING") @map("image_generation_status")
+  imageProvider               String?   @map("image_provider")
+  imageVersion                String?   @map("image_version")
+  imageBrief                  Json?     @map("image_brief")
+  imageProviderMetadata       Json?     @map("image_provider_metadata")
+  hidden                      Boolean   @default(false) // nascosto dalla piattaforma (solo admin)
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @default(now()) @updatedAt
 
@@ -204,6 +267,12 @@ model Event {
   @@index([dedupKey])
   @@index([sourceStorylineId])
   @@index([tradingMode])
+  @@index([sourceType])
+  @@index([oddsApiEventId])
+  @@index([imageGenerationStatus])
+  @@index([generatorVersion])
+  @@index([hidden])
+  @@index([marketType])
   @@map("events")
 }
 

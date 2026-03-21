@@ -1,0 +1,7 @@
+export enum ConsumptionStatus {
+  PENDING = "PENDING",
+  RESERVED = "RESERVED",
+  COMPLETED = "COMPLETED",
+  REJECTED = "REJECTED",
+  REVERSED = "REVERSED",
+}

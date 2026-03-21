@@ -1,0 +1,35 @@
+import { EventCategory } from "../enums/event-category.enum.js";
+import { EventPriority } from "../enums/event-priority.enum.js";
+import { EventStatus } from "../enums/event-status.enum.js";
+import type { ConfidenceScore } from "../value-objects/confidence-score.vo.js";
+import type { Description } from "../value-objects/description.vo.js";
+import type { EntityVersion } from "../value-objects/entity-version.vo.js";
+import type { EventId } from "../value-objects/event-id.vo.js";
+import type { ResolutionWindow } from "../value-objects/resolution-window.vo.js";
+import type { SourceId } from "../value-objects/source-id.vo.js";
+import type { Slug } from "../value-objects/slug.vo.js";
+import type { Tag } from "../value-objects/tag.vo.js";
+import type { Timestamp } from "../value-objects/timestamp.vo.js";
+import type { Title } from "../value-objects/title.vo.js";
+export type CanonicalEvent = Readonly<{
+    id: EventId;
+    title: Title;
+    slug: Slug;
+    description: Description;
+    category: EventCategory;
+    priority: EventPriority;
+    status: EventStatus;
+    occurredAt: Timestamp | null;
+    firstObservedAt: Timestamp;
+    lastUpdatedAt: Timestamp;
+    jurisdictions: readonly string[];
+    involvedEntities: readonly string[];
+    supportingSourceRecordIds: readonly SourceId[];
+    supportingSignalIds: readonly EventId[];
+    tags: readonly Tag[];
+    confidenceScore: ConfidenceScore;
+    resolutionWindow: ResolutionWindow | null;
+    entityVersion: EntityVersion;
+}>;
+export declare const createCanonicalEvent: (input: CanonicalEvent) => CanonicalEvent;
+//# sourceMappingURL=canonical-event.entity.d.ts.map

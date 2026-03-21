@@ -70,7 +70,7 @@ export default function HomeCarouselBox({
         </Link>
       </div>
       {loading ? (
-        <LoadingBlock message="Caricamento…" />
+        <LoadingBlock message="Caricamento…" fullscreen={false} />
       ) : events.length === 0 ? (
         <p className="py-4 text-ds-body-sm text-fg-muted">Nessun evento al momento.</p>
       ) : (

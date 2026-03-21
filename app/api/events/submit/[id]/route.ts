@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { validateEventSubmission } from "@/lib/event-submission/validate";
+import { toCandidateDraftContract } from "@/lib/integration/adapters/candidate-submission-adapter";
 
 /** GET: solo l'autore può leggere la propria submission (solo se PENDING). */
 export async function GET(
@@ -85,12 +86,19 @@ export async function PATCH(
       return NextResponse.json({ error: "La data di chiusura è obbligatoria." }, { status: 400 });
     }
     const closesAtDate = new Date(closesAt);
-    const validation = await validateEventSubmission({
-      title: title.trim(),
-      description: description?.trim() || null,
-      category: category.trim(),
+    const candidateDraft = toCandidateDraftContract({
+      title,
+      description,
+      category,
       closesAt: closesAtDate,
-      resolutionSource: resolutionSource?.trim() || null,
+      resolutionSource,
+    });
+    const validation = await validateEventSubmission({
+      title: candidateDraft.title,
+      description: candidateDraft.description,
+      category: candidateDraft.category,
+      closesAt: candidateDraft.closesAt,
+      resolutionSource: candidateDraft.resolutionSourceUrl,
     });
     const categoryToSave = validation.valid ? validation.normalizedCategory! : category.trim();
     const reviewNotesToSave =
@@ -100,11 +108,11 @@ export async function PATCH(
     await prisma.eventSubmission.update({
       where: { id: submissionId },
       data: {
-        title: title.trim(),
-        description: description?.trim() || null,
+        title: candidateDraft.title,
+        description: candidateDraft.description,
         category: categoryToSave,
-        closesAt: closesAtDate,
-        resolutionSource: resolutionSource?.trim() || null,
+        closesAt: candidateDraft.closesAt,
+        resolutionSource: candidateDraft.resolutionSourceUrl,
         reviewNotes: reviewNotesToSave,
       },
     });

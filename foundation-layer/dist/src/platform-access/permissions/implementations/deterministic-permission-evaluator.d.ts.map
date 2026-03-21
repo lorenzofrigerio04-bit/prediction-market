@@ -1,0 +1,1 @@
+{"version":3,"file":"deterministic-permission-evaluator.d.ts","sourceRoot":"","sources":["../../../../../src/platform-access/permissions/implementations/deterministic-permission-evaluator.ts"],"names":[],"mappings":"AAEA,OAAO,KAAK,EAAE,mBAAmB,EAAE,yBAAyB,EAAE,0BAA0B,EAAE,MAAM,uCAAuC,CAAC;AAsCxI,qBAAa,gCAAiC,YAAW,mBAAmB;IAC1E,QAAQ,CAAC,KAAK,EAAE,yBAAyB,GAAG,0BAA0B;CAmBvE"}

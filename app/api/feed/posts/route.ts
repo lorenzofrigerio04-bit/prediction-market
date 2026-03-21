@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { SPORT_CATEGORY_FILTER } from "@/lib/sport-categories";
 
 export const dynamic = "force-dynamic";
 
@@ -29,10 +30,11 @@ export async function GET(request: NextRequest) {
     const offset = Math.max(0, parseInt(searchParams.get("offset") || "0", 10) || 0);
     const typeFilter = searchParams.get("type"); // "AI_IMAGE" = only photo-descriptive posts (eventi feed)
 
-    const where: { hidden: boolean; type?: "AI_IMAGE" } = { hidden: false };
+    const where: { hidden: boolean; type?: "AI_IMAGE"; event?: object } = { hidden: false };
     if (typeFilter === "AI_IMAGE") {
       where.type = "AI_IMAGE";
     }
+    where.event = { ...SPORT_CATEGORY_FILTER };
 
     const posts = await prisma.post.findMany({
       where,

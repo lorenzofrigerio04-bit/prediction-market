@@ -1,0 +1,7 @@
+export declare enum ComplianceFlag {
+    REVIEWED = "REVIEWED",
+    JURISDICTION_CHECKED = "JURISDICTION_CHECKED",
+    CONTENT_APPROVED = "CONTENT_APPROVED",
+    RESTRICTED_DISTRIBUTION = "RESTRICTED_DISTRIBUTION"
+}
+//# sourceMappingURL=compliance-flag.enum.d.ts.map

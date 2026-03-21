@@ -15,6 +15,9 @@ module.exports = {
         numeric: ['JetBrains Mono', 'ui-monospace', 'monospace'],
         stats: ['Orbitron', 'JetBrains Mono', 'ui-monospace', 'monospace'],
         levels: ['Bebas Neue', 'Oswald', 'system-ui', 'sans-serif'],
+        chubby: ['Nunito', 'Outfit', 'system-ui', 'sans-serif'],
+        /** Titoli mercato / dettaglio evento (vicino a Kalshi: sans condensata) */
+        kalshi: ['var(--font-kalshi-title)', 'Oswald', 'system-ui', 'sans-serif'],
       },
       letterSpacing: {
         'headline': '0.02em',
@@ -25,6 +28,7 @@ module.exports = {
       colors: {
         /* Backgrounds */
         bg: 'rgb(var(--bg) / <alpha-value>)',
+        'admin-bg': 'rgb(var(--admin-bg) / <alpha-value>)',
         'background-primary': 'rgb(var(--background-primary) / <alpha-value>)',
         'background-secondary': 'rgb(var(--background-secondary) / <alpha-value>)',
         surface: 'rgb(var(--surface) / <alpha-value>)',
@@ -39,6 +43,8 @@ module.exports = {
         primary: 'rgb(var(--primary) / <alpha-value>)',
         'primary-hover': 'rgb(var(--primary-hover) / <alpha-value>)',
         'primary-muted': 'rgb(var(--primary-muted) / <alpha-value>)',
+        'primary-fg': 'rgb(var(--primary-fg) / <alpha-value>)',
+        'success-fg': 'rgb(var(--success-fg) / <alpha-value>)',
         'accent-primary': 'rgb(var(--accent-primary) / <alpha-value>)',
         'accent-secondary': 'rgb(var(--accent-secondary) / <alpha-value>)',
         /* Borders */

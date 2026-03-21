@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getEventsWithStats } from "@/lib/fomo/event-stats";
 import { priceYesMicros, SCALE } from "@/lib/amm/fixedPointLmsr";
+import { HOME_FEED_SOURCE_TYPE } from "@/lib/event-visibility";
 
 export const dynamic = "force-dynamic";
 
@@ -20,9 +21,12 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || "";
     const now = new Date();
 
-    const where: Record<string, unknown> = {};
-    // Mostriamo tutti gli eventi (inclusi quelli del generatore) così la pagina Eventi e Discover restano piene
-    where.category = { not: "News" };
+    const where: Record<string, unknown> = {
+      ...HOME_FEED_SOURCE_TYPE,
+    };
+    if (category) {
+      where.category = category;
+    }
 
     // Filtro stato: aperti / in revisione / chiusi / tutti (nessun filtro)
     if (status === "open") {
@@ -45,8 +49,6 @@ export async function GET(request: NextRequest) {
       where.closesAt = { lte: now };
     }
     // status === "all" o altro: nessun filtro su stato
-
-    if (category) where.category = category;
 
     if (search.trim()) {
       where.AND = [

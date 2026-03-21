@@ -1,13 +1,17 @@
 /**
  * Tests for runPipelineV2 - Event generation pipeline
+ *
+ * OBSOLETE: These tests target an old API runPipelineV2(EventInput[]) that no longer exists.
+ * Current runPipelineV2(params: RunPipelineV2Params) accepts { prisma, now?, dryRun? } and
+ * always delegates to runEventGenV2Pipeline (MDE-only). Use runPipelineV2-gating.test.ts and
+ * lib/event-gen-v2/__tests__/run-pipeline.e2e.test.ts for current behavior.
  */
-
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { runPipelineV2 } from '../runPipelineV2';
 import type { EventInput, PipelineResult } from '../types';
 import { prisma } from '@/lib/prisma';
 
-describe('runPipelineV2', () => {
+describe.skip('runPipelineV2 (obsolete: old API runPipelineV2(EventInput[]))', () => {
   let testUser: { id: string };
   const now = new Date('2026-02-18T12:00:00Z');
 

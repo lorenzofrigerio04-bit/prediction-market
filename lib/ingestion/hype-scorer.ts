@@ -4,7 +4,12 @@
  * Optional feedback weights (from analytics feedback-loop) adjust source score by actual market success.
  */
 
-import type { NewsCandidate } from "@/lib/event-sources/types";
+/** Minimal candidate shape for hype scoring (url, sourceName, publishedAt) */
+export interface HypeCandidate {
+  url: string;
+  sourceName?: string | null;
+  publishedAt: string;
+}
 import { isItalySource, ITALY_SOURCE_BOOST } from "./italy-sources";
 import { sourceKeyFromUrl } from "@/lib/analytics/feedback-loop";
 
@@ -63,9 +68,10 @@ const DEFAULT_SOURCE_WEIGHT = 0.4;
  * Hype score 0–1 for a candidate (recency + source).
  * Weights: recency 0.6, source 0.4 (overridable via options).
  * When sourceWeights (feedback) provided, source component is adjusted by actual market success.
+ * @deprecated Use discovery ranking engine instead; no current pipeline caller. See LEGACY_DISCOVERY_COMPONENTS.md.
  */
 export function getHypeScore(
-  candidate: NewsCandidate,
+  candidate: HypeCandidate,
   options?: HypeScoreOptions
 ): number {
   const recWeight = options?.recencyWeight ?? DEFAULT_RECENCY_WEIGHT;
@@ -83,11 +89,12 @@ export function getHypeScore(
  * Sort candidates by hype (desc) and optionally boost Italy sources.
  * When sourceWeights (feedback) provided, high-performing sources are prioritized.
  * Returns a new sorted array.
+ * @deprecated Use discovery ranking engine instead; no current pipeline caller. See LEGACY_DISCOVERY_COMPONENTS.md.
  */
-export function rankByHypeAndItaly(
-  candidates: NewsCandidate[],
+export function rankByHypeAndItaly<T extends HypeCandidate>(
+  candidates: T[],
   options?: { boostItaly?: boolean; sourceWeights?: Record<string, number> }
-): NewsCandidate[] {
+): T[] {
   const boostItaly = options?.boostItaly !== false;
   const hypeOptions: HypeScoreOptions | undefined = options?.sourceWeights
     ? { sourceWeights: options.sourceWeights }

@@ -2,8 +2,8 @@
 
 import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
-import { getCategoryIcon } from "@/lib/category-icons";
 import { IconClock, IconChat, IconCurrency, IconTrendUp } from "@/components/ui/Icons";
+import { OddsBadge } from "@/components/events/OddsBadge";
 import { getEventProbability } from "@/lib/pricing/price-display";
 import { cost } from "@/lib/pricing/lmsr";
 import type { EventFomoStats } from "@/lib/fomo/event-stats";
@@ -105,22 +105,16 @@ export default function EventCard({ event }: EventCardProps) {
       className="block focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-3xl outline-none"
     >
       <article className="card-raised hover-lift transition-all duration-ds-normal ease-ds-ease p-5 md:p-6 h-full flex flex-col group active:scale-[0.995]">
-        {/* HEADER: badge categoria + scadenza */}
-        <div className="flex items-center justify-between gap-2 mb-4">
-          <span className="inline-flex items-center gap-1.5 shrink-0 min-w-0 px-2.5 py-1.5 rounded-xl text-ds-caption font-semibold bg-white/5 border border-white/10 text-fg">
-            <span className="text-primary shrink-0 [&>svg]:w-4 [&>svg]:h-4">
-              {getCategoryIcon(event.category)}
-            </span>
-            <span className="truncate">{event.category}</span>
-          </span>
+        {/* HEADER: scadenza */}
+        <div className="flex items-center justify-end gap-2 mb-4">
           <div className="flex items-center gap-2">
             <span
-              className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-ds-caption font-bold font-numeric ${
+              className={`shrink-0 inline-flex items-center gap-1.5 text-ds-caption font-bold font-numeric ${
                 isClosed
-                  ? "bg-white/5 text-fg-muted border border-white/10"
+                  ? "text-fg-muted"
                   : isUrgent
-                    ? "bg-warning-bg/90 text-warning border border-warning/30 dark:bg-warning-bg/50 dark:text-warning dark:border-warning/40 dark:shadow-[0_0_14px_-2px_rgba(253,224,71,0.4)]"
-                    : "bg-black/40 dark:bg-black/50 border border-primary/40 text-white"
+                    ? "text-warning"
+                    : "text-fg"
               }`}
             >
               <IconClock className="w-4 h-4" aria-hidden />
@@ -143,6 +137,8 @@ export default function EventCard({ event }: EventCardProps) {
             {event.description}
           </p>
         )}
+
+        <OddsBadge eventId={event.id} className="mb-4" />
 
         {/* BLOCCO PREVISIONE — SI / NO: gradienti soft, numeri integrati, barra LED */}
         <div className="mb-4">

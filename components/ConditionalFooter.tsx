@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 
 export default function ConditionalFooter() {
   const pathname = usePathname();
-  if (pathname === "/oracle") return null;
+  if (pathname === "/exchange") return null;
   return (
     <footer
       className="py-3 text-center text-fg-muted text-ds-micro bg-transparent relative z-10"

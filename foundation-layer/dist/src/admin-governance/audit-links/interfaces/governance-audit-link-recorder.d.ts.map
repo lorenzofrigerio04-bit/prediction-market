@@ -1,0 +1,1 @@
+{"version":3,"file":"governance-audit-link-recorder.d.ts","sourceRoot":"","sources":["../../../../../src/admin-governance/audit-links/interfaces/governance-audit-link-recorder.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,mBAAmB,EAAE,MAAM,6CAA6C,CAAC;AAEvF,MAAM,WAAW,2BAA2B;IAC1C,MAAM,CAAC,IAAI,EAAE,mBAAmB,GAAG,mBAAmB,CAAC;IACvD,IAAI,IAAI,SAAS,mBAAmB,EAAE,CAAC;CACxC"}

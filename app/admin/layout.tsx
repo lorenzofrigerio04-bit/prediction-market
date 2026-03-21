@@ -22,7 +22,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-bg flex">
+    <div className="min-h-screen bg-admin-bg flex" suppressHydrationWarning>
       <AdminSidebar />
       <main className="flex-1 overflow-auto animate-[in-fade-up_0.3s_ease-out]">
         {children}

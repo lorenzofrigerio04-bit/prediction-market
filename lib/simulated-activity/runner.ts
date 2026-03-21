@@ -1,9 +1,11 @@
 /**
  * Runner: esegue una run completa di attività simulata (previsioni, commenti, reazioni, follow).
  * Usato dal cron Vercel e dallo script locale scripts/simulate-activity.ts.
+ * Se ENABLE_SIMULATED_ACTIVITY è false (o DISABLE_SIMULATED_ACTIVITY=true) non fa nulla.
  */
 
 import type { PrismaClient } from "@prisma/client";
+import { ENABLE_SIMULATED_ACTIVITY } from "./config";
 import { getOrCreateBotUsers, ensureBotsHaveCredits } from "./bot-users";
 import { runSimulatedPredictions } from "./predictions";
 import { runSimulatedComments } from "./comments";
@@ -28,10 +30,24 @@ export interface RunSimulatedActivityResult {
 /**
  * Esegue una run completa di attività simulata: crea/recupera bot, assicura crediti,
  * poi esegue in sequenza previsioni, commenti, reazioni e follow simulate.
+ * Se l'attività è disabilitata (DISABLE_SIMULATED_ACTIVITY o ENABLE_SIMULATED_ACTIVITY=false) ritorna subito senza eseguire.
  */
 export async function runSimulatedActivity(
   prisma: PrismaClient
 ): Promise<RunSimulatedActivityResult> {
+  if (!ENABLE_SIMULATED_ACTIVITY) {
+    return {
+      ok: true,
+      predictions: { created: 0, errors: 0 },
+      comments: { created: 0, errors: 0 },
+      reactions: { created: 0, errors: 0 },
+      follows: { created: 0, errors: 0 },
+      posts: { created: 0, errors: 0 },
+      botsToppedUp: 0,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   const bots = await getOrCreateBotUsers(prisma, BOT_COUNT);
   const botUserIds = bots.map((b) => b.id);
 

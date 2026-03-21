@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { priceYesMicros, SCALE } from "@/lib/amm/fixedPointLmsr";
+import { HOME_FEED_SOURCE_TYPE } from "@/lib/event-visibility";
 
 export const dynamic = "force-dynamic";
 
@@ -30,8 +31,8 @@ export async function GET(request: NextRequest) {
       where: {
         hidden: false,
         type: "AI_IMAGE",
-        aiImageUrl: { not: null },
         event: {
+          ...HOME_FEED_SOURCE_TYPE,
           resolved: false,
           closesAt: { gt: new Date() },
         },

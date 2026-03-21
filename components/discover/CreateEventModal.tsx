@@ -106,13 +106,13 @@ export default function CreateEventModal({
   if (submitStatus === "approved" && submitResult) {
     return (
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
         onClick={handleBackdropClick}
       >
         <div className="create-event-modal w-full max-w-md p-6 rounded-2xl text-center animate-in-fade-up">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/20 flex items-center justify-center">
             <svg
-              className="w-8 h-8 text-green-400"
+              className="w-8 h-8 text-success"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -125,15 +125,15 @@ export default function CreateEventModal({
               />
             </svg>
           </div>
-          <h2 className="text-ds-h2 font-bold text-white mb-2">
+          <h2 className="text-ds-h2 font-bold text-fg mb-2">
             Evento pubblicato!
           </h2>
-          <p className="text-ds-body text-white/80 mb-6">
+          <p className="text-ds-body text-fg-muted mb-6">
             Il tuo evento è stato approvato automaticamente e pubblicato sulla
             piattaforma. Ora la community può fare previsioni!
           </p>
           {submitResult.warnings && submitResult.warnings.length > 0 && (
-            <div className="mb-4 p-3 rounded-lg bg-yellow-500/20 border border-yellow-500/30 text-yellow-200 text-ds-body-sm text-left">
+            <div className="mb-4 p-3 rounded-lg bg-warning/20 border border-warning/40 text-warning text-ds-body-sm text-left">
               <p className="font-semibold mb-1">Suggerimenti:</p>
               <ul className="list-disc list-inside space-y-1">
                 {submitResult.warnings.map((w, i) => (
@@ -152,7 +152,7 @@ export default function CreateEventModal({
             </Link>
             <button
               onClick={onClose}
-              className="min-h-[44px] px-6 py-2.5 rounded-xl font-semibold text-ds-body-sm w-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+              className="min-h-[44px] px-6 py-2.5 rounded-xl font-semibold text-ds-body-sm w-full bg-surface/80 text-fg hover:bg-surface transition-colors"
             >
               Chiudi
             </button>
@@ -165,13 +165,13 @@ export default function CreateEventModal({
   if (submitStatus === "rejected" && submitResult) {
     return (
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
         onClick={handleBackdropClick}
       >
         <div className="create-event-modal w-full max-w-md p-6 rounded-2xl text-center animate-in-fade-up">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-danger/20 flex items-center justify-center">
             <svg
-              className="w-8 h-8 text-red-400"
+              className="w-8 h-8 text-danger"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -184,21 +184,21 @@ export default function CreateEventModal({
               />
             </svg>
           </div>
-          <h2 className="text-ds-h2 font-bold text-white mb-2">
+          <h2 className="text-ds-h2 font-bold text-fg mb-2">
             Evento non approvato
           </h2>
-          <p className="text-ds-body text-white/80 mb-4">
+          <p className="text-ds-body text-fg-muted mb-4">
             L&apos;evento non rispetta i criteri della piattaforma. Ecco cosa correggere:
           </p>
           {submitResult.errors && submitResult.errors.length > 0 && (
-            <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-left">
+            <div className="mb-6 p-4 rounded-lg bg-danger/15 border border-danger/40 text-left">
               <ul className="space-y-2">
                 {submitResult.errors.map((err, i) => (
                   <li
                     key={i}
-                    className="flex items-start gap-2 text-ds-body-sm text-red-200"
+                    className="flex items-start gap-2 text-ds-body-sm text-danger"
                   >
-                    <span className="text-red-400 mt-0.5">•</span>
+                    <span className="text-danger mt-0.5">•</span>
                     <span>{err}</span>
                   </li>
                 ))}
@@ -214,7 +214,7 @@ export default function CreateEventModal({
             </button>
             <button
               onClick={onClose}
-              className="min-h-[44px] px-6 py-2.5 rounded-xl font-semibold text-ds-body-sm w-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+              className="min-h-[44px] px-6 py-2.5 rounded-xl font-semibold text-ds-body-sm w-full bg-surface/80 text-fg hover:bg-surface transition-colors"
             >
               Chiudi
             </button>
@@ -226,19 +226,19 @@ export default function CreateEventModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md overflow-y-auto"
       onClick={handleBackdropClick}
     >
       <div className="create-event-modal w-full max-w-md p-6 rounded-2xl animate-in-fade-up my-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-ds-h2 font-bold text-white">Crea evento</h2>
+          <h2 className="text-ds-h2 font-bold text-fg">Crea evento</h2>
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+            className="w-10 h-10 rounded-full bg-white/[0.08] flex items-center justify-center hover:bg-white/[0.12] transition-colors"
             aria-label="Chiudi"
           >
             <svg
-              className="w-5 h-5 text-white"
+              className="w-5 h-5 text-fg"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -261,7 +261,7 @@ export default function CreateEventModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-ds-body-sm font-semibold text-white/90 mb-1.5">
+            <label className="block text-ds-body-sm font-semibold text-fg mb-1.5">
               Titolo evento *
             </label>
             <input
@@ -269,14 +269,14 @@ export default function CreateEventModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Es: L'Italia vincerà gli Europei 2026?"
-              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+              className="w-full px-4 py-3 rounded-xl bg-surface/85 border border-border/70 text-fg placeholder:text-fg-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
               maxLength={200}
               required
             />
           </div>
 
           <div>
-            <label className="block text-ds-body-sm font-semibold text-white/90 mb-1.5">
+            <label className="block text-ds-body-sm font-semibold text-fg mb-1.5">
               Descrizione
             </label>
             <textarea
@@ -284,26 +284,26 @@ export default function CreateEventModal({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Descrivi l'evento e il contesto..."
               rows={3}
-              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all resize-none"
+              className="w-full px-4 py-3 rounded-xl bg-surface/85 border border-border/70 text-fg placeholder:text-fg-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all resize-none"
               maxLength={1000}
             />
           </div>
 
           <div>
-            <label className="block text-ds-body-sm font-semibold text-white/90 mb-1.5">
+            <label className="block text-ds-body-sm font-semibold text-fg mb-1.5">
               Categoria *
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all appearance-none cursor-pointer"
+              className="w-full px-4 py-3 rounded-xl bg-surface/85 border border-border/70 text-fg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all appearance-none cursor-pointer"
               required
             >
-              <option value="" disabled className="bg-gray-900">
-                Seleziona categoria
+<option value="" disabled className="bg-admin-bg text-fg">
+              Seleziona categoria
               </option>
               {categories.map((cat) => (
-                <option key={cat} value={cat} className="bg-gray-900">
+                <option key={cat} value={cat} className="bg-admin-bg text-fg">
                   {cat}
                 </option>
               ))}
@@ -311,7 +311,7 @@ export default function CreateEventModal({
           </div>
 
           <div>
-            <label className="block text-ds-body-sm font-semibold text-white/90 mb-1.5">
+            <label className="block text-ds-body-sm font-semibold text-fg mb-1.5">
               Data chiusura *
             </label>
             <input
@@ -319,13 +319,13 @@ export default function CreateEventModal({
               value={closesAt}
               onChange={(e) => setClosesAt(e.target.value)}
               min={minDate}
-              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+              className="w-full px-4 py-3 rounded-xl bg-surface/85 border border-border/70 text-fg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
               required
             />
           </div>
 
           <div>
-            <label className="block text-ds-body-sm font-semibold text-white/90 mb-1.5">
+            <label className="block text-ds-body-sm font-semibold text-fg mb-1.5">
               Fonte di risoluzione
             </label>
             <input
@@ -333,10 +333,10 @@ export default function CreateEventModal({
               value={resolutionSource}
               onChange={(e) => setResolutionSource(e.target.value)}
               placeholder="Es: Risultato ufficiale FIFA, Comunicato stampa..."
-              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+              className="w-full px-4 py-3 rounded-xl bg-surface/85 border border-border/70 text-fg placeholder:text-fg-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
               maxLength={300}
             />
-            <p className="text-ds-micro text-white/50 mt-1">
+            <p className="text-ds-micro text-fg-subtle mt-1">
               Come verrà verificato il risultato dell&apos;evento?
             </p>
           </div>
@@ -381,7 +381,7 @@ export default function CreateEventModal({
           </button>
         </form>
 
-        <p className="text-ds-micro text-white/50 text-center mt-4">
+        <p className="text-ds-micro text-fg-subtle text-center mt-4">
           Gli eventi devono rispettare le nostre linee guida e saranno
           revisionati prima della pubblicazione.
         </p>

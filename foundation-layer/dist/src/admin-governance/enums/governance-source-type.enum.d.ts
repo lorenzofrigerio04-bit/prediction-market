@@ -1,0 +1,7 @@
+export declare enum GovernanceSourceType {
+    INTERNAL_POLICY = "INTERNAL_POLICY",
+    PLATFORM_ACCESS = "PLATFORM_ACCESS",
+    OPERATIONS_CONSOLE = "OPERATIONS_CONSOLE",
+    VIRTUAL_CREDITS = "VIRTUAL_CREDITS"
+}
+//# sourceMappingURL=governance-source-type.enum.d.ts.map

@@ -1,0 +1,2 @@
+export const OPERATIONS_CONSOLE_GOVERNANCE_VIEW_SCHEMA_ID = "https://market-design-engine.dev/schemas/admin-governance/operations-console-governance-view.schema.json";
+export const operationsConsoleGovernanceViewSchema = { $id: OPERATIONS_CONSOLE_GOVERNANCE_VIEW_SCHEMA_ID, $schema: "https://json-schema.org/draft/2020-12/schema", type:"object", additionalProperties:false, required:["module_key","visible_operations"], properties:{ module_key:{type:"string", minLength:1}, visible_operations:{type:"array", items:{type:"string", minLength:1}} } } as const;

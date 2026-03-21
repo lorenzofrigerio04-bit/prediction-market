@@ -1,0 +1,2 @@
+export const PUBLICATION_GOVERNANCE_GUARD_SCHEMA_ID = "https://market-design-engine.dev/schemas/admin-governance/publication-governance-guard.schema.json";
+export const publicationGovernanceGuardSchema = { $id: PUBLICATION_GOVERNANCE_GUARD_SCHEMA_ID, $schema:"https://json-schema.org/draft/2020-12/schema", type:"object", additionalProperties:false, required:["denied_operations"], properties:{ denied_operations:{type:"array", items:{type:"string", minLength:1}} } } as const;

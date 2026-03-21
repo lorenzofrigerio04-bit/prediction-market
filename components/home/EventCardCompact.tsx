@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { formatTimeRemaining } from '@/utils/time';
+import { OddsBadge } from '@/components/events/OddsBadge';
 
 interface EventCardCompactProps {
   event: {
@@ -49,6 +50,7 @@ export function EventCardCompact({ event, showCountdown }: EventCardCompactProps
         )}
       </div>
       <h3 className="event-title">{event.title}</h3>
+      <OddsBadge eventId={event.id} />
       {event.volume !== undefined && (
         <div className="event-volume">
           Volume: {event.volume.toLocaleString()} crediti

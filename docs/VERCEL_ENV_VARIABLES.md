@@ -48,12 +48,19 @@ Su Upstash (gratis per piccoli volumi): crei un database Redis, copi l’URL e l
 | `OPENAI_API_KEY`    | Sì       | Per generazione eventi. |
 | `NEWS_API_KEY`      | Sì       | Per pipeline notizie. |
 | `CRON_SECRET`       | Sì       | Per cron (risoluzione, generazione eventi). |
+| **`FOOTBALL_DATA_ORG_API_TOKEN`** | Da impostare | **Obbligatorio per Sport/Calcio.** Token da football-data.org (gratuito). Calendario partite e risoluzione automatica. |
 | **`REDIS_URL`**     | No       | **Opzionale.** Senza: cache in-memory. Con: cache Redis. |
 | `RESEND_API_KEY`    | Probabile no | Solo se usi invio email (verifica account). |
 | `EMAIL_FROM`        | Probabile no | Solo se usi email (es. `nome <onboarding@tuodominio.com>`). |
 | `ANALYTICS_PROVIDER` | Probabile no | Solo se usi analytics (es. `posthog`). |
 | `POSTHOG_API_KEY`   | Probabile no | Solo con PostHog. |
 | `EVENT_GENERATOR_USER_ID` | No  | Opzionale: id utente che “possiede” gli eventi generati; altrimenti si usa il primo admin. |
+
+---
+
+## Attività simulata (bot)
+
+Per **fermare** i bot (commenti, previsioni, reazioni, follow, post nel feed) imposta su Vercel: **`DISABLE_SIMULATED_ACTIVITY`** = `true`. Cron e pulsante Admin non eseguiranno più nulla. Per riattivare: rimuovi `DISABLE_SIMULATED_ACTIVITY` e imposta **`ENABLE_SIMULATED_ACTIVITY`** = `true`.
 
 ---
 

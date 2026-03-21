@@ -1,0 +1,1 @@
+{"version":3,"file":"manual-override-handler.d.ts","sourceRoot":"","sources":["../../../../../src/editorial/overrides/interfaces/manual-override-handler.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,uCAAuC,CAAC;AAE5E,MAAM,WAAW,qBAAqB;IACpC,aAAa,CAAC,KAAK,EAAE,cAAc,GAAG,cAAc,CAAC;CACtD"}

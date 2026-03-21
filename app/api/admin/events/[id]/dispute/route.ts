@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin";
+import { requireAdminCapability } from "@/lib/admin";
 import { createAuditLog } from "@/lib/audit";
 
 const DISPUTE_WINDOW_MS = 2 * 60 * 60 * 1000; // 2 ore
@@ -22,7 +22,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireAdminCapability("events:resolve");
     const { id: eventId } = await params;
     const body = await request.json();
     const { action, newOutcome } = body;
@@ -68,6 +68,11 @@ export async function POST(
         entityType: "event",
         entityId: eventId,
       });
+      return NextResponse.json({
+        success: true,
+        action,
+        message: "Risoluzione approvata con successo.",
+      });
     }
 
     if (action === "REJECT") {
@@ -83,6 +88,11 @@ export async function POST(
         action: "DISPUTE_REJECT",
         entityType: "event",
         entityId: eventId,
+      });
+      return NextResponse.json({
+        success: true,
+        action,
+        message: "Risoluzione contestata con successo.",
       });
     }
 
@@ -129,6 +139,8 @@ export async function POST(
       });
       return NextResponse.json({
         success: true,
+        action,
+        message: "Outcome corretto e payout annullati con successo.",
       });
     }
 

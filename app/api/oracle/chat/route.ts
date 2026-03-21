@@ -31,6 +31,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
     }
 
+    if (process.env.DISABLE_OPENAI === "true" || process.env.DISABLE_OPENAI === "1") {
+      return NextResponse.json(
+        { error: "Oracle disabilitato (DISABLE_OPENAI attivo)" },
+        { status: 503 }
+      );
+    }
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(

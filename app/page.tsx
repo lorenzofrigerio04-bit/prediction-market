@@ -85,9 +85,13 @@ export default function Home() {
     }
   }, [status]);
 
-  const alreadyCompletedThisSession =
-    typeof window !== "undefined" &&
-    sessionStorage.getItem(ONBOARDING_STORAGE_KEY) === "true";
+  const [alreadyCompletedThisSession, setAlreadyCompletedThisSession] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined" && sessionStorage.getItem(ONBOARDING_STORAGE_KEY) === "true") {
+      setAlreadyCompletedThisSession(true);
+    }
+  }, []);
+
   const showOnboarding =
     pathname === "/" &&
     status === "authenticated" &&
@@ -255,9 +259,9 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="mb-8 md:mb-12 pt-6 md:pt-8" aria-label="Eventi per categoria">
+          <section className="mb-8 md:mb-12 pt-6 md:pt-8" aria-label="Eventi in tendenza">
             <h2 className="landing-section-title landing-section-title--no-underline text-ds-h2 font-bold text-fg mb-3 sm:mb-4">
-              <span className="landing-section-title__text">Eventi per categoria</span>
+              <span className="landing-section-title__text">Eventi in tendenza</span>
             </h2>
             <HomeFeedByCategory
               sections={homeSections}

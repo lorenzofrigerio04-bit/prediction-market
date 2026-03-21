@@ -1,0 +1,1 @@
+{"version":3,"file":"normalization-context.d.ts","sourceRoot":"","sources":["../../../../src/observations/interfaces/normalization-context.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,qCAAqC,CAAC;AAErE,MAAM,MAAM,oBAAoB,GAAG,QAAQ,CAAC;IAC1C,WAAW,EAAE,SAAS,CAAC;IACvB,iBAAiB,EAAE,MAAM,CAAC;IAC1B,WAAW,EAAE,MAAM,GAAG,IAAI,CAAC;CAC5B,CAAC,CAAC"}

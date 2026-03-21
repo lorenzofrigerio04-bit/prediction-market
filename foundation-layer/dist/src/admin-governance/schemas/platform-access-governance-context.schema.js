@@ -1,0 +1,3 @@
+export const PLATFORM_ACCESS_GOVERNANCE_CONTEXT_SCHEMA_ID = "https://market-design-engine.dev/schemas/admin-governance/platform-access-governance-context.schema.json";
+export const platformAccessGovernanceContextSchema = { $id: PLATFORM_ACCESS_GOVERNANCE_CONTEXT_SCHEMA_ID, $schema: "https://json-schema.org/draft/2020-12/schema", type: "object", additionalProperties: false, required: ["module_key", "requested_operations", "denied_operations"], properties: { module_key: { type: "string", minLength: 1 }, requested_operations: { type: "array", items: { type: "string", minLength: 1 } }, denied_operations: { type: "array", items: { type: "string", minLength: 1 } } } };
+//# sourceMappingURL=platform-access-governance-context.schema.js.map

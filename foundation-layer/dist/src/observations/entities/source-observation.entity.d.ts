@@ -1,0 +1,35 @@
+import type { EntityVersion } from "../../value-objects/entity-version.vo.js";
+import type { Timestamp } from "../../value-objects/timestamp.vo.js";
+import { NormalizationStatus } from "../enums/normalization-status.enum.js";
+import type { ObservationConfidenceScore } from "../value-objects/confidence-score.vo.js";
+import type { EvidenceSpan } from "../value-objects/evidence-span.vo.js";
+import type { JurisdictionCandidate } from "../value-objects/jurisdiction-candidate.vo.js";
+import type { LanguageCode } from "../value-objects/language-code.vo.js";
+import type { RawPayloadReference } from "../value-objects/raw-payload-reference.vo.js";
+import type { SourceObservationId } from "../value-objects/source-observation-id.vo.js";
+import type { SourceReference } from "../value-objects/source-reference.vo.js";
+import type { TraceabilityMetadata } from "../value-objects/traceability-metadata.vo.js";
+import type { SourceDefinitionId } from "../../sources/value-objects/source-definition-id.vo.js";
+export type SourceObservation = Readonly<{
+    id: SourceObservationId;
+    version: EntityVersion;
+    sourceDefinitionId: SourceDefinitionId;
+    observedAt: Timestamp;
+    ingestedAt: Timestamp;
+    sourceReference: SourceReference;
+    rawPayloadReference: RawPayloadReference;
+    normalizedHeadlineNullable: string | null;
+    normalizedSummaryNullable: string | null;
+    extractedEntities: readonly string[];
+    extractedDates: readonly string[];
+    extractedNumbers: readonly number[];
+    extractedClaims: readonly string[];
+    language: LanguageCode;
+    jurisdictionCandidates: readonly JurisdictionCandidate[];
+    evidenceSpans: readonly EvidenceSpan[];
+    sourceConfidence: ObservationConfidenceScore;
+    normalizationStatus: NormalizationStatus;
+    traceabilityMetadata: TraceabilityMetadata;
+}>;
+export declare const createSourceObservation: (input: SourceObservation) => SourceObservation;
+//# sourceMappingURL=source-observation.entity.d.ts.map

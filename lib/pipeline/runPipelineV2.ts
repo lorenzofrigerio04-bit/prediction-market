@@ -1,28 +1,13 @@
 /**
- * Pipeline V2 Orchestrator (BLOCCO 5)
- * 
- * Orchestra l'intero flusso di generazione eventi:
- * 1. Get eligible storylines (BLOCCO 3)
- * 2. Generate candidates (BLOCCO 4)
- * 3. Score candidates
- * 4. Dedup candidates
- * 5. Select candidates
- * 6. Publish selected
+ * Pipeline V2 Orchestrator
+ *
+ * MDE-only: delega sempre a runEventGenV2Pipeline.
+ * ENABLE_LEGACY_PIPELINE_V2 è deprecato e non riattiva più il path legacy.
  */
 
 import type { PrismaClient } from '@prisma/client';
-import { getEligibleStorylines, type EligibleStoryline } from '../storyline-engine';
-import { generateEventsFromEligibleStorylines, type GeneratedEventCandidate } from '../event-generation-v2';
-import {
-  scoreCandidates,
-  dedupCandidates,
-  selectCandidates,
-  selectCandidatesWithInfo,
-  publishSelected,
-  computeDedupKey,
-  type PublishResult,
-  type ScoredCandidate,
-} from '../event-publishing';
+import { runEventGenV2Pipeline } from '../event-gen-v2';
+import type { PublishResult } from '../event-publishing';
 
 export interface RunPipelineV2Params {
   prisma: PrismaClient;
@@ -74,7 +59,7 @@ export interface PipelineDebugInfo {
 }
 
 /**
- * Esegue la pipeline V2 completa
+ * Esegue la pipeline V2 (MDE-only: sempre runEventGenV2Pipeline).
  */
 export async function runPipelineV2(
   params: RunPipelineV2Params
@@ -82,241 +67,34 @@ export async function runPipelineV2(
   const { prisma, now = new Date(), dryRun = false } = params;
   const debug = process.env.PIPELINE_DEBUG === 'true';
 
-  const result: PublishResult = {
-    eligibleStorylinesCount: 0,
-    candidatesCount: 0,
-    verifiedCandidatesCount: 0,
-    dedupedCandidatesCount: 0,
-    selectedCount: 0,
-    createdCount: 0,
-    skippedCount: 0,
-    reasonsCount: {},
-  };
-
-  const debugInfo: PipelineDebugInfo = {
-    eligibleStorylinesCount: 0,
-    candidatesGeneratedCount: 0,
-    verifiedCandidatesCount: 0,
-    dedupedCandidatesCount: 0,
-    selectedCount: 0,
-    createdCount: 0,
-    skippedCount: 0,
-    topRejectionReasons: {},
-    sampleEligibleStorylines: [],
-    sampleCandidates: [],
-  };
-
-  try {
-    // Get source counts if debug enabled
-    if (debug) {
-      const [sourceArticlesCount, sourceClustersCount] = await Promise.all([
-        prisma.sourceArticle.count(),
-        prisma.sourceCluster.count(),
-      ]);
-      debugInfo.sourceArticlesCount = sourceArticlesCount;
-      debugInfo.sourceClustersCount = sourceClustersCount;
-    }
-
-    // Step 1: Get eligible storylines
-    const storylineResult = await getEligibleStorylines({
-      prisma,
-      now,
-      lookbackHours: 168, // 7 giorni
-    });
-    const eligible = storylineResult.eligible;
-    result.eligibleStorylinesCount = eligible.length;
-    debugInfo.eligibleStorylinesCount = eligible.length;
-    debugInfo.clustersLoadedCount = storylineResult.clustersLoadedCount;
-    debugInfo.clustersAfterLookbackCount = storylineResult.clustersLoadedCount;
-    debugInfo.storylineExclusionReasons = storylineResult.exclusionReasons;
-
-    if (debug && eligible.length > 0) {
-      const sample = eligible.slice(0, 5).map(s => ({
-        id: s.id,
-        signalsCount: s.articleCount,
-        authorityType: s.authorityType,
-        authorityHost: s.authorityHost,
-        momentum: s.momentum,
-        novelty: s.novelty,
-      }));
-      debugInfo.sampleEligibleStorylines = sample;
-    }
-
-    if (eligible.length === 0) {
-      if (debug) {
-        console.log('[Pipeline V2] Nessuna storyline elegibile');
-      }
-      return { ...result, debugInfo };
-    }
-
-    // Step 2: Generate candidates
-    const genResult = await generateEventsFromEligibleStorylines({
-      prisma,
-      now,
-      eligible,
-    });
-    const candidates = genResult.candidates;
-    result.candidatesCount = candidates.length;
-    result.verifiedCandidatesCount = candidates.length;
-    debugInfo.candidatesGeneratedCount = candidates.length;
-    debugInfo.verifiedCandidatesCount = candidates.length;
-    debugInfo.candidateRejectionReasons = genResult.rejectionReasons;
-
-    const templateIdDistribution: Record<string, number> = {};
-    const categoryDistribution: Record<string, number> = {};
-    for (const c of candidates) {
-      templateIdDistribution[c.templateId] = (templateIdDistribution[c.templateId] ?? 0) + 1;
-      categoryDistribution[c.category] = (categoryDistribution[c.category] ?? 0) + 1;
-    }
-    debugInfo.templateIdDistribution = templateIdDistribution;
-    debugInfo.categoryDistribution = categoryDistribution;
-
-    if (candidates.length === 0) {
-      if (debug) {
-        console.log('[Pipeline V2] Nessun candidato generato');
-      }
-      return { ...result, debugInfo };
-    }
-
-    // Step 3: Score candidates
-    // Mappa momentum/novelty dalle storyline ai candidati
-    const storylineStatsMap = new Map<string, { momentum: number; novelty: number }>();
-    for (const storyline of eligible) {
-      storylineStatsMap.set(storyline.id, {
-        momentum: storyline.momentum,
-        novelty: storyline.novelty,
-      });
-    }
-
-    // Se i candidati hanno già momentum/novelty, usali; altrimenti usa la mappa
-    const candidatesWithStats: GeneratedEventCandidate[] = candidates.map(candidate => {
-      if (candidate.momentum !== undefined && candidate.novelty !== undefined) {
-        return candidate;
-      }
-      const stats = storylineStatsMap.get(candidate.sourceStorylineId);
-      if (stats) {
-        return {
-          ...candidate,
-          momentum: stats.momentum,
-          novelty: stats.novelty,
-        };
-      }
-      return candidate;
-    });
-
-    const scored = scoreCandidates(candidatesWithStats, storylineStatsMap);
-
-    const top10 = [...scored].sort((a, b) => b.score - a.score).slice(0, 10);
-    debugInfo.sampleCandidates = top10.map(c => {
-      let dedupKey: string | undefined;
-      try {
-        dedupKey = computeDedupKey({
-          title: c.title,
-          closesAt: c.closesAt,
-          resolutionAuthorityHost: c.resolutionAuthorityHost,
-        });
-      } catch {
-        dedupKey = undefined;
-      }
-      return {
-        title: c.title,
-        score: c.score,
-        category: c.category,
-        closesAt: c.closesAt.toISOString(),
-        authorityHost: c.resolutionAuthorityHost,
-        templateId: c.templateId,
-        storylineId: c.sourceStorylineId,
-        dedupKey,
-      };
-    });
-
-    if (debug) {
-      console.log('[Pipeline V2] Top 10 candidates:');
-      top10.forEach((c, i) => {
-        console.log(
-          `  ${i + 1}. [${c.category}] ${c.title.slice(0, 60)}... ` +
-          `Score: ${c.score} (M:${c.scoreBreakdown.momentum} N:${c.scoreBreakdown.novelty} ` +
-          `A:${c.scoreBreakdown.authority} C:${c.scoreBreakdown.clarity})`
-        );
-      });
-    }
-
-    // Step 4: Dedup candidates
-    const { deduped, reasonsCount: dedupReasons } = await dedupCandidates(prisma, scored);
-    result.dedupedCandidatesCount = deduped.length;
-    debugInfo.dedupedCandidatesCount = deduped.length;
-    debugInfo.duplicatesInDBCount = dedupReasons.DUPLICATE_IN_DB ?? 0;
-    debugInfo.duplicatesInRunCount = dedupReasons.DUPLICATE_IN_RUN ?? 0;
-    Object.assign(result.reasonsCount, dedupReasons);
-
-    // Step 5: Select candidates (selection logs open/target and returns need)
-    const selectionInfo = await selectCandidatesWithInfo(prisma, deduped, now);
-    const selected = selectionInfo.selected;
-    result.selectedCount = selected.length;
-    debugInfo.selectedCount = selected.length;
-    debugInfo.openEventsCount = selectionInfo.openEventsCount;
-    debugInfo.targetOpenEvents = selectionInfo.targetOpenEvents;
-    debugInfo.need = selectionInfo.need;
-
-    if (selected.length === 0) {
-      if (selectionInfo.need === 0) debugInfo.zeroSelectedReason = 'need==0 (target already reached)';
-      else if (scored.length === 0) debugInfo.zeroSelectedReason = 'candidates==0';
-      else if (deduped.length === 0) debugInfo.zeroSelectedReason = 'all_deduped';
-      else debugInfo.zeroSelectedReason = 'caps_or_sort';
-      if (debug) {
-        console.log('[Pipeline V2] Nessun candidato selezionato:', debugInfo.zeroSelectedReason);
-      }
-      const topReasons = Object.entries(result.reasonsCount)
-        .sort(([, a], [, b]) => (b as number) - (a as number))
-        .slice(0, 10)
-        .reduce((acc, [key, value]) => {
-          acc[key] = value as number;
-          return acc;
-        }, {} as Record<string, number>);
-      debugInfo.topRejectionReasons = topReasons;
-      return { ...result, debugInfo };
-    }
-
-    // Step 6: Publish selected (se non dry-run)
-    if (!dryRun) {
-      const publishResult = await publishSelected(prisma, selected, now);
-      result.createdCount = publishResult.createdCount;
-      result.skippedCount = publishResult.skippedCount;
-      debugInfo.createdCount = publishResult.createdCount;
-      debugInfo.skippedCount = publishResult.skippedCount;
-      Object.assign(result.reasonsCount, publishResult.reasonsCount);
-    } else {
-      if (debug) {
-        console.log('[Pipeline V2] DRY RUN: non pubblicato nel DB');
-      }
-    }
-
-    // Collect top rejection reasons
-    const topReasons = Object.entries(result.reasonsCount)
-      .sort(([, a], [, b]) => (b as number) - (a as number))
-      .slice(0, 10)
-      .reduce((acc, [key, value]) => {
-        acc[key] = value as number;
-        return acc;
-      }, {} as Record<string, number>);
-    debugInfo.topRejectionReasons = topReasons;
-
-    // Debug summary
-    if (debug) {
-      console.log('[Pipeline V2] Summary:', {
-        eligibleStorylinesCount: result.eligibleStorylinesCount,
-        candidatesCount: result.candidatesCount,
-        dedupedCandidatesCount: result.dedupedCandidatesCount,
-        selectedCount: result.selectedCount,
-        createdCount: result.createdCount,
-        skippedCount: result.skippedCount,
-        reasonsCount: result.reasonsCount,
-      });
-    }
-
-    return { ...result, debugInfo };
-  } catch (error) {
-    console.error('[Pipeline V2] Error:', error);
-    throw error;
+  if (debug && process.env.NODE_ENV !== 'test') {
+    console.info('[Pipeline V2] path=mde_only delegating to runEventGenV2Pipeline');
   }
+
+  const result = await runEventGenV2Pipeline({ prisma, now, dryRun });
+  const mapped: PublishResult = {
+    eligibleStorylinesCount: result.eligibleStorylinesCount,
+    candidatesCount: result.candidatesCount,
+    verifiedCandidatesCount: result.rulebookValidCount,
+    dedupedCandidatesCount: result.dedupedCandidatesCount,
+    selectedCount: result.selectedCount,
+    createdCount: result.createdCount,
+    skippedCount: result.skippedCount,
+    reasonsCount: result.reasonsCount,
+  };
+  return {
+    ...mapped,
+    debugInfo: {
+      eligibleStorylinesCount: result.eligibleStorylinesCount,
+      candidatesGeneratedCount: result.candidatesCount,
+      verifiedCandidatesCount: result.rulebookValidCount,
+      dedupedCandidatesCount: result.dedupedCandidatesCount,
+      selectedCount: result.selectedCount,
+      createdCount: result.createdCount,
+      skippedCount: result.skippedCount,
+      topRejectionReasons: result.reasonsCount,
+      sampleEligibleStorylines: [],
+      sampleCandidates: [],
+    },
+  };
 }

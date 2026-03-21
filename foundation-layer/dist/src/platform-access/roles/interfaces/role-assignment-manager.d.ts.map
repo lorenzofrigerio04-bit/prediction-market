@@ -1,0 +1,1 @@
+{"version":3,"file":"role-assignment-manager.d.ts","sourceRoot":"","sources":["../../../../../src/platform-access/roles/interfaces/role-assignment-manager.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,uCAAuC,CAAC;AAC5E,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,+CAA+C,CAAC;AAEpF,MAAM,WAAW,qBAAqB;IACpC,WAAW,CAAC,MAAM,EAAE,cAAc,GAAG,SAAS,cAAc,EAAE,CAAC;CAChE"}

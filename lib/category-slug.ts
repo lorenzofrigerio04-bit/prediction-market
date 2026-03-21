@@ -6,6 +6,15 @@ const CATEGORY_TO_SLUG: Record<string, string> = {
   Economia: "economia",
   Scienza: "scienza",
   Intrattenimento: "intrattenimento",
+  // Categorie sport (Calcio, Tennis, ecc.)
+  Calcio: "calcio",
+  Tennis: "tennis",
+  Pallacanestro: "pallacanestro",
+  Pallavolo: "pallavolo",
+  "Formula 1": "formula-1",
+  MotoGP: "motogp",
+  // Sezione homepage
+  "Eventi in tendenza": "eventi-in-tendenza",
 };
 
 export function categoryToSlug(category: string): string {
@@ -29,6 +38,13 @@ const CATEGORY_FALLBACK_BG: Record<string, string> = {
   Economia: "linear-gradient(135deg, #3d2c1e 0%, #6b4423 100%)",
   Scienza: "linear-gradient(135deg, #2c1f4a 0%, #4a3f6b 100%)",
   Intrattenimento: "linear-gradient(135deg, #5c1a1a 0%, #8b2a2a 100%)",
+  // Categorie sport
+  Calcio: "linear-gradient(135deg, #0d5c2e 0%, #1a8c45 100%)",
+  Tennis: "linear-gradient(135deg, #1a5c1a 0%, #2d8b2d 100%)",
+  Pallacanestro: "linear-gradient(135deg, #5c3a0d 0%, #8b5a1a 100%)",
+  Pallavolo: "linear-gradient(135deg, #1a3a5c 0%, #2d5a8b 100%)",
+  "Formula 1": "linear-gradient(135deg, #5c1a1a 0%, #8b2a2a 100%)",
+  MotoGP: "linear-gradient(135deg, #3d1a1a 0%, #6b2a2a 100%)",
 };
 
 export function getCategoryFallbackGradient(category: string): string {

@@ -3,7 +3,7 @@
  * Hard fail: reject immediately. Needs review: flag for admin approval.
  */
 
-import { parseOutcomeDateFromText } from "../event-generation/closes-at";
+import { parseOutcomeDateFromText } from "../event-utils";
 import type { MarketValidationInput } from "./types";
 
 /** Config for allowed/blocked domains and time bounds. */

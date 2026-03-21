@@ -1,0 +1,3 @@
+export const VIRTUAL_CREDITS_GOVERNANCE_GUARD_SCHEMA_ID = "https://market-design-engine.dev/schemas/admin-governance/virtual-credits-governance-guard.schema.json";
+export const virtualCreditsGovernanceGuardSchema = { $id: VIRTUAL_CREDITS_GOVERNANCE_GUARD_SCHEMA_ID, $schema: "https://json-schema.org/draft/2020-12/schema", type: "object", additionalProperties: false, required: ["denied_operations"], properties: { denied_operations: { type: "array", items: { type: "string", minLength: 1 } } } };
+//# sourceMappingURL=virtual-credits-governance-guard.schema.js.map

@@ -1,0 +1,5 @@
+export enum DecisionStatus {
+  ALLOWED = "ALLOWED",
+  DENIED = "DENIED",
+  CONDITIONALLY_ALLOWED = "CONDITIONALLY_ALLOWED",
+}

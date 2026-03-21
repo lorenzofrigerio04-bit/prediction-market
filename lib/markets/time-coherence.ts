@@ -4,23 +4,21 @@
  */
 
 export type Category =
-  | "Sport"
-  | "Politica"
-  | "Economia"
-  | "Tecnologia"
-  | "Cultura"
-  | "Scienza"
-  | "Intrattenimento";
+  | "Calcio"
+  | "Tennis"
+  | "Pallacanestro"
+  | "Pallavolo"
+  | "Formula 1"
+  | "MotoGP";
 
 /** Buffer hours by category (hours before realWorldEventTime when market closes). */
 export const RESOLUTION_BUFFER_HOURS: Record<Category, number> = {
-  Sport: 1,
-  Politica: 2,
-  Economia: 24,
-  Tecnologia: 12,
-  Cultura: 6,
-  Scienza: 12,
-  Intrattenimento: 6,
+  Calcio: 1,
+  Tennis: 1,
+  Pallacanestro: 1,
+  Pallavolo: 1,
+  "Formula 1": 1,
+  MotoGP: 1,
 };
 
 export type TimeCoherenceResult =

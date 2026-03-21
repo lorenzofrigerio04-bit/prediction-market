@@ -1,0 +1,5 @@
+export enum ClaimPolarity {
+  AFFIRMATIVE = "AFFIRMATIVE",
+  NEGATIVE = "NEGATIVE",
+  CONDITIONAL = "CONDITIONAL",
+}

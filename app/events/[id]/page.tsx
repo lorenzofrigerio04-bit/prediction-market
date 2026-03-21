@@ -5,15 +5,23 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getDisplayTitle } from "@/lib/debug-display";
-import Header from "@/components/Header";
+import EventDetailHeader from "@/components/events/EventDetailHeader";
 import PredictionModal from "@/components/PredictionModal";
 import { PublishCommentModal } from "@/components/feed/PublishCommentModal";
 import CommentsSection from "@/components/CommentsSection";
 import EventProbabilityChart from "@/components/events/EventProbabilityChart";
+import SellConfirmModal, { type SellConfirmLeg, type SellConfirmPayload } from "@/components/events/SellConfirmModal";
 import { trackView } from "@/lib/analytics-client";
-import { getCategoryIcon } from "@/lib/category-icons";
 import { IconCurrency } from "@/components/ui/Icons";
 import BackLink from "@/components/ui/BackLink";
+import {
+  MULTI_OPTION_MARKET_TYPES,
+  parseOutcomesJson,
+  getEventDisplayTitle,
+  deriveOutcomesFromTitle,
+  isMarketTypeId,
+} from "@/lib/market-types";
+import { parseSportMatchTitle, formatBinaryMatchTitle } from "@/lib/sport-match-title";
 
 interface EventDetail {
   id: string;
@@ -24,9 +32,16 @@ interface EventDetail {
   closesAt: string;
   resolved: boolean;
   resolvedAt: string | null;
-  outcome: "YES" | "NO" | null;
+  outcome: string | null;
   resolutionSourceUrl: string | null;
   resolutionNotes: string | null;
+  resolutionCriteriaYes?: string | null;
+  resolutionCriteriaNo?: string | null;
+  resolutionCriteria?: string | null;
+  resolutionAuthorityHost?: string | null;
+  marketId?: string | null;
+  marketType?: string | null;
+  outcomes?: unknown;
   probability: number;
   totalCredits: number;
   yesCredits: number;
@@ -46,6 +61,10 @@ interface EventDetail {
     predictions: number;
     comments: number;
   };
+  bestBookmakerTitle?: string | null;
+  bestYesOdds?: number | null;
+  bestNoOdds?: number | null;
+  outcomeProbabilities?: Array<{ key: string; label: string; probabilityPct: number }> | null;
 }
 
 interface UserPosition {
@@ -57,6 +76,10 @@ interface UserPosition {
   positionYesCostMicros?: string;
   /** Costo attribuito alle quote NO (per P&L vendita) */
   positionNoCostMicros?: string;
+  /** Multi-outcome: quote possedute per opzione */
+  outcomeSharesMicros?: Record<string, string>;
+  /** Multi-outcome: costo residuo per opzione */
+  outcomeCostMicros?: Record<string, string>;
 }
 
 interface TradeHistoryEntry {
@@ -103,10 +126,9 @@ export default function EventDetailPage({
   const [followLoading, setFollowLoading] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [showResolutionPopup, setShowResolutionPopup] = useState(false);
-  const [showDescriptionPopup, setShowDescriptionPopup] = useState(false);
   const [showSellInfoPopup, setShowSellInfoPopup] = useState(false);
-  const [predictionOutcome, setPredictionOutcome] = useState<"YES" | "NO" | null>(null);
-  const [sellOutcome, setSellOutcome] = useState<"YES" | "NO">("YES");
+  const [predictionOutcome, setPredictionOutcome] = useState<string | null>(null);
+  const [sellOutcome, setSellOutcome] = useState<string>("YES");
   const [sellShares, setSellShares] = useState("");
   const [sellLoading, setSellLoading] = useState(false);
   const [sellError, setSellError] = useState<string | null>(null);
@@ -115,8 +137,8 @@ export default function EventDetailPage({
     loading: boolean;
   }>({ estimatedProceedsMicros: null, loading: false });
   const [sellSuccessPl, setSellSuccessPl] = useState<number | null>(null);
-  const [tradeHistory, setTradeHistory] = useState<TradeHistoryEntry[]>([]);
-  const [showAllTransactions, setShowAllTransactions] = useState(false);
+  const [sellConfirmOpen, setSellConfirmOpen] = useState(false);
+  const [sellConfirmLegs, setSellConfirmLegs] = useState<SellConfirmLeg[]>([]);
   const mainRef = useRef<HTMLElement | null>(null);
   const [prevProbability, setPrevProbability] = useState<number | null>(null);
   const SCALE = 1_000_000;
@@ -169,17 +191,16 @@ export default function EventDetailPage({
   }, [event?.id, event?.resolved, event?.category]);
 
   useEffect(() => {
-    if (!showResolutionPopup && !showDescriptionPopup && !showSellInfoPopup) return;
+    if (!showResolutionPopup && !showSellInfoPopup) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setShowResolutionPopup(false);
-        setShowDescriptionPopup(false);
         setShowSellInfoPopup(false);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [showResolutionPopup, showDescriptionPopup, showSellInfoPopup]);
+  }, [showResolutionPopup, showSellInfoPopup]);
 
   useEffect(() => {
     if (event?.probability != null && typeof event.probability === "number") {
@@ -197,9 +218,18 @@ export default function EventDetailPage({
       setSellPreview({ estimatedProceedsMicros: null, loading: false });
       return;
     }
-    const maxSell = sellOutcome === "YES"
-      ? Number(BigInt(userPosition.yesShareMicros) / BigInt(SCALE))
-      : Number(BigInt(userPosition.noShareMicros) / BigInt(SCALE));
+    const maxSell = (() => {
+      if (sellOutcome === "YES") {
+        return Number(BigInt(userPosition.yesShareMicros) / BigInt(SCALE));
+      }
+      if (sellOutcome === "NO") {
+        return Number(BigInt(userPosition.noShareMicros) / BigInt(SCALE));
+      }
+      const outcomeShares = userPosition.outcomeSharesMicros?.[sellOutcome];
+      return outcomeShares
+        ? Number(BigInt(outcomeShares) / BigInt(SCALE))
+        : 0;
+    })();
     if (num > maxSell) {
       setSellPreview({ estimatedProceedsMicros: null, loading: false });
       return;
@@ -249,7 +279,6 @@ export default function EventDetailPage({
       const data: EventResponse = await response.json();
       setEvent(data.event);
       setUserPosition(data.userPosition ?? null);
-      setTradeHistory(data.tradeHistory ?? []);
       setIsFollowing(data.isFollowing ?? false);
     } catch (error) {
       console.error("Error fetching event:", error);
@@ -270,7 +299,48 @@ export default function EventDetailPage({
     }
   };
 
-  const handlePredictionSuccess = (outcome?: "YES" | "NO") => {
+  const runSellFromModal = async (payloads: SellConfirmPayload[]) => {
+    if (!event || payloads.length === 0) return;
+    setSellError(null);
+    setSellLoading(true);
+    let plSum = 0;
+    let gotPl = false;
+    try {
+      for (const { outcome, shareMicros } of payloads) {
+        const res = await fetch("/api/trades/sell", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            eventId: event.id,
+            outcome,
+            shareMicros,
+            idempotencyKey: crypto.randomUUID(),
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setSellError(data.error || "Errore durante la vendita");
+          return;
+        }
+        if (data.realizedPlMicros != null) {
+          plSum += Number(BigInt(data.realizedPlMicros) / BigInt(SCALE));
+          gotPl = true;
+        }
+      }
+      if (gotPl) setSellSuccessPl(plSum);
+      setSellShares("");
+      setSellError(null);
+      setSellConfirmOpen(false);
+      setSellConfirmLegs([]);
+      await fetchEvent();
+      if (session?.user?.id) fetchUserCredits();
+      if (gotPl) setTimeout(() => setSellSuccessPl(null), 6000);
+    } finally {
+      setSellLoading(false);
+    }
+  };
+
+  const handlePredictionSuccess = (outcome?: string) => {
     if (outcome) setSellOutcome(outcome);
     fetchEvent();
     if (session?.user?.id) {
@@ -349,9 +419,8 @@ export default function EventDetailPage({
 
   if (loading) {
     return (
-      <div className="event-detail-page-immersive">
-        <div className="event-detail-page-backdrop" aria-hidden />
-        <Header />
+      <div className="min-h-screen bg-admin-bg">
+        <EventDetailHeader />
         <main id="main-content" className="event-detail-page-main mx-auto px-4 py-8 max-w-2xl">
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
@@ -364,9 +433,8 @@ export default function EventDetailPage({
 
   if (!event) {
     return (
-      <div className="event-detail-page-immersive">
-        <div className="event-detail-page-backdrop" aria-hidden />
-        <Header />
+      <div className="min-h-screen bg-admin-bg">
+        <EventDetailHeader />
         <main id="main-content" className="event-detail-page-main mx-auto px-4 py-8 max-w-2xl">
           <div className="text-center py-12">
             <p className="text-fg-muted text-lg">Evento non trovato</p>
@@ -382,186 +450,231 @@ export default function EventDetailPage({
     );
   }
 
-  const categoryToBackdrop: Record<string, string> = {
-    Cultura: "event-detail-page-backdrop event-detail-page-backdrop--cultura",
-    Economia: "event-detail-page-backdrop event-detail-page-backdrop--economia",
-    Intrattenimento: "event-detail-page-backdrop event-detail-page-backdrop--intrattenimento",
-    Sport: "event-detail-page-backdrop event-detail-page-backdrop--sport",
-    Tecnologia: "event-detail-page-backdrop event-detail-page-backdrop--tecnologia",
-    Scienza: "event-detail-page-backdrop event-detail-page-backdrop--scienza",
-    Politica: "event-detail-page-backdrop event-detail-page-backdrop--politica",
+  const outcomeOptionsRaw = parseOutcomesJson(event.outcomes);
+  const outcomeOptionsDerived = deriveOutcomesFromTitle(event.title);
+  const hasMultiOptionType =
+    !!event.marketType &&
+    isMarketTypeId(event.marketType) &&
+    MULTI_OPTION_MARKET_TYPES.includes(event.marketType);
+  const sportMatchTeams = (event.category === "Calcio" || event.category === "Sport") ? parseSportMatchTitle(event.title) : null;
+  const isSportMatchBinary = sportMatchTeams !== null && !hasMultiOptionType;
+  const outcomeOptions =
+    hasMultiOptionType
+      ? ((outcomeOptionsRaw && outcomeOptionsRaw.length > 0 ? outcomeOptionsRaw : outcomeOptionsDerived) ?? [])
+      : sportMatchTeams
+        ? [{ key: "YES", label: sportMatchTeams.teamA }, { key: "NO", label: sportMatchTeams.teamB }]
+        : ((outcomeOptionsRaw && outcomeOptionsRaw.length > 0 ? outcomeOptionsRaw : outcomeOptionsDerived) ?? []);
+  const hasMultiOptionTitlePattern = outcomeOptionsDerived.length > 0;
+  const isMultiOptionWithOptions =
+    !isSportMatchBinary &&
+    (hasMultiOptionType || hasMultiOptionTitlePattern) &&
+    outcomeOptions.length > 0;
+  const displayTitle = isMultiOptionWithOptions
+    ? getEventDisplayTitle(event.title, event.outcomes)
+    : getDisplayTitle(event.title, debugMode);
+  /** Titolo H1: partite binarie Calcio/Sport → sempre "Chi vincerà X vs Y?" */
+  const eventHeadingTitle =
+    isMultiOptionWithOptions
+      ? getDisplayTitle(displayTitle, debugMode)
+      : isSportMatchBinary && sportMatchTeams
+        ? getDisplayTitle(formatBinaryMatchTitle(sportMatchTeams), debugMode)
+        : getDisplayTitle(event.title, debugMode);
+  const resolvedOutcomeLabel =
+    event.resolved &&
+    event.outcome &&
+    isMultiOptionWithOptions &&
+    outcomeOptions.find((o) => o.key === event.outcome)
+      ? outcomeOptions.find((o) => o.key === event.outcome)!.label
+      : null;
+
+  const dateOptions: Intl.DateTimeFormatOptions = {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Rome",
   };
-  const backdropClass =
-    categoryToBackdrop[event.category] ??
-    "event-detail-page-backdrop event-detail-page-backdrop--default";
+  const dateOptionsShort: Intl.DateTimeFormatOptions = {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "Europe/Rome",
+  };
+  const formatPct = (value: number) => `${Number(value).toFixed(1)}%`;
 
   return (
-    <div className="event-detail-page-immersive">
-      <div className={backdropClass} aria-hidden />
-      <Header />
-      <main id="main-content" ref={mainRef} className="event-detail-page-main mx-auto px-3 py-4 md:px-4 md:py-8 max-w-2xl pb-8 md:pb-24">
-        {/* Top line: Indietro (left) | Segui + Condividi (right) - outside box */}
-        <div className="event-detail-toolbar flex items-center justify-between gap-2 mb-3 flex-wrap text-slate-200">
-          <BackLink
-            href="/"
-            className="inline-flex items-center min-h-[40px] text-slate-200 hover:text-white rounded-xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-          >
-            <svg className="w-5 h-5 mr-1.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            <span className="font-medium text-sm">Indietro</span>
-          </BackLink>
-          <div className="flex items-center gap-1.5">
-            {session && (
-              <>
+    <div className="min-h-screen bg-admin-bg text-fg event-detail-kalshi-theme" suppressHydrationWarning>
+      <EventDetailHeader />
+      <main id="main-content" ref={mainRef} className="event-detail-page-main mx-auto px-3 py-5 md:px-4 md:py-10 max-w-3xl pb-12 md:pb-28 space-y-6 md:space-y-8">
+        {/* Back link */}
+        <BackLink
+          href="/"
+          className="inline-flex items-center min-h-[40px] text-fg-muted hover:text-fg rounded-xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg mb-1"
+        >
+          <svg className="w-5 h-5 mr-1.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          <span className="font-medium text-sm">Indietro</span>
+        </BackLink>
+
+        {/* Breadcrumb + Titolo (stile Kalshi) */}
+        <header className="space-y-2">
+          <p className="text-xs md:text-sm text-fg-muted font-medium tracking-wide">
+            {event.category}
+          </p>
+          <h1 className="font-kalshi text-[1.55rem] sm:text-[1.85rem] md:text-[2rem] lg:text-[2.1rem] font-bold text-fg leading-[1.1] tracking-[0.01em] max-w-full">
+            {eventHeadingTitle}
+          </h1>
+        </header>
+
+        {/* Grafico: senza box, full-bleed su mobile */}
+        <section
+          className="event-detail-chart-bleed -mx-3 w-[calc(100%+1.5rem)] md:mx-0 md:w-full max-w-[100vw] md:max-w-none"
+          aria-labelledby="chart-heading"
+        >
+          <EventProbabilityChart
+            eventId={event.id}
+            range="7d"
+            refetchTrigger={event._count.predictions}
+            layout="standalone"
+            predictionsCount={event._count.predictions}
+            valueUnit="percent"
+            embeddedInPage
+          />
+        </section>
+
+        {/* Sezione acquisto share (incorporata, senza card) */}
+        <article className="event-detail-embed-section py-5 md:py-6">
+          {/* Mercato multi-opzione: pulsanti opzioni */}
+          {isMultiOptionWithOptions ? (
+            <div id="prediction-section" className="mb-3">
+              <div className="flex items-center justify-center gap-2 mb-3 flex-wrap">
+                <p className="font-kalshi text-lg sm:text-xl md:text-2xl font-bold text-fg text-center leading-tight">
+                  Scegli un&apos;opzione
+                </p>
                 <button
                   type="button"
-                  onClick={() => handlePublishToFeed()}
-                  disabled={publishLoading}
-                  className="event-toolbar-btn min-h-[32px] px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-transparent text-slate-200 border border-white/20 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50"
+                  onClick={() => setShowSellInfoPopup(true)}
+                  className="shrink-0 w-8 h-8 rounded-full border border-white/20 bg-transparent text-fg-muted hover:text-fg hover:bg-white/[0.06] flex items-center justify-center text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg"
+                  aria-label="Come funziona il pagamento delle quote"
                 >
-                  {publishLoading ? "..." : "Pubblica"}
+                  i
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowPublishModal(true)}
-                  disabled={publishLoading}
-                  className="event-toolbar-btn min-h-[32px] px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-transparent text-slate-200 border border-white/20 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50"
-                >
-                  Con commento
-                </button>
-                <button
-                  type="button"
-                  onClick={handleFollowToggle}
-                  disabled={followLoading}
-                  className={`event-toolbar-btn min-h-[32px] px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-colors border border-white/20 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
-                    isFollowing
-                      ? "bg-primary/20 text-primary border-primary/40 hover:bg-primary/30"
-                      : "bg-transparent text-slate-200 hover:text-white"
-                  }`}
-                >
-                  {followLoading ? "..." : isFollowing ? "Non seguire" : "Segui"}
-                </button>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={handleShare}
-              className="event-toolbar-btn min-h-[32px] px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-transparent text-slate-200 border border-white/20 hover:text-white transition-colors inline-flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-              aria-label="Condividi"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-              </svg>
-              {shareCopied ? "Copiato!" : "Condividi"}
-            </button>
-          </div>
-        </div>
-
-        {/* Box 1: Evento + Commenti — compatto, spaziato, super leggibile */}
-        <article className="event-detail-box event-detail-box-neon event-detail-box-event-comments transition-all duration-ds-normal p-4 md:p-5 mb-4">
-          {/* Header: categoria (sinistra) + solo numero crediti / Risolto (destra) */}
-          <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-            <span className="inline-flex items-center gap-1 shrink-0 min-w-0 px-2 py-1 rounded-lg text-ds-caption font-semibold bg-white/5 border border-white/10 text-fg backdrop-blur-sm">
-              <span className="text-primary shrink-0 [&>svg]:w-3.5 [&>svg]:h-3.5">
-                {getCategoryIcon(event.category)}
-              </span>
-              <span className="truncate">{event.category}</span>
-            </span>
-            {event.resolved ? (
-              <span className={`shrink-0 px-2 py-1 rounded-lg text-ds-caption font-semibold border ${event.outcome === "YES" ? "bg-success-bg/90 text-success border-success/30 dark:bg-success-bg/50 dark:border-success/40" : "bg-danger-bg/90 text-danger border-danger/30 dark:bg-danger-bg/50 dark:border-danger/40"}`}>
-                Risolto: {event.outcome === "YES" ? "SÌ" : "NO"}
-              </span>
-            ) : session ? (
-              <span className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-lg text-ds-caption font-bold font-numeric text-fg bg-black/40 border border-white/20 text-white">
-                <IconCurrency className="w-3.5 h-3.5 text-primary" aria-hidden />
-                {userCredits.toLocaleString("it-IT")}
-              </span>
-            ) : null}
-          </div>
-
-          <div className="flex items-start gap-2 mb-3">
-            <h1 className="text-ds-h2 font-bold text-fg leading-snug tracking-title text-base md:text-lg flex-1 min-w-0">
-              {getDisplayTitle(event.title, debugMode)}
-            </h1>
-            <button
-              type="button"
-              onClick={() => setShowDescriptionPopup(true)}
-              className="shrink-0 w-8 h-8 rounded-full border border-white/20 bg-white/10 text-slate-300 hover:text-white hover:bg-white/15 flex items-center justify-center text-sm font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-              aria-label="Leggi descrizione evento"
-            >
-              i
-            </button>
-          </div>
-
-          {/* Tabella 1x2: SÌ | NO (prezzo = probabilità, click per comprare quote) */}
-          {(() => {
-            const displayProbability = typeof event.probability === "number" ? event.probability : 50;
-            const yesPct = displayProbability;
-            return (
-              <>
-                <div id="prediction-section" className="grid grid-cols-2 gap-3 mb-3">
+              </div>
+              <div className={`grid gap-2 ${outcomeOptions.length === 4 ? "grid-cols-2" : "grid-cols-1"}`}>
+                {outcomeOptions.map((opt) => (
+                  (() => {
+                    const optPct = event.outcomeProbabilities?.find((p) => p.key === opt.key)?.probabilityPct;
+                    const isSelected = predictionOutcome === opt.key;
+                    return (
                   <button
+                    key={opt.key}
                     type="button"
                     onClick={() => {
                       if (canMakePrediction) {
-                        setPredictionOutcome("YES");
+                        setPredictionOutcome(opt.key);
                         setShowPredictionModal(true);
                       }
                     }}
-                    disabled={!canMakePrediction}
-                    className="min-h-[44px] py-3 rounded-xl font-bold text-base transition-all flex flex-col items-center justify-center gap-0.5 prediction-bar-fill-si border-2 border-transparent hover:border-primary/50 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-                    aria-label="Prevedi SÌ"
+                    disabled={!canMakePrediction || event.resolved}
+                    className={`w-full min-h-[52px] py-2.5 px-3 rounded-xl text-left transition-colors border-2 bg-transparent ${
+                      isSelected
+                        ? "border-primary/70 text-fg"
+                        : "border-white/15 hover:border-white/25 text-fg"
+                    } disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg`}
+                    aria-label={`Opzione: ${opt.label}`}
                   >
-                    <span className="text-white drop-shadow-sm">SÌ</span>
-                    <span className="text-ds-caption text-white/90 font-numeric tabular-nums">{displayProbability.toFixed(1)}%</span>
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-sm text-fg leading-snug line-clamp-2">
+                        {opt.label}
+                      </span>
+                      {typeof optPct === "number" && (
+                        <span className="shrink-0 text-sm font-extrabold font-chubby tabular-nums text-fg-muted">
+                          {formatPct(optPct)}
+                        </span>
+                      )}
+                    </span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (canMakePrediction) {
-                        setPredictionOutcome("NO");
-                        setShowPredictionModal(true);
-                      }
-                    }}
-                    disabled={!canMakePrediction}
-                    className="min-h-[44px] py-3 rounded-xl font-bold text-base transition-all flex flex-col items-center justify-center gap-0.5 prediction-bar-fill-no border-2 border-transparent hover:border-primary/50 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-                    aria-label="Prevedi NO"
-                  >
-                    <span className="text-white drop-shadow-sm">NO</span>
-                    <span className="text-ds-caption text-white/90 font-numeric tabular-nums">{(100 - displayProbability).toFixed(1)}%</span>
-                  </button>
-                </div>
-
-                {/* Barra indicatore SÌ/NO (prezzo = probabilità) */}
-                <div className="mb-3">
-                  <div className="flex justify-between text-ds-caption font-medium text-fg-muted mb-1.5">
-                    <span>SÌ {displayProbability.toFixed(1)}%</span>
-                    <span>NO {(100 - displayProbability).toFixed(1)}%</span>
+                    );
+                  })()
+                ))}
+              </div>
+              {!event.resolved && new Date(event.closesAt) > new Date() && !session && (
+                <p className="text-ds-caption text-fg-muted mt-2">Accedi per scommettere su un&apos;opzione.</p>
+              )}
+            </div>
+          ) : (
+            (() => {
+              const displayProbability = typeof event.probability === "number" ? event.probability : 50;
+              const yesPct = displayProbability;
+              const noPct = 100 - yesPct;
+              const leftLabel = sportMatchTeams?.teamA ?? "SÌ";
+              const rightLabel = sportMatchTeams?.teamB ?? "NO";
+              const leftBorder = yesPct >= noPct ? "border-emerald-400" : "border-rose-500";
+              const rightBorder = noPct > yesPct ? "border-emerald-400" : "border-rose-500";
+              const leftPctColor = yesPct >= noPct ? "text-emerald-400" : "text-rose-500";
+              const rightPctColor = noPct > yesPct ? "text-emerald-400" : "text-rose-500";
+              return (
+                <>
+                  <div className="flex items-center justify-center gap-2 mb-3 flex-wrap">
+                    <p className="font-kalshi text-lg sm:text-xl md:text-2xl font-bold text-fg text-center leading-tight">
+                      Fai la tua previsione!
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowSellInfoPopup(true)}
+                      className="shrink-0 w-8 h-8 rounded-full border border-white/20 bg-transparent text-fg-muted hover:text-fg hover:bg-white/[0.06] flex items-center justify-center text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg"
+                      aria-label="Come funziona il pagamento delle quote"
+                    >
+                      i
+                    </button>
                   </div>
-                  <div
-                    className="prediction-bar-led h-2.5 w-full flex animate-bar-pulse"
-                    role="presentation"
-                    aria-hidden
-                  >
-                    <div
-                      className="prediction-bar-fill-si h-full shrink-0 transition-[width] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)]"
-                      style={{ width: `${yesPct}%` }}
-                    />
-                    <div
-                      className="prediction-bar-fill-no h-full shrink-0 transition-[width] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)]"
-                      style={{ width: `${100 - yesPct}%` }}
-                    />
+                  <div id="prediction-section" className="grid grid-cols-2 gap-3 mb-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (canMakePrediction) {
+                          setPredictionOutcome("YES");
+                          setShowPredictionModal(true);
+                        }
+                      }}
+                      disabled={!canMakePrediction}
+                      className={`min-h-[52px] py-3 px-2 rounded-xl font-semibold text-base transition-all flex flex-col items-center justify-center gap-1 bg-transparent border-2 ${leftBorder} text-fg hover:opacity-95 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg`}
+                      aria-label={sportMatchTeams ? `Scommetti su ${leftLabel}` : "Prevedi SÌ"}
+                    >
+                      <span className="text-fg line-clamp-2 max-w-full text-center text-sm sm:text-base leading-tight">{leftLabel}</span>
+                      <span className={`text-base sm:text-lg font-extrabold font-chubby tabular-nums ${leftPctColor}`}>
+                        {formatPct(yesPct)}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (canMakePrediction) {
+                          setPredictionOutcome("NO");
+                          setShowPredictionModal(true);
+                        }
+                      }}
+                      disabled={!canMakePrediction}
+                      className={`min-h-[52px] py-3 px-2 rounded-xl font-semibold text-base transition-all flex flex-col items-center justify-center gap-1 bg-transparent border-2 ${rightBorder} text-fg hover:opacity-95 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg`}
+                      aria-label={sportMatchTeams ? `Scommetti su ${rightLabel}` : "Prevedi NO"}
+                    >
+                      <span className="text-fg line-clamp-2 max-w-full text-center text-sm sm:text-base leading-tight">{rightLabel}</span>
+                      <span className={`text-base sm:text-lg font-extrabold font-chubby tabular-nums ${rightPctColor}`}>
+                        {formatPct(noPct)}
+                      </span>
+                    </button>
                   </div>
-                </div>
-              </>
-            );
-          })()}
+                </>
+              );
+            })()
+          )}
 
           {event.resolved && (
             <div className="box-raised p-3 mb-3">
               <p className="text-ds-body font-semibold text-fg">
-                Previsioni chiuse. Risultato: {event.outcome === "YES" ? "SÌ" : "NO"}.
+                Previsioni chiuse. Risultato: {resolvedOutcomeLabel ?? (event.outcome === "YES" ? "SÌ" : event.outcome === "NO" ? "NO" : event.outcome)}.
               </p>
               {event.resolutionSourceUrl && (
                 <p className="text-ds-body-sm text-fg-muted mt-1">
@@ -585,7 +698,7 @@ export default function EventDetailPage({
             </div>
           )}
 
-          {/* Box sotto al contatore: Vendi posizioni + Storico (solo se hai posizioni) */}
+          {/* Posizioni aperte (wallet) */}
           {userPosition && (() => {
             const yesShareMicros = BigInt(userPosition.yesShareMicros);
             const noShareMicros = BigInt(userPosition.noShareMicros);
@@ -593,388 +706,306 @@ export default function EventDetailPage({
             const noShares = Math.round(Number(noShareMicros) / SCALE);
             const yesCredits = Math.round(Number(BigInt(userPosition.positionYesCostMicros ?? "0")) / SCALE);
             const noCredits = Math.round(Number(BigInt(userPosition.positionNoCostMicros ?? "0")) / SCALE);
-            const hasShares = yesShares > 0 || noShares > 0;
+            const multiPositionEntries = outcomeOptions
+              .map((opt) => {
+                const micros = BigInt(userPosition.outcomeSharesMicros?.[opt.key] ?? "0");
+                return { key: opt.key, label: opt.label, sharesMicros: micros, shares: Math.round(Number(micros) / SCALE) };
+              })
+              .filter((e) => e.shares > 0);
+            const hasMultiShares = multiPositionEntries.length > 0;
+            const hasShares = yesShares > 0 || noShares > 0 || hasMultiShares;
             const marketOpen = !event.resolved && new Date(event.closesAt) > new Date();
-            const displayedHistory = showAllTransactions ? tradeHistory : tradeHistory.slice(0, 2);
-            const hasMoreThanTwo = tradeHistory.length > 2;
 
-            const renderTransactionItem = (t: TradeHistoryEntry) => {
-              const shares = Math.round(Number(BigInt(t.shareMicros)) / SCALE);
-              const credits = Math.round(Number(BigInt(t.costMicros) < 0 ? -BigInt(t.costMicros) : BigInt(t.costMicros)) / SCALE);
-              const esito = t.outcome === "YES" ? "SÌ" : "NO";
-              const dataOra = new Date(t.createdAt).toLocaleString("it-IT", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-              const dataSolo = new Date(t.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" });
-              const oraSolo = new Date(t.createdAt).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
-              if (t.side === "BUY") {
-                return (
-                  <li key={t.id} className="text-ds-body-sm text-fg-muted flex flex-col gap-0.5">
-                    <span>
-                      Hai acquistato <span className="font-semibold text-fg">{shares.toLocaleString("it-IT")} &quot;{esito}&quot;</span> per{" "}
-                      <span className="font-semibold text-fg">{credits.toLocaleString("it-IT")} crediti</span>
-                    </span>
-                    <span className="text-ds-caption opacity-90 text-right">{dataSolo}, {oraSolo}</span>
-                  </li>
-                );
-              }
-              const realizedPlMicros = t.realizedPlMicros != null ? BigInt(t.realizedPlMicros) : null;
-              const costBasisMicros = realizedPlMicros != null && t.costMicros ? BigInt(t.costMicros) - realizedPlMicros : null;
-              const pct = costBasisMicros != null && costBasisMicros !== 0n
-                ? Number((realizedPlMicros! * 10000n) / costBasisMicros) / 100
-                : null;
-              const isProfit = pct != null && pct >= 0;
-              const arrow = isProfit ? "↑" : "↓";
-              return (
-                <li key={t.id} className="text-ds-body-sm text-fg-muted flex flex-col gap-0.5">
-                  <span>
-                    Hai venduto <span className="font-semibold text-fg">{shares.toLocaleString("it-IT")} &quot;{esito}&quot;</span> per{" "}
-                    <span className="font-semibold text-fg">{credits.toLocaleString("it-IT")} crediti</span>
-                    {pct != null && (
-                      <span className={isProfit ? "text-emerald-500 dark:text-emerald-400 font-semibold" : "text-red-500 dark:text-red-400 font-semibold"}>
-                        {" "}({arrow} {pct >= 0 ? "+" : ""}{pct.toFixed(1)}%)
-                      </span>
-                    )}
+            const colWallet = (shares: number, credits: number, avgPrice: number, label: string) => (
+              <div className="space-y-2 min-h-[5.5rem]">
+                <p className="text-sm text-fg leading-snug text-center sm:text-left">
+                  <span className="font-chubby text-base sm:text-lg font-extrabold tabular-nums">
+                    {shares.toLocaleString("it-IT")}
                   </span>
-                  <span className="text-ds-caption opacity-90 text-right">{dataSolo}, {oraSolo}</span>
-                </li>
+                  <span className="text-fg-muted font-medium"> quote </span>
+                  <span className="font-medium">&quot;{label}&quot;</span>
+                </p>
+                <p className="text-xs text-fg-muted leading-relaxed text-center sm:text-left">
+                  Costo:{" "}
+                  <span className="font-chubby font-semibold tabular-nums text-fg">{credits.toLocaleString("it-IT")}</span>
+                  <IconCurrency className="w-3.5 h-3.5 text-primary inline-block align-middle mx-0.5" aria-hidden />
+                  {avgPrice > 0 && (
+                    <>
+                      {" "}
+                      · Prezzo medio{" "}
+                      <span className="font-chubby font-semibold tabular-nums text-fg">{formatPct(Math.round(avgPrice * 100))}</span>
+                    </>
+                  )}
+                </p>
+              </div>
+            );
+
+            if (isMultiOptionWithOptions) {
+              if (!marketOpen || !hasMultiShares) return null;
+
+              const nMulti = multiPositionEntries.length;
+              const openMultiSellConfirm = () => {
+                setSellError(null);
+                const legs: SellConfirmLeg[] = [];
+                for (const entry of multiPositionEntries) {
+                  if (entry.sharesMicros <= 0n) continue;
+                  const costMicros = BigInt(userPosition.outcomeCostMicros?.[entry.key] ?? "0");
+                  const costCredits = Math.round(Number(costMicros) / SCALE);
+                  legs.push({
+                    outcome: entry.key,
+                    label: entry.label,
+                    shareMicros: entry.sharesMicros.toString(),
+                    shares: entry.shares,
+                    costCredits,
+                  });
+                }
+                if (legs.length === 0) return;
+                setSellConfirmLegs(legs);
+                setSellConfirmOpen(true);
+              };
+
+              const anyMultiMicros = multiPositionEntries.some((e) => e.sharesMicros > 0n);
+
+              return (
+                <div className="pt-6 mt-6">
+                  <div className="pb-2">
+                    <p className="font-kalshi text-2xl sm:text-3xl md:text-[2rem] font-bold text-fg mb-4 text-center tracking-tight">
+                      Wallet
+                    </p>
+                    <div
+                      className={
+                        nMulti >= 2
+                          ? nMulti === 2
+                            ? "relative grid grid-cols-2 gap-3"
+                            : "grid grid-cols-1 sm:grid-cols-2 gap-3"
+                          : "grid grid-cols-1"
+                      }
+                    >
+                      {nMulti === 2 && (
+                        <span
+                          className="pointer-events-none absolute left-1/2 top-0 bottom-0 z-[1] w-px -translate-x-1/2 bg-white/[0.14]"
+                          aria-hidden
+                        />
+                      )}
+                      {multiPositionEntries.map((entry, idx) => {
+                        const costMicros = BigInt(userPosition.outcomeCostMicros?.[entry.key] ?? "0");
+                        const costCredits = Math.round(Number(costMicros) / SCALE);
+                        const avgPrice = entry.shares > 0 ? costCredits / entry.shares : 0;
+                        return (
+                          <div
+                            key={entry.key}
+                            className={nMulti === 2 ? (idx === 0 ? "min-w-0 pr-1" : "min-w-0 pl-1") : "min-w-0"}
+                          >
+                            {colWallet(entry.shares, costCredits, avgPrice, entry.label)}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={openMultiSellConfirm}
+                      disabled={sellLoading || !anyMultiMicros}
+                      className="mt-5 w-full min-h-[48px] rounded-xl bg-primary text-bg font-kalshi text-base sm:text-lg font-bold tracking-tight uppercase hover:bg-primary-hover disabled:opacity-60 transition-colors"
+                    >
+                      {sellLoading ? "Vendita…" : "Vendi"}
+                    </button>
+
+                    {sellSuccessPl != null && (
+                      <div
+                        className={`mt-4 py-2 text-sm font-chubby font-bold tabular-nums text-center ${
+                          sellSuccessPl >= 0 ? "text-emerald-400" : "text-rose-500"
+                        }`}
+                        role="status"
+                      >
+                        {sellSuccessPl >= 0 ? `+${sellSuccessPl.toLocaleString("it-IT")}` : sellSuccessPl.toLocaleString("it-IT")}{" "}
+                        crediti
+                      </div>
+                    )}
+
+                    {sellError && <p className="text-sm text-rose-500 mt-3 text-center">{sellError}</p>}
+                  </div>
+                </div>
               );
-            };
+            }
+
+            if (!marketOpen || !hasShares) return null;
 
             return (
-              <div className="pt-4 mt-4 border-t border-white/10">
-                {/* Prima: VENDI LE TUE POSIZIONI */}
-                {marketOpen && hasShares && (() => {
-                  const maxSell = sellOutcome === "YES" ? yesShares : noShares;
-                  const num = parseFloat(sellShares);
-                  const displayProbability = typeof event.probability === "number" ? event.probability : 50;
-                  const currentPriceYes = displayProbability / 100;
-                  const currentPriceNo = (100 - displayProbability) / 100;
-                  const currentPrice = sellOutcome === "YES" ? currentPriceYes : currentPriceNo;
-                  const currentPricePct = sellOutcome === "YES" ? displayProbability : 100 - displayProbability;
-                  const esitoLabel = sellOutcome === "YES" ? "SÌ" : "NO";
-                  const prevPct = prevProbability != null ? (sellOutcome === "YES" ? prevProbability : 100 - prevProbability) : currentPricePct;
-                  const priceVariationPct = currentPricePct - prevPct;
+              <div className="pt-6 mt-6">
+                {(() => {
                   const avgPriceYes = yesShares > 0 ? yesCredits / yesShares : 0;
                   const avgPriceNo = noShares > 0 ? noCredits / noShares : 0;
+                  const yesLbl = outcomeOptions.find((o) => o.key === "YES")?.label ?? "SÌ";
+                  const noLbl = outcomeOptions.find((o) => o.key === "NO")?.label ?? "NO";
+                  const yMicrosStart = yesShareMicros;
+                  const nMicrosStart = noShareMicros;
 
-                  const handleSell = async () => {
-                    const sellNum = parseFloat(sellShares);
-                    if (!Number.isFinite(sellNum) || sellNum <= 0 || sellNum > maxSell) {
-                      setSellError("Inserisci una quantità valida.");
-                      return;
-                    }
-                    const shareMicros = BigInt(Math.round(sellNum * SCALE));
-                    const maxShareMicros = sellOutcome === "YES" ? yesShareMicros : noShareMicros;
-                    if (shareMicros > maxShareMicros) {
-                      setSellError("Quote insufficienti da vendere. Non puoi vendere più di quanto possiedi.");
-                      return;
-                    }
+                  const openBinarySellConfirm = () => {
+                    if (yMicrosStart <= 0n && nMicrosStart <= 0n) return;
                     setSellError(null);
-                    setSellLoading(true);
-                    try {
-                      const res = await fetch("/api/trades/sell", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          eventId: event.id,
-                          outcome: sellOutcome,
-                          shareMicros: shareMicros.toString(),
-                          idempotencyKey: crypto.randomUUID(),
-                        }),
+                    const legs: SellConfirmLeg[] = [];
+                    if (yesShares > 0) {
+                      legs.push({
+                        outcome: "YES",
+                        label: yesLbl,
+                        shareMicros: yMicrosStart.toString(),
+                        shares: yesShares,
+                        costCredits: yesCredits,
                       });
-                      const data = await res.json().catch(() => ({}));
-                      if (!res.ok) {
-                        setSellError(data.error || "Errore durante la vendita");
-                        return;
-                      }
-                      const realizedPl = data.realizedPlMicros != null
-                        ? Number(BigInt(data.realizedPlMicros) / BigInt(SCALE))
-                        : null;
-                      if (realizedPl != null) setSellSuccessPl(realizedPl);
-                      setSellShares("");
-                      setSellError(null);
-                      await fetchEvent();
-                      if (session?.user?.id) fetchUserCredits();
-                      if (realizedPl != null) setTimeout(() => setSellSuccessPl(null), 6000);
-                    } finally {
-                      setSellLoading(false);
                     }
+                    if (noShares > 0) {
+                      legs.push({
+                        outcome: "NO",
+                        label: noLbl,
+                        shareMicros: nMicrosStart.toString(),
+                        shares: noShares,
+                        costCredits: noCredits,
+                      });
+                    }
+                    if (legs.length === 0) return;
+                    setSellConfirmLegs(legs);
+                    setSellConfirmOpen(true);
                   };
-                  const totalShareMicros = sellOutcome === "YES" ? yesShareMicros : noShareMicros;
-                  const costMicrosForOutcome = BigInt(
-                    sellOutcome === "YES"
-                      ? (userPosition.positionYesCostMicros ?? "0")
-                      : (userPosition.positionNoCostMicros ?? "0")
-                  );
-                  const shareMicrosToSell = totalShareMicros > 0n && num > 0 ? BigInt(Math.round(num * SCALE)) : 0n;
-                  const costBasisMicros =
-                    totalShareMicros > 0n && shareMicrosToSell > 0n
-                      ? (costMicrosForOutcome * shareMicrosToSell) / totalShareMicros
-                      : 0n;
-                  const costBasisCredits = Math.round(Number(costBasisMicros) / SCALE);
-                  const estimatedProceedsCredits =
-                    sellPreview.estimatedProceedsMicros != null
-                      ? Math.round(Number(BigInt(sellPreview.estimatedProceedsMicros)) / SCALE)
-                      : null;
-                  const plCredits = estimatedProceedsCredits != null ? estimatedProceedsCredits - costBasisCredits : null;
-                  const hasValidPl = plCredits != null && Number.isFinite(plCredits);
+
+                  const showYes = yesShares > 0;
+                  const showNo = noShares > 0;
+                  const showBoth = showYes && showNo;
 
                   return (
-                    <div className="rounded-xl bg-white/5 border border-white/10 p-4 md:p-5">
-                      <div className="flex items-center justify-center gap-2 mb-5">
-                        <p className="text-ds-body font-bold text-fg uppercase tracking-label">Vendi le tue posizioni</p>
-                        <button
-                          type="button"
-                          onClick={() => setShowSellInfoPopup(true)}
-                          className="w-6 h-6 rounded-full border border-white/20 bg-white/10 text-slate-300 hover:text-white hover:bg-white/15 flex items-center justify-center text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-                          aria-label="Come funziona la vendita e il payoff delle quote"
-                        >
-                          i
-                        </button>
-                      </div>
-
-                      {/* Hai: */}
-                      <p className="text-ds-caption font-semibold text-fg-muted uppercase tracking-micro mb-2">Hai:</p>
-                      <ul className="space-y-2 mb-5 text-center">
-                        {yesShares > 0 && (
-                          <li className="text-ds-body-sm text-fg flex flex-col items-center justify-center gap-0.5">
-                            <span className="inline-flex flex-wrap items-center justify-center gap-2">
-                              <span className="font-numeric tabular-nums">{yesShares.toLocaleString("it-IT")} &quot;SÌ&quot;</span>
-                              <span className="text-fg-muted">acquistati per</span>
-                              <span className="font-semibold font-numeric tabular-nums">{yesCredits.toLocaleString("it-IT")}</span>
-                              <IconCurrency className="w-4 h-4 text-primary shrink-0" aria-hidden />
-                            </span>
-                            <span className="text-ds-caption text-fg-muted">(acquistati a {avgPriceYes.toFixed(2)} ({Math.round(avgPriceYes * 100)}%))</span>
-                          </li>
+                    <div className="pb-2">
+                      <p className="font-kalshi text-2xl sm:text-3xl md:text-[2rem] font-bold text-fg mb-4 text-center tracking-tight">
+                        Wallet
+                      </p>
+                      <div
+                        className={
+                          showBoth ? "relative grid grid-cols-2 gap-3" : "grid grid-cols-1"
+                        }
+                      >
+                        {showBoth && (
+                          <span
+                            className="pointer-events-none absolute left-1/2 top-0 bottom-0 z-[1] w-px -translate-x-1/2 bg-white/[0.14]"
+                            aria-hidden
+                          />
                         )}
-                        {noShares > 0 && (
-                          <li className="text-ds-body-sm text-fg flex flex-col items-center justify-center gap-0.5">
-                            <span className="inline-flex flex-wrap items-center justify-center gap-2">
-                              <span className="font-numeric tabular-nums">{noShares.toLocaleString("it-IT")} &quot;NO&quot;</span>
-                              <span className="text-fg-muted">acquistati per</span>
-                              <span className="font-semibold font-numeric tabular-nums">{noCredits.toLocaleString("it-IT")}</span>
-                              <IconCurrency className="w-4 h-4 text-primary shrink-0" aria-hidden />
-                            </span>
-                            <span className="text-ds-caption text-fg-muted">(acquistati a {avgPriceNo.toFixed(2)} ({Math.round(avgPriceNo * 100)}%))</span>
-                          </li>
-                        )}
-                      </ul>
-
-                      {/* Puoi: */}
-                      <p className="text-ds-caption font-semibold text-fg-muted uppercase tracking-micro mb-2">Puoi:</p>
-                      <div className="text-center mb-3">
-                        <p className="text-ds-body-sm text-fg-muted mb-1.5">
-                          Vendere{" "}
-                          <span className="inline-flex align-middle">
-                            <input
-                              type="number"
-                              min={0}
-                              max={maxSell}
-                              step="1"
-                              value={sellShares}
-                              onChange={(e) => {
-                                setSellShares(e.target.value);
-                                setSellSuccessPl(null);
-                              }}
-                              placeholder="0"
-                              className="mx-1 w-14 rounded-lg border border-white/40 bg-transparent px-2 py-1.5 text-center font-numeric text-ds-body-sm text-fg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-white/60 shadow-[0_0_8px_rgba(255,255,255,0.15)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              aria-label="Quantità quote da vendere"
-                            />
-                          </span>{" "}
-                          &quot;{esitoLabel}&quot;
-                        </p>
-                        <p className="text-ds-body-sm text-fg-muted flex items-center justify-center gap-1.5 flex-wrap">
-                          <span>al prezzo attuale</span>
-                          <span className="font-semibold text-fg font-numeric tabular-nums">{currentPrice.toFixed(2)} ({currentPricePct}%)</span>
-                          {priceVariationPct !== 0 && (
-                            <span
-                              className={`inline-flex items-center font-numeric tabular-nums text-xs font-semibold ${
-                                priceVariationPct > 0 ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400"
-                              }`}
-                              aria-label={priceVariationPct > 0 ? `Variazione +${priceVariationPct.toFixed(1)}%` : `Variazione ${priceVariationPct.toFixed(1)}%`}
-                            >
-                              {priceVariationPct > 0 ? (
-                                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                                </svg>
-                              ) : (
-                                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                                </svg>
-                              )}
-                              {priceVariationPct > 0 ? "+" : ""}{priceVariationPct.toFixed(1)}%
-                            </span>
-                          )}
-                        </p>
-                      </div>
-
-                      {(num > 0 && num <= maxSell) && (
-                        <div className="rounded-xl bg-black/20 border border-white/10 p-3 mb-3 space-y-1.5">
-                          <div className="flex items-center gap-2 text-ds-body-sm font-numeric tabular-nums">
-                            <IconCurrency className="w-4 h-4 text-primary shrink-0" aria-hidden />
-                            <span className="text-fg-muted">Ricavo stimato:</span>
-                            {sellPreview.loading ? (
-                              <span className="text-fg">…</span>
-                            ) : estimatedProceedsCredits != null ? (
-                              <span className="text-fg font-semibold">{estimatedProceedsCredits.toLocaleString("it-IT")}</span>
-                            ) : (
-                              <span className="text-fg">—</span>
-                            )}
+                        {showYes && (
+                          <div className={showBoth ? "min-w-0 pr-1" : "min-w-0"}>
+                            {colWallet(yesShares, yesCredits, avgPriceYes, yesLbl)}
                           </div>
-                          {hasValidPl && (
-                            <div className="flex items-center gap-2 text-ds-body-sm font-numeric tabular-nums pt-1 border-t border-white/10">
-                              <span className="text-fg-muted">Profit or Loss:</span>
-                              <span
-                                className={
-                                  plCredits! > 0
-                                    ? "text-emerald-500 dark:text-emerald-400 font-semibold"
-                                    : plCredits! < 0
-                                      ? "text-red-500 dark:text-red-400 font-semibold"
-                                      : "text-fg-muted font-semibold"
-                                }
-                              >
-                                {plCredits! > 0 ? "+" : ""}{plCredits!.toLocaleString("it-IT")} crediti
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                        )}
+                        {showNo && (
+                          <div className={showBoth ? "min-w-0 pl-1" : "min-w-0"}>
+                            {colWallet(noShares, noCredits, avgPriceNo, noLbl)}
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={openBinarySellConfirm}
+                        disabled={sellLoading || (yMicrosStart <= 0n && nMicrosStart <= 0n)}
+                        className="mt-5 w-full min-h-[48px] rounded-xl bg-primary text-bg font-kalshi text-base sm:text-lg font-bold tracking-tight uppercase hover:bg-primary-hover disabled:opacity-60 transition-colors"
+                      >
+                        {sellLoading ? "Vendita…" : "Vendi"}
+                      </button>
 
                       {sellSuccessPl != null && (
                         <div
-                          className={`mb-3 p-3 rounded-xl border text-ds-body-sm font-semibold text-center ${
-                            sellSuccessPl >= 0
-                              ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
-                              : "bg-red-500/15 border-red-500/40 text-red-600 dark:text-red-400"
+                          className={`mt-4 py-2 text-sm font-chubby font-bold tabular-nums text-center ${
+                            sellSuccessPl >= 0 ? "text-emerald-400" : "text-rose-500"
                           }`}
                           role="status"
                         >
-                          {sellSuccessPl >= 0 ? `+${sellSuccessPl.toLocaleString("it-IT")} crediti` : `${sellSuccessPl.toLocaleString("it-IT")} crediti`}
+                          {sellSuccessPl >= 0 ? `+${sellSuccessPl.toLocaleString("it-IT")}` : sellSuccessPl.toLocaleString("it-IT")} crediti
                         </div>
                       )}
 
-                      <div className="flex justify-center mt-4">
-                        <button
-                          type="button"
-                          onClick={handleSell}
-                          disabled={sellLoading}
-                          className="px-6 py-3 rounded-xl bg-primary text-primary-fg text-ds-body font-semibold hover:bg-primary-hover disabled:opacity-60 transition-colors"
-                        >
-                          {sellLoading ? "Vendita…" : "Vendi"}
-                        </button>
-                      </div>
-
-                      {sellError && <p className="text-ds-caption text-danger mt-3 text-center">{sellError}</p>}
+                      {sellError && <p className="text-sm text-rose-500 mt-3 text-center">{sellError}</p>}
                     </div>
                   );
                 })()}
-
-                {/* Sotto: Storico transazioni (ultime 2 + Vedi tutte / Chiudi) */}
-                {tradeHistory.length > 0 && (
-                  <div className={marketOpen && hasShares ? "mt-5" : "mt-0"}>
-                    <p className="text-ds-caption font-semibold text-fg-muted uppercase tracking-micro mb-2">Storico transazioni</p>
-                    <ul className="space-y-2" role="list">
-                      {displayedHistory.map((t) => renderTransactionItem(t))}
-                    </ul>
-                    {hasMoreThanTwo && (
-                      <button
-                        type="button"
-                        onClick={() => setShowAllTransactions(!showAllTransactions)}
-                        className="mt-2 text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline"
-                      >
-                        {showAllTransactions ? "Chiudi" : "Vedi tutte"}
-                      </button>
-                    )}
-                  </div>
-                )}
               </div>
             );
           })()}
 
           {!session && !event.resolved && new Date(event.closesAt) > new Date() && (
-            <div className="p-3 bg-warning-bg/90 border border-warning/30 rounded-xl text-ds-body-sm text-warning dark:bg-warning-bg/50 dark:text-warning mb-3">
-              <Link href="/auth/login" className="font-semibold underline">Accedi</Link> per scommettere
-            </div>
+            <p className="text-ds-body-sm text-fg-muted mb-3">
+              <Link href="/auth/login" className="font-semibold text-primary hover:text-primary-hover underline">Accedi</Link>{" "}
+              per scommettere
+            </p>
           )}
 
-          <CommentsSection eventId={event.id} variant="embedded" />
-
-          {/* Criterio di risoluzione e scadenza: solo "i" che apre popup */}
-          <div className="pt-4 mt-4 border-t border-white/10 flex justify-end">
-            <button
-              type="button"
-              onClick={() => setShowResolutionPopup(true)}
-              className="w-8 h-8 rounded-full border border-white/20 bg-white/10 text-slate-300 hover:text-white hover:bg-white/15 flex items-center justify-center text-sm font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-              aria-label="Criterio di risoluzione e scadenza"
-            >
-              i
-            </button>
-          </div>
         </article>
 
-        {/* Box 2: Grafico — centrato nella pagina, titolo e assi bilanciati */}
-        <section className="event-detail-box event-detail-box-neon event-detail-box-chart transition-all duration-ds-normal p-4 md:p-6 mb-4" aria-labelledby="chart-heading">
-          <EventProbabilityChart eventId={event.id} range="7d" refetchTrigger={event._count.predictions} layout="standalone" predictionsCount={event._count.predictions} />
+        {/* Market Rules (inline) */}
+        <section className="event-detail-embed-section py-5 md:py-6 border-t border-white/[0.06]" aria-labelledby="market-rules-heading">
+          <h2 id="market-rules-heading" className="text-sm md:text-base font-semibold text-fg tracking-tight mb-3 uppercase tracking-label">
+            Regole di mercato
+          </h2>
+          <div className="space-y-4 text-ds-body-sm text-fg-muted">
+            {(event.resolutionCriteriaYes || event.resolutionCriteriaNo || event.resolutionCriteria || event.resolutionNotes) ? (
+              event.resolutionCriteria ? (
+                <p className="whitespace-pre-wrap">{event.resolutionCriteria}</p>
+              ) : (
+                <div className="space-y-2">
+                  {event.resolutionCriteriaYes && (
+                    <p><span className="font-medium text-success">SÌ paga se:</span> {event.resolutionCriteriaYes}</p>
+                  )}
+                  {event.resolutionCriteriaNo && (
+                    <p><span className="font-medium text-danger">NO paga se:</span> {event.resolutionCriteriaNo}</p>
+                  )}
+                  {event.resolutionNotes && <p className="whitespace-pre-wrap">{event.resolutionNotes}</p>}
+                </div>
+              )
+            ) : (
+              <p className="italic">Criterio non specificato. La risoluzione avviene secondo la fonte ufficiale indicata.</p>
+            )}
+            {event.resolutionSourceUrl && (
+              <p>
+                Fonte:{" "}
+                <a href={event.resolutionSourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary-hover underline">
+                  {event.resolutionAuthorityHost || event.resolutionSourceUrl.replace(/^https?:\/\//, "").split("/")[0]}
+                </a>
+              </p>
+            )}
+            <p className="pt-2 border-t border-border/60 text-fg/80">
+              Chiusura: <span suppressHydrationWarning>{new Date(event.closesAt).toLocaleDateString("it-IT", dateOptions)}</span>
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowResolutionPopup(true)}
+            className="mt-3 text-sm font-medium text-primary hover:text-primary-hover underline"
+          >
+            Dettagli completi
+          </button>
+        </section>
+
+        {/* Commenti */}
+        <section className="event-detail-embed-section py-5 md:py-6 border-t border-white/[0.06]" aria-labelledby="comments-heading">
+          <h2 id="comments-heading" className="text-sm md:text-base font-semibold text-fg tracking-tight mb-3 uppercase tracking-label">
+            Commenti
+          </h2>
+          <CommentsSection eventId={event.id} variant="embedded" />
         </section>
       </main>
 
-      {/* Popup Descrizione evento */}
-      {showDescriptionPopup && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md transition-[background-color,filter] duration-300"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="description-popup-title"
-          onClick={() => setShowDescriptionPopup(false)}
-        >
-          <div
-            className="event-detail-box event-detail-box-neon max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 rounded-2xl"
-            style={{ background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <h2 id="description-popup-title" className="text-ds-h3 font-bold text-fg">Descrizione evento</h2>
-              <button
-                type="button"
-                onClick={() => setShowDescriptionPopup(false)}
-                className="p-2.5 rounded-xl text-fg-muted hover:text-fg hover:bg-surface/50 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                aria-label="Chiudi"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            {event.description ? (
-              <p className="text-ds-body-sm text-fg-muted whitespace-pre-wrap leading-relaxed">{event.description}</p>
-            ) : (
-              <p className="text-ds-body-sm text-fg-muted">Nessuna descrizione disponibile.</p>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Popup Info vendita / payoff quote */}
-      {showSellInfoPopup && event && userPosition && (
+      {showSellInfoPopup && event && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md transition-[background-color,filter] duration-300"
+          className="scrim-below-app-header z-50 flex items-center justify-center p-4 bg-admin-bg/85 backdrop-blur-md"
           role="dialog"
           aria-modal="true"
           aria-labelledby="sell-info-popup-title"
           onClick={() => setShowSellInfoPopup(false)}
         >
           <div
-            className="event-detail-box event-detail-box-neon max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 rounded-2xl"
-            style={{ background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
+            className="event-detail-section max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 rounded-xl border border-white/10"
+            style={{ background: 'rgb(var(--admin-bg))', boxShadow: '0 8px 32px rgb(0 0 0 / 0.4)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative flex items-center justify-center mb-4 pr-12">
-              <h2 id="sell-info-popup-title" className="text-ds-h3 font-bold text-fg uppercase tracking-label text-center">Come funziona</h2>
+              <h2 id="sell-info-popup-title" className="font-kalshi text-xl sm:text-2xl font-bold text-fg text-center tracking-tight">Come funziona</h2>
               <button
                 type="button"
                 onClick={() => setShowSellInfoPopup(false)}
@@ -993,34 +1024,34 @@ export default function EventDetailPage({
             <p className="text-ds-h3 font-bold text-fg uppercase tracking-label text-center mb-2">Esempio</p>
             <p className="text-ds-body-sm text-fg-muted mb-2">Hai 100 quote SÌ.</p>
             <p className="text-ds-body-sm text-fg-muted mb-1">
-              Se l&apos;evento è SÌ → ricevi <span className="font-semibold text-emerald-500 dark:text-emerald-400">100</span> crediti.
+              Se l&apos;evento è SÌ → ricevi <span className="font-semibold text-success">100</span> crediti.
             </p>
             <p className="text-ds-body-sm text-fg-muted mb-4">
-              Se l&apos;evento è NO → ricevi <span className="font-semibold text-red-500 dark:text-red-400">0</span>.
+              Se l&apos;evento è NO → ricevi <span className="font-semibold text-danger">0</span>.
             </p>
-            <p className="text-ds-body-sm text-fg-muted pt-3 border-t border-white/10 text-center">
+            <p className="text-ds-body-sm text-fg-muted pt-3 border-t border-border/60 text-center">
               Il tuo profitto dipende dal prezzo a cui hai acquistato le quote.
             </p>
           </div>
         </div>
       )}
 
-      {/* Popup Criterio di risoluzione e scadenza */}
+      {/* Popup Regole di mercato (Market Rulebook) */}
       {showResolutionPopup && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md transition-[background-color,filter] duration-300"
+          className="scrim-below-app-header z-50 flex items-center justify-center p-4 bg-admin-bg/85 backdrop-blur-md"
           role="dialog"
           aria-modal="true"
           aria-labelledby="resolution-popup-title"
           onClick={() => setShowResolutionPopup(false)}
         >
           <div
-            className="event-detail-box event-detail-box-neon max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 rounded-2xl"
-            style={{ background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
+            className="event-detail-section max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 rounded-xl border border-white/10"
+            style={{ background: 'rgb(var(--admin-bg))', boxShadow: '0 8px 32px rgb(0 0 0 / 0.4)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-3 mb-4">
-              <h2 id="resolution-popup-title" className="text-ds-h3 font-bold text-fg">Criterio di risoluzione e scadenza</h2>
+              <h2 id="resolution-popup-title" className="text-ds-h3 font-bold text-fg">Regole di mercato</h2>
               <button
                 type="button"
                 onClick={() => setShowResolutionPopup(false)}
@@ -1032,34 +1063,94 @@ export default function EventDetailPage({
                 </svg>
               </button>
             </div>
-            {event.resolutionNotes && (
-              <p className="text-ds-body-sm text-fg-muted whitespace-pre-wrap mb-4">{event.resolutionNotes}</p>
-            )}
-            {event.resolutionSourceUrl && (
-              <p className="text-ds-body-sm text-fg mb-4">
-                Fonte di risoluzione:{" "}
-                <a
-                  href={event.resolutionSourceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:text-primary-hover underline font-medium"
-                >
-                  {event.resolutionSourceUrl.replace(/^https?:\/\//, "").split("/")[0]}
-                </a>
-              </p>
-            )}
-            <div className="text-ds-body-sm text-fg-muted pt-4 border-t border-white/10 space-y-1">
-              <p>Creato da {event.createdBy.name || "Utente"} · {new Date(event.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}</p>
-              <p>Chiusura: {new Date(event.closesAt).toLocaleDateString("it-IT", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</p>
+            <div className="space-y-5 text-ds-body-sm">
+              {/* Oggetto del contratto */}
+              <div>
+                <h3 className="font-semibold text-fg mb-2 uppercase tracking-wider text-xs">Oggetto</h3>
+                <p className="text-fg font-medium">{event.title}</p>
+                {event.description && (
+                  <p className="text-fg-muted mt-1.5 whitespace-pre-wrap">{event.description}</p>
+                )}
+              </div>
+
+              {/* Criterio di pagamento */}
+              <div>
+                <h3 className="font-semibold text-fg mb-2 uppercase tracking-wider text-xs">Criterio di pagamento</h3>
+                <p className="text-fg-muted mb-2 text-xs">Le quote SÌ pagano 1 credito se l&apos;esito è SÌ, 0 se NO. Le quote NO pagano 1 credito se l&apos;esito è NO, 0 se SÌ.</p>
+                {(event.resolutionCriteriaYes || event.resolutionCriteriaNo || event.resolutionCriteria) ? (
+                  event.resolutionCriteria ? (
+                    <p className="text-fg-muted whitespace-pre-wrap">{event.resolutionCriteria}</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {event.resolutionCriteriaYes && (
+                        <p className="text-fg-muted">
+                          <span className="font-medium text-success">SÌ paga se:</span> {event.resolutionCriteriaYes}
+                        </p>
+                      )}
+                      {event.resolutionCriteriaNo && (
+                        <p className="text-fg-muted">
+                          <span className="font-medium text-danger">NO paga se:</span> {event.resolutionCriteriaNo}
+                        </p>
+                      )}
+                    </div>
+                  )
+                ) : event.resolutionNotes ? (
+                  <p className="text-fg-muted whitespace-pre-wrap">{event.resolutionNotes}</p>
+                ) : (
+                  <p className="text-fg-muted italic">Criterio non specificato. La risoluzione avviene secondo la fonte ufficiale indicata.</p>
+                )}
+              </div>
+
+              {/* Fonte di risoluzione */}
+              <div>
+                <h3 className="font-semibold text-fg mb-2 uppercase tracking-wider text-xs">Fonte di risoluzione</h3>
+                {event.resolutionSourceUrl ? (
+                  <a
+                    href={event.resolutionSourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-primary-hover underline font-medium break-all"
+                  >
+                    {event.resolutionAuthorityHost || event.resolutionSourceUrl.replace(/^https?:\/\//, "").split("/")[0]}
+                  </a>
+                ) : (
+                  <p className="text-fg-muted italic">Non specificata</p>
+                )}
+              </div>
+
+              {/* Scadenza e identificativi */}
+              <div className="pt-4 border-t border-border/60 space-y-2">
+                <h3 className="font-semibold text-fg mb-2 uppercase tracking-wider text-xs">Scadenza e identificativi</h3>
+                <div className="space-y-1 text-fg-muted">
+                  <p><span className="text-fg/80">Chiusura:</span> <span suppressHydrationWarning>{new Date(event.closesAt).toLocaleDateString("it-IT", dateOptions)}</span></p>
+                  {event.marketId && <p><span className="text-fg/80">ID mercato:</span> {event.marketId}</p>}
+                  <p><span className="text-fg/80">Creato:</span> {event.createdBy.name || "Utente"} · <span suppressHydrationWarning>{new Date(event.createdAt).toLocaleDateString("it-IT", dateOptionsShort)}</span></p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
 
+      <SellConfirmModal
+        open={sellConfirmOpen}
+        onClose={() => {
+          setSellConfirmOpen(false);
+          setSellConfirmLegs([]);
+          setSellError(null);
+        }}
+        eventId={event.id}
+        eventTitle={eventHeadingTitle}
+        legs={sellConfirmLegs}
+        onConfirm={runSellFromModal}
+        confirming={sellLoading}
+        error={sellError}
+      />
+
       {showPredictionModal && (
         <PredictionModal
           eventId={event.id}
-          eventTitle={getDisplayTitle(event.title, debugMode)}
+          eventTitle={eventHeadingTitle}
           isOpen={showPredictionModal}
           onClose={() => {
             setShowPredictionModal(false);
@@ -1068,6 +1159,16 @@ export default function EventDetailPage({
           onSuccess={handlePredictionSuccess}
           userCredits={userCredits}
           initialOutcome={predictionOutcome}
+          outcomeLabels={sportMatchTeams ? { YES: sportMatchTeams.teamA, NO: sportMatchTeams.teamB } : undefined}
+          outcomeOptions={isMultiOptionWithOptions ? outcomeOptions : undefined}
+          binaryYesProbabilityPct={
+            !isMultiOptionWithOptions ? (typeof event.probability === "number" ? event.probability : 50) : undefined
+          }
+          outcomeProbabilityPctByKey={
+            isMultiOptionWithOptions
+              ? Object.fromEntries((event.outcomeProbabilities ?? []).map((p) => [p.key, p.probabilityPct]))
+              : undefined
+          }
         />
       )}
       <PublishCommentModal

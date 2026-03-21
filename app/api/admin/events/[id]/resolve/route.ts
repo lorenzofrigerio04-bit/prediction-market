@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin";
+import { requireAdminCapability } from "@/lib/admin";
 import { createAuditLog } from "@/lib/audit";
 import { updateMissionProgress } from "@/lib/missions";
 import { handleMissionEvent } from "@/lib/missions/mission-progress-service";
@@ -9,10 +9,18 @@ import { resolveMarketMarkResolved, payoutMarketInBatches } from "@/lib/amm/reso
 import { invalidatePriceCache } from "@/lib/cache/price";
 import { invalidateTrendingCache } from "@/lib/cache/trending";
 import { invalidateAllFeedCaches } from "@/lib/feed-cache";
+import {
+  BINARY_OUTCOME_MARKET_TYPES,
+  getValidOutcomeKeys,
+  isMarketTypeId,
+  MULTI_OPTION_MARKET_TYPES,
+} from "@/lib/market-types";
 
 /**
  * POST /api/admin/events/[id]/resolve
- * Risolve un evento (imposta outcome YES o NO) e applica i payout AMM da Position (1 share = 1 credit).
+ * Risolve un evento.
+ * - BINARY / THRESHOLD: outcome = "YES" | "NO" → salva esito e applica payout AMM.
+ * - MULTIPLE_CHOICE, RANGE, TIME_TO_EVENT, COUNT_VOLUME, RANKING: outcome = chiave opzione vincente → salva esito e payout quote AMM vincenti.
  */
 export async function POST(
   request: NextRequest,
@@ -23,12 +31,14 @@ export async function POST(
     const body = await request.json().catch(() => ({}));
     const { outcome, auto: isAuto } = body;
 
-    if (!outcome || (outcome !== "YES" && outcome !== "NO")) {
+    if (outcome == null || typeof outcome !== "string" || outcome.trim() === "") {
       return NextResponse.json(
-        { error: "Outcome deve essere 'YES' o 'NO'" },
+        { error: "Outcome obbligatorio: 'YES' | 'NO' oppure chiave opzione (per mercati multi-opzione)" },
         { status: 400 }
       );
     }
+
+    const outcomeTrimmed = outcome.trim();
 
     const cronSecret = process.env.CRON_SECRET?.trim();
     const authHeader = request.headers.get("authorization");
@@ -41,7 +51,7 @@ export async function POST(
     if (isCronAuth) {
       actorId = null;
     } else {
-      const admin = await requireAdmin();
+      const admin = await requireAdminCapability("events:resolve");
       actorId = admin.id;
     }
 
@@ -53,6 +63,8 @@ export async function POST(
         resolved: true,
         tradingMode: true,
         resolutionSourceUrl: true,
+        marketType: true,
+        outcomes: true,
       },
     });
 
@@ -76,68 +88,105 @@ export async function POST(
         { status: 400 }
       );
     }
-    {
-      await prisma.$transaction((tx) =>
-        resolveMarketMarkResolved(tx, eventId, outcome as "YES" | "NO")
-      );
-      const { paidUserIds } = await payoutMarketInBatches(prisma, eventId, outcome as "YES" | "NO", 500);
 
-      const allPredictions = await prisma.prediction.findMany({
-        where: { eventId, resolved: true },
-        select: { userId: true, won: true },
-      });
-      const paidSet = new Set(paidUserIds);
-      for (const p of allPredictions) {
-        handleMissionEvent(prisma, p.userId, p.won ? "WIN_PREDICTION" : "LOSE_PREDICTION", {
-          eventId,
-          outcome: outcome as "YES" | "NO",
-          won: p.won ?? false,
-        }).catch((e) => console.error("Mission event (win/lose) error:", e));
+    const marketType = (event.marketType ?? "BINARY") as string;
+    const isBinaryOutcome = isMarketTypeId(marketType) && BINARY_OUTCOME_MARKET_TYPES.includes(marketType);
+
+    if (isBinaryOutcome) {
+      if (outcomeTrimmed !== "YES" && outcomeTrimmed !== "NO") {
+        return NextResponse.json(
+          { error: "Per mercati binari o a soglia l'outcome deve essere 'YES' o 'NO'" },
+          { status: 400 }
+        );
       }
-
-      for (const userId of paidUserIds) {
-        updateMissionProgress(prisma, userId, "WIN_PREDICTIONS", 1).catch((e) =>
-          console.error("Mission progress update error:", e)
-        );
-        checkAndAwardBadges(prisma, userId).catch((e) =>
-          console.error("Badge check error:", e)
-        );
-        prisma.notification
-          .create({
-            data: {
-              userId,
-              type: "EVENT_RESOLVED",
-              data: JSON.stringify({
-                eventId: event.id,
-                eventTitle: event.title,
-                outcome: outcome === "YES" ? "yes" : "no",
-              }),
+    } else {
+      if (isMarketTypeId(marketType) && MULTI_OPTION_MARKET_TYPES.includes(marketType)) {
+        const validKeys = getValidOutcomeKeys(event.outcomes);
+        if (validKeys.length === 0) {
+          return NextResponse.json(
+            { error: "Mercato multi-opzione senza opzioni definite (outcomes vuoto o non valido)" },
+            { status: 400 }
+          );
+        }
+        if (!validKeys.includes(outcomeTrimmed)) {
+          return NextResponse.json(
+            {
+              error: `Outcome non valido. Opzioni ammesse: ${validKeys.join(", ")}`,
+              validOutcomes: validKeys,
             },
-          })
-          .catch((e) => console.error("Notification create error:", e));
+            { status: 400 }
+          );
+        }
       }
-
-      await createAuditLog(prisma, {
-        userId: actorId,
-        action: "EVENT_RESOLVE",
-        entityType: "event",
-        entityId: eventId,
-        payload: {
-          outcome,
-          tradingMode: "AMM",
-          resolutionSourceUrl: event.resolutionSourceUrl ?? undefined,
-          ...(isCronAuth && { source: "auto" }),
-        },
-      });
-
-      Promise.all([
-        invalidatePriceCache(eventId),
-        invalidateTrendingCache(),
-        invalidateAllFeedCaches(),
-      ]).catch((e) => console.error("Cache invalidation error:", e));
-
-      return NextResponse.json({ success: true });
     }
+
+    await prisma.$transaction((tx) =>
+      resolveMarketMarkResolved(tx, eventId, outcomeTrimmed)
+    );
+
+    const payoutResult = await payoutMarketInBatches(
+      prisma,
+      eventId,
+      outcomeTrimmed,
+      500
+    );
+    const paidUserIds = payoutResult.paidUserIds;
+
+    const allPredictions = await prisma.prediction.findMany({
+      where: { eventId, resolved: true },
+      select: { userId: true, won: true },
+    });
+    for (const p of allPredictions) {
+      handleMissionEvent(prisma, p.userId, p.won ? "WIN_PREDICTION" : "LOSE_PREDICTION", {
+        eventId,
+        outcome: outcomeTrimmed,
+        won: p.won ?? false,
+      }).catch((e) => console.error("Mission event (win/lose) error:", e));
+    }
+
+    for (const userId of paidUserIds) {
+      updateMissionProgress(prisma, userId, "WIN_PREDICTIONS", 1).catch((e) =>
+        console.error("Mission progress update error:", e)
+      );
+      checkAndAwardBadges(prisma, userId).catch((e) =>
+        console.error("Badge check error:", e)
+      );
+      prisma.notification
+        .create({
+          data: {
+            userId,
+            type: "EVENT_RESOLVED",
+            data: JSON.stringify({
+              eventId: event.id,
+              eventTitle: event.title,
+              outcome: outcomeTrimmed === "YES" ? "yes" : outcomeTrimmed === "NO" ? "no" : outcomeTrimmed,
+            }),
+          },
+        })
+        .catch((e) => console.error("Notification create error:", e));
+    }
+
+    await createAuditLog(prisma, {
+      userId: actorId,
+      action: "EVENT_RESOLVE",
+      entityType: "event",
+      entityId: eventId,
+      payload: {
+        outcome: outcomeTrimmed,
+        marketType,
+        tradingMode: "AMM",
+        resolutionSourceUrl: event.resolutionSourceUrl ?? undefined,
+        ...(isCronAuth && { source: "auto" }),
+      },
+    });
+
+    Promise.all([
+      invalidatePriceCache(eventId),
+      invalidateTrendingCache(),
+      invalidateAllFeedCaches(),
+    ]).catch((e) => console.error("Cache invalidation error:", e));
+
+    return NextResponse.json({ success: true });
   } catch (error: unknown) {
     console.error("Error resolving event:", error);
     const msg = error instanceof Error ? error.message : String(error);

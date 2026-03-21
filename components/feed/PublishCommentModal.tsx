@@ -78,7 +78,7 @@ export function PublishCommentModal({
       aria-labelledby="publish-comment-modal-title"
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-black/15 dark:border-white/15 bg-bg p-6 shadow-xl"
+        className="w-full max-w-md rounded-2xl border border-white/10 bg-admin-bg p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">

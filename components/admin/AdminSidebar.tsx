@@ -5,7 +5,9 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/admin", label: "Eventi", icon: "📋" },
+  { href: "/admin/operations", label: "Operations", icon: "🛠️" },
   { href: "/admin/resolve", label: "Risoluzione eventi", icon: "✅" },
+  { href: "/admin/pipeline-metrics", label: "Pipeline metrics", icon: "📊" },
   { href: "/admin/simulate", label: "Simulazione bot", icon: "🤖" },
   { href: "/admin/users", label: "Utenti", icon: "👤" },
   { href: "/admin/moderation", label: "Moderazione", icon: "💬" },
@@ -17,7 +19,7 @@ export default function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-56 min-h-screen bg-surface/30 border-r border-border dark:border-white/10 flex flex-col">
+    <aside className="w-56 min-h-screen bg-white/[0.06] border-r border-white/10 flex flex-col">
       <div className="p-4 border-b border-border dark:border-white/10">
         <Link
           href="/admin"
@@ -33,8 +35,8 @@ export default function AdminSidebar() {
         {navItems.map((item) => {
           const isActive =
             item.href === "/admin"
-              ? pathname === "/admin" || (pathname.startsWith("/admin/events") && !pathname.startsWith("/admin/resolve"))
-              : pathname === item.href || pathname.startsWith(item.href + "/");
+              ? pathname === "/admin" || (pathname?.startsWith("/admin/events") && !pathname?.startsWith("/admin/resolve"))
+              : pathname === item.href || pathname?.startsWith(item.href + "/");
           return (
             <Link
               key={item.href}

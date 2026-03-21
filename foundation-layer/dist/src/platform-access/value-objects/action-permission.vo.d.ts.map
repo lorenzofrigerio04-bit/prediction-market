@@ -1,0 +1,1 @@
+{"version":3,"file":"action-permission.vo.d.ts","sourceRoot":"","sources":["../../../../src/platform-access/value-objects/action-permission.vo.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,OAAO,EAAE,MAAM,+BAA+B,CAAC;AAG7D,MAAM,MAAM,gBAAgB,GAAG,OAAO,CAAC,MAAM,EAAE,kBAAkB,CAAC,CAAC;AAEnE,eAAO,MAAM,sBAAsB,GAAI,OAAO,MAAM,KAAG,gBAC6C,CAAC"}

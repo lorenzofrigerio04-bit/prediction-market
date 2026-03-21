@@ -1,0 +1,80 @@
+import { ValidationError } from "../../common/errors/validation-error.js";
+import { assertNonEmpty, normalizeKey, normalizeWhitespace } from "../../common/utils/normalization.js";
+import { createScore0100 } from "../../market-design/value-objects/score.vo.js";
+import { createConfidenceScore, type ConfidenceScore } from "../../value-objects/confidence-score.vo.js";
+
+export type DeterministicMetadata = Readonly<Record<string, unknown>>;
+
+export type PublishingIssue = Readonly<{
+  code: string;
+  message: string;
+  path: string;
+}>;
+
+const hasInvalidPrimitive = (value: unknown): boolean => {
+  if (value === null) {
+    return false;
+  }
+  if (typeof value === "string" || typeof value === "boolean") {
+    return false;
+  }
+  if (typeof value === "number") {
+    return !Number.isFinite(value);
+  }
+  if (Array.isArray(value)) {
+    return value.some(hasInvalidPrimitive);
+  }
+  if (typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).some(hasInvalidPrimitive);
+  }
+  return true;
+};
+
+export const createDeterministicMetadata = (
+  value: Record<string, unknown>,
+  field: string,
+): DeterministicMetadata => {
+  if (hasInvalidPrimitive(value)) {
+    throw new ValidationError("INVALID_DETERMINISTIC_METADATA", `${field} must be JSON-serializable`, {
+      field,
+    });
+  }
+  return Object.freeze({ ...value });
+};
+
+const validateIssue = (value: PublishingIssue, field: string): PublishingIssue =>
+  Object.freeze({
+    code: assertNonEmpty(value.code, `${field}.code`),
+    message: assertNonEmpty(value.message, `${field}.message`),
+    path: assertNonEmpty(value.path, `${field}.path`),
+  });
+
+export const createIssueCollection = (
+  values: readonly PublishingIssue[],
+  field: string,
+): readonly PublishingIssue[] => {
+  const normalized = values.map((value, index) => validateIssue(value, `${field}[${index}]`));
+  const keys = normalized.map((value) => `${normalizeKey(value.code)}|${normalizeKey(value.path)}`);
+  if (new Set(keys).size !== keys.length) {
+    throw new ValidationError("DUPLICATE_PUBLISHING_ISSUE", `${field} must not contain duplicates`, {
+      field,
+    });
+  }
+  return Object.freeze([...normalized]);
+};
+
+export const createSummaryConfidence = (value: number): ConfidenceScore => createConfidenceScore(value);
+
+export const createStructuralReadinessScore = (value: number): number => createScore0100(value, "score");
+
+export const createTextBlock = (value: string, field: string): string =>
+  assertNonEmpty(normalizeWhitespace(value), field);
+
+export const createDeterministicToken = (seed: string): string => {
+  const normalized = normalizeWhitespace(seed).toLowerCase();
+  let acc = 0;
+  for (let index = 0; index < normalized.length; index += 1) {
+    acc = (acc * 31 + normalized.charCodeAt(index)) % 1_000_000;
+  }
+  return acc.toString().padStart(6, "0");
+};

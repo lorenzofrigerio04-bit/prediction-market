@@ -1,0 +1,10 @@
+export declare enum ArtifactType {
+    MARKET_PAYLOAD = "MARKET_PAYLOAD",
+    RULEBOOK = "RULEBOOK",
+    TITLE_SET = "TITLE_SET",
+    RESOLUTION_SUMMARY = "RESOLUTION_SUMMARY",
+    AUDIT_TRAIL = "AUDIT_TRAIL",
+    METADATA = "METADATA",
+    READINESS_REPORT = "READINESS_REPORT"
+}
+//# sourceMappingURL=artifact-type.enum.d.ts.map

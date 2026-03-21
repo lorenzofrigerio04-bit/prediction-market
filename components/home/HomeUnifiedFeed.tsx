@@ -216,6 +216,7 @@ export function HomeUnifiedFeed({ onEventNavigate }: HomeUnifiedFeedProps) {
                     variant="popular"
                     onNavigate={onEventNavigate}
                     compact={true}
+                    imageUrl={e.aiImageUrl}
                   />
                 ))}
               </div>

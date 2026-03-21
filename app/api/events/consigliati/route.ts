@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getEventsWithStats } from "@/lib/fomo/event-stats";
+import { PUBLIC_EVENT_VISIBILITY } from "@/lib/event-visibility";
 
 export const dynamic = "force-dynamic";
 
@@ -21,10 +22,10 @@ const viralOrderBy = [
 
 /**
  * GET /api/events/consigliati
+ * Solo event-gen-v2 (sourceType=NEWS).
  * - categories (opzionale): comma-separated; se presente restituisce TUTTI gli eventi
- *   di quelle categorie in ordine di viralità, paginati (per visione generale + filtri).
+ *   di quelle categorie in ordine di viralità, paginati.
  * - Senza categories: feed personalizzato (cold = viral; warm = 70% gusti, 30% random).
- * - offset/limit per scroll infinito (nessun limite al numero totale di eventi).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -43,10 +44,10 @@ export async function GET(request: NextRequest) {
 
     const now = new Date();
     const baseWhere = {
+      ...PUBLIC_EVENT_VISIBILITY,
       resolved: false,
       status: "OPEN" as const,
       closesAt: { gt: now },
-      category: { not: "News" as const },
     };
 
     let eventIds: string[];

@@ -1,0 +1,1 @@
+{"version":3,"file":"editorial-reviewer.d.ts","sourceRoot":"","sources":["../../../../../src/editorial/reviews/interfaces/editorial-reviewer.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,wCAAwC,CAAC;AAC9E,OAAO,KAAK,EAAE,gBAAgB,EAAE,MAAM,mDAAmD,CAAC;AAE1F,MAAM,WAAW,iBAAiB;IAChC,aAAa,CAAC,KAAK,EAAE,gBAAgB,EAAE,MAAM,EAAE,eAAe,GAAG,eAAe,CAAC;CAClF"}

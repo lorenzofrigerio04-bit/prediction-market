@@ -1,0 +1,2 @@
+export { type GovernanceSource as SourceEnablementControl, createGovernanceSource as createSourceEnablementControl } from "./governance-source.entity.js";
+//# sourceMappingURL=source-enablement-control.entity.d.ts.map

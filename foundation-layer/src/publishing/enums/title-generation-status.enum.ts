@@ -1,0 +1,6 @@
+export enum TitleGenerationStatus {
+  PENDING = "PENDING",
+  GENERATED = "GENERATED",
+  FAILED = "FAILED",
+  REQUIRES_REVIEW = "REQUIRES_REVIEW",
+}

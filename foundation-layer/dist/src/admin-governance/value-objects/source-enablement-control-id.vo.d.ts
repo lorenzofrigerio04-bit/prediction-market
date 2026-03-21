@@ -1,0 +1,2 @@
+export { type GovernanceSourceId as SourceEnablementControlId, createGovernanceSourceId as createSourceEnablementControlId } from "./admin-governance-ids.vo.js";
+//# sourceMappingURL=source-enablement-control-id.vo.d.ts.map

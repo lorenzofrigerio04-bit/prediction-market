@@ -15,19 +15,6 @@ export interface LandingEventRowEvent {
   b?: number | null;
 }
 
-const CATEGORY_ICONS: Record<string, string> = {
-  Sport: "⚽",
-  Tecnologia: "💻",
-  Politica: "🏛️",
-  Economia: "📈",
-  Cultura: "🎭",
-  Altro: "✨",
-};
-
-function getCategoryIcon(category: string): string {
-  return CATEGORY_ICONS[category] ?? "✨";
-}
-
 function getTimeRemaining(closesAt: string): string {
   const timeUntilClose = new Date(closesAt).getTime() - Date.now();
   if (timeUntilClose <= 0) return "Chiuso";
@@ -56,7 +43,6 @@ export default function LandingEventRow({ event }: LandingEventRowProps) {
   }
   const noPct = 100 - yesPct;
   const timeLabel = getTimeRemaining(event.closesAt);
-  const icon = getCategoryIcon(event.category);
   const isPolitica = event.category === "Politica";
   const isCultura = event.category === "Cultura";
   const isSport = event.category === "Sport";
@@ -71,11 +57,7 @@ export default function LandingEventRow({ event }: LandingEventRowProps) {
     >
       <div className="landing-event-row__bg" aria-hidden />
       <div className="relative z-10">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg text-ds-micro font-semibold bg-white/5 dark:bg-black/40 border border-white/10 dark:border-primary/30 text-fg shrink-0">
-          <span aria-hidden>{icon}</span>
-          {event.category}
-        </span>
+      <div className="flex items-center justify-end gap-3 mb-3">
         <span className="text-ds-micro font-bold font-numeric text-primary shrink-0">
           {timeLabel}
         </span>

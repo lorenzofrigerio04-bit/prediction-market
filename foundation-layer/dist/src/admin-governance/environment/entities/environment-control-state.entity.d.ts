@@ -1,0 +1,2 @@
+export { type GovernanceEnvironmentBinding as EnvironmentControlState, createGovernanceEnvironmentBinding as createEnvironmentControlState } from "./governance-environment-binding.entity.js";
+//# sourceMappingURL=environment-control-state.entity.d.ts.map

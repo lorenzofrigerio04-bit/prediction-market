@@ -1,0 +1,1 @@
+{"version":3,"file":"validate-title-set.d.ts","sourceRoot":"","sources":["../../../../src/publishing/validators/validate-title-set.ts"],"names":[],"mappings":"AAAA,OAAO,EAAwB,KAAK,gBAAgB,EAAc,MAAM,4CAA4C,CAAC;AACrH,OAAO,EAIL,KAAK,iBAAiB,EAEvB,MAAM,8CAA8C,CAAC;AACtD,OAAO,KAAK,EAAE,QAAQ,EAAE,MAAM,wCAAwC,CAAC;AAuDvE,eAAO,MAAM,gBAAgB,GAAI,OAAO,QAAQ,EAAE,UAAU,iBAAiB,KAAG,gBAK/E,CAAC"}

@@ -5,6 +5,10 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
+import {
+  isMarketTypeId,
+  MULTI_OPTION_MARKET_TYPES,
+} from "@/lib/market-types";
 
 type Tx = Omit<
   PrismaClient,
@@ -13,11 +17,12 @@ type Tx = Omit<
 
 /**
  * Phase A: Mark event resolved. Short transaction, lock order: Event -> AmmState.
+ * outcome: per BINARY/THRESHOLD è "YES" | "NO"; per multi-opzione è la chiave dell'opzione vincente (es. "real_madrid").
  */
 export async function resolveMarketMarkResolved(
   tx: Tx,
   eventId: string,
-  outcome: "YES" | "NO"
+  outcome: string
 ): Promise<void> {
   const event = await tx.event.findUnique({
     where: { id: eventId },
@@ -44,15 +49,79 @@ export async function resolveMarketMarkResolved(
 export async function payoutMarketInBatches(
   prisma: PrismaClient,
   eventId: string,
-  outcome: "YES" | "NO",
+  outcome: string,
   batchSize: number = 500
 ): Promise<{ paidCount: number; paidUserIds: string[] }> {
   const event = await prisma.event.findUnique({
     where: { id: eventId },
-    select: { outcome: true, resolved: true, tradingMode: true },
+    select: { outcome: true, resolved: true, tradingMode: true, marketType: true },
   });
   if (!event || event.tradingMode !== "AMM" || !event.resolved || event.outcome !== outcome) {
     throw new Error("Event not resolved or outcome mismatch");
+  }
+
+  const marketType = event.marketType ?? "BINARY";
+  const isMultiOutcomeMarket =
+    isMarketTypeId(marketType) &&
+    MULTI_OPTION_MARKET_TYPES.includes(marketType);
+
+  if (isMultiOutcomeMarket) {
+    let paidCount = 0;
+    const paidUserIds: string[] = [];
+    const users = await prisma.trade.findMany({
+      where: { eventId, outcome },
+      distinct: ["userId"],
+      select: { userId: true },
+      orderBy: { userId: "asc" },
+    });
+    for (let offset = 0; offset < users.length; offset += batchSize) {
+      const batchUsers = users.slice(offset, offset + batchSize);
+      await prisma.$transaction(async (tx) => {
+        for (const row of batchUsers) {
+          const existing = await tx.transaction.findFirst({
+            where: {
+              userId: row.userId,
+              type: "SHARE_PAYOUT",
+              referenceId: eventId,
+            },
+          });
+          if (existing) continue;
+
+          const [buyAgg, sellAgg] = await Promise.all([
+            tx.trade.aggregate({
+              where: { eventId, userId: row.userId, outcome, side: "BUY" },
+              _sum: { shareMicros: true },
+            }),
+            tx.trade.aggregate({
+              where: { eventId, userId: row.userId, outcome, side: "SELL" },
+              _sum: { shareMicros: true },
+            }),
+          ]);
+          const netShares =
+            (buyAgg._sum.shareMicros ?? 0n) - (sellAgg._sum.shareMicros ?? 0n);
+          if (netShares <= 0n) continue;
+
+          await tx.transaction.create({
+            data: {
+              userId: row.userId,
+              type: "SHARE_PAYOUT",
+              amount: 0,
+              amountMicros: netShares,
+              referenceId: eventId,
+              referenceType: "event",
+            },
+          });
+          await tx.user.update({
+            where: { id: row.userId },
+            data: { creditsMicros: { increment: netShares } },
+          });
+          paidCount += 1;
+          paidUserIds.push(row.userId);
+        }
+      });
+    }
+
+    return { paidCount, paidUserIds };
   }
 
   let paidCount = 0;

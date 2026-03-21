@@ -1,0 +1,1 @@
+{"version":3,"file":"access-scope-resolver.d.ts","sourceRoot":"","sources":["../../../../../src/platform-access/scopes/interfaces/access-scope-resolver.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,WAAW,EAAE,MAAM,oCAAoC,CAAC;AACtE,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,+CAA+C,CAAC;AAEpF,MAAM,WAAW,mBAAmB;IAClC,WAAW,CAAC,MAAM,EAAE,cAAc,GAAG,SAAS,WAAW,EAAE,CAAC;CAC7D"}

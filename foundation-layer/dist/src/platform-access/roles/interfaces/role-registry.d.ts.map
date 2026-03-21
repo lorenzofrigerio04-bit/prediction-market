@@ -1,0 +1,1 @@
+{"version":3,"file":"role-registry.d.ts","sourceRoot":"","sources":["../../../../../src/platform-access/roles/interfaces/role-registry.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,uCAAuC,CAAC;AAC5E,OAAO,KAAK,EAAE,gBAAgB,EAAE,MAAM,+CAA+C,CAAC;AAEtF,MAAM,WAAW,YAAY;IAC3B,OAAO,CAAC,MAAM,EAAE,gBAAgB,GAAG,cAAc,GAAG,IAAI,CAAC;CAC1D"}

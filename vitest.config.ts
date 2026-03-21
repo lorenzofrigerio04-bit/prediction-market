@@ -9,6 +9,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./"),
+      "@market-design-engine/foundation-layer": path.resolve(
+        __dirname,
+        "foundation-layer/dist/src/index.js"
+      ),
     },
   },
 });

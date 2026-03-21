@@ -1,0 +1,2 @@
+export { LEARNING_RECOMMENDATION_SCHEMA_ID as RECOMMENDATION_SET_SCHEMA_ID, learningRecommendationSchema as recommendationSetSchema, } from "./learning-recommendation.schema.js";
+//# sourceMappingURL=recommendation-set.schema.d.ts.map

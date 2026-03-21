@@ -8,6 +8,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { getPostType } from "@/lib/feed/post-type";
 import { generateEventImageForPost } from "@/lib/ai-image-generation/generate";
+import { isAiImageGenerationDisabled } from "@/lib/check-ai-image-disabled";
 import { MAX_POSTS_PER_RUN } from "./config";
 import {
   getPersonaForBotIndex,
@@ -24,8 +25,10 @@ export interface RunSimulatedPostsResult {
  * Trigger per la generazione immagine AI.
  * In development: chiamata diretta a generateEventImageForPost (evita fetch su baseUrl/porta sbagliata).
  * In production: fetch in background verso POST /api/ai/generate-event-image.
+ * Se DISABLE_AI_IMAGE_GENERATION=true non fa nulla (si usano immagini categoria).
  */
 function triggerAiImageJob(postId: string): void {
+  if (isAiImageGenerationDisabled()) return;
   const isDev =
     process.env.NODE_ENV === "development" || !process.env.VERCEL;
   if (isDev) {

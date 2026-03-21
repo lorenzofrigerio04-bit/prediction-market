@@ -1,0 +1,22 @@
+import type { Branded } from "../../common/types/branded.js";
+export type UserIdentityId = Branded<string, "UserIdentityId">;
+export type WorkspaceId = Branded<string, "WorkspaceId">;
+export type RoleDefinitionId = Branded<string, "RoleDefinitionId">;
+export type RoleAssignmentId = Branded<string, "RoleAssignmentId">;
+export type PermissionPolicyId = Branded<string, "PermissionPolicyId">;
+export type AccessScopeId = Branded<string, "AccessScopeId">;
+export type AuthorizationDecisionId = Branded<string, "AuthorizationDecisionId">;
+export type ActionPermissionCheckId = Branded<string, "ActionPermissionCheckId">;
+export type AdminCapabilityFlagId = Branded<string, "AdminCapabilityFlagId">;
+export type PlatformActionCompatibilityId = Branded<string, "PlatformActionCompatibilityId">;
+export declare const createUserIdentityId: (value: string) => UserIdentityId;
+export declare const createWorkspaceId: (value: string) => WorkspaceId;
+export declare const createRoleDefinitionId: (value: string) => RoleDefinitionId;
+export declare const createRoleAssignmentId: (value: string) => RoleAssignmentId;
+export declare const createPermissionPolicyId: (value: string) => PermissionPolicyId;
+export declare const createAccessScopeId: (value: string) => AccessScopeId;
+export declare const createAuthorizationDecisionId: (value: string) => AuthorizationDecisionId;
+export declare const createActionPermissionCheckId: (value: string) => ActionPermissionCheckId;
+export declare const createAdminCapabilityFlagId: (value: string) => AdminCapabilityFlagId;
+export declare const createPlatformActionCompatibilityId: (value: string) => PlatformActionCompatibilityId;
+//# sourceMappingURL=platform-access-ids.vo.d.ts.map

@@ -135,7 +135,7 @@ export default function AgentSphere() {
     };
   }, [status, pathname]);
 
-  if (pathname === "/oracle") return null;
+  if (pathname === "/exchange") return null;
   if (status !== "authenticated") return null;
 
   const displayName = session?.user?.name || session?.user?.email || "utente";
@@ -143,8 +143,8 @@ export default function AgentSphere() {
   const isReturning = welcomeWord === "Bentornato";
   const messageLine1 = isReturning ? `Bentornato, ${nameCapitalized}.` : `Benvenuto, ${nameCapitalized}.`;
   const messageLine2 = isReturning
-    ? "Clicca per Oracle Assistant e le previsioni."
-    : "Clicca per Oracle Assistant e le previsioni.";
+    ? "Clicca per Exchange e le previsioni."
+    : "Clicca per Exchange e le previsioni.";
 
   return (
     <>
@@ -178,9 +178,9 @@ export default function AgentSphere() {
           </div>
         )}
         <Link
-          href="/oracle"
+          href="/exchange"
           className="agent-sphere agent-sphere-chill block touch-manipulation active:scale-[0.98] transition-transform duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-full"
-          aria-label="Oracle Assistant"
+          aria-label="Exchange"
         />
       </div>
     </>

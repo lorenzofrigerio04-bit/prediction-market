@@ -57,6 +57,14 @@ async function handleIngest(request: NextRequest) {
     const results = await processAllSources();
     const totals = aggregateStats(results);
 
+    // Invalidate trend cache so next getTrends() recomputes with fresh articles
+    try {
+      const { invalidateTrendCache } = await import("@/lib/trend-detection");
+      await invalidateTrendCache();
+    } catch (e) {
+      console.warn("[cron/ingest] Could not invalidate trend cache:", e);
+    }
+
     return NextResponse.json(
       {
         ok: true,

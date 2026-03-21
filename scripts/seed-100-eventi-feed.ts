@@ -26,10 +26,9 @@
 
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
-import { getClosureRules } from "../lib/event-generation/config";
-import { parseOutcomeDateFromText } from "../lib/event-generation/closes-at";
+import { getClosureRules, parseOutcomeDateFromText } from "../lib/event-utils";
 import { computeDedupKey } from "../lib/event-publishing/dedup";
-import { getEventGeneratorUserId } from "../lib/event-generation/create-events";
+import { getEventGeneratorUserId } from "../lib/event-utils";
 import { getBParameter } from "../lib/pricing/initialization";
 import { getBufferHoursForCategory } from "../lib/markets";
 import { ensureAmmStateForEvent } from "../lib/amm/ensure-amm-state";

@@ -195,12 +195,12 @@ export default function MissionsPage() {
         />
 
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-600 dark:text-red-400 text-ds-body-sm flex flex-wrap items-center justify-between gap-2">
+          <div className="mb-6 p-4 bg-danger/15 border border-danger/40 rounded-xl text-danger text-ds-body-sm flex flex-wrap items-center justify-between gap-2">
             <span>{error}</span>
             <button
               type="button"
               onClick={() => fetchMissions()}
-              className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-600 dark:text-red-400 font-medium text-sm hover:bg-red-500/30"
+              className="px-3 py-1.5 rounded-lg bg-danger/20 text-danger font-medium text-sm hover:bg-danger/30"
             >
               Riprova
             </button>
@@ -217,8 +217,8 @@ export default function MissionsPage() {
           <div
             className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm font-medium shadow-lg ${
               toast.type === "success"
-                ? "bg-green-600/90 text-white"
-                : "bg-slate-700/90 text-slate-100"
+                ? "bg-success/90 text-bg"
+                : "bg-surface text-fg"
             }`}
             role="alert"
           >
@@ -228,7 +228,7 @@ export default function MissionsPage() {
 
         {/* Bonus giornaliero + streak */}
         <SectionContainer>
-          <div className="rounded-xl border border-white/10 bg-bg p-4 sm:p-5 event-detail-box">
+          <div className="rounded-xl border border-border/60 bg-bg p-4 sm:p-5 event-detail-box">
             <p className="text-ds-body-sm text-fg-muted">Bonus giornaliero</p>
             {data?.canSpinToday ? (
               <>
@@ -247,7 +247,7 @@ export default function MissionsPage() {
             ) : (
               <>
                 <p className="mt-1 flex items-center gap-1.5 text-ds-h2 font-sans leading-none">
-                  <span className="font-semibold tabular-nums text-white">
+                  <span className="font-semibold tabular-nums text-fg">
                     {data?.todaySpinCredits != null ? data.todaySpinCredits.toLocaleString("it-IT") : "—"}
                   </span>
                   <svg className="h-[0.9em] w-[0.9em] shrink-0 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden style={{ verticalAlign: "middle" }}>
@@ -260,7 +260,7 @@ export default function MissionsPage() {
                 </p>
               </>
             )}
-            <div className="mt-4 border-t border-white/10 pt-4">
+            <div className="mt-4 border-t border-border/60 pt-4">
               <p className="text-ds-body font-semibold text-fg">
                 La tua streak: {data?.streak ?? 0} <span className="inline-block text-lg leading-none" aria-hidden>🔥</span>
               </p>
@@ -269,11 +269,11 @@ export default function MissionsPage() {
         </SectionContainer>
 
         {isEmpty && (
-          <div className="mb-6 p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 text-ds-body-sm">
+          <div className="mb-6 p-4 rounded-xl border border-warning/40 bg-warning/15 text-warning text-ds-body-sm">
             <p className="font-medium mb-1">Nessuna missione disponibile</p>
             <p>
               Le missioni vengono caricate dal database. Se hai appena installato il progetto, esegui il seed:{" "}
-              <code className="bg-black/20 px-1 rounded">npx prisma db seed</code>
+              <code className="bg-bg/40 px-1 rounded">npx prisma db seed</code>
             </p>
           </div>
         )}
@@ -294,7 +294,7 @@ export default function MissionsPage() {
             const sorted = sortByUnlockFirst(dailyList);
             if (sorted.length === 0) {
               return (
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-ds-body-sm text-fg-muted">
+                <div className="rounded-xl border border-border/60 bg-surface/70 p-4 text-ds-body-sm text-fg-muted">
                   Nessuna missione del giorno assegnata. Torna domani o ricarica la pagina.
                 </div>
               );
@@ -331,7 +331,7 @@ export default function MissionsPage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-ds-body-sm text-fg-muted">
+            <div className="rounded-xl border border-border/60 bg-surface/70 p-4 text-ds-body-sm text-fg-muted">
               Nessuna missione settimanale. Ricarica la pagina.
             </div>
           )}
@@ -350,9 +350,9 @@ export default function MissionsPage() {
                 <defs>
                   {/* Trama liquid glass come i box: gradiente 135° */}
                   <linearGradient id="levelWheelGlassFill" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="rgba(255,255,255,0.07)" />
-                    <stop offset="50%" stopColor="rgba(255,255,255,0.02)" />
-                    <stop offset="100%" stopColor="rgba(255,255,255,0.05)" />
+                    <stop offset="0%" stopColor="rgb(var(--text-primary) / 0.08)" />
+                    <stop offset="50%" stopColor="rgb(var(--text-primary) / 0.03)" />
+                    <stop offset="100%" stopColor="rgb(var(--text-primary) / 0.06)" />
                   </linearGradient>
                   {/* Gradiente per segmento: colore pieno lato "entrata" → trasparente verso livello successivo */}
                   {data.chapters.map((_ch, i) => {
@@ -456,7 +456,7 @@ export default function MissionsPage() {
             </div>
 
           {/* Specifiche livello corrente: barra XP e missioni */}
-          <div className="mt-6 rounded-xl border border-white/10 bg-white/5 event-detail-box p-5 sm:p-6">
+          <div className="mt-6 rounded-xl border border-border/60 bg-surface/70 event-detail-box p-5 sm:p-6">
             <div className="mb-4">
               <div className="flex items-baseline justify-between gap-2 mb-2">
                 <span className="text-ds-h3 font-bold text-fg">
@@ -469,7 +469,7 @@ export default function MissionsPage() {
                   {formatAmount(data.user.xpTotal)} XP
                 </span>
               </div>
-              <div className="h-3 bg-white/15 rounded-full overflow-hidden">
+              <div className="h-3 bg-surface rounded-full overflow-hidden">
                 <div
                   className="animate-level-progress-fill h-full rounded-full level-progress-bar-fill transition-all duration-500"
                   style={{
@@ -544,7 +544,7 @@ export default function MissionsPage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-ds-body-sm text-fg-muted">
+            <div className="rounded-xl border border-border/60 bg-surface/70 p-4 text-ds-body-sm text-fg-muted">
               Nessun obiettivo di precisione disponibile.
             </div>
           )}
@@ -621,10 +621,10 @@ function MissionCard({
     <div
       className={`relative rounded-xl border p-3 sm:p-4 transition-all duration-200 event-detail-box ${
         isClaimed
-          ? "mission-card-claimed bg-white/5"
+          ? "mission-card-claimed bg-surface/70"
           : isExpired
-            ? "border-white/5 bg-white/5 opacity-75"
-            : "border-white/10 bg-surface/30 dark:bg-white/5 hover:border-primary/30"
+            ? "border-border/40 bg-surface/70 opacity-75"
+            : "border-border/60 bg-surface/70 hover:border-primary/40"
       }`}
     >
       {tooltip && (
@@ -635,7 +635,7 @@ function MissionCard({
               e.stopPropagation();
               setInfoOpen((v) => !v);
             }}
-            className="flex h-5 w-5 items-center justify-center rounded-full text-fg-muted hover:text-fg hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+            className="flex h-5 w-5 items-center justify-center rounded-full text-fg-muted hover:text-fg hover:bg-surface transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
             aria-label="Info"
             aria-expanded={infoOpen}
           >
@@ -656,9 +656,9 @@ function MissionCard({
         <span
           className={`shrink-0 flex items-center justify-center w-9 h-9 rounded-lg ${
             isClaimed || isExpired
-              ? "bg-white/10 text-fg-muted"
+              ? "bg-surface text-fg-muted"
               : isCompleted
-                ? "bg-green-500/20 text-green-500"
+                ? "bg-success/20 text-success"
                 : "bg-primary/15 text-primary"
           }`}
           aria-hidden
@@ -685,7 +685,7 @@ function MissionCard({
           </p>
           {!isClaimed && !isExpired && (
             <div className="mt-2 flex items-center gap-2">
-              <div className="flex-1 min-w-0 h-1.5 bg-white/10 rounded-full overflow-hidden max-w-[140px]">
+              <div className="flex-1 min-w-0 h-1.5 bg-surface rounded-full overflow-hidden max-w-[140px]">
                 <div
                   className="h-full bg-primary rounded-full transition-all duration-300"
                   style={{ width: `${pct}%` }}
@@ -733,7 +733,7 @@ function MissionCard({
               )}
               {isClaimed && (
                 <span className="text-ds-body-sm text-fg-muted inline-flex items-center gap-1">
-                  <IconCheck className="w-4 h-4 text-green-500" />
+                  <IconCheck className="w-4 h-4 text-success" />
                   Riscattata
                 </span>
               )}

@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin";
+import { requireAdminCapability } from "@/lib/admin";
 import { createAuditLog } from "@/lib/audit";
-import { parseOutcomeDateFromText } from "@/lib/event-generation/closes-at";
-import { getClosureRules } from "@/lib/event-generation/config";
+import { parseOutcomeDateFromText, getClosureRules } from "@/lib/event-utils";
 
 const COHERENCE_TOLERANCE_MS = 48 * 60 * 60 * 1000;
 
@@ -16,7 +15,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
+    await requireAdminCapability("events:create");
     const { id } = await params;
     const event = await prisma.event.findUnique({
       where: { id },
@@ -45,7 +44,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireAdminCapability("events:create");
     const { id: eventId } = await params;
     const body = await request.json();
     const {

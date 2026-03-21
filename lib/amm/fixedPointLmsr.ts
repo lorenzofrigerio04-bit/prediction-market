@@ -78,6 +78,32 @@ function costMicros(
   return (bMicros * (lnSum + (maxQ * SCALE) / bMicros)) / SCALE;
 }
 
+function costMultiMicros(
+  outcomeKeys: string[],
+  qByOutcomeMicros: Record<string, bigint>,
+  bMicros: bigint
+): bigint {
+  if (bMicros <= 0n) throw new Error("bMicros must be positive");
+  if (outcomeKeys.length < 2) throw new Error("multi-outcome market needs at least 2 outcomes");
+
+  let maxQ = 0n;
+  for (const key of outcomeKeys) {
+    const q = qByOutcomeMicros[key] ?? 0n;
+    if (q < 0n) throw new Error("quantities cannot be negative");
+    if (q > maxQ) maxQ = q;
+  }
+
+  let sumExp = 0n;
+  for (const key of outcomeKeys) {
+    const q = qByOutcomeMicros[key] ?? 0n;
+    const arg = ((q - maxQ) * SCALE) / bMicros;
+    sumExp += expScaled(arg);
+  }
+  if (sumExp <= 0n) throw new Error("invalid sumExp");
+  const lnSum = lnScaled(sumExp);
+  return (bMicros * (lnSum + (maxQ * SCALE) / bMicros)) / SCALE;
+}
+
 /**
  * Price for YES outcome in micros (0 to SCALE). p_yes = exp(q_yes/b) / (exp(q_yes/b) + exp(q_no/b))
  */
@@ -184,6 +210,112 @@ export function sellGivenShares(
   } else {
     finalCost = costMicros(qYesMicros, qNoMicros - shareMicros, bMicros);
   }
+  const proceeds = initialCost - finalCost;
+  return proceeds < 0n ? 0n : proceeds;
+}
+
+/**
+ * Prices for all outcomes in a multi-outcome market (sum ~ SCALE).
+ */
+export function pricesByOutcomeMicros(
+  outcomeKeys: string[],
+  qByOutcomeMicros: Record<string, bigint>,
+  bMicros: bigint
+): Record<string, bigint> {
+  if (bMicros <= 0n) throw new Error("bMicros must be positive");
+  if (outcomeKeys.length < 2) throw new Error("multi-outcome market needs at least 2 outcomes");
+
+  let maxQ = 0n;
+  for (const key of outcomeKeys) {
+    const q = qByOutcomeMicros[key] ?? 0n;
+    if (q < 0n) throw new Error("quantities cannot be negative");
+    if (q > maxQ) maxQ = q;
+  }
+
+  const expByOutcome: Record<string, bigint> = {};
+  let sumExp = 0n;
+  for (const key of outcomeKeys) {
+    const q = qByOutcomeMicros[key] ?? 0n;
+    const arg = ((q - maxQ) * SCALE) / bMicros;
+    const exp = expScaled(arg);
+    expByOutcome[key] = exp;
+    sumExp += exp;
+  }
+  if (sumExp <= 0n) throw new Error("invalid sumExp");
+
+  const prices: Record<string, bigint> = {};
+  for (const key of outcomeKeys) {
+    prices[key] = (expByOutcome[key] * SCALE) / sumExp;
+  }
+  return prices;
+}
+
+/**
+ * Multi-outcome buy with max spend guard.
+ */
+export function buyGivenMaxCostMultiOutcome(
+  outcomeKeys: string[],
+  qByOutcomeMicros: Record<string, bigint>,
+  bMicros: bigint,
+  outcomeKey: string,
+  maxCostMicros: bigint
+): { shareMicros: bigint; actualCostMicros: bigint } {
+  if (!outcomeKeys.includes(outcomeKey)) throw new Error("invalid outcome key");
+  if (maxCostMicros <= 0n) throw new Error("maxCostMicros must be positive");
+
+  const initialCost = costMultiMicros(outcomeKeys, qByOutcomeMicros, bMicros);
+  let low = 0n;
+  let high = maxCostMicros * 50n + bMicros * 10n;
+  if (high < SCALE) high = SCALE;
+  let shareMicros = 0n;
+
+  for (let i = 0; i < 120; i++) {
+    const mid = (low + high) / 2n;
+    if (mid === low) {
+      shareMicros = low;
+      break;
+    }
+    const trial = { ...qByOutcomeMicros, [outcomeKey]: (qByOutcomeMicros[outcomeKey] ?? 0n) + mid };
+    const costDiff = costMultiMicros(outcomeKeys, trial, bMicros) - initialCost;
+    if (costDiff <= maxCostMicros) {
+      low = mid;
+      shareMicros = mid;
+    } else {
+      high = mid;
+    }
+  }
+
+  const finalMap = {
+    ...qByOutcomeMicros,
+    [outcomeKey]: (qByOutcomeMicros[outcomeKey] ?? 0n) + shareMicros,
+  };
+  let actualCostMicros = costMultiMicros(outcomeKeys, finalMap, bMicros) - initialCost;
+  if (actualCostMicros < 0n) actualCostMicros = 0n;
+  if (actualCostMicros > maxCostMicros) actualCostMicros = maxCostMicros;
+  return { shareMicros, actualCostMicros };
+}
+
+/**
+ * Multi-outcome sell.
+ */
+export function sellGivenSharesMultiOutcome(
+  outcomeKeys: string[],
+  qByOutcomeMicros: Record<string, bigint>,
+  bMicros: bigint,
+  outcomeKey: string,
+  shareMicros: bigint
+): bigint {
+  if (!outcomeKeys.includes(outcomeKey)) throw new Error("invalid outcome key");
+  if (shareMicros <= 0n) throw new Error("shareMicros must be positive");
+  const current = qByOutcomeMicros[outcomeKey] ?? 0n;
+  if (shareMicros > current) throw new Error("cannot sell more shares than available in market");
+
+  const initialCost = costMultiMicros(outcomeKeys, qByOutcomeMicros, bMicros);
+  const finalMap = {
+    ...qByOutcomeMicros,
+    [outcomeKey]: current - shareMicros,
+  };
+  const finalCost = costMultiMicros(outcomeKeys, finalMap, bMicros);
   const proceeds = initialCost - finalCost;
   return proceeds < 0n ? 0n : proceeds;
 }

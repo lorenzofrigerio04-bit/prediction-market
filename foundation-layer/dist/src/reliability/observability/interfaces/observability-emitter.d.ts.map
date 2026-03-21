@@ -1,0 +1,1 @@
+{"version":3,"file":"observability-emitter.d.ts","sourceRoot":"","sources":["../../../../../src/reliability/observability/interfaces/observability-emitter.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,2CAA2C,CAAC;AAEpF,MAAM,WAAW,oBAAoB;IACnC,IAAI,CAAC,KAAK,EAAE,kBAAkB,GAAG,kBAAkB,CAAC;IACpD,UAAU,IAAI,SAAS,kBAAkB,EAAE,CAAC;IAC5C,KAAK,IAAI,IAAI,CAAC;CACf"}

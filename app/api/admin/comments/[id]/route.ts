@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin";
+import { requireAdminCapability } from "@/lib/admin";
 import { createAuditLog } from "@/lib/audit";
 
 /**
@@ -12,7 +12,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireAdminCapability("events:moderate_comments");
     const { id: commentId } = await params;
     const body = await request.json().catch(() => ({}));
     const { hidden, reason } = body;
@@ -36,6 +36,7 @@ export async function PATCH(
         entityId: commentId,
         payload: { reason: reason || null, eventId: comment.eventId, contentPreview: comment.content.slice(0, 100) },
       });
+      return NextResponse.json({ ok: true, action: "COMMENT_HIDE", commentId });
     }
 
     return NextResponse.json({ error: "Azione non supportata" }, { status: 400 });
@@ -56,7 +57,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireAdminCapability("events:moderate_comments");
     const { id: commentId } = await params;
     const reason = request.nextUrl.searchParams.get("reason") ?? undefined;
 
@@ -77,6 +78,7 @@ export async function DELETE(
       entityId: commentId,
       payload: { reason: reason || null, eventId: comment.eventId, contentPreview: comment.content.slice(0, 100) },
     });
+    return NextResponse.json({ ok: true, action: "COMMENT_DELETE", commentId });
   } catch (error: any) {
     if (error.message === "Non autenticato" || error.message?.includes("Accesso negato")) {
       return NextResponse.json({ error: error.message }, { status: 403 });

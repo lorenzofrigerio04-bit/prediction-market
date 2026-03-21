@@ -6,6 +6,7 @@
 import OpenAI from "openai";
 import { put } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
+import { isAiImageGenerationDisabled } from "@/lib/check-ai-image-disabled";
 import { getAiImageGenerationConfig } from "./config";
 
 const PROMPT_TITLE_MAX_LEN = 220;
@@ -86,6 +87,9 @@ export async function generateEventImageForPost(
   }
   if (!post.event) {
     return { ok: false, error: "Evento non trovato" };
+  }
+  if (isAiImageGenerationDisabled()) {
+    return { ok: false, error: "Generazione immagini AI disabilitata (DISABLE_AI_IMAGE_GENERATION)" };
   }
 
   const config = getAiImageGenerationConfig();

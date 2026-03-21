@@ -9,16 +9,9 @@ import { ensureAmmStateForEvent } from "@/lib/amm/ensure-amm-state";
 import { getBParameterOrDefault } from "@/lib/pricing/initialization";
 import { handleMissionEvent } from "@/lib/missions/mission-progress-service";
 import { checkAndAwardBadges } from "@/lib/badges";
+import { SPORT_CATEGORIES } from "@/lib/sport-categories";
 
-export const ALLOWED_CATEGORIES = [
-  "Sport",
-  "Politica",
-  "Tecnologia",
-  "Economia",
-  "Cultura",
-  "Scienza",
-  "Intrattenimento",
-] as const;
+export const ALLOWED_CATEGORIES = SPORT_CATEGORIES;
 
 export type AllowedCategory = (typeof ALLOWED_CATEGORIES)[number];
 

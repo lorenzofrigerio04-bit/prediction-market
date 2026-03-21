@@ -5,6 +5,7 @@ import {
   getClosedUnresolvedEvents,
   checkResolutionSource,
 } from "@/lib/resolution/auto-resolve";
+import { resolveSportEventByMatchId } from "@/lib/resolution/football-data";
 
 export const dynamic = "force-dynamic";
 
@@ -49,16 +50,27 @@ export async function GET(request: NextRequest) {
 
     const events = await getClosedUnresolvedEvents(prisma);
     const needsReview: Array<{ id: string; reason: string }> = [];
-    const autoResolved: Array<{ id: string; outcome: "YES" | "NO" }> = [];
+    const autoResolved: Array<{ id: string; outcome: string }> = [];
     const errors: Array<{ id: string; error: string }> = [];
     const baseUrl = getCanonicalBaseUrl();
     const cronSecret = process.env.CRON_SECRET?.trim();
 
     for (const event of events) {
-      if (!event.resolutionSourceUrl?.trim()) {
+      let result: Awaited<ReturnType<typeof checkResolutionSource>>;
+
+      if (event.footballDataMatchId != null) {
+        result = await resolveSportEventByMatchId({
+          footballDataMatchId: event.footballDataMatchId,
+          marketType: event.marketType,
+          templateId: event.templateId,
+          creationMetadata: event.creationMetadata,
+        });
+      } else if (event.resolutionSourceUrl?.trim()) {
+        result = await checkResolutionSource(event.resolutionSourceUrl);
+      } else {
         needsReview.push({
           id: event.id,
-          reason: "missing resolution source URL",
+          reason: "missing resolution source (no footballDataMatchId nor resolutionSourceUrl)",
         });
         await prisma.event.update({
           where: { id: event.id },
@@ -67,9 +79,7 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      const result = await checkResolutionSource(event.resolutionSourceUrl);
-
-      if ("outcome" in result && (result.outcome === "YES" || result.outcome === "NO")) {
+      if ("outcome" in result && typeof result.outcome === "string" && result.outcome.trim() !== "") {
         const res = await fetch(
           `${baseUrl}/api/admin/events/${event.id}/resolve`,
           {

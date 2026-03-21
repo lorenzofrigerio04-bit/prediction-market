@@ -1,0 +1,11 @@
+export * from "./validate-user-identity.js";
+export * from "./validate-workspace.js";
+export * from "./validate-role-definition.js";
+export * from "./validate-role-assignment.js";
+export * from "./validate-permission-policy.js";
+export * from "./validate-access-scope.js";
+export * from "./validate-authorization-decision.js";
+export * from "./validate-action-permission-check.js";
+export * from "./validate-admin-capability-flag.js";
+export * from "./validate-platform-action-compatibility.js";
+//# sourceMappingURL=index.d.ts.map

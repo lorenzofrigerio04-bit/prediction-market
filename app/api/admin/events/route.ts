@@ -1,15 +1,15 @@
-import { createHash, randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin";
+import { requireAdminCapability } from "@/lib/admin";
 import { createAuditLog } from "@/lib/audit";
 import { validateMarket } from "@/lib/validator";
-import { getBParameter } from "@/lib/pricing/initialization";
-import { getBufferHoursForCategory } from "@/lib/markets";
-import { parseOutcomeDateFromText } from "@/lib/event-generation/closes-at";
-import { getClosureRules } from "@/lib/event-generation/config";
-import { computeDedupKey } from "@/lib/event-publishing/dedup";
-import { ensureAmmStateForEvent } from "@/lib/amm/ensure-amm-state";
+import { parseOutcomeDateFromText, getClosureRules } from "@/lib/event-utils";
+import { adminBodyToCandidateDraftContract } from "@/lib/integration/adapters/candidate-submission-adapter";
+import { manualDraftToCandidate } from "@/lib/integration/adapters/manual-submission-to-candidate-adapter";
+import { validateCandidates } from "@/lib/event-gen-v2/rulebook-validator";
+import { scoreCandidate } from "@/lib/event-publishing/scoring";
+import { publishSelectedV2 } from "@/lib/event-gen-v2/publisher";
+import { ensureTitlesForMarket } from "@/lib/psychological-title-engine";
 
 /**
  * GET /api/admin/events
@@ -17,7 +17,7 @@ import { ensureAmmStateForEvent } from "@/lib/amm/ensure-amm-state";
  */
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin();
+    await requireAdminCapability("events:create");
 
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get("status") || "all"; // all, pending, pending_resolution, resolved
@@ -65,8 +65,23 @@ export async function GET(request: NextRequest) {
       prisma.event.count({ where }),
     ]);
 
+    const eventsForClient = events.map((event) => {
+      const predictionCount =
+        (event._count?.Prediction ?? 0) +
+        ((event._count as { Trade?: number } | undefined)?.Trade ?? 0);
+      return {
+        ...event,
+        _count: {
+          predictions: predictionCount,
+          comments: event._count?.comments ?? 0,
+          // Keep legacy key for backward compatibility with older callers.
+          Prediction: event._count?.Prediction ?? 0,
+        },
+      };
+    });
+
     return NextResponse.json({
-      events,
+      events: eventsForClient,
       pagination: {
         page,
         limit,
@@ -101,7 +116,7 @@ const COHERENCE_TOLERANCE_MS = 48 * 60 * 60 * 1000;
  */
 export async function POST(request: NextRequest) {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireAdminCapability("events:create");
 
     const body = await request.json();
     const {
@@ -113,7 +128,6 @@ export async function POST(request: NextRequest) {
       resolutionSourceUrl,
       resolutionNotes,
     } = body;
-    const tradingMode = "AMM";
 
     if (!title || !category) {
       return NextResponse.json(
@@ -218,45 +232,57 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const b = getBParameter(category as Parameters<typeof getBParameter>[0], "Medium");
-    const resolutionBufferHours = getBufferHoursForCategory(category);
+    // MDE-only: crea evento solo tramite rulebook + publishSelectedV2 (no prisma.event.create).
+    const draft = adminBodyToCandidateDraftContract({
+      title,
+      description: description ?? null,
+      category,
+      closesAt: closesAtDate,
+      resolutionSourceUrl: resolutionSourceUrl.trim(),
+      resolutionNotes: resolutionNotes?.trim() ?? null,
+    });
+    const candidate = manualDraftToCandidate(draft, category.trim());
+    await ensureTitlesForMarket([candidate]);
+    const rulebookResult = validateCandidates([candidate]);
 
-    let resolutionAuthorityHost: string | null = null;
-    try {
-      resolutionAuthorityHost = new URL(resolutionSourceUrl.trim()).host;
-    } catch {
-      // URL non valido: host non impostato
-    }
-
-    let dedupKey: string;
-    if (resolutionAuthorityHost && resolutionAuthorityHost.trim() !== "") {
-      dedupKey = computeDedupKey({
-        title,
-        closesAt: closesAtDate,
-        resolutionAuthorityHost,
+    if (process.env.NODE_ENV !== "test") {
+      console.info("[admin/events] path=mde_only candidateValidation=" + (rulebookResult.valid.length > 0 ? "valid" : "rejected"), {
+        rejectedReasons: rulebookResult.rejectionReasons,
       });
-    } else {
-      dedupKey = createHash("sha256")
-        .update(`${title}|${closesAtDate.toISOString()}|${admin.id}|${randomUUID()}`)
-        .digest("hex");
     }
 
-    const event = await prisma.event.create({
-      data: {
-        title,
-        description: description || null,
-        category,
-        closesAt: closesAtDate,
-        resolutionSourceUrl: resolutionSourceUrl.trim(),
-        resolutionNotes: resolutionNotes.trim(),
-        createdById: admin.id,
-        resolutionStatus: marketValidation.needsReview ? "NEEDS_REVIEW" : "PENDING",
-        b,
-        resolutionBufferHours,
-        dedupKey,
-        tradingMode,
-        ...(resolutionAuthorityHost && { resolutionAuthorityHost }),
-      },
+    if (rulebookResult.valid.length === 0) {
+      const firstReject = rulebookResult.rejected[0];
+      const reason = firstReject?.reason ?? "Rulebook MDE ha rifiutato il candidato.";
+      return NextResponse.json(
+        { error: "Evento non conforme al rulebook MDE", reason },
+        { status: 400 }
+      );
+    }
+
+    const storylineStats = { momentum: 50, novelty: 50 };
+    const scored = scoreCandidate(rulebookResult.valid[0], storylineStats);
+    const publishResult = await publishSelectedV2(prisma, [scored], now, {
+      createdById: admin.id,
+    });
+
+    if (process.env.NODE_ENV !== "test") {
+      console.info("[admin/events] path=mde_only publishResult", {
+        createdCount: publishResult.createdCount,
+        eventIds: publishResult.eventIds?.length ?? 0,
+      });
+    }
+
+    if (!publishResult.eventIds?.length) {
+      return NextResponse.json(
+        { error: "Pubblicazione MDE non ha creato l'evento (es. dedup/skip)." },
+        { status: 500 }
+      );
+    }
+
+    const eventId = publishResult.eventIds[0];
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
       include: {
         createdBy: {
           select: {
@@ -268,8 +294,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (tradingMode === "AMM") {
-      await ensureAmmStateForEvent(prisma, event.id);
+    if (!event) {
+      return NextResponse.json(
+        { error: "Evento creato ma non trovato." },
+        { status: 500 }
+      );
     }
 
     await createAuditLog(prisma, {

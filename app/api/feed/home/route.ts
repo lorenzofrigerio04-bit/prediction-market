@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { priceYesMicros, SCALE } from "@/lib/amm/fixedPointLmsr";
+import { HOME_FEED_SOURCE_TYPE } from "@/lib/event-visibility";
 
 export const dynamic = "force-dynamic";
 
-const EVENTS_PER_CATEGORY = 8;
+const EVENTS_PER_SECTION = 12;
 
 export interface HomeSectionEvent {
   id: string;
@@ -13,48 +14,43 @@ export interface HomeSectionEvent {
   closesAt: string;
   probability: number;
   _count?: { predictions: number };
+  aiImageUrl?: string | null;
 }
 
 /**
  * GET /api/feed/home
- * Restituisce eventi SENZA foto AI, raggruppati per categoria.
- * Gli eventi con foto AI (35) sono mostrati nella pagina Discover (lente).
+ * Eventi in tendenza per la Home: solo eventi notizie (sourceType null o NEWS).
+ * Gli eventi sport (sourceType=SPORT) compaiono solo in /sport.
  */
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const limit = Math.min(
-      parseInt(searchParams.get("limit") || String(EVENTS_PER_CATEGORY), 10) ||
-        EVENTS_PER_CATEGORY,
-      20
+      parseInt(searchParams.get("limit") || String(EVENTS_PER_SECTION), 10) ||
+        EVENTS_PER_SECTION,
+      24
     );
 
     const now = new Date();
 
-    const eventIdsWithAiPhoto = await prisma.post
-      .findMany({
-        where: {
-          type: "AI_IMAGE",
-          aiImageUrl: { not: null },
-        },
-        select: { eventId: true },
-        distinct: ["eventId"],
-      })
-      .then((rows) => new Set(rows.map((r) => r.eventId)));
-
     const eventsRaw = await prisma.event.findMany({
       where: {
-        category: { not: "News" },
+        ...HOME_FEED_SOURCE_TYPE,
         resolved: false,
         closesAt: { gt: now },
-        id: { notIn: Array.from(eventIdsWithAiPhoto) },
       },
-      orderBy: [{ totalCredits: "desc" }, { createdAt: "desc" }],
-      take: 500,
+      orderBy: [{ closesAt: "asc" }, { createdAt: "desc" }],
+      take: 100,
       include: {
         _count: { select: { Prediction: true, Trade: true } },
         ammState: {
           select: { qYesMicros: true, qNoMicros: true, bMicros: true },
+        },
+        posts: {
+          where: { type: "AI_IMAGE", aiImageUrl: { not: null } },
+          take: 1,
+          orderBy: { createdAt: "desc" },
+          select: { aiImageUrl: true },
         },
       },
     });
@@ -83,27 +79,20 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    const byCategory = new Map<string, typeof events>();
-    for (const e of events) {
-      const cat = e.category?.trim() || "Altro";
-      if (!byCategory.has(cat)) byCategory.set(cat, []);
-      byCategory.get(cat)!.push(e);
-    }
-
-    const sections = Array.from(byCategory.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([category, evs]) => ({
-        category,
-        events: evs.slice(0, limit).map((e) => ({
-            id: e.id,
-            title: e.title,
-            category: e.category,
-            closesAt: e.closesAt,
-            yesPct: Math.round(e.probability ?? 50),
-            predictionsCount: e._count?.predictions,
-          })),
-      }))
-      .filter((s) => s.events.length > 0);
+    const sections = [
+      {
+        category: "Eventi in tendenza",
+        events: events.slice(0, limit).map((e) => ({
+          id: e.id,
+          title: e.title,
+          category: e.category,
+          closesAt: e.closesAt,
+          yesPct: Math.round(e.probability ?? 50),
+          predictionsCount: e._count?.predictions,
+          aiImageUrl: (e as { posts?: { aiImageUrl: string | null }[] }).posts?.[0]?.aiImageUrl ?? undefined,
+        })),
+      },
+    ].filter((s) => s.events.length > 0);
 
     return NextResponse.json({
       sections,

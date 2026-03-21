@@ -1,0 +1,1 @@
+{"version":3,"file":"queue-view-builder.d.ts","sourceRoot":"","sources":["../../../../../src/operations-console/queues/interfaces/queue-view-builder.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,wCAAwC,CAAC;AAE7E,MAAM,MAAM,mBAAmB,GAAG,QAAQ,CAAC;IACzC,IAAI,EAAE,cAAc,CAAC;CACtB,CAAC,CAAC;AAEH,MAAM,WAAW,gBAAgB;IAC/B,cAAc,CAAC,KAAK,EAAE,mBAAmB,GAAG,cAAc,CAAC;CAC5D"}

@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { toGovernanceAuditEvent } from "@/lib/integration/adapters/governance-audit-adapter";
 
 export type AuditPayload = Record<string, unknown>;
 
@@ -15,14 +16,20 @@ export async function createAuditLog(
     payload?: AuditPayload | null;
   }
 ) {
+  const governanceEvent = toGovernanceAuditEvent({
+    action: params.action,
+    entityType: params.entityType,
+    entityId: params.entityId ?? null,
+    payload: params.payload ?? null,
+  });
   return prisma.auditLog.create({
     data: {
       userId: params.userId ?? null,
-      action: params.action,
-      entityType: params.entityType,
-      entityId: params.entityId ?? null,
+      action: governanceEvent.actionKey,
+      entityType: governanceEvent.targetType,
+      entityId: governanceEvent.targetId,
       // Convert payload to JSON string for SQLite compatibility
-      payload: params.payload ? JSON.stringify(params.payload) : null,
+      payload: governanceEvent.details ? JSON.stringify(governanceEvent.details) : null,
     },
   });
 }

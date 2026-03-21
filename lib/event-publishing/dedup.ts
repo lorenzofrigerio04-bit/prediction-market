@@ -86,8 +86,15 @@ export function dedupIntraRun(candidates: ScoredCandidate[]): ScoredCandidate[] 
   return Array.from(map.values());
 }
 
+/** Candidato sport con chiave template per distinguere mercati multipli sulla stessa partita */
+type CandidateWithOptionalMatchId = ScoredCandidate & {
+  footballDataMatchId?: number | null;
+  templateId?: string | null;
+};
+
 /**
- * Dedup DB: rimuove candidati con dedupKey già presente nel DB
+ * Dedup DB: rimuove candidati con dedupKey già presente nel DB.
+ * Per candidati sport (footballDataMatchId): considera duplicato anche se esiste già un evento con lo stesso match ID.
  */
 export async function dedupFromDB(
   prisma: PrismaClient,
@@ -101,9 +108,46 @@ export async function dedupFromDB(
     DUPLICATE_IN_DB: 0,
   };
 
-  // Genera dedupKeys per tutti i candidati (escludi chi non ha host valido)
+  const now = new Date();
+  let toCheck = candidates;
+
+  // Sport: dedup per partita + template (consente più mercati sulla stessa partita).
+  const matchIds = (candidates as CandidateWithOptionalMatchId[])
+    .map((c) => c.footballDataMatchId)
+    .filter((id): id is number => id != null && Number.isInteger(id));
+  if (matchIds.length > 0) {
+    const existingByMatchId = await prisma.event.findMany({
+      where: {
+        footballDataMatchId: { in: matchIds },
+        status: 'OPEN',
+        closesAt: { gt: now },
+      },
+      select: { footballDataMatchId: true, templateId: true },
+    });
+    const existingMarketKeySet = new Set(
+      existingByMatchId
+        .map((e) =>
+          e.footballDataMatchId != null
+            ? `${e.footballDataMatchId}:${e.templateId ?? ''}`
+            : null
+        )
+        .filter((key): key is string => key != null)
+    );
+    toCheck = toCheck.filter((c) => {
+      const mid = (c as CandidateWithOptionalMatchId).footballDataMatchId;
+      if (mid != null) {
+        const candidateKey = `${mid}:${(c as CandidateWithOptionalMatchId).templateId ?? ''}`;
+        if (!existingMarketKeySet.has(candidateKey)) return true;
+        reasonsCount.DUPLICATE_IN_DB++;
+        return false;
+      }
+      return true;
+    });
+  }
+
+  // Genera dedupKeys per i restanti (escludi chi non ha host valido)
   const candidatesWithKeys: { candidate: ScoredCandidate; dedupKey: string }[] = [];
-  for (const candidate of candidates) {
+  for (const candidate of toCheck) {
     try {
       const dedupKey = computeDedupKey({
         title: candidate.title,
@@ -120,23 +164,18 @@ export async function dedupFromDB(
     return { deduped: [], reasonsCount };
   }
 
-  const dedupKeys = candidatesWithKeys.map(c => c.dedupKey);
-  const now = new Date();
-  // Duplicato solo se: status OPEN e closesAt > now (eventi attivi)
+  const dedupKeys = candidatesWithKeys.map((c) => c.dedupKey);
   const existingEvents = await prisma.event.findMany({
     where: {
       dedupKey: { in: dedupKeys },
       status: 'OPEN',
       closesAt: { gt: now },
     },
-    select: {
-      dedupKey: true,
-    },
+    select: { dedupKey: true },
   });
 
-  const existingKeysSet = new Set(existingEvents.map(e => e.dedupKey));
+  const existingKeysSet = new Set(existingEvents.map((e) => e.dedupKey));
 
-  // Filtra candidati con dedupKey già presente
   const deduped = candidatesWithKeys
     .filter(({ dedupKey }) => {
       if (existingKeysSet.has(dedupKey)) {

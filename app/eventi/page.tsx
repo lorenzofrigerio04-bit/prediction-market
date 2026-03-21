@@ -1,15 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 import { EventCardEngagement } from '@/components/events/EventCardEngagement';
 import { AuthGateModal } from '@/components/auth/AuthGateModal';
-
-// Mock: in produzione questo verrà da un hook o context
-const useAuth = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  // TODO: Integrare con sistema di autenticazione reale
-  return { isAuthenticated, setIsAuthenticated };
-};
 
 interface Event {
   id: string;
@@ -25,10 +20,41 @@ interface Event {
   isClosed?: boolean;
 }
 
+/** Mappa la risposta di /api/events al formato usato da EventCardEngagement */
+function mapApiEventToEvent(apiEvent: {
+  id: string;
+  title: string;
+  description?: string | null;
+  closesAt: Date | string;
+  category: string;
+  resolved?: boolean;
+  probability?: number;
+  _count?: { predictions?: number };
+  fomo?: { votesVelocity?: number; pointsMultiplier?: number };
+}): Event {
+  const closesAt = typeof apiEvent.closesAt === 'string' ? apiEvent.closesAt : apiEvent.closesAt?.toISOString?.() ?? '';
+  const yesPct = Math.round(apiEvent.probability ?? 50);
+  return {
+    id: apiEvent.id,
+    title: apiEvent.title,
+    description: apiEvent.description ?? '',
+    closesAt,
+    category: apiEvent.category ?? 'Altro',
+    velocity: apiEvent.fomo?.votesVelocity ?? 0,
+    participants: apiEvent._count?.predictions ?? 0,
+    yesPct,
+    noPct: 100 - yesPct,
+    pointsMultiplier: apiEvent.fomo?.pointsMultiplier ?? 1,
+    isClosed: apiEvent.resolved ?? false,
+  };
+}
+
 export default function EventiPage() {
-  const { isAuthenticated } = useAuth();
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === 'authenticated' && !!session?.user;
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showTrendingOnly, setShowTrendingOnly] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [voteIntent, setVoteIntent] = useState<{
@@ -40,68 +66,17 @@ export default function EventiPage() {
     async function fetchEvents() {
       try {
         setIsLoading(true);
-        // TODO: Sostituire con chiamata API reale
-        // const response = await fetch('/api/events?sort=closing&trendingOnly=' + showTrendingOnly);
-        // const data = await response.json();
-
-        // Mock data per sviluppo
-        const mockEvents: Event[] = [
-          {
-            id: '1',
-            title: 'Bitcoin supererà $100k entro fine anno?',
-            description:
-              'Il prezzo di Bitcoin continuerà a salire raggiungendo la soglia psicologica dei 100.000 dollari entro il 31 dicembre 2024?',
-            closesAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-            category: 'Crypto',
-            velocity: 12,
-            participants: 342,
-            yesPct: 68,
-            noPct: 32,
-            pointsMultiplier: 1.5,
-          },
-          {
-            id: '2',
-            title: 'OpenAI lancerà GPT-5 nel 2024?',
-            description:
-              'OpenAI annuncerà e renderà disponibile GPT-5 prima della fine del 2024?',
-            closesAt: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString(),
-            category: 'Tech',
-            velocity: 8,
-            participants: 189,
-            yesPct: 45,
-            noPct: 55,
-            pointsMultiplier: 2.0,
-          },
-          {
-            id: '3',
-            title: 'Italia vincerà gli Europei 2024?',
-            description:
-              'La nazionale italiana di calcio vincerà il campionato europeo 2024?',
-            closesAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-            category: 'Sport',
-            velocity: 5,
-            participants: 521,
-            yesPct: 72,
-            noPct: 28,
-            pointsMultiplier: 1.2,
-          },
-        ];
-
-        // Sort: default "in scadenza" (più vicini alla chiusura prima)
-        const sortedEvents = [...mockEvents].sort((a, b) => {
-          const aTime = new Date(a.closesAt).getTime();
-          const bTime = new Date(b.closesAt).getTime();
-          return aTime - bTime;
-        });
-
-        // Filter: se "Solo trend", mostra solo eventi con velocity > 5
-        const filteredEvents = showTrendingOnly
-          ? sortedEvents.filter((e) => e.velocity > 5)
-          : sortedEvents;
-
-        setEvents(filteredEvents);
+        setError(null);
+        const sort = showTrendingOnly ? 'popular' : 'expiring';
+        const res = await fetch(`/api/events?status=open&sort=${sort}&page=1&limit=24`);
+        if (!res.ok) throw new Error('Errore nel caricamento');
+        const data = await res.json();
+        const list = (data.events ?? []).map(mapApiEventToEvent);
+        setEvents(list);
       } catch (err) {
         console.error('Errore nel caricamento eventi:', err);
+        setError(err instanceof Error ? err.message : 'Errore di rete');
+        setEvents([]);
       } finally {
         setIsLoading(false);
       }
@@ -143,14 +118,12 @@ export default function EventiPage() {
 
   const handleLogin = () => {
     setAuthModalOpen(false);
-    // TODO: Reindirizzare a pagina login o aprire modal login
-    window.location.href = '/login';
+    window.location.href = '/auth/login';
   };
 
   const handleSignup = () => {
     setAuthModalOpen(false);
-    // TODO: Reindirizzare a pagina signup o aprire modal signup
-    window.location.href = '/signup';
+    window.location.href = '/auth/signup';
   };
 
   // Gestione del voto dopo autenticazione
@@ -182,13 +155,23 @@ export default function EventiPage() {
           <div className="eventi-loading" aria-live="polite">
             <p>Caricamento eventi...</p>
           </div>
+        ) : error ? (
+          <div className="eventi-empty" role="status">
+            <p>{error}</p>
+            <button type="button" onClick={() => window.location.reload()} className="retry-btn">
+              Riprova
+            </button>
+          </div>
         ) : events.length === 0 ? (
           <div className="eventi-empty" role="status">
             <p>
               {showTrendingOnly
                 ? 'Nessun evento in tendenza al momento.'
-                : 'Nessun evento disponibile al momento.'}
+                : 'Nessun evento disponibile. Genera eventi dalla sezione Admin o esplora le altre pagine.'}
             </p>
+            <Link href="/sport" className="eventi-empty-link">
+              Vai a Sport →
+            </Link>
           </div>
         ) : (
           <div className="eventi-grid" role="list">
@@ -268,6 +251,17 @@ export default function EventiPage() {
           text-align: center;
           padding: 3rem 1rem;
           color: var(--color-text-light);
+        }
+
+        .eventi-empty .retry-btn,
+        .eventi-empty-link {
+          margin-top: 1rem;
+          display: inline-block;
+          color: var(--color-primary);
+          font-weight: 600;
+        }
+        .eventi-empty-link:hover {
+          text-decoration: underline;
         }
 
         .eventi-grid {

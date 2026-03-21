@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/admin";
+import { requireAdminCapability } from "@/lib/admin";
 
 const DISPUTE_WINDOW_HOURS = 2;
 
@@ -10,7 +10,7 @@ const DISPUTE_WINDOW_HOURS = 2;
  */
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin();
+    await requireAdminCapability("events:resolve");
     const since = new Date();
     since.setHours(since.getHours() - DISPUTE_WINDOW_HOURS);
 

@@ -196,6 +196,11 @@ describe("getClosedUnresolvedEvents", () => {
         closesAt: new Date(now.getTime() - 1000),
         resolutionSourceUrl: "https://example.com/1",
         resolutionStatus: "PENDING",
+        marketType: "BINARY",
+        outcomes: null,
+        templateId: null,
+        creationMetadata: null,
+        footballDataMatchId: null,
       },
     ];
     const prisma = {
@@ -214,6 +219,11 @@ describe("getClosedUnresolvedEvents", () => {
         closesAt: true,
         resolutionSourceUrl: true,
         resolutionStatus: true,
+        marketType: true,
+        outcomes: true,
+        templateId: true,
+        creationMetadata: true,
+        footballDataMatchId: true,
       },
       orderBy: { closesAt: "asc" },
     });

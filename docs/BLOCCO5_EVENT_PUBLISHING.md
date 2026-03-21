@@ -34,30 +34,27 @@ Il BLOCCO 5 prende output da BLOCCO 3 (storyline elegibili) e BLOCCO 4 (candidat
 Esegue la pipeline senza pubblicare nel DB:
 
 ```bash
-pnpm dry-run:events
+pnpm pipeline:v2:dry
 ```
-
-Mostra:
-- Numero storyline elegibili
-- Numero candidati generati
-- Numero candidati dopo dedup
-- Numero candidati selezionati
-- Ragioni di scarto
 
 ### Generazione Eventi
 
 Esegue la pipeline completa e pubblica nel DB:
 
 ```bash
-pnpm generate-events
+# Via admin: Admin → Esegui pipeline
+# Oppure via cron: GET /api/cron/generate-events con CRON_SECRET
+pnpm pipeline:v2
 ```
 
 ### Purge Eventi
 
-Rimuove tutti gli eventi dal DB (utile per test):
+Rimuove tutti gli eventi dal DB (utile per test). Richiede `CONFIRM_DELETE_ALL_MARKETS=true`:
 
 ```bash
-pnpm purge:events
+CONFIRM_DELETE_ALL_MARKETS=true pnpm purge:events
+# Oppure script dedicato:
+CONFIRM_DELETE_ALL_MARKETS=true pnpm migrate:delete-all-markets
 ```
 
 ### Test

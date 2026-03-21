@@ -49,10 +49,10 @@ const REACTION_TYPES = {
 export default function CommentsSection({ eventId, variant = "default" }: CommentsSectionProps) {
   const isEmbedded = variant === "embedded";
   const wrapperClass = isEmbedded
-    ? "pt-4 mt-4 border-t border-white/10 comments-embedded"
+    ? "pt-2 comments-embedded"
     : "card-raised p-5 md:p-6 transition-all duration-200";
   const loadingWrapperClass = isEmbedded
-    ? "pt-4 mt-4 border-t border-white/10 comments-embedded"
+    ? "pt-2 comments-embedded"
     : "card-raised p-5 md:p-6";
   const { data: session } = useSession();
   const [comments, setComments] = useState<Comment[]>([]);
@@ -223,7 +223,7 @@ export default function CommentsSection({ eventId, variant = "default" }: Commen
 
     return (
         <div className={isReply ? "ml-4 md:ml-6 mt-3 pl-3 border-l-2 border-primary/30" : ""}>
-        <div className="box-raised p-4 transition-all duration-200 hover-lift">
+        <div className={isEmbedded ? "rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:bg-white/[0.05]" : "box-raised p-4 transition-all duration-200 hover-lift"}>
           <div className="flex items-start gap-3 mb-2">
             <div className="w-9 h-9 rounded-full bg-surface/60 border border-border dark:border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0 ring-2 ring-transparent dark:ring-white/5">
               {comment.user.image ? (
@@ -332,7 +332,7 @@ export default function CommentsSection({ eventId, variant = "default" }: Commen
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <div className="flex items-center gap-2">
           <IconChat className="w-5 h-5 text-primary shrink-0" aria-hidden />
-          <span className="text-ds-body font-semibold text-fg">
+          <span className="text-ds-body font-semibold text-fg uppercase tracking-label text-xs">
             {comments.length} {comments.length === 1 ? "commento" : "commenti"}
           </span>
         </div>

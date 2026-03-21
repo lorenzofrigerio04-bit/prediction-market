@@ -1,0 +1,8 @@
+export enum GrantStatus {
+  PENDING = "PENDING",
+  ACTIVE = "ACTIVE",
+  EXPIRED = "EXPIRED",
+  REVOKED = "REVOKED",
+  CONSUMED = "CONSUMED",
+  CANCELLED = "CANCELLED",
+}
