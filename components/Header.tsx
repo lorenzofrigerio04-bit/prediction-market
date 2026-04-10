@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import SideDrawer from "./SideDrawer";
 import { PredictionMasterLogoCompact } from "./PredictionMasterMark";
 import {
@@ -29,11 +29,60 @@ const bottomLinkClass =
   "flex flex-col items-center justify-center gap-1 min-w-[52px] min-h-[52px] py-1.5 rounded-xl transition-colors duration-200 touch-manipulation active:scale-[0.97] opacity-100";
 
 const SCROLL_TOP_THRESHOLD = 16;
+const MARKET_CATEGORIES = [
+  { id: "trending", label: "Tendenza", href: "/discover/tutti?sort=popular" },
+  { id: "elections", label: "Elezioni", href: "/discover/elezioni" },
+  { id: "politics", label: "Politica", href: "/discover/politica" },
+  { id: "sports", label: "Sport", href: "/discover/sport" },
+  { id: "culture", label: "Cultura", href: "/discover/cultura" },
+  { id: "crypto", label: "Cripto", href: "/discover/cripto" },
+  { id: "climate", label: "Clima", href: "/discover/clima" },
+  { id: "economics", label: "Economia", href: "/discover/economia" },
+  { id: "mentions", label: "Menzioni", href: "/discover/menzioni" },
+  { id: "companies", label: "Aziende", href: "/discover/aziende" },
+  { id: "finance", label: "Finanza", href: "/discover/finanza" },
+  { id: "tech-science", label: "Tecnologia e Scienza", href: "/discover/tecnologia-e-scienza" },
+] as const;
+
+type MarketCategoryId = (typeof MARKET_CATEGORIES)[number]["id"];
+
+function getCategoryFromRoute(pathname: string, sortParam: string | null): MarketCategoryId {
+  if (pathname === "/discover" || pathname === "/") return "trending";
+  if (pathname.startsWith("/sport")) return "sports";
+
+  if (pathname.startsWith("/discover/")) {
+    const slug = pathname.split("/")[2] ?? "";
+    if (slug === "tutti") return sortParam === "popular" ? "trending" : "trending";
+    if (slug === "elezioni" || slug === "elections") return "elections";
+    if (slug === "politica" || slug === "politics") return "politics";
+    if (slug === "sport" || slug === "sports") return "sports";
+    if (slug === "cultura" || slug === "culture") return "culture";
+    if (slug === "crypto" || slug === "cripto") return "crypto";
+    if (slug === "clima" || slug === "climate") return "climate";
+    if (slug === "economia" || slug === "economics") return "economics";
+    if (slug === "menzioni" || slug === "mentions") return "mentions";
+    if (slug === "aziende" || slug === "companies") return "companies";
+    if (slug === "finanza" || slug === "financials") return "finance";
+    if (
+      slug === "tecnologia" ||
+      slug === "scienza" ||
+      slug === "tecnologia-e-scienza" ||
+      slug === "tech-science"
+    ) {
+      return "tech-science";
+    }
+  }
+
+  return "trending";
+}
+
 export default function Header() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [activeCategoryId, setActiveCategoryId] = useState<MarketCategoryId>("trending");
 
   useEffect(() => {
     const handleScroll = () => {
@@ -44,6 +93,10 @@ export default function Header() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    setActiveCategoryId(getCategoryFromRoute(pathname ?? "/", searchParams.get("sort")));
+  }, [pathname, searchParams]);
 
   const isActive = (path: string) =>
     pathname === path || (path !== "/" && pathname.startsWith(path));
@@ -88,6 +141,36 @@ export default function Header() {
               >
                 <IconMenu className="w-6 h-6" />
               </button>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="market-categories-strip border-t border-b border-white/10 bg-[rgb(var(--admin-bg))]/90 backdrop-blur-sm"
+          aria-label="Categorie mercati"
+        >
+          <div className="mx-auto max-w-7xl px-4">
+            <div className="flex h-10 items-center overflow-x-auto whitespace-nowrap scrollbar-hide">
+              {MARKET_CATEGORIES.map((category, index) => {
+                const isActive = activeCategoryId === category.id;
+                return (
+                <span key={category.id} className="inline-flex items-center">
+                  {index > 0 && (
+                    <span className="mx-3 text-fg-muted/40" aria-hidden>
+                      &bull;
+                    </span>
+                  )}
+                  <Link
+                    href={category.href}
+                    className={`relative inline-flex items-center px-0.5 py-1 text-[13px] font-medium tracking-[0.01em] transition-colors duration-200 ${
+                      isActive ? "text-fg" : "text-fg-muted/85"
+                    }`}
+                    aria-current={isActive ? "true" : undefined}
+                  >
+                    {category.label}
+                  </Link>
+                </span>
+              )})}
             </div>
           </div>
         </div>
