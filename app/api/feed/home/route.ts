@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { priceYesMicros, SCALE } from "@/lib/amm/fixedPointLmsr";
+import { priceYesMicros, pricesByOutcomeMicros, SCALE } from "@/lib/amm/fixedPointLmsr";
 import { HOME_FEED_SOURCE_TYPE } from "@/lib/event-visibility";
+import {
+  isMarketTypeId,
+  MULTI_OPTION_MARKET_TYPES,
+  parseOutcomesJson,
+} from "@/lib/market-types";
+import { getEventMarketSharesByOutcome } from "@/lib/amm/multi-outcome-engine";
 
 export const dynamic = "force-dynamic";
 
@@ -70,12 +76,20 @@ export async function GET(request: NextRequest) {
     const predictionsCount = (c: { Prediction: number; Trade?: number }) =>
       (c.Prediction ?? 0) + (c.Trade ?? 0);
 
-    const events = eventsRaw.map((event) => {
+    const events = await Promise.all(eventsRaw.map(async (event) => {
       const { _count, ammState, ...rest } = event;
       const predCount = predictionsCount(
         _count as { Prediction: number; Trade: number }
       );
       let probability = 50;
+      let outcomeProbabilities:
+        | Array<{ key: string; label: string; probabilityPct: number }>
+        | null = null;
+      const marketType = event.marketType ?? "BINARY";
+      const isMultiOutcomeMarket =
+        isMarketTypeId(marketType) &&
+        MULTI_OPTION_MARKET_TYPES.includes(marketType);
+      const outcomeOptions = parseOutcomesJson(event.outcomes) ?? [];
       if (ammState) {
         const yesMicros = priceYesMicros(
           ammState.qYesMicros,
@@ -83,13 +97,36 @@ export async function GET(request: NextRequest) {
           ammState.bMicros
         );
         probability = Number((yesMicros * 100n) / SCALE);
+      } else if (isMultiOutcomeMarket && outcomeOptions.length > 0) {
+        try {
+          const outcomeKeys = outcomeOptions.map((o) => o.key);
+          const qByOutcome = await getEventMarketSharesByOutcome(
+            prisma,
+            event.id,
+            outcomeKeys
+          );
+          const bMicros = BigInt(Math.max(1, Math.round((event.b ?? 1) * 1_000_000)));
+          const prices = pricesByOutcomeMicros(outcomeKeys, qByOutcome, bMicros);
+          outcomeProbabilities = outcomeOptions.map((opt) => ({
+            key: opt.key,
+            label: opt.label,
+            probabilityPct: Number((prices[opt.key] * 100n) / SCALE),
+          }));
+        } catch {
+          outcomeProbabilities = outcomeOptions.map((opt) => ({
+            key: opt.key,
+            label: opt.label,
+            probabilityPct: Math.round(100 / Math.max(1, outcomeOptions.length)),
+          }));
+        }
       }
       return {
         ...rest,
         probability,
+        outcomeProbabilities,
         _count: { predictions: predCount },
       };
-    });
+    }));
 
     const byCategory = new Map<string, typeof events>();
     for (const event of events) {
@@ -122,6 +159,11 @@ export async function GET(request: NextRequest) {
             aiImageUrl:
               e.imageUrl ??
               (e as { posts?: { aiImageUrl: string | null }[] }).posts?.[0]?.aiImageUrl ??
+              undefined,
+            marketType: e.marketType ?? undefined,
+            outcomes: parseOutcomesJson(e.outcomes) ?? undefined,
+            outcomeProbabilities:
+              (e as { outcomeProbabilities?: Array<{ key: string; label: string; probabilityPct: number }> | null }).outcomeProbabilities ??
               undefined,
           })),
         };

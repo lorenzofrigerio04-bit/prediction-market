@@ -37,7 +37,18 @@ export interface HomeEventTileProps {
   marketType?: string | null;
   /** Opzioni per eventi multi-outcome */
   outcomes?: Array<{ key: string; label: string }> | null;
+  /** Probabilità per singola opzione nei mercati multi-outcome */
+  outcomeProbabilities?: Array<{ key: string; label: string; probabilityPct: number }> | null;
 }
+
+const MULTI_OUTCOME_ACCENT_CLASSES = [
+  { border: "border-emerald-400/80", label: "text-emerald-400" },
+  { border: "border-cyan-300/80", label: "text-cyan-300" },
+  { border: "border-violet-400/80", label: "text-violet-300" },
+  { border: "border-amber-300/80", label: "text-amber-300" },
+  { border: "border-rose-400/80", label: "text-rose-400" },
+  { border: "border-indigo-300/80", label: "text-indigo-300" },
+] as const;
 
 function formatTimeLeftShort(closesAt: string, nowMs: number): string {
   if (nowMs <= 0) return "—";
@@ -55,7 +66,6 @@ export default function HomeEventTile({
   category,
   closesAt,
   yesPct,
-  predictionsCount,
   variant,
   resolved,
   onNavigate,
@@ -64,6 +74,7 @@ export default function HomeEventTile({
   topRightLabel,
   marketType,
   outcomes,
+  outcomeProbabilities,
 }: HomeEventTileProps) {
   const [now, setNow] = useState(0);
   useEffect(() => {
@@ -95,6 +106,28 @@ export default function HomeEventTile({
     parseOutcomesJson(outcomes) ??
     (deriveOutcomesFromTitle(title).length > 0 ? deriveOutcomesFromTitle(title) : null);
   const isMultiOutcome = hasMultiOptionType || (outcomeOptions && outcomeOptions.length > 2);
+  const outcomeProbabilityByKey = new Map(
+    (outcomeProbabilities ?? []).map((entry) => [entry.key, entry.probabilityPct])
+  );
+  const rankedOutcomeEntries = (outcomeOptions ?? [])
+    .map((opt, index) => {
+      const fallbackPct = Math.round(
+        100 / Math.max(1, (outcomeOptions ?? []).length)
+      );
+      const rawPct = outcomeProbabilityByKey.get(opt.key);
+      const probabilityPct =
+        typeof rawPct === "number" && Number.isFinite(rawPct)
+          ? Math.round(rawPct)
+          : fallbackPct;
+      return { opt, index, probabilityPct };
+    })
+    .sort((a, b) => {
+      if (b.probabilityPct !== a.probabilityPct) {
+        return b.probabilityPct - a.probabilityPct;
+      }
+      return a.index - b.index;
+    });
+  const visibleOutcomeEntries = rankedOutcomeEntries.slice(0, 4);
 
   /** Titolo da mostrare: binario "Chi vincerà X vs Y?", multi-outcome domanda senza opzioni */
   const displayTitle = isMultiOutcome
@@ -103,9 +136,13 @@ export default function HomeEventTile({
       ? formatBinaryMatchTitle(teams)
       : title;
 
-  const minH = compact ? "min-h-0" : "min-h-[175px] sm:min-h-[195px]";
-  const pClass = compact ? "p-3 sm:p-3" : "p-4 sm:p-5";
-  const flexFill = compact ? "flex-1 h-full min-h-0" : "";
+  const minH = "min-h-[220px] sm:min-h-[250px]";
+  const pClass = "p-4 sm:p-5";
+  const flexFill = "h-full min-h-0";
+  const titleClampClass = compact ? "line-clamp-2" : "line-clamp-3";
+  const titleSizeClass = compact ? "text-[0.98rem] sm:text-[1.05rem]" : "text-[1.08rem] sm:text-[1.2rem]";
+  const responseAreaClass = compact ? "h-[82px] sm:h-[88px]" : "h-[92px] sm:h-[100px]";
+  const binaryResponseAreaClass = compact ? "h-[112px] sm:h-[120px]" : "h-[122px] sm:h-[132px]";
 
   return (
     <Link
@@ -125,7 +162,7 @@ export default function HomeEventTile({
         <img
           src={normalizedEventImageUrl ?? undefined}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-110 contrast-105"
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-95 contrast-105 saturate-105"
           onError={() => setEventImageFailed(true)}
         />
       )}
@@ -134,12 +171,12 @@ export default function HomeEventTile({
         <img
           src={categoryImagePath}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-110 contrast-105"
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-95 contrast-105 saturate-105"
           onError={() => setCategoryImageFailed(true)}
         />
       )}
       {/* Overlay scuro per leggibilità testo (ridotto per far risaltare la foto) */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/30" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/60 to-black/35" />
       <div className={`relative z-10 flex h-full flex-col justify-between ${pClass}`}>
         <div className="flex items-center justify-end gap-2">
           {isClosedOrClosing && (
@@ -153,33 +190,48 @@ export default function HomeEventTile({
             </span>
           )}
         </div>
-        <div className={teams && !isMultiOutcome ? "flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden" : isMultiOutcome && outcomeOptions && outcomeOptions.length > 0 ? "flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden" : ""}>
+        <div className={teams && !isMultiOutcome ? "flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden" : isMultiOutcome && outcomeOptions && outcomeOptions.length > 0 ? "flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden" : "flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden"}>
           {isMultiOutcome && outcomeOptions && outcomeOptions.length > 0 ? (
-            /* Variante multi-outcome: data centrata, titolo centrato, opzioni in griglia 2x2 */
+            /* Variante multi-outcome: 4 opzioni top in spazio fisso */
             <>
-              <div className="flex-1 flex flex-col justify-center items-center min-h-0 gap-3 w-full min-w-0 overflow-hidden">
+              <div className="flex-1 flex flex-col min-h-0 gap-3 w-full min-w-0 overflow-hidden">
                 {topRightLabel && (
-                  <span className="text-[10px] sm:text-xs font-semibold text-white/80 text-center shrink-0">
+                  <span className="text-[10px] sm:text-xs font-semibold text-white/80 shrink-0">
                     {topRightLabel}
                   </span>
                 )}
                 <h3
-                  className={`font-semibold text-white/95 tracking-wide text-center shrink-0 line-clamp-2 ${compact ? "text-sm sm:text-base" : "text-base sm:text-ds-body"}`}
+                  className={`font-kalshi font-semibold leading-[1.15] tracking-[0.01em] break-words text-white shrink-0 ${titleClampClass} ${titleSizeClass}`}
                   style={{ textShadow: "0 2px 12px rgba(0,0,0,0.9), 0 0 1px rgba(0,0,0,0.8)" }}
                 >
                   {displayTitle}
                 </h3>
-                <div className="w-full min-w-0 grid grid-cols-2 gap-1.5 sm:gap-2">
-                  {outcomeOptions.map((opt) => (
+                <div className={`mt-auto w-full min-w-0 ${responseAreaClass}`}>
+                  <div className="grid h-full grid-rows-4 gap-1.5">
+                  {visibleOutcomeEntries.map((entry, index) => {
+                    const { opt, probabilityPct: displayPct } = entry;
+                    const accent =
+                      MULTI_OUTCOME_ACCENT_CLASSES[
+                        index % MULTI_OUTCOME_ACCENT_CLASSES.length
+                      ];
+                    return (
                     <div
                       key={opt.key}
-                      className="min-w-0 flex items-center justify-center py-2 px-2 sm:px-3 rounded-lg border border-white/10 bg-white/[0.04] overflow-hidden"
+                      className={`min-w-0 flex h-full items-center justify-between rounded-xl border bg-black/20 px-2.5 py-1 overflow-hidden backdrop-blur-[1px] ${accent.border}`}
                     >
-                      <span className="text-[11px] sm:text-sm font-medium text-white/90 truncate text-center w-full" title={opt.label}>
+                      <span
+                        className={`text-[11px] sm:text-xs font-semibold truncate leading-tight ${accent.label}`}
+                        title={opt.label}
+                      >
                         {opt.label}
                       </span>
+                      <span className="ml-2 shrink-0 font-kalshi text-[13px] sm:text-sm font-semibold tabular-nums text-white/95">
+                        {displayPct}%
+                      </span>
                     </div>
-                  ))}
+                    );
+                  })}
+                  </div>
                 </div>
               </div>
             </>
@@ -224,32 +276,31 @@ export default function HomeEventTile({
           ) : (
             /* Variante generica: titolo + barra SÌ/NO */
             <>
-              <h3 className={`line-clamp-2 font-semibold leading-snug text-white ${compact ? "mb-1 text-xs sm:text-xs" : "mb-2 text-sm sm:text-ds-body-sm"}`} style={{ textShadow: "0 2px 8px rgba(0,0,0,1), 0 0 1px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9)" }}>
+              <h3
+                className={`font-kalshi font-semibold leading-[1.15] tracking-[0.01em] break-words text-white mb-2 ${titleClampClass} ${titleSizeClass}`}
+                style={{ textShadow: "0 2px 8px rgba(0,0,0,1), 0 0 1px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9)" }}
+              >
                 {displayTitle}
               </h3>
-              {variant === "popular" && predictionsCount != null && !compact && (
-                <p className="mb-1.5 text-xs font-medium text-white sm:text-ds-micro" style={{ textShadow: "0 1px 4px rgba(0,0,0,1), 0 0 1px rgba(0,0,0,0.8)" }}>
-                  {predictionsCount} previsioni
-                </p>
-              )}
-              <div
-                className="flex h-2 w-full overflow-hidden rounded-full bg-black/50 shadow-inner backdrop-blur-[1px]"
-                role="presentation"
-              >
-                <div
-                  className="h-full shrink-0 rounded-l-full transition-all duration-500"
-                  style={{
-                    width: `${yesPct}%`,
-                    background: "linear-gradient(90deg, rgb(20 148 132) 0%, rgb(13 148 136) 100%)",
-                  }}
-                />
-                <div
-                  className="h-full shrink-0 rounded-r-full transition-all duration-500"
-                  style={{
-                    width: `${noPct}%`,
-                    background: "linear-gradient(90deg, rgb(239 68 68) 0%, rgb(244 63 94) 100%)",
-                  }}
-                />
+              <div className={`mt-auto w-full ${binaryResponseAreaClass} flex flex-col justify-end pt-4 sm:pt-6`}>
+                <div className="grid grid-rows-2 gap-1.5">
+                  <div className="flex min-h-[36px] items-center justify-between rounded-2xl border border-emerald-400/75 bg-black/20 px-3.5 py-1.5 backdrop-blur-[1px]">
+                    <span className="text-sm font-semibold uppercase tracking-wide text-emerald-400">
+                      SI
+                    </span>
+                    <span className="font-kalshi text-base sm:text-lg font-semibold tabular-nums text-white/95">
+                      {yesPct}%
+                    </span>
+                  </div>
+                  <div className="flex min-h-[36px] items-center justify-between rounded-2xl border border-rose-500/80 bg-black/20 px-3.5 py-1.5 backdrop-blur-[1px]">
+                    <span className="text-sm font-semibold uppercase tracking-wide text-rose-500">
+                      NO
+                    </span>
+                    <span className="font-kalshi text-base sm:text-lg font-semibold tabular-nums text-white/95">
+                      {noPct}%
+                    </span>
+                  </div>
+                </div>
               </div>
             </>
           )}

@@ -47,6 +47,7 @@ export function FeedCardSlide({
   const hasMoreDesc = (event.description?.length ?? 0) > 120;
   const predictionsCount = event.predictionsCount ?? 0;
   const { yes: yesPct } = getYesNoPct(event.probability, predictionsCount);
+  const noPct = 100 - yesPct;
   const displayName = post.user.name?.trim() || "Utente";
   const initial = displayName.charAt(0).toUpperCase() || "?";
 
@@ -66,11 +67,8 @@ export function FeedCardSlide({
             <span className="consigliati-badge rounded-lg border border-white/15 bg-black/20 px-2.5 py-1.5 text-[11px] font-semibold text-white backdrop-blur-md drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] min-h-[28px] inline-flex items-center">
               {event.category}
             </span>
-            <span className="consigliati-badge rounded-lg border border-white/15 bg-black/20 px-2.5 py-1.5 text-[11px] font-semibold text-white backdrop-blur-md drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] tabular-nums min-h-[28px] inline-flex items-center">
-              {predictionsCount} previsioni
-            </span>
           </div>
-          <div className="mt-3 flex flex-col gap-0">
+          <div className="mt-3 flex flex-1 flex-col gap-0 self-stretch">
             <div className="mb-2 flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-white/40 bg-black/40 text-sm font-bold text-white backdrop-blur-sm">
                 {post.user.image ? (
@@ -91,7 +89,7 @@ export function FeedCardSlide({
               href={`/events/${event.id}`}
               className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-lg"
             >
-              <h2 className="text-base font-bold leading-snug text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] line-clamp-3">
+              <h2 className="font-kalshi text-[1.05rem] sm:text-[1.15rem] font-bold leading-[1.12] tracking-[0.01em] break-words text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
                 {event.title}
               </h2>
             </Link>
@@ -101,28 +99,30 @@ export function FeedCardSlide({
                 {hasMoreDesc ? "…" : ""}
               </p>
             )}
-            <div
-              className="consigliati-yesno-bar mt-1.5 h-2 w-full overflow-hidden rounded-full"
-              role="presentation"
-              aria-hidden
-            >
-              <div className="flex h-full w-full">
-                <div
-                  className="prediction-bar-fill-si h-full shrink-0 transition-[width] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)]"
-                  style={{ width: `${yesPct}%` }}
-                />
-                <div
-                  className="prediction-bar-fill-no h-full shrink-0 transition-[width] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)]"
-                  style={{ width: `${100 - yesPct}%` }}
-                />
-              </div>
-            </div>
             <Link
               href={`/events/${event.id}`}
               className="mt-1.5 inline-block text-xs font-semibold text-primary drop-shadow-sm hover:underline"
             >
               Vai all&apos;evento →
             </Link>
+            <div className="mt-auto flex w-full flex-col gap-2.5">
+              <div className="flex w-full min-h-[52px] items-center justify-between rounded-2xl border border-emerald-400/80 bg-black/20 px-3.5 py-3">
+                <span className="text-base font-bold uppercase tracking-wide text-emerald-400">
+                  SI
+                </span>
+                <span className="font-kalshi text-lg font-bold tabular-nums text-white sm:text-xl">
+                  {yesPct}%
+                </span>
+              </div>
+              <div className="flex w-full min-h-[52px] items-center justify-between rounded-2xl border border-rose-500/85 bg-black/20 px-3.5 py-3">
+                <span className="text-base font-bold uppercase tracking-wide text-rose-500">
+                  NO
+                </span>
+                <span className="font-kalshi text-lg font-bold tabular-nums text-white sm:text-xl">
+                  {noPct}%
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

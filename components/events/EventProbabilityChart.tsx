@@ -5,16 +5,39 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
   ResponsiveContainer,
-  Area,
+  Line,
   ComposedChart,
   ReferenceArea,
 } from "recharts";
 
-interface Point {
+interface BinaryPoint {
   t: string;
   yesPct: number;
+}
+
+interface MultiPoint {
+  t: string;
+  outcomePctByKey: Record<string, number>;
+}
+
+interface OutcomeOption {
+  key: string;
+  label: string;
+}
+
+interface HistoryResponse {
+  mode?: "binary" | "multi";
+  points?: Array<BinaryPoint | MultiPoint>;
+  outcomes?: OutcomeOption[];
+}
+
+interface ChartSeries {
+  field: string;
+  key: string;
+  label: string;
+  color: string;
+  glow: string;
 }
 
 interface EventProbabilityChartProps {
@@ -32,6 +55,8 @@ interface EventProbabilityChartProps {
   valueUnit?: "percent" | "credits";
   /** Pagina dettaglio: niente titolo sopra, niente box, altezza mobile-first */
   embeddedInPage?: boolean;
+  /** Multi-outcome: opzioni da usare come fallback label legenda */
+  outcomeOptions?: OutcomeOption[];
 }
 
 function formatAxisTime(iso: string, range: string): string {
@@ -60,15 +85,19 @@ export default function EventProbabilityChart({
   theme = "dark",
   valueUnit = "percent",
   embeddedInPage = false,
+  outcomeOptions,
 }: EventProbabilityChartProps) {
   const isStandalone = layout === "standalone";
   const isLight = theme === "light";
-  const chartHeadingText =
-    valueUnit === "credits" ? "Prezzo SÌ / NO nel tempo" : "Andamento SÌ / NO nel tempo";
-  const gridStroke = isLight ? "rgb(229 231 235)" : "rgb(255 255 255 / 0.06)";
-  const axisStroke = isLight ? "rgb(156 163 175)" : "rgb(255 255 255 / 0.35)";
-  const tickFill = isLight ? "rgb(107 114 128)" : "rgb(255 255 255 / 0.6)";
-  const axisLineStroke = isLight ? "rgb(229 231 235)" : "rgb(255 255 255 / 0.12)";
+  const chartHeadingText = valueUnit === "credits" ? "Prezzi nel tempo" : "Andamento probabilità nel tempo";
+  const gridStroke = isLight ? "rgb(148 163 184 / 0.28)" : "rgb(148 163 184 / 0.24)";
+  const axisStroke = isLight ? "rgb(100 116 139 / 0.7)" : "rgb(148 163 184 / 0.7)";
+  const tickFill = isLight ? "rgb(71 85 105)" : "rgb(148 163 184 / 0.9)";
+  const axisLineStroke = isLight ? "rgb(148 163 184 / 0.35)" : "rgb(148 163 184 / 0.35)";
+  // Palette multi-outcome stile market chart (come riferimenti Polymarket/Kalshi).
+  const colorPalette = isLight
+    ? ["#2F8DFF", "#6AB8FF", "#F2B705", "#ED8A1C", "#30CFAF", "#9D8CFF", "#FF6E84", "#5B9DFF"]
+    : ["#338FFF", "#82C5FF", "#F5C324", "#F59A23", "#3AD8B8", "#A897FF", "#FF7F97", "#6DAEFF"];
   const formatValue = useCallback(
     (value: number | null | undefined) => {
       if (value == null || !Number.isFinite(value)) return "—";
@@ -76,7 +105,7 @@ export default function EventProbabilityChart({
     },
     [valueUnit]
   );
-  const [points, setPoints] = useState<Point[]>([]);
+  const [history, setHistory] = useState<HistoryResponse>({ mode: "binary", points: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -86,8 +115,12 @@ export default function EventProbabilityChart({
         if (!res.ok) throw new Error("Errore caricamento");
         return res.json();
       })
-      .then((data: { points: Point[] }) => data.points ?? []);
-  }, [eventId, range]);
+      .then((data: HistoryResponse) => ({
+        mode: data.mode ?? "binary",
+        points: data.points ?? [],
+        outcomes: data.outcomes ?? outcomeOptions ?? [],
+      }));
+  }, [eventId, range, outcomeOptions]);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,8 +129,8 @@ export default function EventProbabilityChart({
       setError(null);
     });
     fetchHistory()
-      .then((pts) => {
-        if (!cancelled) setPoints(pts);
+      .then((res) => {
+        if (!cancelled) setHistory(res);
       })
       .catch((e) => {
         if (!cancelled) setError(e.message ?? "Errore");
@@ -114,37 +147,89 @@ export default function EventProbabilityChart({
     if (!eventId) return;
     const interval = setInterval(() => {
       fetchHistory()
-        .then((pts) => setPoints(pts))
+        .then((res) => setHistory(res))
         .catch(() => {});
     }, 15000);
     return () => clearInterval(interval);
   }, [eventId, fetchHistory]);
 
+  const isMultiOutcome = history.mode === "multi";
+  const outcomeDefs = (history.outcomes && history.outcomes.length >= 2 ? history.outcomes : outcomeOptions ?? []).map((o) => ({
+    key: o.key,
+    label: o.label,
+  }));
+
+  const seriesDefs: ChartSeries[] = useMemo(() => {
+    if (isMultiOutcome && outcomeDefs.length >= 2) {
+      return outcomeDefs.map((opt, idx) => {
+        const color = colorPalette[idx % colorPalette.length];
+        const glow = "none";
+        return {
+          field: `outcome_${idx}`,
+          key: opt.key,
+          label: opt.label,
+          color,
+          glow,
+        };
+      });
+    }
+    return [
+      {
+        field: "yesPct",
+        key: "YES",
+        label: "SÌ",
+        color: isLight ? "#35C38A" : "#4ED9A0",
+        glow: isLight ? "none" : "drop-shadow(0 0 5px rgb(78 217 160 / 0.28))",
+      },
+      {
+        field: "noPct",
+        key: "NO",
+        label: "NO",
+        color: isLight ? "#FF6B7A" : "#FF7F90",
+        glow: isLight ? "none" : "drop-shadow(0 0 5px rgb(255 127 144 / 0.28))",
+      },
+    ];
+  }, [isMultiOutcome, outcomeDefs, colorPalette, isLight]);
+
   const { data, isEmpty, timeDomain } = useMemo(() => {
-    const withNo = points.map((p) => {
+    const rows = (history.points ?? []).map((rawPoint) => {
+      const p = rawPoint as MultiPoint & BinaryPoint;
       const time = new Date(p.t).getTime();
-      return {
-        ...p,
+      const base = {
+        t: p.t,
         time,
-        noPct: Math.round((100 - p.yesPct) * 10) / 10,
         label: formatAxisTime(p.t, range),
-      };
+      } as Record<string, number | string>;
+      if (isMultiOutcome && p.outcomePctByKey) {
+        for (const series of seriesDefs) {
+          const value = p.outcomePctByKey[series.key];
+          if (Number.isFinite(value)) {
+            base[series.field] = Math.round(Number(value) * 10) / 10;
+          }
+        }
+        return base;
+      }
+      const yesPct = Number.isFinite(p.yesPct) ? Number(p.yesPct) : 50;
+      base.yesPct = Math.round(yesPct * 10) / 10;
+      base.noPct = Math.round((100 - yesPct) * 10) / 10;
+      return base;
     });
-    const empty = withNo.length === 0;
+
+    const empty = rows.length === 0;
     let domain: [number, number] | undefined;
-    if (!empty && withNo.length > 0) {
-      const times = withNo.map((d) => d.time);
+    if (!empty && rows.length > 0) {
+      const times = rows.map((d) => Number(d.time));
       const minT = Math.min(...times);
       const maxT = Math.max(...times);
       const padding = Math.max((maxT - minT) * 0.02, 60 * 1000);
       domain = [minT - padding, maxT + padding];
     }
     return {
-      data: withNo,
+      data: rows,
       isEmpty: empty,
       timeDomain: domain,
     };
-  }, [points, range]);
+  }, [history.points, range, isMultiOutcome, seriesDefs]);
 
   if (predictionsCount === 0) {
     const emptyH = embeddedInPage
@@ -164,7 +249,7 @@ export default function EventProbabilityChart({
         )}
         {embeddedInPage && (
           <span id="chart-heading" className="sr-only">
-            Andamento probabilità SÌ e NO nel tempo
+            Andamento probabilità nel tempo
           </span>
         )}
         <div
@@ -229,7 +314,13 @@ export default function EventProbabilityChart({
             setLoading(true);
             fetch(`/api/events/${eventId}/probability-history?range=${range}`)
               .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Errore"))))
-              .then((data: { points: Point[] }) => setPoints(data.points ?? []))
+              .then((data: HistoryResponse) =>
+                setHistory({
+                  mode: data.mode ?? "binary",
+                  points: data.points ?? [],
+                  outcomes: data.outcomes ?? outcomeOptions ?? [],
+                })
+              )
               .catch(() => setError("Errore"))
               .finally(() => setLoading(false));
           }}
@@ -249,12 +340,41 @@ export default function EventProbabilityChart({
         const past = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         const tPast = past.getTime();
         const tNow = now.getTime();
+        if (isMultiOutcome && seriesDefs.length >= 2) {
+          const even = Math.round((100 / seriesDefs.length) * 10) / 10;
+          const pastPoint: Record<string, number | string> = {
+            t: past.toISOString(),
+            time: tPast,
+            label: formatAxisTime(past.toISOString(), range),
+          };
+          const nowPoint: Record<string, number | string> = {
+            t: now.toISOString(),
+            time: tNow,
+            label: formatAxisTime(now.toISOString(), range),
+          };
+          for (const series of seriesDefs) {
+            pastPoint[series.field] = even;
+            nowPoint[series.field] = even;
+          }
+          return [pastPoint, nowPoint];
+        }
         return [
           { t: past.toISOString(), time: tPast, yesPct: 50, noPct: 50, label: formatAxisTime(past.toISOString(), range) },
           { t: now.toISOString(), time: tNow, yesPct: 50, noPct: 50, label: formatAxisTime(now.toISOString(), range) },
         ];
       })()
     : data;
+
+  const latestPoint = chartData.length > 0 ? (chartData[chartData.length - 1] as Record<string, number | string>) : null;
+  const legendRows = !isMultiOutcome || seriesDefs.length < 2
+    ? []
+    : seriesDefs
+        .map((series) => {
+          const rawValue = latestPoint?.[series.field];
+          const value = typeof rawValue === "number" ? rawValue : null;
+          return { ...series, value };
+        })
+        .sort((a, b) => (b.value ?? -1) - (a.value ?? -1));
 
   const chartAreaH = embeddedInPage
     ? "h-[min(52vh,340px)] sm:h-[300px] md:h-[320px]"
@@ -274,7 +394,7 @@ export default function EventProbabilityChart({
       )}
       {embeddedInPage && (
         <span id="chart-heading" className="sr-only">
-          Andamento probabilità SÌ e NO nel tempo
+          Andamento probabilità nel tempo
         </span>
       )}
       <div className={`event-probability-chart-area w-full relative ${chartAreaH}`}>
@@ -283,14 +403,14 @@ export default function EventProbabilityChart({
             data={chartData}
             margin={
               embeddedInPage
-                ? { top: 12, right: 8, left: 0, bottom: 20 }
+                ? { top: 10, right: 26, left: 0, bottom: 18 }
                 : isStandalone
-                  ? { top: 16, right: 20, left: 8, bottom: 24 }
-                  : { top: 8, right: 12, left: 4, bottom: 16 }
+                  ? { top: 14, right: 34, left: 4, bottom: 22 }
+                  : { top: 8, right: 28, left: 2, bottom: 14 }
             }
           >
             <CartesianGrid
-              strokeDasharray="2 2"
+              strokeDasharray="1 5"
               stroke={gridStroke}
               vertical={false}
             />
@@ -300,19 +420,24 @@ export default function EventProbabilityChart({
               domain={timeDomain ?? ["dataMin", "dataMax"]}
               tickFormatter={(ts) => formatAxisTime(new Date(ts).toISOString(), range)}
               stroke={axisStroke}
-              tick={{ fontSize: 10, fill: tickFill }}
+              tick={{ fontSize: 10, fill: tickFill, fontWeight: 500 }}
               tickLine={false}
               axisLine={{ stroke: axisLineStroke }}
+              minTickGap={24}
+              tickMargin={10}
               allowDataOverflow
             />
             <YAxis
               domain={[0, 100]}
+              orientation="right"
               stroke={axisStroke}
-              tick={{ fontSize: 10, fill: tickFill }}
+              ticks={[0, 20, 40, 60, 80, 100]}
+              tick={{ fontSize: 11, fill: tickFill, fontWeight: 500 }}
               tickLine={false}
               axisLine={false}
               tickFormatter={(v) => formatValue(Number(v))}
-              width={valueUnit === "credits" ? 40 : 28}
+              tickMargin={8}
+              width={valueUnit === "credits" ? 44 : 38}
             />
             {isEmpty && chartData[0] && "time" in chartData[0] && (
               <ReferenceArea
@@ -325,55 +450,29 @@ export default function EventProbabilityChart({
             )}
             {!isEmpty && (
               <>
-                <Tooltip
-                  contentStyle={{
-                    background: isLight ? "#ffffff" : "rgb(var(--surface) / 0.98)",
-                    border: isLight ? "1px solid #e5e7eb" : "1px solid rgb(255 255 255 / 0.12)",
-                    borderRadius: "var(--radius-md)",
-                    fontSize: "12px",
-                    padding: "8px 12px",
-                  }}
-                  labelFormatter={(_, payload) => {
-                    const t = payload?.[0]?.payload?.t;
-                    return t
-                      ? new Date(t).toLocaleString("it-IT", {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : "";
-                  }}
-                  formatter={(value, name) => [
-                    formatValue(value as number),
-                    name === "yesPct" ? "SÌ" : "NO",
-                  ]}
-                  itemStyle={{ paddingTop: 2 }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="yesPct"
-                  name="yesPct"
-                  stroke={isLight ? "#0AC285" : "rgb(var(--primary))"}
-                  fill={isLight ? "rgb(10 194 133 / 0.18)" : "rgb(var(--primary) / 0.18)"}
-                  strokeWidth={2}
-                  dot={false}
-                  isAnimationActive
-                  animationDuration={400}
-                  connectNulls
-                />
-                <Area
-                  type="monotone"
-                  dataKey="noPct"
-                  name="noPct"
-                  stroke={isLight ? "#6b7280" : "rgb(148 163 184 / 0.9)"}
-                  fill={isLight ? "rgb(107 114 128 / 0.14)" : "rgb(148 163 184 / 0.12)"}
-                  strokeWidth={2}
-                  dot={false}
-                  isAnimationActive
-                  animationDuration={400}
-                  connectNulls
-                />
+                {seriesDefs.map((series) => (
+                  <Line
+                    key={series.field}
+                    type={isMultiOutcome ? "linear" : "monotone"}
+                    dataKey={series.field}
+                    name={series.label}
+                    stroke={series.color}
+                    strokeWidth={isMultiOutcome ? 2.2 : 2.6}
+                    dot={false}
+                    isAnimationActive
+                    animationDuration={400}
+                    connectNulls
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ filter: series.glow }}
+                    activeDot={{
+                      r: 4,
+                      fill: series.color,
+                      stroke: isLight ? "#ffffff" : "#0B0F14",
+                      strokeWidth: 1.5,
+                    }}
+                  />
+                ))}
               </>
             )}
           </ComposedChart>
@@ -389,6 +488,36 @@ export default function EventProbabilityChart({
           </div>
         )}
       </div>
+      {isMultiOutcome && seriesDefs.length >= 2 && (
+        <div className="mt-3 px-1 overflow-x-auto">
+          <div className="inline-grid grid-flow-col grid-rows-3 auto-cols-[minmax(165px,1fr)] gap-x-2 gap-y-1.5 min-w-full">
+          {legendRows.map((series) => {
+            return (
+              <div
+                key={`legend-${series.field}`}
+                className="min-w-0 px-1 py-0.5"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 inline-flex items-center gap-2">
+                    <span
+                      className="inline-block h-2 w-2 rounded-full shrink-0"
+                      style={{ backgroundColor: series.color }}
+                      aria-hidden
+                    />
+                    <span className="truncate text-[11px] sm:text-xs font-medium" style={{ color: series.color }}>
+                      {series.label}
+                    </span>
+                  </div>
+                  <span className="shrink-0 text-[11px] sm:text-xs font-semibold tabular-nums" style={{ color: series.color }}>
+                    {series.value == null ? "—" : formatValue(series.value)}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

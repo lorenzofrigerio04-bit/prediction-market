@@ -24,6 +24,9 @@ export interface HomeFeedEventData {
   b?: number | null;
   _count?: { predictions: number };
   aiImageUrl?: string | null;
+  marketType?: string | null;
+  outcomes?: Array<{ key: string; label: string }> | null;
+  outcomeProbabilities?: Array<{ key: string; label: string; probabilityPct: number }> | null;
 }
 
 function eventToTileData(e: HomeFeedEventData): HomeEventTileData {
@@ -39,6 +42,9 @@ function eventToTileData(e: HomeFeedEventData): HomeEventTileData {
     yesPct,
     predictionsCount: e._count?.predictions,
     aiImageUrl: e.aiImageUrl,
+    marketType: e.marketType,
+    outcomes: e.outcomes,
+    outcomeProbabilities: e.outcomeProbabilities,
   };
 }
 
@@ -266,6 +272,9 @@ export function HomeFeed({
         onNavigate={onEventNavigate}
         compact={compact}
         imageUrl={tile.aiImageUrl}
+        marketType={tile.marketType}
+        outcomes={tile.outcomes}
+        outcomeProbabilities={tile.outcomeProbabilities}
       />
     );
   };

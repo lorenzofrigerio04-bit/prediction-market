@@ -4,6 +4,12 @@ import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import HomeEventTile, { type HomeEventTileVariant } from "./HomeEventTile";
 import { LoadingBlock } from "@/components/ui";
+import {
+  deriveOutcomesFromTitle,
+  isMarketTypeId,
+  MULTI_OPTION_MARKET_TYPES,
+  parseOutcomesJson,
+} from "@/lib/market-types";
 
 export interface HomeEventTileData {
   id: string;
@@ -13,6 +19,9 @@ export interface HomeEventTileData {
   yesPct: number;
   predictionsCount?: number;
   aiImageUrl?: string | null;
+  marketType?: string | null;
+  outcomes?: Array<{ key: string; label: string }> | null;
+  outcomeProbabilities?: Array<{ key: string; label: string; probabilityPct: number }> | null;
 }
 
 interface HomeCarouselBoxProps {
@@ -26,6 +35,20 @@ interface HomeCarouselBoxProps {
 }
 
 const STAGGER_MS = 80;
+
+function isMultiOutcomeTile(event: HomeEventTileData): boolean {
+  const hasMultiOptionType =
+    !!event.marketType &&
+    isMarketTypeId(event.marketType) &&
+    MULTI_OPTION_MARKET_TYPES.includes(event.marketType);
+  if (hasMultiOptionType) return true;
+  const parsedOutcomes =
+    parseOutcomesJson(event.outcomes) ??
+    (deriveOutcomesFromTitle(event.title).length > 0
+      ? deriveOutcomesFromTitle(event.title)
+      : null);
+  return !!parsedOutcomes && parsedOutcomes.length > 2;
+}
 
 export default function HomeCarouselBox({
   title,
@@ -95,7 +118,11 @@ export default function HomeCarouselBox({
                   predictionsCount={event.predictionsCount}
                   variant={variant}
                   onNavigate={onEventNavigate}
+                  compact={isMultiOutcomeTile(event)}
                   imageUrl={event.aiImageUrl}
+                  marketType={event.marketType}
+                  outcomes={event.outcomes}
+                  outcomeProbabilities={event.outcomeProbabilities}
                 />
               </div>
             );

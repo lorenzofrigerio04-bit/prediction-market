@@ -53,7 +53,7 @@ export default function PredictionModal({
   const { data: session } = useSession();
   const router = useRouter();
   const [selectedOutcome, setSelectedOutcome] = useState<string | null>(null);
-  const [credits, setCredits] = useState(10);
+  const [creditsInput, setCreditsInput] = useState("10");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [quoteSecondsLeft, setQuoteSecondsLeft] = useState(MODAL_QUOTE_TIMER_DURATION);
@@ -65,7 +65,7 @@ export default function PredictionModal({
   useEffect(() => {
     if (!isOpen) {
       setSelectedOutcome(null);
-      setCredits(10);
+      setCreditsInput("10");
       setError(null);
     } else {
       setSelectedOutcome(initialOutcome ?? null);
@@ -154,6 +154,9 @@ export default function PredictionModal({
   };
 
   if (!isOpen) return null;
+
+  const parsedCredits = Number.parseInt(creditsInput, 10);
+  const credits = Number.isFinite(parsedCredits) ? parsedCredits : 0;
 
   const options = outcomeOptions?.length
     ? outcomeOptions
@@ -325,8 +328,8 @@ export default function PredictionModal({
                     type="number"
                     min={1}
                     max={userCredits}
-                    value={credits}
-                    onChange={(e) => setCredits(parseInt(e.target.value, 10) || 0)}
+                    value={creditsInput}
+                    onChange={(e) => setCreditsInput(e.target.value)}
                     disabled={loading}
                     className={`${creditsInputClass} cursor-text w-full`}
                   />

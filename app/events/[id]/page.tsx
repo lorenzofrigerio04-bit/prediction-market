@@ -541,6 +541,7 @@ export default function EventDetailPage({
             predictionsCount={event._count.predictions}
             valueUnit="percent"
             embeddedInPage
+            outcomeOptions={isMultiOptionWithOptions ? outcomeOptions : undefined}
           />
         </section>
 
@@ -630,7 +631,7 @@ export default function EventDetailPage({
                       i
                     </button>
                   </div>
-                  <div id="prediction-section" className="grid grid-cols-2 gap-3 mb-3">
+                  <div id="prediction-section" className="grid grid-cols-2 gap-2.5 mb-3">
                     <button
                       type="button"
                       onClick={() => {
@@ -640,11 +641,11 @@ export default function EventDetailPage({
                         }
                       }}
                       disabled={!canMakePrediction}
-                      className={`min-h-[52px] py-3 px-2 rounded-xl font-semibold text-base transition-all flex flex-col items-center justify-center gap-1 bg-transparent border-2 ${leftBorder} text-fg hover:opacity-95 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg`}
+                      className={`min-h-[48px] py-2.5 px-2 rounded-xl font-semibold text-sm transition-all flex flex-col items-center justify-center gap-0.5 bg-transparent border-2 ${leftBorder} text-fg hover:opacity-95 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg`}
                       aria-label={sportMatchTeams ? `Scommetti su ${leftLabel}` : "Prevedi SÌ"}
                     >
-                      <span className="text-fg line-clamp-2 max-w-full text-center text-sm sm:text-base leading-tight">{leftLabel}</span>
-                      <span className={`text-base sm:text-lg font-extrabold font-chubby tabular-nums ${leftPctColor}`}>
+                      <span className="text-fg line-clamp-2 max-w-full text-center text-sm leading-tight">{leftLabel}</span>
+                      <span className={`text-sm sm:text-base font-extrabold font-chubby tabular-nums ${leftPctColor}`}>
                         {formatPct(yesPct)}
                       </span>
                     </button>
@@ -657,11 +658,11 @@ export default function EventDetailPage({
                         }
                       }}
                       disabled={!canMakePrediction}
-                      className={`min-h-[52px] py-3 px-2 rounded-xl font-semibold text-base transition-all flex flex-col items-center justify-center gap-1 bg-transparent border-2 ${rightBorder} text-fg hover:opacity-95 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg`}
+                      className={`min-h-[48px] py-2.5 px-2 rounded-xl font-semibold text-sm transition-all flex flex-col items-center justify-center gap-0.5 bg-transparent border-2 ${rightBorder} text-fg hover:opacity-95 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg`}
                       aria-label={sportMatchTeams ? `Scommetti su ${rightLabel}` : "Prevedi NO"}
                     >
-                      <span className="text-fg line-clamp-2 max-w-full text-center text-sm sm:text-base leading-tight">{rightLabel}</span>
-                      <span className={`text-base sm:text-lg font-extrabold font-chubby tabular-nums ${rightPctColor}`}>
+                      <span className="text-fg line-clamp-2 max-w-full text-center text-sm leading-tight">{rightLabel}</span>
+                      <span className={`text-sm sm:text-base font-extrabold font-chubby tabular-nums ${rightPctColor}`}>
                         {formatPct(noPct)}
                       </span>
                     </button>

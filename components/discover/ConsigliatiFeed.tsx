@@ -358,17 +358,14 @@ function ConsigliatiSlide({
       {/* Tap centro foto: vai a evento (solo se tap netto, non scroll) */}
       <ConsigliatiSlideCenterTap eventId={event.id} />
       <div className="consigliati-slide-content relative z-10 flex h-full flex-col justify-between px-4 pb-[calc(4rem+var(--safe-area-inset-bottom))] pl-[max(1rem,var(--safe-area-inset-left))] pr-[max(1rem,var(--safe-area-inset-right))] md:pb-6 md:pl-4 md:pr-4 pt-[calc(var(--header-height,3.5rem)+52px)] md:pt-4">
-        {/* Categoria e numero previsioni: a sinistra, uno sotto l'altro, allineati al titolo */}
+        {/* Categoria in alto a sinistra */}
         <div className="consigliati-slide-badges mt-5 flex flex-col items-start gap-2">
           <span className="consigliati-badge rounded-lg border border-white/15 bg-black/20 px-2.5 py-1.5 text-[11px] font-semibold text-white backdrop-blur-md drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] min-h-[28px] inline-flex items-center">
             {event.category}
           </span>
-          <span className="consigliati-badge rounded-lg border border-white/15 bg-black/20 px-2.5 py-1.5 text-[11px] font-semibold text-white backdrop-blur-md drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] tabular-nums min-h-[28px] inline-flex items-center">
-            {predictionsCount} previsioni
-          </span>
         </div>
         <div className="flex items-end justify-between gap-3">
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex flex-1 flex-col self-stretch">
             {/* Autore: avatar (iniziale o foto reale) + nome sempre dal pool se sistema */}
             <div className="mb-2 flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-white/40 bg-black/40 text-sm font-bold text-white backdrop-blur-sm">
@@ -390,7 +387,7 @@ function ConsigliatiSlide({
               href={`/events/${event.id}`}
               className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-lg"
             >
-              <h2 className="text-base font-bold leading-snug text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] line-clamp-3">
+              <h2 className="font-kalshi text-[1.05rem] sm:text-[1.15rem] font-bold leading-[1.12] tracking-[0.01em] break-words text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
                 {event.title}
               </h2>
             </Link>
@@ -400,29 +397,30 @@ function ConsigliatiSlide({
                 {hasMoreDesc ? "…" : ""}
               </p>
             )}
-            {/* Barra SÌ/NO dinamica (verde/rosso) con contorno LED neon leggero */}
-            <div
-              className="consigliati-yesno-bar mt-1.5 h-2 w-full overflow-hidden rounded-full"
-              role="presentation"
-              aria-hidden
-            >
-              <div className="flex h-full w-full">
-                <div
-                  className="prediction-bar-fill-si h-full shrink-0 transition-[width] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)]"
-                  style={{ width: `${yesPct}%` }}
-                />
-                <div
-                  className="prediction-bar-fill-no h-full shrink-0 transition-[width] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)]"
-                  style={{ width: `${100 - yesPct}%` }}
-                />
-              </div>
-            </div>
             <Link
               href={`/events/${event.id}`}
               className="mt-1.5 inline-block text-xs font-semibold text-primary drop-shadow-sm hover:underline"
             >
               Vai all&apos;evento →
             </Link>
+            <div className="mt-auto flex w-full flex-col gap-2.5">
+              <div className="flex w-full min-h-[52px] items-center justify-between rounded-2xl border border-emerald-400/80 bg-black/20 px-3.5 py-3">
+                <span className="text-base font-bold uppercase tracking-wide text-emerald-400">
+                  SI
+                </span>
+                <span className="font-kalshi text-lg font-bold tabular-nums text-white sm:text-xl">
+                  {yesPct}%
+                </span>
+              </div>
+              <div className="flex w-full min-h-[52px] items-center justify-between rounded-2xl border border-rose-500/85 bg-black/20 px-3.5 py-3">
+                <span className="text-base font-bold uppercase tracking-wide text-rose-500">
+                  NO
+                </span>
+                <span className="font-kalshi text-lg font-bold tabular-nums text-white sm:text-xl">
+                  {noPct}%
+                </span>
+              </div>
+            </div>
           </div>
           {/* Barra destra stile TikTok: icona + numero, compatta; mb per separazione dalla bottom nav */}
           <div className="consigliati-actions flex flex-shrink-0 flex-col items-center gap-4 pr-0 mb-12 md:mb-10">
