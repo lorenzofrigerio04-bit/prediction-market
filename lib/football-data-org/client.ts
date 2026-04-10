@@ -98,6 +98,52 @@ export async function fetchMatches(
   });
 }
 
+function parseYmdUtc(ymd: string): Date {
+  const [year, month, day] = ymd.split("-").map(Number);
+  return new Date(Date.UTC(year, (month ?? 1) - 1, day ?? 1));
+}
+
+function formatYmdUtc(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+function addUtcDays(d: Date, days: number): Date {
+  const out = new Date(d);
+  out.setUTCDate(out.getUTCDate() + days);
+  return out;
+}
+
+/**
+ * football-data.org limita il range massimo a 10 giorni.
+ * Questa funzione spezza automaticamente l'intervallo in blocchi <= 10 giorni
+ * e unisce i match deduplicati per id.
+ */
+export async function fetchMatchesInRange(
+  dateFrom: string,
+  dateTo: string
+): Promise<FootballDataMatch[]> {
+  const start = parseYmdUtc(dateFrom);
+  const end = parseYmdUtc(dateTo);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    throw new Error("Formato data non valido. Usa YYYY-MM-DD.");
+  }
+  if (start > end) return [];
+
+  const CHUNK_DAYS_INCLUSIVE = 10;
+  const STEP_DAYS = CHUNK_DAYS_INCLUSIVE - 1;
+  const merged = new Map<number, FootballDataMatch>();
+
+  for (let cursor = start; cursor <= end; cursor = addUtcDays(cursor, CHUNK_DAYS_INCLUSIVE)) {
+    const chunkEnd = addUtcDays(cursor, STEP_DAYS) < end ? addUtcDays(cursor, STEP_DAYS) : end;
+    const chunkMatches = await fetchMatches(formatYmdUtc(cursor), formatYmdUtc(chunkEnd));
+    for (const m of chunkMatches) merged.set(m.id, m);
+  }
+
+  return Array.from(merged.values()).sort(
+    (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
+  );
+}
+
 /**
  * Restituisce una singola partita per ID (per risoluzione e stato live).
  */

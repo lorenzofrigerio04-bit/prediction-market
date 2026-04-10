@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminCapability } from "@/lib/admin";
+import { fetchMatchesInRange } from "@/lib/football-data-org/client";
 
 export const dynamic = "force-dynamic";
 
@@ -14,12 +15,35 @@ export async function GET() {
 
     const token = process.env.FOOTBALL_DATA_ORG_API_TOKEN;
     const configured = typeof token === "string" && token.trim().length > 0;
+    let apiReachable = false;
+    let probeMatchesCount = 0;
+    let probeError: string | null = null;
+
+    if (configured) {
+      try {
+        const now = new Date();
+        const dateFrom = now.toISOString().slice(0, 10);
+        const to = new Date(now);
+        to.setDate(to.getDate() + 30);
+        const dateTo = to.toISOString().slice(0, 10);
+        const matches = await fetchMatchesInRange(dateFrom, dateTo);
+        apiReachable = true;
+        probeMatchesCount = matches.length;
+      } catch (error) {
+        probeError = error instanceof Error ? error.message : String(error);
+      }
+    }
 
     return NextResponse.json({
       source: "football-data.org",
       apiTokenConfigured: configured,
+      apiReachable,
+      probeMatchesCount,
+      probeError,
       message: configured
-        ? "FOOTBALL_DATA_ORG_API_TOKEN impostato. La pipeline sport e la risoluzione automatica usano football-data.org."
+        ? apiReachable
+          ? "FOOTBALL_DATA_ORG_API_TOKEN impostato e API raggiungibile."
+          : "FOOTBALL_DATA_ORG_API_TOKEN impostato, ma la chiamata API di test non e' riuscita. Controlla probeError."
         : "Imposta FOOTBALL_DATA_ORG_API_TOKEN in .env (registrazione gratuita su football-data.org).",
     });
   } catch (error) {

@@ -259,9 +259,9 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="mb-8 md:mb-12 pt-6 md:pt-8" aria-label="Eventi in tendenza">
+          <section className="mb-8 md:mb-12 pt-6 md:pt-8" aria-label="Eventi principali per categoria">
             <h2 className="landing-section-title landing-section-title--no-underline text-ds-h2 font-bold text-fg mb-3 sm:mb-4">
-              <span className="landing-section-title__text">Eventi in tendenza</span>
+              <span className="landing-section-title__text">Top eventi per categoria</span>
             </h2>
             <HomeFeedByCategory
               sections={homeSections}

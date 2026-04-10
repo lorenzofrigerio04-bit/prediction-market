@@ -7,8 +7,8 @@ export const metadata: Metadata = {
 
 export default function ContentRulesPage() {
   return (
-    <article className="box-raised rounded-2xl p-6 md:p-8">
-      <h1 className="text-2xl md:text-3xl font-bold text-fg mb-2">
+    <article className="box-raised rounded-3xl p-6 md:p-8 border border-border/70 bg-admin-bg">
+      <h1 className="font-kalshi text-[1.9rem] md:text-[2.25rem] font-bold text-fg leading-[1.04] tracking-[0.01em] mb-2">
         Regole contenuti
       </h1>
       <p className="text-fg-muted text-sm mb-8">
@@ -17,7 +17,7 @@ export default function ContentRulesPage() {
 
       <div className="prose prose-sm max-w-none text-fg space-y-6">
         <section>
-          <h2 className="text-lg font-semibold text-fg mb-2">Contenuti vietati</h2>
+          <h2 className="font-kalshi text-[1.25rem] font-bold text-fg leading-[1.06] tracking-[0.01em] mb-2">Contenuti vietati</h2>
           <p className="text-fg-muted leading-relaxed mb-4">
             Non sono ammessi:
           </p>
@@ -33,7 +33,7 @@ export default function ContentRulesPage() {
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-fg mb-2">Previsioni e crediti</h2>
+          <h2 className="font-kalshi text-[1.25rem] font-bold text-fg leading-[1.06] tracking-[0.01em] mb-2">Previsioni e crediti</h2>
           <p className="text-fg-muted leading-relaxed">
             Le previsioni sulla piattaforma sono effettuate esclusivamente con <strong className="text-fg">crediti virtuali</strong>. 
             I crediti non hanno valore reale e non sono convertibili in denaro. Si tratta di un ambiente di gioco e di confronto 
@@ -42,7 +42,7 @@ export default function ContentRulesPage() {
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-fg mb-2">Segnalazioni</h2>
+          <h2 className="font-kalshi text-[1.25rem] font-bold text-fg leading-[1.06] tracking-[0.01em] mb-2">Segnalazioni</h2>
           <p className="text-fg-muted leading-relaxed">
             Puoi segnalare contenuti inappropriati tramite le funzioni previste in app. Le segnalazioni vengono esaminate 
             dal team di moderazione in tempi ragionevoli.

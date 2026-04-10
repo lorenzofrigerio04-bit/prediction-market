@@ -79,6 +79,10 @@ export default function OperationsDashboard() {
     () => data?.permissions.actionSurface.availableActionKeys.includes("submit") ?? false,
     [data]
   );
+  const publishedMarketsCount = useMemo(
+    () => data?.submissions.filter((submission) => Boolean(submission.eventId)).length ?? 0,
+    [data]
+  );
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -214,7 +218,10 @@ export default function OperationsDashboard() {
                 </label>
 
                 <label className="block">
-                  <span className="mb-1.5 block text-sm font-medium text-fg-muted">Categoria</span>
+                  <span className="mb-1.5 flex items-center justify-between gap-2 text-sm font-medium text-fg-muted">
+                    <span>Categoria</span>
+                    <span className="text-xs">Mercati pubblicati: {publishedMarketsCount}</span>
+                  </span>
                   <select
                     required
                     value={formData.category}

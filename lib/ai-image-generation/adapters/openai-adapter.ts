@@ -27,7 +27,7 @@ export function createOpenAIImageAdapter(): ImageProviderAdapter {
                 : {}),
             }
           : isGptImage
-            ? { quality: 'medium' as const }
+            ? { quality: 'low' as const }
             : {}),
       });
 

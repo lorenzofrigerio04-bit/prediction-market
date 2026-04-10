@@ -90,7 +90,9 @@ export async function POST(request: NextRequest) {
       (result.reasonsCount?.DUPLICATE_IN_DB ?? 0) === result.candidatesCount;
     const hint =
       result.createdCount === 0 && result.fixturesCount === 0
-        ? "Nessuna fixture ricevuta da football-data.org. Verifica FOOTBALL_DATA_ORG_API_TOKEN e che ci siano partite in calendario (Serie A, Champions League, ecc.) nei prossimi 7 giorni."
+        ? result.fixturesFetchError
+          ? `Errore chiamata football-data.org: ${result.fixturesFetchError}`
+          : "Nessuna fixture ricevuta da football-data.org. Verifica FOOTBALL_DATA_ORG_API_TOKEN e che ci siano partite in calendario (Serie A, Champions League, ecc.) nei prossimi 30 giorni."
         : result.createdCount === 0 && result.fixturesCount > 0
           ? allDuplicates
             ? "Tutte le partite sono già presenti in DB. Nuove partite verranno create quando ci saranno match in date non ancora importate."

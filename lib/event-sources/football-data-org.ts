@@ -5,9 +5,9 @@
  */
 
 import type { NewsCandidate } from "./types";
-import { fetchMatches } from "@/lib/football-data-org/client";
+import { fetchMatchesInRange } from "@/lib/football-data-org/client";
 
-const FIXTURES_DAYS = 7;
+const FIXTURES_DAYS = 30;
 const MAX_FIXTURES = 50;
 
 /**
@@ -23,7 +23,7 @@ export async function fetchFootballFixturesFootballDataOrg(
   to.setDate(to.getDate() + FIXTURES_DAYS);
   const dateTo = to.toISOString().slice(0, 10);
 
-  const matches = await fetchMatches(dateFrom, dateTo);
+  const matches = await fetchMatchesInRange(dateFrom, dateTo);
   const scheduled = matches.filter(
     (m) => m.status === "SCHEDULED" || m.status === "TIMED"
   );

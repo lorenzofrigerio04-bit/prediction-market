@@ -6,6 +6,8 @@ interface SectionContainerProps {
   children: ReactNode;
   /** Optional section title (h2) */
   title?: string;
+  /** Optional custom class for section title */
+  titleClassName?: string;
   /** Optional link or action next to title */
   action?: ReactNode;
   className?: string;
@@ -14,6 +16,7 @@ interface SectionContainerProps {
 export default function SectionContainer({
   children,
   title,
+  titleClassName = "",
   action,
   className = "",
 }: SectionContainerProps) {
@@ -22,7 +25,7 @@ export default function SectionContainer({
       {(title || action) && (
         <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
           {title && (
-            <h2 className="text-ds-h2 font-bold text-fg">
+            <h2 className={`text-ds-h2 font-bold text-fg ${titleClassName}`}>
               {title}
             </h2>
           )}

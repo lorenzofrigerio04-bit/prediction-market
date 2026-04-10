@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
+import MarkReturningVisitor from "@/components/auth/MarkReturningVisitor";
 import ThemeScript from "./ThemeScript";
 import AppBackground from "@/components/AppBackground";
 import ConditionalFooter from "@/components/ConditionalFooter";
@@ -35,8 +36,10 @@ export const dynamic = "force-dynamic";
 
 export default function RootLayout({
   children,
+  modal,
 }: {
   children: React.ReactNode;
+  modal: React.ReactNode;
 }) {
   /* SessionProvider senza session SSR: il client rifà sempre GET /api/auth/session (cookie).
      Così useSession() non resta indietro rispetto al cookie dopo OAuth Google. */
@@ -64,6 +67,7 @@ export default function RootLayout({
         <LandingBackgroundProviderWithRoute>
           <AppBackground />
           <SessionProvider>
+            <MarkReturningVisitor />
             <a
               href="#main-content"
               className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-surface focus:text-fg focus:border focus:border-border focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-bg"
@@ -71,6 +75,7 @@ export default function RootLayout({
               Vai al contenuto
             </a>
             <div className="flex-1 platform-content" suppressHydrationWarning>{children}</div>
+            {modal}
             <ConditionalFooter />
           </SessionProvider>
         </LandingBackgroundProviderWithRoute>

@@ -64,6 +64,24 @@ Per **fermare** i bot (commenti, previsioni, reazioni, follow, post nel feed) im
 
 ---
 
+## Cron Polymarket 2.0 (4 run/giorno)
+
+Per la pubblicazione automatica Polymarket 2.0 via Vercel Cron (`0 */6 * * *`, UTC, endpoint `/api/cron/run-generate-events-polymarket-v2`), tieni queste variabili su Vercel:
+
+- `CRON_SECRET`: obbligatoria, usata dal route handler per autorizzare la chiamata cron.
+- `DISABLE_CRON_AUTOMATION`: deve essere assente/false, altrimenti i cron rispondono `503`.
+- `DISABLE_EVENT_GENERATION`: deve essere assente/false, altrimenti la run viene saltata.
+
+Per massimizzare i mercati elaborati mantenendo i filtri attuali della pipeline:
+
+- `POLYMARKET_V2_MAX_PER_SOURCE=1000`
+- `POLYMARKET_V2_MAX_TOTAL_DEFAULT=800`
+- `POLYMARKET_V2_PROCESSING_HEADROOM_MULTIPLIER=1`
+
+Nota: questi valori rappresentano il massimo pratico senza refactor (nessuna nuova paginazione multi-request su API Gamma).
+
+---
+
 ## In sintesi
 
 - **DB:** lascia `DATABASE_URL` com’è.

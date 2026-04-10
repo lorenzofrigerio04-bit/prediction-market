@@ -385,6 +385,28 @@ textarea:focus-visible {
   transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal) var(--ease-out);
 }
 
+/* Flat integrated surfaces (profile/settings/legal): same page background + thin tiffany accents */
+.profile-kalshi-page .card-raised,
+.profile-kalshi-page .box-raised,
+.settings-flat-page .card-raised,
+.settings-flat-page .box-raised,
+.legal-flat-page .card-raised,
+.legal-flat-page .box-raised {
+  background: rgb(var(--admin-bg));
+  border-color: rgb(var(--border) / 0.55);
+  box-shadow: 0 10px 24px -22px rgb(0 0 0 / 0.55);
+}
+
+.profile-kalshi-page .card-raised:hover,
+.profile-kalshi-page .box-raised:hover,
+.settings-flat-page .card-raised:hover,
+.settings-flat-page .box-raised:hover,
+.legal-flat-page .card-raised:hover,
+.legal-flat-page .box-raised:hover {
+  border-color: rgb(129 216 208 / 0.38);
+  box-shadow: 0 12px 26px -22px rgb(129 216 208 / 0.28);
+}
+
 /* —— Sport page: category strip (premium / futuristic) —— */
 .sport-category-strip {
   position: relative;

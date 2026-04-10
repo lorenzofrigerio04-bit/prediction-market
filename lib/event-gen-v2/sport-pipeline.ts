@@ -11,79 +11,10 @@ import type { Candidate } from './types';
 import { validateCandidates } from './rulebook-validator';
 import { scoreCandidates } from '@/lib/event-publishing/scoring';
 import { dedupCandidates, publishSelectedV2 } from './publisher';
-
-/** Chiusura mercato: subito dopo la fine dei 90 minuti (orario inizio + 90 min) */
-const MATCH_DURATION_MINUTES = 90;
+import { buildSportMediaAwareCandidates } from './sport-media-agent';
 
 /** Max fixture da considerare (piano free: 1 chiamata/run; limiti API 10 req/min). */
 const SPORT_FIXTURES_LIMIT = 200;
-const TEMPLATE_ID_BINARY = 'sport-football-fixture';
-const TEMPLATE_ID_TOTAL_GOALS = 'sport-football-total-goals';
-
-const TOTAL_GOALS_OUTCOMES = [
-  { key: 'goals_0_1', label: '0-1 gol' },
-  { key: 'goals_2', label: '2 gol' },
-  { key: 'goals_3', label: '3 gol' },
-  { key: 'goals_4_plus', label: '4+ gol' },
-] as const;
-
-function fixtureToCandidateBinary(fixture: NewsCandidate): Candidate {
-  const matchStart = new Date(fixture.publishedAt);
-  const closesAt = new Date(matchStart.getTime() + MATCH_DURATION_MINUTES * 60 * 1000);
-  const matchId = fixture.footballDataMatchId;
-
-  return {
-    title: fixture.title,
-    description: fixture.snippet,
-    category: 'Calcio',
-    closesAt,
-    resolutionAuthorityHost: 'api.football-data.org',
-    resolutionAuthorityType: 'REPUTABLE',
-    resolutionCriteriaYes:
-      'La squadra di casa vince la partita (risultato finale 90\' o supplementari).',
-    resolutionCriteriaNo:
-      'La squadra di casa non vince (pareggio o vittoria ospiti).',
-    sourceStorylineId: matchId != null ? `football-data:${matchId}` : fixture.url,
-    templateId: TEMPLATE_ID_BINARY,
-    resolutionSourceUrl: fixture.url,
-    timezone: 'Europe/Rome',
-    sportLeague: fixture.leagueName ?? null,
-    footballDataMatchId: matchId ?? null,
-    creationMetadata: {
-      sport_market_kind: 'MATCH_WINNER_HOME_AWAY',
-    },
-  };
-}
-
-function fixtureToCandidateTotalGoals(fixture: NewsCandidate): Candidate {
-  const matchStart = new Date(fixture.publishedAt);
-  const closesAt = new Date(matchStart.getTime() + MATCH_DURATION_MINUTES * 60 * 1000);
-  const matchId = fixture.footballDataMatchId;
-
-  return {
-    title: `Quanti gol totali verranno segnati in ${fixture.title}?`,
-    description: `${fixture.snippet}. Mercato multi-outcome con una sola opzione vincente.`,
-    category: 'Calcio',
-    closesAt,
-    resolutionAuthorityHost: 'api.football-data.org',
-    resolutionAuthorityType: 'REPUTABLE',
-    resolutionCriteriaYes: '',
-    resolutionCriteriaNo: '',
-    resolutionCriteriaFull:
-      'Sommare i gol finali di squadra casa + squadra ospite (fullTime). Risoluzione: 0-1 => goals_0_1; 2 => goals_2; 3 => goals_3; 4 o più => goals_4_plus.',
-    marketType: 'MULTIPLE_CHOICE',
-    outcomes: [...TOTAL_GOALS_OUTCOMES],
-    sourceStorylineId: matchId != null ? `football-data:${matchId}:total-goals` : `${fixture.url}#total-goals`,
-    templateId: TEMPLATE_ID_TOTAL_GOALS,
-    resolutionSourceUrl: fixture.url,
-    timezone: 'Europe/Rome',
-    sportLeague: fixture.leagueName ?? null,
-    footballDataMatchId: matchId ?? null,
-    creationMetadata: {
-      sport_market_kind: 'TOTAL_GOALS_BUCKETS',
-    },
-  };
-}
 
 export interface RunSportPipelineParams {
   prisma: PrismaClient;
@@ -94,6 +25,7 @@ export interface RunSportPipelineParams {
 
 export interface RunSportPipelineResult {
   fixturesCount: number;
+  fixturesFetchError?: string;
   candidatesCount: number;
   rulebookValidCount: number;
   rulebookRejectedCount: number;
@@ -128,18 +60,49 @@ export async function runSportPipeline(
   let fixtures: NewsCandidate[] = [];
   try {
     fixtures = await fetchFootballFixturesFootballDataOrg(SPORT_FIXTURES_LIMIT);
-  } catch {
-    // ignore
+  } catch (error) {
+    result.fixturesFetchError = error instanceof Error ? error.message : String(error);
   }
   result.fixturesCount = fixtures.length;
   if (fixtures.length === 0) {
     return result;
   }
 
-  const candidates: Candidate[] = fixtures.flatMap((fixture) => [
-    fixtureToCandidateBinary(fixture),
-    fixtureToCandidateTotalGoals(fixture),
-  ]);
+  let candidates: Candidate[] = [];
+  try {
+    candidates = await buildSportMediaAwareCandidates(fixtures);
+  } catch {
+    // ignore and fallback
+  }
+  if (candidates.length === 0) {
+    // Fallback ultra-safe: garantisce continuità operativa anche se media-agent è indisponibile.
+    candidates = fixtures.map((fixture) => {
+      const matchStart = new Date(fixture.publishedAt);
+      const closesAt = new Date(matchStart.getTime() + 90 * 60 * 1000);
+      const matchId = fixture.footballDataMatchId;
+      return {
+        title: `Vincerà la squadra di casa in ${fixture.title}?`,
+        description: fixture.snippet,
+        category: 'Calcio',
+        closesAt,
+        resolutionAuthorityHost: 'api.football-data.org',
+        resolutionAuthorityType: 'REPUTABLE',
+        resolutionCriteriaYes:
+          'La squadra di casa vince la partita (risultato finale 90\' o supplementari).',
+        resolutionCriteriaNo:
+          'La squadra di casa non vince (pareggio o vittoria ospiti).',
+        sourceStorylineId: matchId != null ? `football-data:${matchId}:home-win` : fixture.url,
+        templateId: 'sport-football-fixture',
+        resolutionSourceUrl: fixture.url,
+        timezone: 'Europe/Rome',
+        sportLeague: fixture.leagueName ?? null,
+        footballDataMatchId: matchId ?? null,
+        creationMetadata: {
+          sport_market_kind: 'MATCH_WINNER_HOME_AWAY',
+        },
+      };
+    });
+  }
   result.candidatesCount = candidates.length;
 
   const validationResult = validateCandidates(candidates);
@@ -156,7 +119,9 @@ export async function runSportPipeline(
 
   const storylineStatsMap = new Map<string, { momentum: number; novelty: number }>();
   for (const c of validCandidates) {
-    storylineStatsMap.set(c.sourceStorylineId, { momentum: 70, novelty: 60 });
+    const momentum = typeof c.momentum === 'number' ? c.momentum : 70;
+    const novelty = typeof c.novelty === 'number' ? c.novelty : 60;
+    storylineStatsMap.set(c.sourceStorylineId, { momentum, novelty });
   }
   const scored = scoreCandidates(validCandidates, storylineStatsMap);
 

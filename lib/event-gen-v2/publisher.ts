@@ -20,6 +20,7 @@ import {
   toPublishableCandidateContract,
   type LegacySelectedCandidate,
 } from '../integration/adapters/publication-action-adapter';
+import { enqueueMarketImageGeneration } from '../ai-image-generation/background-worker';
 
 /** Candidate with v2 fields (resolution sources, generation scores, marketType, footballDataMatchId, etc.) */
 type CandidateWithV2 = ScoredCandidate & {
@@ -97,7 +98,7 @@ export async function publishSelectedV2(
   const createdById = options?.createdById;
 
   const sourceType = options?.sourceType ?? 'NEWS';
-  return publishSelected(prisma, selected, now, {
+  const publishResult = await publishSelected(prisma, selected, now, {
     createdById,
     getV2Data: async (candidate, tx) => {
       const publishable = toPublishableCandidateContract(
@@ -170,6 +171,11 @@ export async function publishSelectedV2(
       };
     },
   });
+
+  // Do not block publication: images are generated asynchronously.
+  enqueueMarketImageGeneration(publishResult.eventIds ?? []);
+
+  return publishResult;
 }
 
 export {

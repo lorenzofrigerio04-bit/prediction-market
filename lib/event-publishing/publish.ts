@@ -161,8 +161,9 @@ async function createEventFromCandidate(
             ? (extraData.creationMetadata as Prisma.InputJsonValue)
             : undefined,
         timezone: extraData.timezone ?? undefined,
-        // Immagini eventi: solo categoria standard, nessuna generazione AI
-        imageGenerationStatus: 'SUCCESS',
+        // Immagini eventi: enqueue async generation after publish.
+        // Events are visible immediately and image is attached later.
+        imageGenerationStatus: 'PENDING',
         imageBrief:
           extraData.imageBrief != null
             ? (extraData.imageBrief as unknown as Prisma.InputJsonValue)

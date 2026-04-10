@@ -120,11 +120,17 @@ function validateUsernameClient(value: string): string | null {
 
 /** Badge sbloccati: blu sfumato più vivo, contorno verde su tutto il box */
 const UNLOCKED_BADGE_STYLE =
-  "bg-gradient-to-br from-surface to-bg border-2 border-success shadow-sm";
+  "bg-bg border border-[#81D8D0]/45 shadow-[0_8px_20px_-18px_rgba(129,216,208,0.6)]";
 
 /** Badge ancora da sbloccare: blu leggero sfumato, più tenue degli sbloccati */
 const LOCKED_BADGE_STYLE =
-  "bg-gradient-to-br from-surface/90 to-bg border border-border/70";
+  "bg-bg border border-border/70";
+
+const PROFILE_SECTION_TITLE_CLASS =
+  "font-kalshi text-[1.35rem] sm:text-[1.55rem] leading-[1.05] tracking-[0.01em]";
+
+const PROFILE_DOCUMENT_LINK_CLASS =
+  "group relative flex items-center justify-between gap-3 rounded-2xl border border-border/70 bg-admin-bg px-4 py-3.5 text-left transition-all duration-ds-normal ease-ds-ease hover:border-[#81D8D0]/50 hover:bg-admin-bg hover:shadow-[0_10px_24px_-18px_rgba(129,216,208,0.65)]";
 
 export default function ProfilePage() {
   const { data: session, status, update: updateSession } = useSession();
@@ -307,7 +313,7 @@ export default function ProfilePage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-bg">
+      <div className="min-h-screen bg-admin-bg">
         <Header />
         <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
           <LoadingBlock message="Caricamento profilo..." />
@@ -318,7 +324,7 @@ export default function ProfilePage() {
 
   if (status === "authenticated" && session?.user && !loading && !profileData && error) {
     return (
-      <div className="min-h-screen bg-bg">
+      <div className="min-h-screen bg-admin-bg">
         <Header />
         <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
           <div className="mb-6 p-4 bg-danger/15 border border-danger/40 rounded-2xl text-danger text-ds-body-sm">
@@ -342,7 +348,7 @@ export default function ProfilePage() {
   /** Sessione ok ma dati profilo non ancora caricati: evita schermata vuota o flash del redirect login. */
   if (status === "authenticated" && session?.user && !profileData && !error) {
     return (
-      <div className="min-h-screen bg-bg">
+      <div className="min-h-screen bg-admin-bg">
         <Header />
         <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
           <LoadingBlock message="Caricamento profilo..." />
@@ -356,9 +362,9 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="min-h-screen bg-admin-bg">
       <Header />
-      <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
+      <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl profile-kalshi-page">
         {error && (
           <div className="mb-6 p-4 bg-danger/15 border border-danger/40 rounded-2xl text-danger text-ds-body-sm">
             {error}
@@ -366,16 +372,16 @@ export default function ProfilePage() {
         )}
 
         {/* Mini box: nome, streak, data iscrizione */}
-        <Card className="p-4 md:p-5 mb-6 relative">
+        <Card className="p-4 md:p-5 mb-6 relative border border-border/70 bg-admin-bg">
           <button
             type="button"
             onClick={openEditModal}
-            className="absolute top-3 right-3 px-2 py-1 rounded-md text-xs font-medium bg-bg/40 border border-primary/50 text-fg shadow-[0_0_8px_rgb(var(--primary)/0.35)] hover:shadow-[0_0_12px_rgb(var(--primary)/0.5)] transition-shadow"
+            className="absolute top-3 right-3 px-2 py-1 rounded-md text-xs font-medium bg-admin-bg border border-[#81D8D0]/45 text-fg shadow-[0_0_0_1px_rgba(129,216,208,0.1)] hover:shadow-[0_0_0_1px_rgba(129,216,208,0.35)] transition-shadow"
           >
             Modifica
           </button>
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center text-bg text-2xl font-bold shrink-0 overflow-hidden">
+            <div className="w-14 h-14 md:w-16 md:h-16 rounded-full border border-[#81D8D0]/45 bg-[#81D8D0]/15 flex items-center justify-center text-fg text-2xl font-bold shrink-0 overflow-hidden">
               {profileData.user.image ? (
                 <img src={profileData.user.image} alt="" className="w-full h-full object-cover" />
               ) : (
@@ -383,8 +389,10 @@ export default function ProfilePage() {
               )}
             </div>
             <div className="min-w-0 flex-1 pr-20">
-              <h1 className="text-lg md:text-xl font-bold text-fg truncate">{displayName}</h1>
-              <span className="text-fg-muted text-sm font-normal">— 🔥 {profileData.stats.streak} giorni</span>
+              <h1 className="font-kalshi text-[1.45rem] md:text-[1.65rem] font-bold text-fg leading-[1.05] tracking-[0.01em] truncate">
+                {displayName}
+              </h1>
+              <span className="text-fg-muted text-sm font-normal">🔥 {profileData.stats.streak} giorni</span>
               <p className="text-fg-muted text-xs mt-0.5">Membro dal {formatDate(profileData.user.createdAt)}</p>
             </div>
           </div>
@@ -393,14 +401,14 @@ export default function ProfilePage() {
         {/* Modal Modifica profilo */}
         {editModalOpen && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg/75"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-admin-bg/80"
             role="dialog"
             aria-modal="true"
             aria-labelledby="edit-profile-title"
             onClick={() => !editSaving && setEditModalOpen(false)}
           >
             <div
-              className="bg-bg border border-border/70 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden"
+              className="bg-admin-bg border border-border/70 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-5 border-b border-border/70">
@@ -410,7 +418,7 @@ export default function ProfilePage() {
               </div>
               <div className="p-5 space-y-5">
                 <div className="flex flex-col items-center gap-3">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center text-bg text-3xl font-bold overflow-hidden shrink-0">
+                  <div className="w-24 h-24 rounded-full border border-[#81D8D0]/45 bg-[#81D8D0]/15 flex items-center justify-center text-fg text-3xl font-bold overflow-hidden shrink-0">
                     {editImagePreview ? (
                       <img src={editImagePreview} alt="" className="w-full h-full object-cover" />
                     ) : (
@@ -476,7 +484,7 @@ export default function ProfilePage() {
                       if (e.key === "Escape") setEditModalOpen(false);
                     }}
                     placeholder="Username"
-                    className="w-full px-4 py-2.5 rounded-xl border border-border/70 bg-bg text-fg focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-4 py-2.5 rounded-xl border border-border/70 bg-admin-bg text-fg focus:outline-none focus:ring-2 focus:ring-[#81D8D0]/60"
                     disabled={editSaving}
                     aria-invalid={!!editError}
                   />
@@ -514,13 +522,13 @@ export default function ProfilePage() {
           href="/crea"
           className="block mb-6"
         >
-          <Card className="p-4 md:p-5 bg-gradient-to-br from-primary/20 to-accent-700/20 border-primary/30 hover:border-primary/50 transition-all group">
+          <Card className="p-4 md:p-5 bg-admin-bg border border-border/70 hover:border-[#81D8D0]/45 transition-all group">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-primary/30 flex items-center justify-center text-2xl group-hover:scale-105 transition-transform">
+              <div className="w-12 h-12 rounded-xl border border-[#81D8D0]/35 bg-admin-bg flex items-center justify-center text-2xl group-hover:scale-105 transition-transform">
                 🔮
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-ds-body font-bold text-fg">Crea evento</h2>
+                <h2 className="font-kalshi text-xl leading-[1.02] tracking-[0.01em] text-fg">Crea evento</h2>
                 <p className="text-ds-body-sm text-fg-muted mt-0.5">
                   Proponi un nuovo evento per il prediction market
                 </p>
@@ -530,7 +538,7 @@ export default function ProfilePage() {
           </Card>
         </Link>
 
-        <SectionContainer title="Statistiche">
+        <SectionContainer title="Statistiche" titleClassName={PROFILE_SECTION_TITLE_CLASS}>
           <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6">
             <StatsCard
               title="ROI"
@@ -565,7 +573,7 @@ export default function ProfilePage() {
           </div>
         </SectionContainer>
 
-        <SectionContainer title="Badge">
+        <SectionContainer title="Badge" titleClassName={PROFILE_SECTION_TITLE_CLASS}>
           <Card className="p-5 md:p-6">
             {allBadges.length === 0 ? (
               <p className="text-fg-muted text-sm text-center py-6">
@@ -598,7 +606,7 @@ export default function ProfilePage() {
                       </p>
                       <p
                         className={`text-[10px] text-center mt-2 font-medium ${
-                          unlocked ? "text-success" : "text-primary"
+                          unlocked ? "text-[#81D8D0]" : "text-fg-muted"
                         }`}
                       >
                         {unlocked ? "✓ Sbloccato" : "Da sbloccare"}
@@ -611,52 +619,52 @@ export default function ProfilePage() {
           </Card>
         </SectionContainer>
 
-        <SectionContainer title="Impostazioni">
-          <Card className="p-3 md:p-4 bg-surface/70 border border-border/70 backdrop-blur-sm">
-            <ul className="space-y-0 divide-y divide-border/80">
+        <SectionContainer title="Impostazioni" titleClassName={PROFILE_SECTION_TITLE_CLASS}>
+          <Card className="p-3 md:p-4 border border-border/70 bg-admin-bg">
+            <ul className="space-y-2">
               <li>
                 <Link
                   href="/settings"
-                  className="flex items-center justify-between py-2.5 text-sm text-fg hover:text-primary transition-colors ds-tap-target"
+                  className={PROFILE_DOCUMENT_LINK_CLASS}
                 >
-                  <span className="font-medium">Account e preferenze</span>
-                  <span className="text-fg-muted text-xs" aria-hidden>→</span>
+                  <span className="font-medium text-fg">Account e preferenze</span>
+                  <span className="text-fg-muted text-xs transition-transform group-hover:translate-x-0.5" aria-hidden>→</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/legal/terms"
-                  className="flex items-center justify-between py-2.5 text-sm text-fg-muted hover:text-fg transition-colors ds-tap-target"
+                  className={PROFILE_DOCUMENT_LINK_CLASS}
                 >
-                  <span>Termini di servizio</span>
-                  <span className="text-xs" aria-hidden>→</span>
+                  <span className="text-fg">Termini di servizio</span>
+                  <span className="text-fg-muted text-xs transition-transform group-hover:translate-x-0.5" aria-hidden>→</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/legal/privacy"
-                  className="flex items-center justify-between py-2.5 text-sm text-fg-muted hover:text-fg transition-colors ds-tap-target"
+                  className={PROFILE_DOCUMENT_LINK_CLASS}
                 >
-                  <span>Privacy policy</span>
-                  <span className="text-xs" aria-hidden>→</span>
+                  <span className="text-fg">Privacy policy</span>
+                  <span className="text-fg-muted text-xs transition-transform group-hover:translate-x-0.5" aria-hidden>→</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/legal/content-rules"
-                  className="flex items-center justify-between py-2.5 text-sm text-fg-muted hover:text-fg transition-colors ds-tap-target"
+                  className={PROFILE_DOCUMENT_LINK_CLASS}
                 >
-                  <span>Regole contenuti</span>
-                  <span className="text-xs" aria-hidden>→</span>
+                  <span className="text-fg">Regole contenuti</span>
+                  <span className="text-fg-muted text-xs transition-transform group-hover:translate-x-0.5" aria-hidden>→</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/legal/credits"
-                  className="flex items-center justify-between py-2.5 text-sm text-fg-muted hover:text-fg transition-colors ds-tap-target"
+                  className={PROFILE_DOCUMENT_LINK_CLASS}
                 >
-                  <span>Disclaimer crediti</span>
-                  <span className="text-xs" aria-hidden>→</span>
+                  <span className="text-fg">Disclaimer crediti</span>
+                  <span className="text-fg-muted text-xs transition-transform group-hover:translate-x-0.5" aria-hidden>→</span>
                 </Link>
               </li>
             </ul>

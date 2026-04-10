@@ -44,14 +44,28 @@ export async function generateMarketImageForEvent(
   if (event.imageUrl?.trim() && event.imageGenerationStatus === "SUCCESS") {
     return { ok: false, error: "Event ha già immagine" };
   }
-  if (
-    event.imageGenerationStatus !== "PENDING" &&
-    event.imageGenerationStatus !== "FAILED"
-  ) {
-    return { ok: false, error: `Status non processabile: ${event.imageGenerationStatus}` };
-  }
   if (isAiImageGenerationDisabled()) {
     return { ok: false, error: "Generazione immagini AI disabilitata (DISABLE_AI_IMAGE_GENERATION)" };
+  }
+
+  const claimed = await prisma.event.updateMany({
+    where: {
+      id: eventId,
+      imageGenerationStatus: { in: ["PENDING", "FAILED"] },
+    },
+    data: {
+      imageGenerationStatus: "IN_PROGRESS",
+    },
+  });
+  if (claimed.count === 0) {
+    const latest = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { imageGenerationStatus: true },
+    });
+    return {
+      ok: false,
+      error: `Status non processabile: ${latest?.imageGenerationStatus ?? event.imageGenerationStatus}`,
+    };
   }
 
   let brief: ImageBrief;

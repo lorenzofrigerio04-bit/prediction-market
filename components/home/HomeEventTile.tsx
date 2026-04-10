@@ -60,6 +60,7 @@ export default function HomeEventTile({
   resolved,
   onNavigate,
   compact = false,
+  imageUrl,
   topRightLabel,
   marketType,
   outcomes,
@@ -76,8 +77,11 @@ export default function HomeEventTile({
   const categoryImagePath = getCategoryImagePath(category);
   const fallbackGradient = getCategoryFallbackGradient(category);
   const [categoryImageFailed, setCategoryImageFailed] = useState(false);
+  const [eventImageFailed, setEventImageFailed] = useState(false);
+  const normalizedEventImageUrl = imageUrl?.trim() ? imageUrl : null;
+  const useEventImage = !!normalizedEventImageUrl && !eventImageFailed;
   const useCategoryImage = categoryImagePath && !categoryImageFailed;
-  const useImage = useCategoryImage;
+  const useImage = useEventImage || useCategoryImage;
   const closesAtMs = new Date(closesAt).getTime();
   const isClosedOrClosing = variant === "closing" || (now > 0 && closesAtMs <= now);
 
@@ -116,7 +120,16 @@ export default function HomeEventTile({
           background: useImage ? undefined : fallbackGradient,
         }}
       />
-      {useCategoryImage && (
+      {useEventImage && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={normalizedEventImageUrl ?? undefined}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-110 contrast-105"
+          onError={() => setEventImageFailed(true)}
+        />
+      )}
+      {!useEventImage && useCategoryImage && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={categoryImagePath}

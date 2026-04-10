@@ -58,11 +58,19 @@ export default function AdminDashboard() {
   const [pendingResolutionCount, setPendingResolutionCount] = useState(0);
   const [generateLoading, setGenerateLoading] = useState(false);
   const [generateResult, setGenerateResult] = useState<Record<string, unknown> | null>(null);
+  const [generateReplicaLoading, setGenerateReplicaLoading] = useState(false);
+  const [generateReplicaResult, setGenerateReplicaResult] = useState<Record<string, unknown> | null>(null);
+  const [generatePolymarketLoading, setGeneratePolymarketLoading] = useState(false);
+  const [generatePolymarketResult, setGeneratePolymarketResult] = useState<Record<string, unknown> | null>(null);
+  const [generatePolymarketV2Loading, setGeneratePolymarketV2Loading] = useState(false);
+  const [generatePolymarketV2Result, setGeneratePolymarketV2Result] = useState<Record<string, unknown> | null>(null);
+  const [polymarketV2MaxTotalInput, setPolymarketV2MaxTotalInput] = useState("500");
   const [generateSportLoading, setGenerateSportLoading] = useState(false);
   const [generateSportResult, setGenerateSportResult] = useState<Record<string, unknown> | null>(null);
   const [sportRateLimit, setSportRateLimit] = useState<{ canGenerate: boolean; retryAfterSeconds: number } | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectingAll, setSelectingAll] = useState(false);
   const [successCreatedCount, setSuccessCreatedCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -132,6 +140,56 @@ export default function AdminDashboard() {
       console.error("Error fetching events:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const selectAllAcrossPages = async () => {
+    setSelectingAll(true);
+    try {
+      const firstPageParams = new URLSearchParams({
+        status: statusFilter,
+        page: "1",
+        limit: "200",
+      });
+      const firstPageResponse = await fetch(`/api/admin/events?${firstPageParams}`);
+      if (!firstPageResponse.ok) throw new Error("Failed to fetch first page");
+      const firstPageData: EventsResponse = await firstPageResponse.json();
+
+      const allIds = new Set(firstPageData.events.map((event) => event.id));
+      const totalPages = firstPageData.pagination.totalPages;
+
+      if (totalPages > 1) {
+        const pageRequests: Promise<Response>[] = [];
+        for (let p = 2; p <= totalPages; p += 1) {
+          const params = new URLSearchParams({
+            status: statusFilter,
+            page: p.toString(),
+            limit: "200",
+          });
+          pageRequests.push(fetch(`/api/admin/events?${params}`));
+        }
+
+        const pageResponses = await Promise.all(pageRequests);
+        const pagePayloads = await Promise.all(
+          pageResponses.map(async (response) => {
+            if (!response.ok) throw new Error("Failed to fetch one of the pages");
+            return (await response.json()) as EventsResponse;
+          })
+        );
+
+        for (const payload of pagePayloads) {
+          for (const event of payload.events) {
+            allIds.add(event.id);
+          }
+        }
+      }
+
+      setSelectedIds(allIds);
+    } catch (error) {
+      console.error("Error selecting all events across pages:", error);
+      alert("Errore nel recupero di tutti gli eventi.");
+    } finally {
+      setSelectingAll(false);
     }
   };
 
@@ -240,7 +298,13 @@ export default function AdminDashboard() {
                   setGenerateLoading(false);
                 }
               }}
-              disabled={generateLoading || generateSportLoading}
+              disabled={
+                generateLoading ||
+                generateReplicaLoading ||
+                generatePolymarketLoading ||
+                generatePolymarketV2Loading ||
+                generateSportLoading
+              }
               className="bg-primary text-primary-fg px-5 py-2.5 rounded-xl hover:bg-primary-hover disabled:opacity-50 font-medium transition-colors"
             >
               {generateLoading ? "Generazione…" : "Genera eventi home (max 5)"}
@@ -252,6 +316,174 @@ export default function AdminDashboard() {
                   : (generateResult as { error?: string }).error
                     ? "Errore"
                     : "Completato"}
+              </span>
+            )}
+            <span className="w-px h-6 bg-border dark:bg-white/10" aria-hidden />
+            <button
+              onClick={async () => {
+                setGenerateReplicaLoading(true);
+                setGenerateReplicaResult(null);
+                try {
+                  const res = await fetch("/api/admin/run-generate-events-replica", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ maxTotal: 25 }),
+                  });
+                  const data = await res.json();
+                  setGenerateReplicaResult(data);
+                  if (res.ok && (data.created ?? 0) > 0) {
+                    setSuccessCreatedCount(data.created ?? 0);
+                    fetchEvents();
+                    setTimeout(() => fetchEvents(), 2000);
+                  }
+                } catch (e) {
+                  setGenerateReplicaResult({ error: String(e) });
+                } finally {
+                  setGenerateReplicaLoading(false);
+                }
+              }}
+              disabled={
+                generateLoading ||
+                generateReplicaLoading ||
+                generatePolymarketLoading ||
+                generatePolymarketV2Loading ||
+                generateSportLoading
+              }
+              className="bg-primary text-primary-fg px-5 py-2.5 rounded-xl hover:bg-primary-hover disabled:opacity-50 font-medium transition-colors"
+            >
+              {generateReplicaLoading ? "Generazione…" : "Genera eventi Replica"}
+            </button>
+            {generateReplicaResult && (
+              <span className="text-sm text-fg-muted">
+                {typeof (generateReplicaResult as { created?: number }).created === "number"
+                  ? `Replica: ${(generateReplicaResult as { created?: number }).created} creati`
+                  : (generateReplicaResult as { error?: string }).error
+                    ? "Errore"
+                    : "Completato"}
+              </span>
+            )}
+            <span className="w-px h-6 bg-border dark:bg-white/10" aria-hidden />
+            <button
+              onClick={async () => {
+                setGeneratePolymarketLoading(true);
+                setGeneratePolymarketResult(null);
+                try {
+                  const res = await fetch("/api/admin/run-generate-events-polymarket", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ maxTotal: 25 }),
+                  });
+                  const data = await res.json();
+                  setGeneratePolymarketResult(data);
+                  if (res.ok && (data.created ?? 0) > 0) {
+                    setSuccessCreatedCount(data.created ?? 0);
+                    fetchEvents();
+                    setTimeout(() => fetchEvents(), 2000);
+                  }
+                } catch (e) {
+                  setGeneratePolymarketResult({ error: String(e) });
+                } finally {
+                  setGeneratePolymarketLoading(false);
+                }
+              }}
+              disabled={
+                generateLoading ||
+                generateReplicaLoading ||
+                generatePolymarketLoading ||
+                generatePolymarketV2Loading ||
+                generateSportLoading
+              }
+              className="bg-primary text-primary-fg px-5 py-2.5 rounded-xl hover:bg-primary-hover disabled:opacity-50 font-medium transition-colors"
+            >
+              {generatePolymarketLoading
+                ? "Generazione…"
+                : "Generazione eventi polymarket"}
+            </button>
+            {generatePolymarketResult && (
+              <span className="text-sm text-fg-muted">
+                {typeof (generatePolymarketResult as { created?: number }).created === "number"
+                  ? `Polymarket: ${(generatePolymarketResult as { created?: number }).created} creati`
+                  : (generatePolymarketResult as { error?: string }).error
+                    ? "Errore"
+                    : "Completato"}
+              </span>
+            )}
+            <span className="w-px h-6 bg-border dark:bg-white/10" aria-hidden />
+            <button
+              onClick={async () => {
+                setGeneratePolymarketV2Loading(true);
+                setGeneratePolymarketV2Result(null);
+                try {
+                  const parsedMax = Number(polymarketV2MaxTotalInput);
+                  const maxTotal = Number.isFinite(parsedMax)
+                    ? Math.max(1, Math.min(800, Math.round(parsedMax)))
+                    : 500;
+                  const res = await fetch("/api/admin/run-generate-events-polymarket-v2", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      maxTotal,
+                    }),
+                  });
+                  const data = await res.json();
+                  setGeneratePolymarketV2Result(data);
+                  if (res.ok && (data.created ?? 0) > 0) {
+                    setSuccessCreatedCount(data.created ?? 0);
+                    fetchEvents();
+                    setTimeout(() => fetchEvents(), 2000);
+                  }
+                } catch (e) {
+                  setGeneratePolymarketV2Result({ error: String(e) });
+                } finally {
+                  setGeneratePolymarketV2Loading(false);
+                }
+              }}
+              disabled={
+                generateLoading ||
+                generateReplicaLoading ||
+                generatePolymarketLoading ||
+                generatePolymarketV2Loading ||
+                generateSportLoading
+              }
+              className="bg-primary text-primary-fg px-5 py-2.5 rounded-xl hover:bg-primary-hover disabled:opacity-50 font-medium transition-colors"
+            >
+              {generatePolymarketV2Loading
+                ? "Generazione…"
+                : "Generazione eventi Polymarket 2.0"}
+            </button>
+            <label className="text-xs text-fg-muted inline-flex items-center gap-1">
+              max
+              <input
+                type="number"
+                min={1}
+                max={800}
+                step={10}
+                inputMode="numeric"
+                placeholder="500"
+                value={polymarketV2MaxTotalInput}
+                onFocus={(e) => e.currentTarget.select()}
+                onChange={(e) => setPolymarketV2MaxTotalInput(e.target.value)}
+                className="w-20 rounded border border-white/10 bg-white/[0.06] px-2 py-1 text-fg"
+              />
+            </label>
+            {generatePolymarketV2Result && (
+              <span className="text-sm text-fg-muted flex flex-col items-start gap-0.5 max-w-xl">
+                {typeof (generatePolymarketV2Result as { created?: number }).created === "number"
+                  ? `Polymarket 2.0: ${(generatePolymarketV2Result as { created?: number }).created} creati, ${(generatePolymarketV2Result as { updatedCount?: number }).updatedCount ?? 0} aggiornati`
+                  : (generatePolymarketV2Result as { error?: string }).error
+                    ? "Errore"
+                    : "Completato"}
+                <span className="text-xs text-fg-subtle">
+                  {(generatePolymarketV2Result as { sourceFetchedCount?: number }).sourceFetchedCount ?? 0} trovati ·{" "}
+                  {(generatePolymarketV2Result as { validityPassedCount?: number }).validityPassedCount ?? 0} validi ·{" "}
+                  {(generatePolymarketV2Result as { binaryCount?: number }).binaryCount ?? 0} binari ·{" "}
+                  {(generatePolymarketV2Result as { multiOutcomeCount?: number }).multiOutcomeCount ?? 0} multi
+                </span>
+                {(generatePolymarketV2Result as { reasonsCount?: Record<string, number> }).reasonsCount && (
+                  <pre className="text-[10px] text-left bg-black/20 dark:bg-white/10 p-2 rounded overflow-x-auto max-h-32 overflow-y-auto mt-1">
+                    {JSON.stringify((generatePolymarketV2Result as { reasonsCount?: Record<string, number> }).reasonsCount, null, 2)}
+                  </pre>
+                )}
               </span>
             )}
             <span className="w-px h-6 bg-border dark:bg-white/10" aria-hidden />
@@ -278,7 +510,14 @@ export default function AdminDashboard() {
                   setGenerateSportLoading(false);
                 }
               }}
-              disabled={generateLoading || generateSportLoading || (sportRetryCountdown > 0)}
+              disabled={
+                generateLoading ||
+                generateReplicaLoading ||
+                generatePolymarketLoading ||
+                generatePolymarketV2Loading ||
+                generateSportLoading ||
+                sportRetryCountdown > 0
+              }
               className="bg-primary text-primary-fg px-5 py-2.5 rounded-xl hover:bg-primary-hover disabled:opacity-50 font-medium transition-colors"
             >
               {generateSportLoading ? "Generazione…" : "Genera eventi sport (max 200)"}
@@ -359,10 +598,11 @@ export default function AdminDashboard() {
             <>
               <button
                 type="button"
-                onClick={() => setSelectedIds(new Set(events.map((e) => e.id)))}
+                onClick={selectAllAcrossPages}
+                disabled={selectingAll}
                 className="bg-surface/80 text-fg border border-border dark:border-white/10 px-4 py-2 rounded-xl hover:bg-surface font-medium transition-colors text-sm"
               >
-                Tutti (pagina)
+                {selectingAll ? "Selezione..." : "Tutti"}
               </button>
               {selectedIds.size > 0 && (
                 <>
