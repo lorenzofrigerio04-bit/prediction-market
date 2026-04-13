@@ -1,17 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import Header from "@/components/Header";
 import OnboardingTour from "@/components/OnboardingTour";
-import { HomeFeedByCategory, type HomeSection } from "@/components/home/HomeFeedByCategory";
 import { HomeUnifiedFeed } from "@/components/home/HomeUnifiedFeed";
-import LandingHeroStats from "@/components/landing/LandingHeroStats";
-import LandingHeroTitle from "@/components/landing/LandingHeroTitle";
-import LandingWhyFlip from "@/components/landing/LandingWhyFlip";
-import { EmptyState, LoadingBlock } from "@/components/ui";
+import LandingMarketsBackdropWall from "@/components/landing/LandingMarketsBackdropWall";
+import LandingTrendingMarketCard from "@/components/landing/LandingTrendingMarketCard";
+import { LoadingBlock } from "@/components/ui";
 import { getDisplayTitle, isDebugTitle } from "@/lib/debug-display";
 import { generateNotificationsOnDemand } from "@/lib/notifications/client";
 
@@ -30,39 +27,50 @@ export default function Home() {
   const [sessionSynced, setSessionSynced] = useState(false);
   const sessionSyncDone = useRef(false);
 
-  const [homeSections, setHomeSections] = useState<HomeSection[]>([]);
   const [homeFeedLoading, setHomeFeedLoading] = useState(false);
+  const [landingTop24hEvents, setLandingTop24hEvents] = useState<
+    Array<{
+      id: string;
+      title: string;
+      category: string;
+      closesAt: string;
+      yesPct: number;
+      predictionsCount?: number;
+      aiImageUrl?: string | null;
+      marketType?: string | null;
+      outcomes?: Array<{ key: string; label: string }> | null;
+      outcomeProbabilities?: Array<{ key: string; label: string; probabilityPct: number }> | null;
+      createdAt?: string;
+    }>
+  >([]);
 
-  const fetchHomeFeed = useCallback(async () => {
+  const fetchLandingFeed = useCallback(async () => {
     setHomeFeedLoading(true);
     try {
-      const res = await fetch("/api/feed/home");
+      const res = await fetch("/api/feed/home-unified?limit=60", { cache: "no-store" });
       if (!res.ok) throw new Error("Feed error");
       const data = await res.json();
-      setHomeSections((data.sections ?? []) as HomeSection[]);
+      const top24h = (data?.rows?.top24h ?? []) as Array<{
+        id: string;
+        title: string;
+        category: string;
+        closesAt: string;
+        yesPct: number;
+        predictionsCount?: number;
+        aiImageUrl?: string | null;
+        marketType?: string | null;
+        outcomes?: Array<{ key: string; label: string }> | null;
+        outcomeProbabilities?: Array<{ key: string; label: string; probabilityPct: number }> | null;
+        createdAt?: string;
+      }>;
+      setLandingTop24hEvents(top24h);
     } catch {
-      setHomeSections([]);
+      setLandingTop24hEvents([]);
     } finally {
       setHomeFeedLoading(false);
     }
   }, []);
 
-  const whySectionRef = useRef<HTMLElement>(null);
-  const [whySectionInView, setWhySectionInView] = useState(false);
-  useEffect(() => {
-    const el = whySectionRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) setWhySectionInView(true);
-        });
-      },
-      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
   const [debugInfo, setDebugInfo] = useState<{ version?: { commit: string; env: string; baseUrl: string }; health?: { dbConnected: boolean; markets_count: number } } | null>(null);
 
   useEffect(() => {
@@ -136,29 +144,29 @@ export default function Home() {
   // Al ritorno sulla home (pathname o visibility) aggiorna il feed
   useEffect(() => {
     if (pathname === "/" && prevPathnameRef.current !== "/") {
-      fetchHomeFeed();
+      fetchLandingFeed();
     }
     prevPathnameRef.current = pathname;
-  }, [pathname, fetchHomeFeed]);
+  }, [pathname, fetchLandingFeed]);
 
   useEffect(() => {
     if (pathname !== "/") return;
-    const onVisible = () => fetchHomeFeed();
+    const onVisible = () => fetchLandingFeed();
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [pathname, fetchHomeFeed]);
+  }, [pathname, fetchLandingFeed]);
 
   const HOME_FEEDS_POLL_MS = 30_000;
   useEffect(() => {
     if (status !== "authenticated" || pathname !== "/") return;
     const poll = () => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        fetchHomeFeed();
+        fetchLandingFeed();
       }
     };
     const id = setInterval(poll, HOME_FEEDS_POLL_MS);
     return () => clearInterval(id);
-  }, [status, pathname, fetchHomeFeed]);
+  }, [status, pathname, fetchLandingFeed]);
 
   // Ripristino scroll quando si torna indietro da un evento (solo se salvataggio recente)
   useEffect(() => {
@@ -196,12 +204,36 @@ export default function Home() {
   }, [status]);
 
   const showLanding = status === "unauthenticated";
+  const landingTrendingEvents = useMemo(() => {
+    const seen = new Set<string>();
+    const flattened = landingTop24hEvents.map((event) => ({
+      ...event,
+      title: getDisplayTitle(event.title, debugMode),
+    }));
 
+    const filtered = flattened.filter((event) => (debugMode ? true : !isDebugTitle(event.title)));
+    const deduped = filtered.filter((event) => {
+      if (seen.has(event.id)) return false;
+      seen.add(event.id);
+      return true;
+    });
+
+    const now = Date.now();
+    const in24h = deduped.filter((event) => {
+      if (!event.createdAt) return false;
+      const createdMs = new Date(event.createdAt).getTime();
+      return Number.isFinite(createdMs) && now - createdMs <= 24 * 60 * 60 * 1000;
+    });
+
+    return (in24h.length > 0 ? in24h : deduped).slice(0, 50);
+  }, [landingTop24hEvents, debugMode]);
+
+  const landingHasEvents = landingTrendingEvents.length > 0;
   useEffect(() => {
-    if (showLanding || status === "authenticated") {
-      fetchHomeFeed();
+    if (showLanding) {
+      fetchLandingFeed();
     }
-  }, [showLanding, status, fetchHomeFeed]);
+  }, [showLanding, fetchLandingFeed]);
 
   if (status === "loading") {
     return (
@@ -218,78 +250,39 @@ export default function Home() {
     return (
       <div className="min-h-screen relative overflow-x-hidden landing-page">
         <Header showCategoryStrip={false} />
-        <main id="main-content" className="relative mx-auto px-4 py-4 sm:px-6 sm:py-6 md:py-10 lg:py-12 max-w-2xl">
-          {/* Hero: una schermata = solo fino ai contatori; contatori alla stessa altezza di "Eventi in corso" */}
+        <main id="main-content" className="relative mx-auto px-4 py-4 sm:px-6 sm:py-6 md:py-8 lg:py-10 max-w-5xl">
           <section
-            className="landing-hero-section flex flex-col min-h-[var(--landing-hero-min-h)] pt-1 pb-6 md:pt-2 md:pb-8"
+            className="landing-hero-section relative left-1/2 w-screen -translate-x-1/2 overflow-hidden flex flex-col min-h-[100dvh]"
           >
-            <div className="landing-hero-card px-4 py-0 md:px-10 md:py-0 text-center flex flex-col flex-1 min-h-0">
-              {/* Blocco testo + CTA centrato in altezza nello spazio sopra i contatori */}
-              <div className="flex flex-1 min-h-0 flex-col justify-center py-4 md:py-6">
-                <p className="landing-hero-eyebrow text-[0.7rem] sm:text-ds-caption font-semibold uppercase tracking-wider mb-2 md:mb-2.5 text-white/95 text-center max-w-full break-words leading-snug">
-                  Mercati di previsione – Solo crediti virtuali
-                </p>
-                <div className="landing-hero-line mt-[1cm] mb-2.5 md:mb-3" aria-hidden />
-                <LandingHeroTitle />
-                <div className="landing-hero-line landing-hero-line--below my-3 md:my-4" aria-hidden />
-                <p className="landing-hero-subtitle text-ds-body-landing font-normal text-white/90 max-w-md mx-auto leading-snug text-center mb-[0.8cm]">
-                  Se pensi di saperlo prima degli altri,
-                  <br />
-                  <span className="landing-hero-subtitle-emphasis">è il momento di provarlo.</span>
-                </p>
-                <div className="landing-hero-line landing-hero-line--cta mt-0 mb-4 md:mb-6" aria-hidden />
-                <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-                  <Link
-                    href="/auth/signup"
-                    className="landing-cta-primary w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body inline-flex items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-                  >
-                    Prevedi ora — 1000 crediti di benvenuto!
-                  </Link>
-                  <Link
-                    href="/auth/login"
-                    className="landing-cta-secondary w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl font-semibold text-ds-body inline-flex items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-                  >
-                    Già account? Accedi
-                  </Link>
+            <LandingMarketsBackdropWall markets={landingTrendingEvents} />
+            <div className="landing-hero-card relative z-10 flex flex-1 min-h-0" />
+          </section>
+
+          <section className="mb-8 md:mb-10 pt-6 md:pt-7" aria-label="Mercati in tendenza">
+            <h2 className="landing-section-title landing-section-title--no-underline text-ds-h2 font-bold text-fg mb-3 sm:mb-4">
+              <span className="landing-section-title__text">Trending now</span>
+            </h2>
+            {homeFeedLoading ? (
+              <LoadingBlock message="Caricamento mercati in tendenza..." fullscreen={false} />
+            ) : !landingHasEvents ? (
+              <p className="text-ds-body-sm text-white/70 py-3">Nessun mercato disponibile al momento.</p>
+            ) : (
+              <div className="landing-trending-row-wrap">
+                <div className="landing-trending-row" role="list" aria-label="Mercati in tendenza">
+                  {landingTrendingEvents.map((event) => (
+                    <div key={event.id} className="landing-trending-row__item" role="listitem">
+                      <LandingTrendingMarketCard
+                        id={event.id}
+                        title={event.title}
+                        category={event.category}
+                        imageUrl={event.aiImageUrl}
+                        onNavigate={handleEventClick}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="shrink-0 pt-4 md:pt-6">
-                <LandingHeroStats />
-              </div>
-            </div>
-          </section>
-
-          <section className="mb-8 md:mb-12 pt-6 md:pt-8" aria-label="Eventi principali per categoria">
-            <h2 className="landing-section-title landing-section-title--no-underline text-ds-h2 font-bold text-fg mb-3 sm:mb-4">
-              <span className="landing-section-title__text">Top eventi per categoria</span>
-            </h2>
-            <HomeFeedByCategory
-              sections={homeSections}
-              loading={homeFeedLoading}
-              variant="popular"
-              onEventNavigate={handleEventClick}
-              filterEvent={(title) => debugMode || !isDebugTitle(title)}
-              getDisplayTitle={(t) => getDisplayTitle(t, debugMode)}
-            />
-          </section>
-
-          <section ref={whySectionRef} className="mb-8 md:mb-12">
-            <h2 className="text-ds-h2 font-bold text-fg mb-4 sm:mb-5 text-center">
-              Perché giocare
-            </h2>
-            <LandingWhyFlip />
-          </section>
-
-          <section className="text-center pt-4 pb-8 sm:pt-6 sm:pb-10">
-            <div className="landing-hero-card inline-block px-5 py-5 sm:px-8 sm:py-6 md:px-10 md:py-8">
-              <p className="text-ds-body font-semibold text-white mb-3">Pronto a iniziare?</p>
-              <Link
-                href="/auth/signup"
-                className="landing-cta-primary landing-cta-primary--blue w-full max-w-sm mx-auto min-h-[48px] px-6 py-4 rounded-xl font-semibold text-ds-body-sm text-white inline-flex items-center justify-center transition-all hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-              >
-                Prevedi ora — 100 crediti gratis
-              </Link>
-            </div>
+            )}
           </section>
         </main>
       </div>

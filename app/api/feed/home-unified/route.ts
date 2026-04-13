@@ -138,6 +138,7 @@ interface ApiHomeEvent {
   title: string;
   category: string;
   closesAt: string;
+  createdAt?: string;
   yesPct: number;
   predictionsCount: number;
   totalCredits: number;
@@ -161,6 +162,7 @@ function toApiEvent(event: ScoredEvent): ApiHomeEvent {
     title: event.title,
     category: event.category,
     closesAt: event.closesAt,
+    createdAt: event.createdAt.toISOString(),
     yesPct: event.yesPct,
     predictionsCount: event.predictionsCount,
     totalCredits: event.totalCredits,

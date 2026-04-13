@@ -31,9 +31,6 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
-// Obbliga il layout a essere valutato a ogni richiesta (no cache), così i cookie di sessione vengono letti
-export const dynamic = "force-dynamic";
-
 export default function RootLayout({
   children,
   modal,

@@ -23,6 +23,7 @@ export interface HomeUnifiedFeedProps {
   layout?: "netflix" | "classic";
 }
 const HOME_UNIFIED_REFRESH_MS = 30_000;
+const HOME_UNIFIED_CACHE_TTL_MS = 45_000;
 
 interface UnifiedHomeEvent {
   id: string;
@@ -50,6 +51,18 @@ interface HomeRailsPayload {
     events: UnifiedHomeEvent[];
   }>;
 }
+
+type HomeUnifiedFeedSnapshot = {
+  updatedAt: number;
+  payload: {
+    events: UnifiedHomeEvent[];
+    featuredEventsApi: UnifiedHomeEvent[];
+    heroEventApi: UnifiedHomeEvent | null;
+    rowsApi: HomeRailsPayload | null;
+  };
+};
+
+const homeUnifiedFeedCache = new Map<string, HomeUnifiedFeedSnapshot>();
 
 function isMultiOutcomeTile(event: UnifiedHomeEvent): boolean {
   const hasMultiOptionType =
@@ -362,11 +375,25 @@ export function HomeUnifiedFeed({
   emptyDescription = "Non ci sono ancora eventi in questa sezione.",
   layout = "netflix",
 }: HomeUnifiedFeedProps) {
-  const [events, setEvents] = useState<UnifiedHomeEvent[]>([]);
-  const [featuredEventsApi, setFeaturedEventsApi] = useState<UnifiedHomeEvent[]>([]);
-  const [heroEventApi, setHeroEventApi] = useState<UnifiedHomeEvent | null>(null);
-  const [rowsApi, setRowsApi] = useState<HomeRailsPayload | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cachedSnapshot = homeUnifiedFeedCache.get(endpoint);
+  const hasWarmCache =
+    !!cachedSnapshot &&
+    Date.now() - cachedSnapshot.updatedAt <= HOME_UNIFIED_CACHE_TTL_MS;
+  const warmPayload = hasWarmCache ? cachedSnapshot?.payload ?? null : null;
+
+  const [events, setEvents] = useState<UnifiedHomeEvent[]>(
+    () => warmPayload?.events ?? []
+  );
+  const [featuredEventsApi, setFeaturedEventsApi] = useState<UnifiedHomeEvent[]>(
+    () => warmPayload?.featuredEventsApi ?? []
+  );
+  const [heroEventApi, setHeroEventApi] = useState<UnifiedHomeEvent | null>(
+    () => warmPayload?.heroEventApi ?? null
+  );
+  const [rowsApi, setRowsApi] = useState<HomeRailsPayload | null>(
+    () => warmPayload?.rowsApi ?? null
+  );
+  const [loading, setLoading] = useState(!hasWarmCache);
   const [heroPullDistance, setHeroPullDistance] = useState(0);
   const [heroScrollY, setHeroScrollY] = useState(0);
   const touchStartYRef = useRef<number | null>(null);
@@ -378,10 +405,20 @@ export function HomeUnifiedFeed({
       const res = await fetch(endpoint, { cache: "no-store" });
       if (!res.ok) throw new Error("Errore di caricamento");
       const data = await res.json();
-      setEvents((data.events ?? []) as UnifiedHomeEvent[]);
-      setFeaturedEventsApi((data.featuredEvents ?? []) as UnifiedHomeEvent[]);
-      setHeroEventApi((data.heroEvent ?? null) as UnifiedHomeEvent | null);
-      setRowsApi((data.rows ?? null) as HomeRailsPayload | null);
+      const nextPayload = {
+        events: (data.events ?? []) as UnifiedHomeEvent[],
+        featuredEventsApi: (data.featuredEvents ?? []) as UnifiedHomeEvent[],
+        heroEventApi: (data.heroEvent ?? null) as UnifiedHomeEvent | null,
+        rowsApi: (data.rows ?? null) as HomeRailsPayload | null,
+      };
+      setEvents(nextPayload.events);
+      setFeaturedEventsApi(nextPayload.featuredEventsApi);
+      setHeroEventApi(nextPayload.heroEventApi);
+      setRowsApi(nextPayload.rowsApi);
+      homeUnifiedFeedCache.set(endpoint, {
+        updatedAt: Date.now(),
+        payload: nextPayload,
+      });
     } catch {
       if (!silent) {
         setEvents([]);
@@ -395,8 +432,8 @@ export function HomeUnifiedFeed({
   }, [endpoint]);
 
   useEffect(() => {
-    fetchFeed();
-  }, [fetchFeed]);
+    fetchFeed(hasWarmCache);
+  }, [fetchFeed, hasWarmCache]);
 
   useEffect(() => {
     const id = setInterval(() => {
