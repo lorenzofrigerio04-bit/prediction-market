@@ -3078,7 +3078,7 @@ body.discover-consigliati-active .header-neon {
     linear-gradient(180deg, rgb(var(--primary) / 0.2) 0%, rgb(var(--primary) / 0.08) 100%) !important;
   border: none !important;
   box-shadow:
-    0 0 24px -6px rgb(var(--primary-glow) / 0.56) !important,
+    0 0 24px -6px rgb(var(--primary-glow) / 0.56),
     0 0 0 1px rgb(var(--primary) / 0.24) inset !important;
 }
 /* Linea cyan in cima alla casella attiva (sempre visibile) */
