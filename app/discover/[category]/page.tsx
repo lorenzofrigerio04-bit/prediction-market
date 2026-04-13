@@ -10,7 +10,7 @@ function buildCategoryFeedConfig(slug: string) {
     return {
       pageLabel: "Tendenza",
       endpoint: "/api/feed/home-unified?sort=popular",
-      featuredTitle: "Top 5 eventi delle ultime 24h",
+      featuredTitle: "Top 10 eventi delle ultime 24h",
       feedTitle: "Eventi popolari",
     };
   }

@@ -217,7 +217,7 @@ export default function Home() {
   if (showLanding) {
     return (
       <div className="min-h-screen relative overflow-x-hidden landing-page">
-        <Header />
+        <Header showCategoryStrip={false} />
         <main id="main-content" className="relative mx-auto px-4 py-4 sm:px-6 sm:py-6 md:py-10 lg:py-12 max-w-2xl">
           {/* Hero: una schermata = solo fino ai contatori; contatori alla stessa altezza di "Eventi in corso" */}
           <section
@@ -315,19 +315,6 @@ export default function Home() {
           <HomeUnifiedFeed onEventNavigate={handleEventClick} />
         </div>
 
-        <section className="text-center pt-8 pb-6" aria-label="Invito a esplorare">
-          <div className="landing-hero-card inline-block rounded-2xl px-6 py-5 sm:px-8 sm:py-6">
-            <p className="text-ds-body font-semibold text-white mb-3">
-              Non sai da dove iniziare?
-            </p>
-            <Link
-              href="/discover"
-              className="landing-cta-primary w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl font-semibold text-ds-body-sm inline-flex items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-            >
-              Esplora tutti gli eventi →
-            </Link>
-          </div>
-        </section>
       </main>
     </div>
   );

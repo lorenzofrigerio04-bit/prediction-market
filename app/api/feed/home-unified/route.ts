@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 
 const DEFAULT_LIMIT = 60;
 const MAX_LIMIT = 120;
-const TOP24H_LIMIT = 5;
+const TOP24H_LIMIT = 10;
 const TOP24H_WINDOW_MS = 24 * 60 * 60 * 1000;
 const RAIL_LIMIT = 16;
 const MICROS_PER_CREDIT = 1_000_000n;

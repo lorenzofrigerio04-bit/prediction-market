@@ -1311,30 +1311,26 @@ textarea:focus-visible {
   }
 }
 
-/* —— Perché giocare: flip card 3D (un motivo alla volta) —— */
+/* —— Perché giocare: card swap stack (stile React Bits) —— */
 .landing-why-flip__scene {
   position: relative;
   width: 100%;
   max-width: 22rem;
   margin-left: auto;
   margin-right: auto;
-  min-height: 200px;
 }
-.landing-why-flip__card-wrapper {
+.landing-why-flip__stack {
   position: relative;
-  width: 100%;
-  height: 200px;
-  min-height: 200px;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
+  min-height: 228px;
+  isolation: isolate;
 }
-.landing-why-flip__face {
+.landing-why-flip__card {
   position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  top: 0;
+  left: 0;
+  right: 0;
+  min-height: 200px;
   border-radius: var(--radius-lg);
-  /* Liquid glass: trasparenza + blur */
   background: rgb(255 255 255 / 0.06);
   backdrop-filter: blur(20px) saturate(1.1);
   -webkit-backdrop-filter: blur(20px) saturate(1.1);
@@ -1347,8 +1343,38 @@ textarea:focus-visible {
   align-items: center;
   justify-content: center;
   padding: 1.5rem 1.25rem;
+  transition:
+    transform 620ms cubic-bezier(0.2, 0.9, 0.35, 1),
+    opacity 620ms ease,
+    filter 620ms ease;
+  will-change: transform, opacity, filter;
 }
-.dark .landing-why-flip__face {
+.landing-why-flip__card--pos-0 {
+  z-index: 4;
+  opacity: 1;
+  transform: translateY(0) scale(1) rotate(-0.9deg);
+  filter: saturate(1);
+}
+.landing-why-flip__card--pos-1 {
+  z-index: 3;
+  opacity: 0.92;
+  transform: translateY(14px) scale(0.965) rotate(1.4deg);
+  filter: saturate(0.9);
+}
+.landing-why-flip__card--pos-2 {
+  z-index: 2;
+  opacity: 0.76;
+  transform: translateY(28px) scale(0.93) rotate(-0.4deg);
+  filter: saturate(0.8);
+}
+.landing-why-flip__card--pos-3 {
+  z-index: 1;
+  opacity: 0;
+  transform: translateY(36px) scale(0.9);
+  filter: blur(1px);
+  pointer-events: none;
+}
+.dark .landing-why-flip__card {
   background: rgb(255 255 255 / 0.04);
   border-color: rgb(255 255 255 / 0.08);
   box-shadow:
@@ -1356,19 +1382,9 @@ textarea:focus-visible {
     0 4px 24px -4px rgb(0 0 0 / 0.3),
     0 20px 40px -12px rgb(0 0 0 / 0.2);
 }
-.landing-why-flip__face--back {
-  transform: rotateY(180deg);
-}
 .landing-why-flip__face-inner {
   text-align: center;
   width: 100%;
-}
-.landing-why-flip__face-inner--back {
-  transform: rotateY(180deg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
 }
 .landing-why-flip__icon {
   width: 4rem;
@@ -1404,13 +1420,12 @@ textarea:focus-visible {
 @media (min-width: 640px) {
   .landing-why-flip__scene {
     max-width: 26rem;
+  }
+  .landing-why-flip__stack {
     min-height: 240px;
   }
-  .landing-why-flip__card-wrapper {
-    height: 240px;
-    min-height: 240px;
-  }
-  .landing-why-flip__face {
+  .landing-why-flip__card {
+    min-height: 212px;
     padding: 2rem 1.5rem;
   }
   .landing-why-flip__icon {
@@ -1433,16 +1448,50 @@ textarea:focus-visible {
   margin-top: 1.25rem;
 }
 .landing-why-flip__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgb(255 255 255 / 0.25);
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.35s ease, box-shadow 0.35s ease;
+  width: 9px;
+  height: 9px;
+  border-radius: 9999px;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.3), rgb(255 255 255 / 0.08));
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.05) inset,
+    0 2px 8px rgb(0 0 0 / 0.2);
+  cursor: pointer;
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 0.35s ease,
+    border-color 0.35s ease,
+    box-shadow 0.35s ease;
+}
+.landing-why-flip__dot:hover {
+  border-color: rgb(147 197 253 / 0.72);
+  box-shadow:
+    0 0 0 1px rgb(147 197 253 / 0.2) inset,
+    0 0 10px rgb(96 165 250 / 0.32);
 }
 .landing-why-flip__dot--active {
-  background: rgb(74 222 128);
-  transform: scale(1.25);
-  box-shadow: 0 0 12px rgb(74 222 128 / 0.6);
+  border-color: rgb(255 255 255 / 0.72);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.62), rgb(255 255 255 / 0.22));
+  transform: scale(1.18);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.28) inset,
+    0 0 12px rgb(255 255 255 / 0.34),
+    0 0 22px rgb(255 255 255 / 0.16);
+}
+.landing-why-flip__dot:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgb(2 6 23 / 0.8),
+    0 0 0 4px rgb(96 165 250 / 0.8),
+    0 0 16px rgb(96 165 250 / 0.35);
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-why-flip__card {
+    transition: none;
+  }
+  .landing-why-flip__dot {
+    transition: none;
+  }
 }
 
 .landing-hero-eyebrow {
@@ -2914,9 +2963,15 @@ textarea:focus-visible {
 .header-spacer {
   height: calc(5.75rem + env(safe-area-inset-top, 0px));
 }
+.header-spacer--compact {
+  height: calc(3.5rem + env(safe-area-inset-top, 0px));
+}
 @media (min-width: 768px) {
   .header-spacer {
     height: calc(6.25rem + env(safe-area-inset-top, 0px));
+  }
+  .header-spacer--compact {
+    height: calc(4rem + env(safe-area-inset-top, 0px));
   }
 }
 
@@ -4354,7 +4409,7 @@ html body .nav-bottom-neon a span.nav-bottom-label,
 
 /* Bottom nav premium floating: raised, no hard outlines, active backlit */
 .nav-bottom-neon {
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 8px) !important;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 4px) !important;
   background: transparent !important;
   padding: 0 !important;
 }

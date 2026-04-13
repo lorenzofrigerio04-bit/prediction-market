@@ -60,7 +60,11 @@ function getCategoryFromRoute(pathname: string, sortParam: string | null): Marke
   return "trending";
 }
 
-export default function Header() {
+type HeaderProps = {
+  showCategoryStrip?: boolean;
+};
+
+export default function Header({ showCategoryStrip = true }: HeaderProps) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -129,42 +133,45 @@ export default function Header() {
           </div>
         </div>
 
-        <div
-          className="market-categories-strip"
-          aria-label="Categorie mercati"
-        >
-          <div className="mx-auto max-w-7xl px-4">
-            <div className="flex h-11 items-center overflow-x-auto whitespace-nowrap scrollbar-hide">
-              {MARKET_CATEGORIES.map((category, index) => {
-                const isActive = activeCategoryId === category.id;
-                return (
-                <span key={category.id} className="inline-flex items-center">
-                  {index > 0 && (
-                    <span className="mx-2.5 text-white/30" aria-hidden>
-                      &bull;
+        {showCategoryStrip && (
+          <div
+            className="market-categories-strip"
+            aria-label="Categorie mercati"
+          >
+            <div className="mx-auto max-w-7xl px-4">
+              <div className="flex h-11 items-center overflow-x-auto whitespace-nowrap scrollbar-hide">
+                {MARKET_CATEGORIES.map((category, index) => {
+                  const isActive = activeCategoryId === category.id;
+                  return (
+                    <span key={category.id} className="inline-flex items-center">
+                      {index > 0 && (
+                        <span className="mx-2.5 text-white/30" aria-hidden>
+                          &bull;
+                        </span>
+                      )}
+                      <Link
+                        href={category.href}
+                        className={`relative inline-flex items-center rounded-full border px-2.5 py-1 text-[15.5px] font-medium tracking-[0.01em] transition-all duration-200 ${
+                          isActive
+                            ? "border-white/30 bg-white/10 text-white shadow-[0_8px_20px_-12px_rgba(128,250,255,0.55)]"
+                            : "border-transparent bg-transparent text-white/78 hover:border-white/20 hover:bg-white/6 hover:text-white/95"
+                        }`}
+                        aria-current={isActive ? "true" : undefined}
+                      >
+                        {category.label}
+                      </Link>
                     </span>
-                  )}
-                  <Link
-                    href={category.href}
-                    className={`relative inline-flex items-center rounded-full border px-2.5 py-1 text-[12.5px] font-medium tracking-[0.01em] transition-all duration-200 ${
-                      isActive
-                        ? "border-white/30 bg-white/10 text-white shadow-[0_8px_20px_-12px_rgba(128,250,255,0.55)]"
-                        : "border-transparent bg-transparent text-white/78 hover:border-white/20 hover:bg-white/6 hover:text-white/95"
-                    }`}
-                    aria-current={isActive ? "true" : undefined}
-                  >
-                    {category.label}
-                  </Link>
-                </span>
-              )})}
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </header>
 
       {/* Spacer per evitare che il contenuto finisca sotto l'header fixed */}
       <div
-        className="header-spacer shrink-0"
+        className={`header-spacer shrink-0 ${showCategoryStrip ? "" : "header-spacer--compact"}`}
         aria-hidden
       />
 

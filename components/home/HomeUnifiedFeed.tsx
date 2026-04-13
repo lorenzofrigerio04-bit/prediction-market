@@ -239,10 +239,19 @@ function RankedRailTile({
   rank: number;
   onEventNavigate?: () => void;
 }) {
+  const isDoubleDigit = rank >= 10;
   return (
-    <div className="relative flex w-[236px] min-w-[236px] snap-start items-stretch pl-9 sm:w-[252px] sm:min-w-[252px]">
+    <div
+      className={`relative flex w-[214px] min-w-[214px] snap-start items-stretch sm:w-[232px] sm:min-w-[232px] ${
+        isDoubleDigit ? "pl-11 sm:pl-13" : "pl-8 sm:pl-9"
+      }`}
+    >
       <span
-        className="pointer-events-none absolute left-1 bottom-0 z-20 font-kalshi text-[6.7rem] leading-[0.82] text-transparent sm:text-[7.4rem]"
+        className={`pointer-events-none absolute bottom-0 z-20 font-kalshi leading-[0.82] text-transparent ${
+          isDoubleDigit
+            ? "left-0 text-[5.4rem] sm:text-[6rem]"
+            : "left-1 text-[6.3rem] sm:text-[7rem]"
+        }`}
         style={{
           fontFamily: "var(--font-levels), 'Bebas Neue', 'Oswald', sans-serif",
           fontWeight: 400,
@@ -293,21 +302,21 @@ function HorizontalRail({
 }) {
   if (events.length === 0) return null;
   return (
-    <section aria-label={title}>
+    <section aria-label={title} className="px-1 sm:px-1.5">
       <div className="mb-2.5 flex items-center justify-between gap-2">
-        <h3 className="font-kalshi text-[1.06rem] font-semibold tracking-[0.01em] text-white/95 sm:text-[1.12rem]">
+        <h3 className="font-kalshi text-[1.14rem] font-bold leading-[1.08] tracking-[0.005em] text-white/95 sm:text-[1.24rem]">
           {title}
         </h3>
         {href && (
           <Link
             href={href}
-            className="text-ds-body-sm font-semibold text-primary transition-colors hover:text-primary-hover"
+            className="text-[0.82rem] font-semibold text-primary transition-colors hover:text-primary-hover"
           >
             Vedi tutti
           </Link>
         )}
       </div>
-      <div className="netflix-rail-scroll scrollbar-hide -mx-1 flex snap-x snap-proximity gap-2 overflow-x-auto px-1 pb-1.5 sm:gap-2.5">
+      <div className="netflix-rail-scroll scrollbar-hide flex snap-x snap-proximity gap-2.5 overflow-x-auto pb-1.5 sm:gap-3">
         {events.map((event, idx) =>
           ranked ? (
             <RankedRailTile
@@ -319,7 +328,7 @@ function HorizontalRail({
           ) : (
             <div
               key={event.id}
-              className="w-[220px] min-w-[220px] snap-start sm:w-[236px] sm:min-w-[236px]"
+              className="w-[198px] min-w-[198px] snap-start sm:w-[214px] sm:min-w-[214px]"
             >
               <HomeEventTile
                 id={event.id}
@@ -347,7 +356,7 @@ function HorizontalRail({
 export function HomeUnifiedFeed({
   onEventNavigate,
   endpoint = "/api/feed/home-unified",
-  featuredTitle = "Top 5 eventi delle ultime 24h",
+  featuredTitle = "Top 10 eventi delle ultime 24h",
   feedTitle = "Mercati per categoria",
   emptyTitle = "Nessun evento",
   emptyDescription = "Non ci sono ancora eventi in questa sezione.",
@@ -796,7 +805,7 @@ export function HomeUnifiedFeed({
         </section>
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         <HorizontalRail title="Scelti per te" events={forYouEvents} onEventNavigate={onEventNavigate} />
         <HorizontalRail
           title="Mercati in tendenza"
@@ -805,7 +814,7 @@ export function HomeUnifiedFeed({
           onEventNavigate={onEventNavigate}
         />
         <HorizontalRail
-          title="Top 5 mercati delle ultime 24h"
+          title="Top 10 mercati delle ultime 24h"
           events={top24hEvents}
           onEventNavigate={onEventNavigate}
           ranked
