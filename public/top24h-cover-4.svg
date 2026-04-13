@@ -1,0 +1,18 @@
+<svg width="1200" height="840" viewBox="0 0 1200 840" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="840" fill="#160C08"/>
+  <g opacity="0.9" filter="url(#a)">
+    <ellipse cx="880" cy="210" rx="340" ry="210" fill="#F59E0B"/>
+  </g>
+  <g opacity="0.68" filter="url(#b)">
+    <ellipse cx="260" cy="630" rx="370" ry="230" fill="#FB7185"/>
+  </g>
+  <path d="M100 300C260 260 430 300 600 360C780 420 930 450 1100 410" stroke="white" stroke-opacity="0.2" stroke-width="2"/>
+  <defs>
+    <filter id="a" x="240" y="-300" width="1280" height="1020" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="150"/>
+    </filter>
+    <filter id="b" x="-420" y="90" width="1360" height="1080" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="150"/>
+    </filter>
+  </defs>
+</svg>

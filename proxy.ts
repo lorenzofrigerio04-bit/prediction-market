@@ -18,7 +18,7 @@ function isProtectedPath(pathname: string): boolean {
   return false;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const res = NextResponse.next();
   purgeLegacyNextAuthCookies(res);
 

@@ -227,13 +227,19 @@ export function IconNavSport({ className, ...props }: SVGProps<SVGSVGElement>) {
   );
 }
 
-/** Exchange: grafico primo quadrante — assi a L + linea rialzista */
+/** Exchange: icona trading professionale (candles + trend) */
 export function IconNavExchange({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <NavIcon className={className} {...props}>
-      <path d="M5 19V5" strokeLinecap="round" />
-      <path d="M5 19H19" strokeLinecap="round" />
-      <path d="M5 16L9 13L12 14.5L16 10L19 7" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4.5 19.5H19.5" strokeLinecap="round" />
+      <path d="M7.5 17V10.5" />
+      <rect x="6.4" y="12.1" width="2.2" height="3.8" rx="0.7" />
+      <path d="M12 15.8V8.4" />
+      <rect x="10.9" y="9.7" width="2.2" height="4.6" rx="0.7" />
+      <path d="M16.5 17.2V11" />
+      <rect x="15.4" y="12.4" width="2.2" height="3.7" rx="0.7" />
+      <path d="M6 8.8L10.1 7.2L12.6 9L18.1 5.7" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M17 5.6H18.6V7.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
     </NavIcon>
   );
 }

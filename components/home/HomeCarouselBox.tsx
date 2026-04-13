@@ -82,9 +82,11 @@ export default function HomeCarouselBox({
   }, [loading, events, events.length]);
 
   return (
-    <section className="py-4 sm:py-5" aria-label={title}>
-      <div className="mb-3 flex items-center justify-between gap-3 flex-wrap sm:mb-4">
-        <h2 className="text-ds-h2 font-bold text-fg">{title}</h2>
+    <section className="py-2 sm:py-2.5" aria-label={title}>
+      <div className="mb-2.5 flex items-center justify-between gap-3 flex-wrap sm:mb-3">
+        <h2 className="font-kalshi font-bold text-fg leading-[1.1] tracking-[0.01em] text-[1.65rem] sm:text-[2rem] md:text-[2.35rem]">
+          {title}
+        </h2>
         <Link
           href={viewAllHref}
           className="text-ds-body-sm font-semibold text-primary hover:text-primary-hover focus-visible:underline shrink-0"

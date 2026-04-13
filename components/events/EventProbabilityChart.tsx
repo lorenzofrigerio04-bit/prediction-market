@@ -489,7 +489,7 @@ export default function EventProbabilityChart({
         )}
       </div>
       {isMultiOutcome && seriesDefs.length >= 2 && (
-        <div className="mt-3 px-1 overflow-x-auto">
+        <div className="mt-3 px-1 overflow-x-auto scrollbar-hide">
           <div className="inline-grid grid-flow-col grid-rows-3 auto-cols-[minmax(165px,1fr)] gap-x-2 gap-y-1.5 min-w-full">
           {legendRows.map((series) => {
             return (

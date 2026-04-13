@@ -14,6 +14,7 @@ import {
   IconBell,
   IconUser,
 } from "@/components/ui/Icons";
+import { MARKET_CATEGORIES, type MarketCategoryId } from "@/lib/market-categories";
 
 // Bottom bar: Home, Sport, Exchange, Notifiche, Profilo
 const BOTTOM_NAV_LEFT = [
@@ -26,26 +27,9 @@ const BOTTOM_NAV_RIGHT = [
 ] as const;
 
 const bottomLinkClass =
-  "flex flex-col items-center justify-center gap-1 min-w-[52px] min-h-[52px] py-1.5 rounded-xl transition-colors duration-200 touch-manipulation active:scale-[0.97] opacity-100";
+  "flex flex-col items-center justify-center gap-1 min-w-[52px] min-h-[52px] py-1.5 rounded-xl transition-all duration-250 touch-manipulation active:scale-[0.97] opacity-100";
 
 const SCROLL_TOP_THRESHOLD = 16;
-const MARKET_CATEGORIES = [
-  { id: "trending", label: "Tendenza", href: "/discover/tutti?sort=popular" },
-  { id: "elections", label: "Elezioni", href: "/discover/elezioni" },
-  { id: "politics", label: "Politica", href: "/discover/politica" },
-  { id: "sports", label: "Sport", href: "/discover/sport" },
-  { id: "culture", label: "Cultura", href: "/discover/cultura" },
-  { id: "crypto", label: "Cripto", href: "/discover/cripto" },
-  { id: "climate", label: "Clima", href: "/discover/clima" },
-  { id: "economics", label: "Economia", href: "/discover/economia" },
-  { id: "mentions", label: "Menzioni", href: "/discover/menzioni" },
-  { id: "companies", label: "Aziende", href: "/discover/aziende" },
-  { id: "finance", label: "Finanza", href: "/discover/finanza" },
-  { id: "tech-science", label: "Tecnologia e Scienza", href: "/discover/tecnologia-e-scienza" },
-] as const;
-
-type MarketCategoryId = (typeof MARKET_CATEGORIES)[number]["id"];
-
 function getCategoryFromRoute(pathname: string, sortParam: string | null): MarketCategoryId {
   if (pathname === "/discover" || pathname === "/") return "trending";
   if (pathname.startsWith("/sport")) return "sports";
@@ -146,24 +130,26 @@ export default function Header() {
         </div>
 
         <div
-          className="market-categories-strip border-t border-b border-white/10 bg-[rgb(var(--admin-bg))]/90 backdrop-blur-sm"
+          className="market-categories-strip"
           aria-label="Categorie mercati"
         >
           <div className="mx-auto max-w-7xl px-4">
-            <div className="flex h-10 items-center overflow-x-auto whitespace-nowrap scrollbar-hide">
+            <div className="flex h-11 items-center overflow-x-auto whitespace-nowrap scrollbar-hide">
               {MARKET_CATEGORIES.map((category, index) => {
                 const isActive = activeCategoryId === category.id;
                 return (
                 <span key={category.id} className="inline-flex items-center">
                   {index > 0 && (
-                    <span className="mx-3 text-fg-muted/40" aria-hidden>
+                    <span className="mx-2.5 text-white/30" aria-hidden>
                       &bull;
                     </span>
                   )}
                   <Link
                     href={category.href}
-                    className={`relative inline-flex items-center px-0.5 py-1 text-[13px] font-medium tracking-[0.01em] transition-colors duration-200 ${
-                      isActive ? "text-fg" : "text-fg-muted/85"
+                    className={`relative inline-flex items-center rounded-full border px-2.5 py-1 text-[12.5px] font-medium tracking-[0.01em] transition-all duration-200 ${
+                      isActive
+                        ? "border-white/30 bg-white/10 text-white shadow-[0_8px_20px_-12px_rgba(128,250,255,0.55)]"
+                        : "border-transparent bg-transparent text-white/78 hover:border-white/20 hover:bg-white/6 hover:text-white/95"
                     }`}
                     aria-current={isActive ? "true" : undefined}
                   >

@@ -14,13 +14,15 @@ import {
   parseOutcomesJson,
 } from "@/lib/market-types";
 import { getEventMarketSharesByOutcome } from "@/lib/amm/multi-outcome-engine";
+import { MARKET_CATEGORIES, type MarketCategoryId } from "@/lib/market-categories";
 
 export const dynamic = "force-dynamic";
 
 const DEFAULT_LIMIT = 60;
 const MAX_LIMIT = 120;
-const TOP_FEATURED_LIMIT = 5;
-const TOP_FEATURED_WINDOW_MS = 24 * 60 * 60 * 1000;
+const TOP24H_LIMIT = 5;
+const TOP24H_WINDOW_MS = 24 * 60 * 60 * 1000;
+const RAIL_LIMIT = 16;
 const MICROS_PER_CREDIT = 1_000_000n;
 
 function normalizeCategorySlug(raw: string | null): string | null {
@@ -75,6 +77,46 @@ function clamp01(value: number): number {
   return value;
 }
 
+function normalizedLog(value: number, maxValue: number): number {
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  const safeMax = Math.max(1, maxValue);
+  return clamp01(Math.log1p(value) / Math.log1p(safeMax));
+}
+
+const SPORTS_CATEGORY_SLUGS = [
+  "sport",
+  "calcio",
+  "tennis",
+  "pallacanestro",
+  "pallavolo",
+  "formula-1",
+  "motogp",
+];
+
+function eventBelongsToCategoryId(eventCategory: string, categoryId: MarketCategoryId): boolean {
+  if (categoryId === "trending") return true;
+  const slug = categoryToSlug(eventCategory);
+  if (categoryId === "elections") return slug === "elezioni" || slug === "elections";
+  if (categoryId === "politics") return slug === "politica" || slug === "politics";
+  if (categoryId === "sports") return SPORTS_CATEGORY_SLUGS.includes(slug);
+  if (categoryId === "culture") return slug === "cultura" || slug === "culture";
+  if (categoryId === "crypto") return slug === "cripto" || slug === "crypto";
+  if (categoryId === "climate") return slug === "clima" || slug === "climate";
+  if (categoryId === "economics") return slug === "economia" || slug === "economics";
+  if (categoryId === "mentions") return slug === "menzioni" || slug === "mentions";
+  if (categoryId === "companies") return slug === "aziende" || slug === "companies";
+  if (categoryId === "finance") return slug === "finanza" || slug === "financials";
+  if (categoryId === "tech-science") {
+    return (
+      slug === "tecnologia" ||
+      slug === "scienza" ||
+      slug === "tech-science" ||
+      slug === "tecnologia-e-scienza"
+    );
+  }
+  return false;
+}
+
 function mixConsecutiveCategories<T extends { category: string }>(items: T[]): T[] {
   if (items.length <= 2) return items;
   const pool = [...items];
@@ -89,6 +131,44 @@ function mixConsecutiveCategories<T extends { category: string }>(items: T[]): T
   }
 
   return mixed;
+}
+
+interface ApiHomeEvent {
+  id: string;
+  title: string;
+  category: string;
+  closesAt: string;
+  yesPct: number;
+  predictionsCount: number;
+  totalCredits: number;
+  aiImageUrl?: string;
+  marketType?: string;
+  outcomes?: Array<{ key: string; label: string }>;
+  outcomeProbabilities?: Array<{ key: string; label: string; probabilityPct: number }>;
+}
+
+type ScoredEvent = ApiHomeEvent & {
+  categorySlug: string;
+  createdAt: Date;
+  popularityScore: number;
+  forYouScore: number;
+  trendingScore: number;
+};
+
+function toApiEvent(event: ScoredEvent): ApiHomeEvent {
+  return {
+    id: event.id,
+    title: event.title,
+    category: event.category,
+    closesAt: event.closesAt,
+    yesPct: event.yesPct,
+    predictionsCount: event.predictionsCount,
+    totalCredits: event.totalCredits,
+    aiImageUrl: event.aiImageUrl,
+    marketType: event.marketType,
+    outcomes: event.outcomes,
+    outcomeProbabilities: event.outcomeProbabilities,
+  };
 }
 
 /**
@@ -250,7 +330,18 @@ export async function GET(request: NextRequest) {
       : processed;
 
     if (filteredByCategory.length === 0) {
-      return NextResponse.json({ events: [] });
+      return NextResponse.json({
+        heroEvent: null,
+        rows: {
+          forYou: [],
+          trending: [],
+          top24h: [],
+          followed: [],
+          categories: [],
+        },
+        events: [],
+        featuredEvents: [],
+      });
     }
 
     let profile: UserProfileView | null = null;
@@ -266,19 +357,21 @@ export async function GET(request: NextRequest) {
     }
 
     const maxVolume = Math.max(...filteredByCategory.map((e) => e.predictionsCount), 1);
+    const maxCredits = Math.max(...filteredByCategory.map((e) => e.totalCredits), 1);
     const oldestCreatedAt = Math.min(
       ...filteredByCategory.map((e) => e.createdAt.getTime())
     );
     const maxAgeMs = Math.max(Date.now() - oldestCreatedAt, 1);
 
-    const ranked = filteredByCategory
+    const scored = filteredByCategory
       .map((event) => {
-        const popularityScore = clamp01(
-          Math.log1p(event.predictionsCount) / Math.log1p(180)
-        );
+        const predictionsNorm = normalizedLog(event.predictionsCount, maxVolume);
+        const creditsNorm = normalizedLog(event.totalCredits, maxCredits);
+        const popularityScore = 0.65 * predictionsNorm + 0.35 * creditsNorm;
         const replicaScore = clamp01(Math.log10(event.replicaRankValue + 1));
         const daysToClose = (event.closesAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
         const urgencyScore = clamp01(1 - Math.min(Math.max(daysToClose, 0), 45) / 45);
+        const recencyScore = clamp01(1 - Math.min((Date.now() - event.createdAt.getTime()) / maxAgeMs, 1));
         const personalScore = profile
           ? scoreMarketForUser(
               {
@@ -295,62 +388,108 @@ export async function GET(request: NextRequest) {
               { maxAgeMs, maxVolume }
             )
           : 0;
-        const globalBaseScore =
-          0.5 * popularityScore + 0.3 * replicaScore + 0.2 * urgencyScore;
-        const score = profile
-          ? 0.6 * personalScore + 0.4 * globalBaseScore
-          : globalBaseScore;
-        return { ...event, score };
-      })
-      .sort((a, b) => {
-        if (b.score !== a.score) return b.score - a.score;
-        return a.closesAt.getTime() - b.closesAt.getTime();
+        const globalBaseScore = 0.55 * popularityScore + 0.25 * replicaScore + 0.2 * urgencyScore;
+        const forYouScore = profile
+          ? 0.62 * personalScore + 0.28 * popularityScore + 0.1 * recencyScore
+          : 0.72 * popularityScore + 0.28 * recencyScore;
+        const trendingScore = 0.75 * popularityScore + 0.15 * replicaScore + 0.1 * urgencyScore;
+        return {
+          ...event,
+          categorySlug: categoryToSlug(event.category),
+          closesAt: event.closesAt.toISOString(),
+          popularityScore: globalBaseScore,
+          forYouScore,
+          trendingScore,
+        } as ScoredEvent;
       });
 
-    const reranked = rerankFeed(
-      ranked.map((event) => ({
-        ...event,
-        eventId: event.id,
-      }))
-    );
-    const mixed = mixConsecutiveCategories(reranked);
+    const trendingSorted = [...scored].sort((a, b) => {
+      if (b.trendingScore !== a.trendingScore) return b.trendingScore - a.trendingScore;
+      if (b.predictionsCount !== a.predictionsCount) return b.predictionsCount - a.predictionsCount;
+      return b.totalCredits - a.totalCredits;
+    });
+    const forYouSorted = [...scored].sort((a, b) => {
+      if (b.forYouScore !== a.forYouScore) return b.forYouScore - a.forYouScore;
+      return b.trendingScore - a.trendingScore;
+    });
+
+    const eventIdsForUserSignals = trendingSorted.map((event) => event.id);
+    const [predictionRows, followedRows] = userId
+      ? await Promise.all([
+          prisma.prediction.findMany({
+            where: { userId, eventId: { in: eventIdsForUserSignals } },
+            select: { eventId: true },
+            distinct: ["eventId"],
+          }),
+          prisma.eventFollower.findMany({
+            where: { userId, eventId: { in: eventIdsForUserSignals } },
+            select: { eventId: true },
+          }),
+        ])
+      : [[], []];
+    const predictedEventIds = new Set(predictionRows.map((row) => row.eventId));
+    const followedEventIds = new Set(followedRows.map((row) => row.eventId));
+
+    const heroEventScored =
+      trendingSorted.find((event) => !predictedEventIds.has(event.id)) ?? trendingSorted[0] ?? null;
+    const heroId = heroEventScored?.id ?? null;
+    const withoutHero = heroId ? trendingSorted.filter((event) => event.id !== heroId) : trendingSorted;
+
+    const forYouRail = rerankFeed(
+      forYouSorted
+        .filter((event) => event.id !== heroId)
+        .map((event) => ({ ...event, eventId: event.id }))
+    )
+      .slice(0, RAIL_LIMIT)
+      .map(toApiEvent);
+    const trendingRail = mixConsecutiveCategories(withoutHero)
+      .slice(0, RAIL_LIMIT)
+      .map(toApiEvent);
 
     const nowMs = now.getTime();
-    const cutoff24h = nowMs - TOP_FEATURED_WINDOW_MS;
-    const featuredPool = ranked.filter((event) => event.createdAt.getTime() >= cutoff24h);
-    const featuredSource = [
-      ...featuredPool,
-      ...ranked.filter((event) => event.createdAt.getTime() < cutoff24h),
+    const cutoff24h = nowMs - TOP24H_WINDOW_MS;
+    const top24hSource = [
+      ...withoutHero.filter((event) => event.createdAt.getTime() >= cutoff24h),
+      ...withoutHero.filter((event) => event.createdAt.getTime() < cutoff24h),
     ];
-    const featuredEvents = featuredSource.slice(0, TOP_FEATURED_LIMIT).map((event) => ({
-      id: event.id,
-      title: event.title,
-      category: event.category,
-      closesAt: event.closesAt,
-      yesPct: event.yesPct,
-      predictionsCount: event.predictionsCount,
-      totalCredits: event.totalCredits,
-      aiImageUrl: event.aiImageUrl,
-      marketType: event.marketType,
-      outcomes: event.outcomes,
-      outcomeProbabilities: event.outcomeProbabilities,
-    }));
+    const top24hRail = top24hSource.slice(0, TOP24H_LIMIT).map(toApiEvent);
 
-    const events = mixed.slice(0, limit).map((event) => ({
-      id: event.id,
-      title: event.title,
-      category: event.category,
-      closesAt: event.closesAt,
-      yesPct: event.yesPct,
-      predictionsCount: event.predictionsCount,
-      totalCredits: event.totalCredits,
-      aiImageUrl: event.aiImageUrl,
-      marketType: event.marketType,
-      outcomes: event.outcomes,
-      outcomeProbabilities: event.outcomeProbabilities,
-    }));
+    const followedRail = withoutHero
+      .filter((event) => followedEventIds.has(event.id))
+      .slice(0, RAIL_LIMIT)
+      .map(toApiEvent);
 
-    return NextResponse.json({ events, featuredEvents });
+    const categoryRails = MARKET_CATEGORIES
+      .filter((category) => category.id !== "trending")
+      .map((category) => ({
+        id: category.id,
+        label: category.label,
+        href: category.href,
+        events: withoutHero
+          .filter((event) => eventBelongsToCategoryId(event.category, category.id))
+          .slice(0, 12)
+          .map(toApiEvent),
+      }))
+      .filter((row) => row.events.length > 0);
+
+    const events = mixConsecutiveCategories(
+      rerankFeed(withoutHero.map((event) => ({ ...event, eventId: event.id })))
+    )
+      .slice(0, limit)
+      .map(toApiEvent);
+
+    return NextResponse.json({
+      heroEvent: heroEventScored ? toApiEvent(heroEventScored) : null,
+      rows: {
+        forYou: forYouRail,
+        trending: trendingRail,
+        top24h: top24hRail,
+        followed: followedRail,
+        categories: categoryRails,
+      },
+      events,
+      featuredEvents: top24hRail,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("Feed home-unified error:", message);

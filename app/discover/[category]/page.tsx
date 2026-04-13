@@ -43,6 +43,7 @@ export default function DiscoverCategoryPage() {
             feedTitle={feedTitle}
             emptyTitle={`Nessun evento in ${pageLabel}`}
             emptyDescription="Al momento non ci sono mercati aperti in questa categoria."
+            layout="classic"
           />
         </div>
       </main>

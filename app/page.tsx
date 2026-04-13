@@ -302,7 +302,7 @@ export default function Home() {
         <OnboardingTour onComplete={handleOnboardingComplete} />
       )}
       <Header />
-      <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-6xl">
+      <main id="main-content" className="mx-auto px-page-x pt-0 pb-page-y md:pt-0 md:pb-8 max-w-6xl">
         {/* Debug panel: only when ?debug=1 or NEXT_PUBLIC_DEBUG_MODE=true. */}
         {debugMode && (
           <div className="text-ds-micro text-fg-muted mb-2 p-2 rounded bg-white/5" aria-hidden>
@@ -311,7 +311,7 @@ export default function Home() {
           </div>
         )}
 
-        <div className="pt-4 sm:pt-5 px-4 sm:px-6 max-w-2xl mx-auto">
+        <div className="pt-0 px-2 sm:px-4 max-w-6xl mx-auto">
           <HomeUnifiedFeed onEventNavigate={handleEventClick} />
         </div>
 

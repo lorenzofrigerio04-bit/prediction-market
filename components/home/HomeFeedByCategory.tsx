@@ -52,7 +52,7 @@ export function HomeFeedByCategory({
   }
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8">
+    <div className="flex flex-col gap-4 sm:gap-5">
       {filtered.map((section) => (
         <HomeCarouselBox
           key={section.category}

@@ -526,6 +526,38 @@ export default function EventDetailPage({
           <h1 className="font-kalshi text-[1.55rem] sm:text-[1.85rem] md:text-[2rem] lg:text-[2.1rem] font-bold text-fg leading-[1.1] tracking-[0.01em] max-w-full">
             {eventHeadingTitle}
           </h1>
+          <div className="flex items-center gap-2 pt-1">
+            {session?.user?.id ? (
+              <button
+                type="button"
+                onClick={handleFollowToggle}
+                disabled={followLoading}
+                className={`inline-flex min-h-[40px] items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                  isFollowing
+                    ? "border-primary/60 bg-primary/15 text-primary"
+                    : "border-white/20 bg-white/5 text-fg hover:border-primary/50 hover:text-primary"
+                } disabled:cursor-not-allowed disabled:opacity-70`}
+                aria-label={isFollowing ? "Rimuovi mi piace mercato" : "Metti mi piace mercato"}
+              >
+                {followLoading ? "..." : isFollowing ? "Mi piace messo" : "Mi piace"}
+              </button>
+            ) : (
+              <Link
+                href={`/auth/login?callbackUrl=${encodeURIComponent(`/events/${event.id}`)}`}
+                className="inline-flex min-h-[40px] items-center justify-center rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm font-semibold text-fg hover:border-primary/50 hover:text-primary"
+              >
+                Mi piace
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={handleShare}
+              className="inline-flex min-h-[40px] items-center justify-center rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm font-semibold text-fg hover:border-primary/50 hover:text-primary"
+              aria-label="Condividi evento"
+            >
+              {shareCopied ? "Link copiato" : "Condividi"}
+            </button>
+          </div>
         </header>
 
         {/* Grafico: senza box, full-bleed su mobile */}
