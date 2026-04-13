@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Header from "@/components/Header";
 import LeaderboardRow from "@/components/LeaderboardRow";
@@ -116,7 +116,9 @@ export default function LeaderboardPage() {
         onComplete={() => setShowConfetti(false)}
         durationMs={4000}
       />
-      <Header />
+      <Suspense fallback={null}>
+        <Header />
+      </Suspense>
       <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl">
         <PageHeader title="CLASSIFICA" align="center" />
 

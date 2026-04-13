@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect, useRef } from "react";
+import { Suspense, use, useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -100,7 +100,7 @@ interface EventResponse {
   isFollowing?: boolean;
 }
 
-export default function EventDetailPage({
+function EventDetailPageContent({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -1213,5 +1213,13 @@ export default function EventDetailPage({
         loading={publishLoading}
       />
     </div>
+  );
+}
+
+export default function EventDetailPage(props: { params: Promise<{ id: string }> }) {
+  return (
+    <Suspense fallback={null}>
+      <EventDetailPageContent {...props} />
+    </Suspense>
   );
 }

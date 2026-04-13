@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { Suspense, useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
@@ -14,7 +14,7 @@ import { generateNotificationsOnDemand } from "@/lib/notifications/client";
 
 const ONBOARDING_STORAGE_KEY = "prediction-market-onboarding-completed";
 
-export default function Home() {
+function HomeContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   // Debug panel and [DEBUG] titles only when ?debug=1 or NEXT_PUBLIC_DEBUG_MODE=true.
@@ -310,5 +310,13 @@ export default function Home() {
 
       </main>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   );
 }

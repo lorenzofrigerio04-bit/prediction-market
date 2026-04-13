@@ -148,9 +148,22 @@ interface ApiHomeEvent {
   outcomeProbabilities?: Array<{ key: string; label: string; probabilityPct: number }>;
 }
 
-type ScoredEvent = ApiHomeEvent & {
+type ScoredEvent = {
+  id: string;
+  title: string;
+  category: string;
+  closesAt: Date;
   categorySlug: string;
   createdAt: Date;
+  yesPct: number;
+  predictionsCount: number;
+  totalCredits: number;
+  aiImageUrl?: string;
+  marketType?: string;
+  outcomes?: Array<{ key: string; label: string }>;
+  outcomeProbabilities?: Array<{ key: string; label: string; probabilityPct: number }>;
+  b: number;
+  replicaRankValue: number;
   popularityScore: number;
   forYouScore: number;
   trendingScore: number;
@@ -161,7 +174,7 @@ function toApiEvent(event: ScoredEvent): ApiHomeEvent {
     id: event.id,
     title: event.title,
     category: event.category,
-    closesAt: event.closesAt,
+    closesAt: event.closesAt.toISOString(),
     createdAt: event.createdAt.toISOString(),
     yesPct: event.yesPct,
     predictionsCount: event.predictionsCount,
@@ -366,7 +379,7 @@ export async function GET(request: NextRequest) {
     const maxAgeMs = Math.max(Date.now() - oldestCreatedAt, 1);
 
     const scored = filteredByCategory
-      .map((event) => {
+      .map((event): ScoredEvent => {
         const predictionsNorm = normalizedLog(event.predictionsCount, maxVolume);
         const creditsNorm = normalizedLog(event.totalCredits, maxCredits);
         const popularityScore = 0.65 * predictionsNorm + 0.35 * creditsNorm;
@@ -398,11 +411,10 @@ export async function GET(request: NextRequest) {
         return {
           ...event,
           categorySlug: categoryToSlug(event.category),
-          closesAt: event.closesAt.toISOString(),
           popularityScore: globalBaseScore,
           forYouScore,
           trendingScore,
-        } as ScoredEvent;
+        };
       });
 
     const trendingSorted = [...scored].sort((a, b) => {

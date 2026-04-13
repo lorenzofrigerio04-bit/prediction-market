@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import SideDrawer from "./SideDrawer";
 import { PredictionMasterLogoCompact } from "./PredictionMasterMark";
 import {
@@ -67,7 +67,6 @@ type HeaderProps = {
 export default function Header({ showCategoryStrip = true }: HeaderProps) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeCategoryId, setActiveCategoryId] = useState<MarketCategoryId>("trending");
@@ -83,8 +82,8 @@ export default function Header({ showCategoryStrip = true }: HeaderProps) {
   }, []);
 
   useEffect(() => {
-    setActiveCategoryId(getCategoryFromRoute(pathname ?? "/", searchParams.get("sort")));
-  }, [pathname, searchParams]);
+    setActiveCategoryId(getCategoryFromRoute(pathname ?? "/", null));
+  }, [pathname]);
 
   const isActive = (path: string) =>
     pathname === path || (path !== "/" && pathname.startsWith(path));

@@ -1,5 +1,10 @@
+import { Suspense } from "react";
 import LoginScreen from "@/components/auth/LoginScreen";
 
 export default function LoginPage() {
-  return <LoginScreen variant="page" />;
+  return (
+    <Suspense fallback={null}>
+      <LoginScreen variant="page" />
+    </Suspense>
+  );
 }

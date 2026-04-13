@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { Suspense, useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Header from "@/components/Header";
@@ -12,7 +12,7 @@ import { PostCommentsDrawer } from "@/components/feed/PostCommentsDrawer";
 
 const FEED_PAGE_SIZE = 20;
 
-export default function DiscoverPage() {
+function DiscoverPageContent() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const [items, setItems] = useState<HomeFeedItem[]>([]);
@@ -197,5 +197,13 @@ export default function DiscoverPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function DiscoverPage() {
+  return (
+    <Suspense fallback={null}>
+      <DiscoverPageContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -29,7 +29,7 @@ const inputClass =
   "w-full px-4 py-3 rounded-xl bg-surface/85 border border-border/70 text-fg placeholder:text-fg-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all";
 const labelClass = "block text-ds-body-sm font-semibold text-fg mb-1.5";
 
-export default function CreaPage() {
+function CreaPageContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -615,4 +615,12 @@ export default function CreaPage() {
   }
 
   return null;
+}
+
+export default function CreaPage() {
+  return (
+    <Suspense fallback={<LoadingBlock message="Caricamento…" />}>
+      <CreaPageContent />
+    </Suspense>
+  );
 }
