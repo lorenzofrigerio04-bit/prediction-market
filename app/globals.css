@@ -1944,9 +1944,9 @@ textarea:focus-visible {
 .landing-hero-section--prelogin {
   position: relative;
   min-height: clamp(
-    360px,
-    calc(100dvh - var(--header-height) - var(--safe-area-inset-top) - var(--bottom-nav-total) - 8.2rem),
-    720px
+    460px,
+    calc(100dvh - var(--header-height) - var(--safe-area-inset-top) - var(--bottom-nav-total) - 2.8rem),
+    860px
   );
 }
 
@@ -1971,9 +1971,9 @@ textarea:focus-visible {
 @media (min-width: 768px) {
   .landing-hero-section--prelogin {
     min-height: clamp(
-      460px,
-      calc(100dvh - var(--header-height) - var(--safe-area-inset-top) - var(--bottom-nav-total) - 6rem),
-      780px
+      560px,
+      calc(100dvh - var(--header-height) - var(--safe-area-inset-top) - var(--bottom-nav-total) - 2rem),
+      940px
     );
   }
 }
@@ -2058,20 +2058,20 @@ textarea:focus-visible {
 }
 .landing-trending-card {
   width: 100%;
-  aspect-ratio: 16 / 12;
-  max-height: clamp(158px, 48vw, 250px);
+  aspect-ratio: 16 / 10.8;
+  max-height: clamp(176px, 54vw, 272px);
   transform-origin: center center;
   will-change: transform, filter, opacity, box-shadow;
   z-index: 12;
 }
 
 .landing-trending-section {
-  margin-top: clamp(-26px, -3.8vh, -14px);
-  padding-top: clamp(14px, 2.2vh, 22px);
+  margin-top: clamp(-10px, -1.6vh, -4px);
+  padding-top: clamp(24px, 3.2vh, 34px);
   background: linear-gradient(
     180deg,
     rgb(var(--admin-bg) / 0) 0%,
-    rgb(var(--admin-bg) / 0.72) 25%,
+    rgb(var(--admin-bg) / 0.68) 32%,
     rgb(var(--admin-bg) / 1) 60%
   );
 }
@@ -2094,8 +2094,8 @@ textarea:focus-visible {
     width: min(84vw, 860px);
   }
   .landing-trending-card {
-    aspect-ratio: 16 / 11.4;
-    max-height: clamp(188px, 31vw, 280px);
+    aspect-ratio: 16 / 10.6;
+    max-height: clamp(198px, 34vw, 298px);
   }
 }
 

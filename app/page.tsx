@@ -367,17 +367,17 @@ function HomeContent() {
               <div className="landing-prelogin-photo-bg__image" />
               <div className="landing-prelogin-photo-bg__overlay" />
             </div>
-            <div className="landing-hero-card relative z-10 flex flex-1 min-h-0 items-center justify-center px-4">
-              <div className="w-full max-w-[20rem] mx-auto flex flex-col gap-3" aria-label="Azioni accesso">
+            <div className="landing-hero-card relative z-10 flex flex-1 min-h-0 items-end justify-center px-4 pb-[clamp(86px,16vh,168px)] sm:pb-[clamp(96px,14vh,188px)]">
+              <div className="w-full max-w-[19rem] mx-auto flex flex-col gap-3" aria-label="Azioni accesso">
                 <Link
                   href="/auth/login"
-                  className="inline-flex w-full min-h-[56px] items-center justify-center rounded-[16px] border border-cyan-200/40 bg-gradient-to-b from-[#7EFAFF] via-[#51DCE8] to-[#39C6D5] text-[#03111C] font-extrabold text-[16px] tracking-[0.02em] transition-all duration-250 hover:brightness-110 hover:-translate-y-[1px] hover:shadow-[0_14px_34px_-14px_rgba(103,243,255,0.95)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-100/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#031126]"
+                  className="inline-flex w-full min-h-[54px] items-center justify-center rounded-[16px] border border-cyan-200/40 bg-gradient-to-b from-[#7EFAFF] via-[#51DCE8] to-[#39C6D5] text-[#03111C] font-extrabold text-[16px] tracking-[0.02em] transition-all duration-250 hover:brightness-110 hover:-translate-y-[1px] hover:shadow-[0_14px_34px_-14px_rgba(103,243,255,0.95)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-100/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#031126]"
                 >
                   Accedi
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="inline-flex w-full min-h-[56px] items-center justify-center rounded-[16px] border border-white/35 bg-[linear-gradient(180deg,rgba(255,255,255,0.28)_0%,rgba(255,255,255,0.14)_100%)] text-white font-bold text-[16px] tracking-[0.02em] shadow-[inset_0_1px_0_rgba(255,255,255,0.28)] transition-all duration-250 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.33)_0%,rgba(255,255,255,0.16)_100%)] hover:-translate-y-[1px] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#031126]"
+                  className="inline-flex w-full min-h-[54px] items-center justify-center rounded-[16px] border border-white/35 bg-[linear-gradient(180deg,rgba(255,255,255,0.28)_0%,rgba(255,255,255,0.14)_100%)] text-white font-bold text-[16px] tracking-[0.02em] shadow-[inset_0_1px_0_rgba(255,255,255,0.28)] transition-all duration-250 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.33)_0%,rgba(255,255,255,0.16)_100%)] hover:-translate-y-[1px] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#031126]"
                 >
                   Registrati
                 </Link>
