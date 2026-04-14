@@ -26,6 +26,7 @@ function HomeContent() {
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
   const [sessionSynced, setSessionSynced] = useState(false);
   const sessionSyncDone = useRef(false);
+  const landingFeedRequestInFlightRef = useRef(false);
 
   const [homeFeedLoading, setHomeFeedLoading] = useState(false);
   const [landingTop24hEvents, setLandingTop24hEvents] = useState<
@@ -45,9 +46,11 @@ function HomeContent() {
   >([]);
 
   const fetchLandingFeed = useCallback(async () => {
+    if (landingFeedRequestInFlightRef.current) return;
+    landingFeedRequestInFlightRef.current = true;
     setHomeFeedLoading(true);
     try {
-      const res = await fetch("/api/feed/home-unified?limit=60", { cache: "no-store" });
+      const res = await fetch("/api/feed/home-unified?limit=24", { cache: "no-store" });
       if (!res.ok) throw new Error("Feed error");
       const data = await res.json();
       const top24h = (data?.rows?.top24h ?? []) as Array<{
@@ -68,6 +71,7 @@ function HomeContent() {
       setLandingTop24hEvents([]);
     } finally {
       setHomeFeedLoading(false);
+      landingFeedRequestInFlightRef.current = false;
     }
   }, []);
 
@@ -151,7 +155,11 @@ function HomeContent() {
 
   useEffect(() => {
     if (pathname !== "/") return;
-    const onVisible = () => fetchLandingFeed();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        fetchLandingFeed();
+      }
+    };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [pathname, fetchLandingFeed]);

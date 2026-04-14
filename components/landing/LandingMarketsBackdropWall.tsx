@@ -30,7 +30,6 @@ const CARD_LAYOUT = [
 ] as const;
 
 function EventCoverCard({ market, index }: EventCoverCardProps) {
-  const generatedImageUrl = `/api/ai/landing-market-image?eventId=${encodeURIComponent(market.id)}`;
   const primaryImage = market.aiImageUrl?.trim();
   const layout = CARD_LAYOUT[index % CARD_LAYOUT.length];
   const yOffset = ((index * 11) % 16) - 8;
@@ -45,7 +44,6 @@ function EventCoverCard({ market, index }: EventCoverCardProps) {
   };
   const backgroundLayers = [
     primaryImage ? `url("${primaryImage}")` : null,
-    `url("${generatedImageUrl}")`,
     getCategoryFallbackGradient(market.category),
   ]
     .filter(Boolean)
@@ -68,13 +66,14 @@ export default function LandingMarketsBackdropWall({ markets }: LandingMarketsBa
     const fallbackCategories = ["Politica", "Sport", "Economia", "Tecnologia", "Scienza", "Cultura", "Intrattenimento"];
     const source =
       markets.length > 0
-        ? markets.slice(0, 50)
+        ? markets.slice(0, 24)
         : fallbackCategories.map((category, idx) => ({
             id: `fallback-${idx}`,
             category,
             aiImageUrl: null,
           }));
-    const targetTiles = 220;
+    // Keep the hero dense but avoid creating hundreds of painted layers on first load.
+    const targetTiles = 84;
     return Array.from({ length: Math.max(targetTiles, source.length) }, (_, i) => source[i % source.length]);
   }, [markets]);
 
