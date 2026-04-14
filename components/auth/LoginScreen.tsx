@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Header from "@/components/Header";
 
 const ERROR_MESSAGES: Record<string, string> = {
   OAuthAccountNotLinked:
@@ -167,7 +166,7 @@ export default function LoginScreen({ variant }: { variant: LoginScreenVariant }
 
   const card = (
     <section
-      className="relative w-full max-w-[430px] rounded-[24px] border border-white/10 bg-[#0b0f17]/70 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.95)] backdrop-blur-lg p-5 sm:p-6"
+      className="relative w-full max-w-[430px] rounded-[24px] border border-white/10 bg-[#0b0f17]/58 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.95)] backdrop-blur-md p-5 sm:p-6"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="relative mb-6">
@@ -335,7 +334,7 @@ export default function LoginScreen({ variant }: { variant: LoginScreenVariant }
       >
         <button
           type="button"
-          className="absolute inset-0 bg-black/45 backdrop-blur-xl"
+          className="absolute inset-0 bg-[rgba(3,7,14,0.18)] backdrop-blur-0"
           onClick={handleDismiss}
           aria-label="Chiudi login"
         />
@@ -346,11 +345,10 @@ export default function LoginScreen({ variant }: { variant: LoginScreenVariant }
 
   return (
     <div className="min-h-dvh bg-transparent text-fg flex flex-col">
-      <Header />
-      <main className="relative flex-1 flex items-center justify-center px-4 py-8 sm:py-10 bg-admin-bg/40 backdrop-blur-2xl">
+      <main className="relative flex-1 flex items-center justify-center px-4 py-8 sm:py-10 bg-admin-bg/14 backdrop-blur-[1px]">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-45"
+          className="pointer-events-none absolute inset-0 opacity-22"
           style={{
             background:
               "radial-gradient(38rem 22rem at 50% 0%, rgba(89,236,244,0.10), transparent 60%), radial-gradient(30rem 18rem at 50% 100%, rgba(89,236,244,0.07), transparent 65%)",
