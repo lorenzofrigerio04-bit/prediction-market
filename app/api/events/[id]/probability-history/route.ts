@@ -15,8 +15,8 @@ type RangeKey = keyof typeof RANGE_MS;
 /**
  * GET /api/events/[id]/probability-history?range=24h|7d|30d
  * Returns time series for the chart:
- * - binary: YES/NO percentage
- * - multi-outcome: probability by outcome key
+ * - binary: YES/NO percentage (reconstructed from trades)
+ * - multi-outcome: probability by outcome key (reconstructed from trades)
  * Downsampled to max 100 points. Appends current state so the line extends to "now".
  */
 export async function GET(
@@ -60,23 +60,17 @@ export async function GET(
       MULTI_OPTION_MARKET_TYPES.includes(eventMeta.marketType);
 
     const outcomeOptions = parseOutcomesJson(eventMeta.outcomes) ?? [];
+    const bMicros = BigInt(Math.max(1, Math.round((eventMeta.b ?? 1) * 1_000_000)));
 
     if (isMultiOutcomeMarket && outcomeOptions.length >= 2) {
       const outcomeKeys = outcomeOptions.map((o) => o.key);
-      const bMicros = BigInt(Math.max(1, Math.round((eventMeta.b ?? 1) * 1_000_000)));
       const tradesBeforeRange = await prisma.trade.findMany({
-        where: {
-          eventId,
-          createdAt: { lt: from },
-        },
+        where: { eventId, createdAt: { lt: from } },
         orderBy: { createdAt: "asc" },
         select: { outcome: true, side: true, shareMicros: true, createdAt: true },
       });
       const tradesInRange = await prisma.trade.findMany({
-        where: {
-          eventId,
-          createdAt: { gte: from, lte: now },
-        },
+        where: { eventId, createdAt: { gte: from, lte: now } },
         orderBy: { createdAt: "asc" },
         select: { outcome: true, side: true, shareMicros: true, createdAt: true },
       });
@@ -104,7 +98,7 @@ export async function GET(
         const prices = pricesByOutcomeMicros(outcomeKeys, qByOutcome, bMicros);
         const pctByOutcome: Record<string, number> = {};
         for (const key of outcomeKeys) {
-          pctByOutcome[key] = Math.round(Number((prices[key] * 100n) / SCALE) * 10) / 10;
+          pctByOutcome[key] = Math.round((Number(prices[key]) * 100 / Number(SCALE)) * 10) / 10;
         }
         return pctByOutcome;
       };
@@ -151,62 +145,76 @@ export async function GET(
       });
     }
 
-    const raw = await prisma.eventProbabilitySnapshot.findMany({
-      where: {
-        eventId,
-        createdAt: { gte: from },
-      },
+    // Binary: replay trades to reconstruct YES% over time
+    const binaryTradesBefore = await prisma.trade.findMany({
+      where: { eventId, createdAt: { lt: from } },
       orderBy: { createdAt: "asc" },
-      select: { yesPct: true, createdAt: true },
+      select: { outcome: true, side: true, shareMicros: true, createdAt: true },
+    });
+    const binaryTradesInRange = await prisma.trade.findMany({
+      where: { eventId, createdAt: { gte: from, lte: now } },
+      orderBy: { createdAt: "asc" },
+      select: { outcome: true, side: true, shareMicros: true, createdAt: true },
     });
 
-    // Se non ci sono snapshot ma l’evento ha attività AMM (almeno una previsione),
-    // restituiamo 2 punti: inizio periodo 50% → ora con probabilità corrente (mostra andamento).
-    if (raw.length === 0) {
-      const event = { ammState: eventMeta.ammState };
-      if (event?.ammState) {
-        const amm = event.ammState;
-        const yesMicros = priceYesMicros(amm.qYesMicros, amm.qNoMicros, amm.bMicros);
-        const currentYesPct = Math.round(Number((yesMicros * 100n) / SCALE) * 10) / 10;
-        const points = [
-          { t: from.toISOString(), yesPct: 50 },
-          { t: now.toISOString(), yesPct: currentYesPct },
-        ];
-        return NextResponse.json({ points });
+    let qYes = 0n;
+    let qNo = 0n;
+
+    const applyBinaryTrade = (trade: { outcome: string; side: string; shareMicros: bigint }) => {
+      const delta = trade.side === "BUY" ? trade.shareMicros : -trade.shareMicros;
+      if (trade.outcome === "YES") {
+        const next = qYes + delta;
+        qYes = next > 0n ? next : 0n;
+      } else {
+        const next = qNo + delta;
+        qNo = next > 0n ? next : 0n;
       }
-      return NextResponse.json({ points: [] });
+    };
+
+    for (const trade of binaryTradesBefore) applyBinaryTrade(trade);
+
+    const computeYesPct = (): number => {
+      const yesMicros = priceYesMicros(qYes, qNo, bMicros);
+      return Math.round((Number(yesMicros) * 100 / Number(SCALE)) * 10) / 10;
+    };
+
+    const rawPoints: Array<{ t: Date; yesPct: number }> = [
+      { t: from, yesPct: computeYesPct() },
+    ];
+
+    for (const trade of binaryTradesInRange) {
+      applyBinaryTrade(trade);
+      rawPoints.push({ t: trade.createdAt, yesPct: computeYesPct() });
     }
 
-    // Downsample to at most MAX_POINTS: bucket by time, keep last point per bucket
-    const bucketMs = Math.max(
-      Math.floor(rangeMs / MAX_POINTS),
-      60 * 1000
-    );
+    const bucketMs = Math.max(Math.floor(rangeMs / MAX_POINTS), 60 * 1000);
     const buckets = new Map<number, { t: Date; yesPct: number }>();
-    for (const row of raw) {
-      const bucket = Math.floor(row.createdAt.getTime() / bucketMs) * bucketMs;
-      buckets.set(bucket, {
-        t: row.createdAt,
-        yesPct: row.yesPct,
-      });
+    for (const row of rawPoints) {
+      const bucket = Math.floor(row.t.getTime() / bucketMs) * bucketMs;
+      buckets.set(bucket, row);
     }
+
     let points = Array.from(buckets.values())
       .sort((a, b) => a.t.getTime() - b.t.getTime())
       .map(({ t, yesPct }) => ({
         t: t.toISOString(),
-        yesPct: Math.round(yesPct * 10) / 10,
+        yesPct,
       }));
 
-    // Append current probability so the chart extends to "now" (AMM)
-    const event = { ammState: eventMeta.ammState };
-    if (event?.ammState) {
-      const amm = event.ammState;
-      const yesMicros = priceYesMicros(amm.qYesMicros, amm.qNoMicros, amm.bMicros);
-      const currentYesPct = Number((yesMicros * 100n) / SCALE);
-      const lastPoint = points[points.length - 1];
-      const lastT = lastPoint ? new Date(lastPoint.t).getTime() : 0;
-      if (now.getTime() - lastT > 60 * 1000) {
-        points = [...points, { t: now.toISOString(), yesPct: Math.round(currentYesPct * 10) / 10 }];
+    if (points.length === 0) {
+      points = [{ t: from.toISOString(), yesPct: computeYesPct() }];
+    }
+
+    // Append current live AMM state so the chart extends to "now"
+    const lastT = new Date(points[points.length - 1].t).getTime();
+    if (now.getTime() - lastT > 60 * 1000) {
+      if (eventMeta.ammState) {
+        const amm = eventMeta.ammState;
+        const liveYesMicros = priceYesMicros(amm.qYesMicros, amm.qNoMicros, amm.bMicros);
+        const liveYesPct = Math.round((Number(liveYesMicros) * 100 / Number(SCALE)) * 10) / 10;
+        points.push({ t: now.toISOString(), yesPct: liveYesPct });
+      } else {
+        points.push({ t: now.toISOString(), yesPct: computeYesPct() });
       }
     }
 

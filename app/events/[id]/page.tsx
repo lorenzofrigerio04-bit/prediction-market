@@ -9,6 +9,7 @@ import EventDetailHeader from "@/components/events/EventDetailHeader";
 import PredictionModal from "@/components/PredictionModal";
 import { PublishCommentModal } from "@/components/feed/PublishCommentModal";
 import CommentsSection from "@/components/CommentsSection";
+import EventFeedbackPanel from "@/components/admin/EventFeedbackPanel";
 import EventProbabilityChart from "@/components/events/EventProbabilityChart";
 import SellConfirmModal, { type SellConfirmLeg, type SellConfirmPayload } from "@/components/events/SellConfirmModal";
 import { trackView } from "@/lib/analytics-client";
@@ -582,59 +583,80 @@ function EventDetailPageContent({
           {/* Mercato multi-opzione: pulsanti opzioni */}
           {isMultiOptionWithOptions ? (
             <div id="prediction-section" className="mb-3">
-              <div className="flex items-center justify-center gap-2 mb-3 flex-wrap">
+              <div className="flex items-center justify-center gap-2.5 mb-5 flex-wrap">
                 <p className="font-kalshi text-lg sm:text-xl md:text-2xl font-bold text-fg text-center leading-tight">
                   Scegli un&apos;opzione
                 </p>
                 <button
                   type="button"
                   onClick={() => setShowSellInfoPopup(true)}
-                  className="shrink-0 w-8 h-8 rounded-full border border-white/20 bg-transparent text-fg-muted hover:text-fg hover:bg-white/[0.06] flex items-center justify-center text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg"
+                  className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-colors hover:border-[rgba(80,245,252,0.3)]"
+                  style={{
+                    background: "rgba(80,245,252,0.06)",
+                    border: "1px solid rgba(80,245,252,0.15)",
+                    color: "rgba(80,245,252,0.6)",
+                  }}
                   aria-label="Come funziona il pagamento delle quote"
                 >
-                  i
+                  ?
                 </button>
               </div>
-              <div className={`grid gap-2 ${outcomeOptions.length === 4 ? "grid-cols-2" : "grid-cols-1"}`}>
-                {outcomeOptions.map((opt) => (
-                  (() => {
-                    const optPct = event.outcomeProbabilities?.find((p) => p.key === opt.key)?.probabilityPct;
+              <div className={`grid gap-3 ${outcomeOptions.length <= 3 ? "grid-cols-1" : "grid-cols-2"}`}>
+                {(() => {
+                  const sorted = outcomeOptions.map((opt, idx) => ({
+                    ...opt,
+                    idx,
+                    pct: event.outcomeProbabilities?.find((p) => p.key === opt.key)?.probabilityPct ?? null,
+                  }));
+                  const maxPct = Math.max(...sorted.map((o) => o.pct ?? 0));
+                  const accents = ["45,212,191", "80,165,252", "168,130,255", "248,163,72", "248,113,113", "130,220,100"];
+                  return sorted.map((opt) => {
                     const isSelected = predictionOutcome === opt.key;
+                    const accent = accents[opt.idx % accents.length];
+                    const isLeading = opt.pct !== null && opt.pct >= maxPct && maxPct > 0;
                     return (
-                  <button
-                    key={opt.key}
-                    type="button"
-                    onClick={() => {
-                      if (canMakePrediction) {
-                        setPredictionOutcome(opt.key);
-                        setShowPredictionModal(true);
-                      }
-                    }}
-                    disabled={!canMakePrediction || event.resolved}
-                    className={`w-full min-h-[52px] py-2.5 px-3 rounded-xl text-left transition-colors border-2 bg-transparent ${
-                      isSelected
-                        ? "border-primary/70 text-fg"
-                        : "border-white/15 hover:border-white/25 text-fg"
-                    } disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg`}
-                    aria-label={`Opzione: ${opt.label}`}
-                  >
-                    <span className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-sm text-fg leading-snug line-clamp-2">
-                        {opt.label}
-                      </span>
-                      {typeof optPct === "number" && (
-                        <span className="shrink-0 text-sm font-extrabold font-chubby tabular-nums text-fg-muted">
-                          {formatPct(optPct)}
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => {
+                          if (canMakePrediction) {
+                            setPredictionOutcome(opt.key);
+                            setShowPredictionModal(true);
+                          }
+                        }}
+                        disabled={!canMakePrediction || event.resolved}
+                        className="group/opt w-full min-h-[78px] py-4 px-4 rounded-2xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg active:scale-[0.97] flex flex-col items-center justify-center gap-2"
+                        style={{
+                          background: isLeading
+                            ? `linear-gradient(135deg, rgba(${accent},0.15) 0%, rgba(${accent},0.04) 100%)`
+                            : `linear-gradient(135deg, rgba(${accent},0.07) 0%, rgba(${accent},0.02) 100%)`,
+                          border: isLeading
+                            ? `1.5px solid rgba(${accent},0.5)`
+                            : `1.5px solid rgba(${accent},0.18)`,
+                          boxShadow: isLeading
+                            ? `0 0 32px -8px rgba(${accent},0.25), inset 0 1px 0 rgba(255,255,255,0.08)`
+                            : "inset 0 1px 0 rgba(255,255,255,0.05)",
+                        }}
+                        aria-label={`Opzione: ${opt.label}`}
+                      >
+                        <span className="text-fg line-clamp-2 max-w-full text-center text-sm leading-tight font-semibold group-hover/opt:text-white transition-colors">
+                          {opt.label}
                         </span>
-                      )}
-                    </span>
-                  </button>
+                        {typeof opt.pct === "number" && (
+                          <span
+                            className="text-xl sm:text-2xl font-extrabold font-chubby tabular-nums"
+                            style={{ color: `rgb(${accent})` }}
+                          >
+                            {formatPct(opt.pct)}
+                          </span>
+                        )}
+                      </button>
                     );
-                  })()
-                ))}
+                  });
+                })()}
               </div>
               {!event.resolved && new Date(event.closesAt) > new Date() && !session && (
-                <p className="text-ds-caption text-fg-muted mt-2">Accedi per scommettere su un&apos;opzione.</p>
+                <p className="text-ds-caption text-fg-muted mt-3 text-center">Accedi per scommettere su un&apos;opzione.</p>
               )}
             </div>
           ) : (
@@ -644,26 +666,29 @@ function EventDetailPageContent({
               const noPct = 100 - yesPct;
               const leftLabel = sportMatchTeams?.teamA ?? "SÌ";
               const rightLabel = sportMatchTeams?.teamB ?? "NO";
-              const leftBorder = yesPct >= noPct ? "border-emerald-400" : "border-rose-500";
-              const rightBorder = noPct > yesPct ? "border-emerald-400" : "border-rose-500";
-              const leftPctColor = yesPct >= noPct ? "text-emerald-400" : "text-rose-500";
-              const rightPctColor = noPct > yesPct ? "text-emerald-400" : "text-rose-500";
+              const yesIsLeading = yesPct >= noPct;
               return (
                 <>
-                  <div className="flex items-center justify-center gap-2 mb-3 flex-wrap">
+                  <div className="flex items-center justify-center gap-2.5 mb-5 flex-wrap">
                     <p className="font-kalshi text-lg sm:text-xl md:text-2xl font-bold text-fg text-center leading-tight">
                       Fai la tua previsione!
                     </p>
                     <button
                       type="button"
                       onClick={() => setShowSellInfoPopup(true)}
-                      className="shrink-0 w-8 h-8 rounded-full border border-white/20 bg-transparent text-fg-muted hover:text-fg hover:bg-white/[0.06] flex items-center justify-center text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg"
+                      className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-colors hover:border-[rgba(80,245,252,0.3)]"
+                      style={{
+                        background: "rgba(80,245,252,0.06)",
+                        border: "1px solid rgba(80,245,252,0.15)",
+                        color: "rgba(80,245,252,0.6)",
+                      }}
                       aria-label="Come funziona il pagamento delle quote"
                     >
-                      i
+                      ?
                     </button>
                   </div>
-                  <div id="prediction-section" className="grid grid-cols-2 gap-2.5 mb-3">
+                  <div id="prediction-section" className="grid grid-cols-2 gap-3 mb-3">
+                    {/* YES / Left button */}
                     <button
                       type="button"
                       onClick={() => {
@@ -673,14 +698,29 @@ function EventDetailPageContent({
                         }
                       }}
                       disabled={!canMakePrediction}
-                      className={`min-h-[48px] py-2.5 px-2 rounded-xl font-semibold text-sm transition-all flex flex-col items-center justify-center gap-0.5 bg-transparent border-2 ${leftBorder} text-fg hover:opacity-95 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg`}
+                      className="group/bet relative min-h-[78px] py-4 px-3 rounded-2xl font-semibold text-sm transition-all duration-200 flex flex-col items-center justify-center gap-2 overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg active:scale-[0.97]"
+                      style={{
+                        background: yesIsLeading
+                          ? "linear-gradient(135deg, rgba(45,212,191,0.15) 0%, rgba(20,184,166,0.05) 100%)"
+                          : "linear-gradient(135deg, rgba(45,212,191,0.07) 0%, rgba(20,184,166,0.02) 100%)",
+                        border: yesIsLeading
+                          ? "1.5px solid rgba(45,212,191,0.5)"
+                          : "1.5px solid rgba(45,212,191,0.18)",
+                        boxShadow: yesIsLeading
+                          ? "0 0 32px -8px rgba(45,212,191,0.25), inset 0 1px 0 rgba(255,255,255,0.08)"
+                          : "inset 0 1px 0 rgba(255,255,255,0.05)",
+                      }}
                       aria-label={sportMatchTeams ? `Scommetti su ${leftLabel}` : "Prevedi SÌ"}
                     >
-                      <span className="text-fg line-clamp-2 max-w-full text-center text-sm leading-tight">{leftLabel}</span>
-                      <span className={`text-sm sm:text-base font-extrabold font-chubby tabular-nums ${leftPctColor}`}>
+                      <span className="text-fg line-clamp-2 max-w-full text-center text-sm leading-tight font-semibold group-hover/bet:text-white transition-colors">{leftLabel}</span>
+                      <span
+                        className="text-xl sm:text-2xl font-extrabold font-chubby tabular-nums"
+                        style={{ color: "rgb(45,212,191)" }}
+                      >
                         {formatPct(yesPct)}
                       </span>
                     </button>
+                    {/* NO / Right button */}
                     <button
                       type="button"
                       onClick={() => {
@@ -690,11 +730,25 @@ function EventDetailPageContent({
                         }
                       }}
                       disabled={!canMakePrediction}
-                      className={`min-h-[48px] py-2.5 px-2 rounded-xl font-semibold text-sm transition-all flex flex-col items-center justify-center gap-0.5 bg-transparent border-2 ${rightBorder} text-fg hover:opacity-95 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg`}
+                      className="group/bet relative min-h-[78px] py-4 px-3 rounded-2xl font-semibold text-sm transition-all duration-200 flex flex-col items-center justify-center gap-2 overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg active:scale-[0.97]"
+                      style={{
+                        background: !yesIsLeading
+                          ? "linear-gradient(135deg, rgba(248,113,113,0.15) 0%, rgba(244,63,94,0.05) 100%)"
+                          : "linear-gradient(135deg, rgba(248,113,113,0.07) 0%, rgba(244,63,94,0.02) 100%)",
+                        border: !yesIsLeading
+                          ? "1.5px solid rgba(248,113,113,0.5)"
+                          : "1.5px solid rgba(248,113,113,0.18)",
+                        boxShadow: !yesIsLeading
+                          ? "0 0 32px -8px rgba(248,113,113,0.25), inset 0 1px 0 rgba(255,255,255,0.08)"
+                          : "inset 0 1px 0 rgba(255,255,255,0.05)",
+                      }}
                       aria-label={sportMatchTeams ? `Scommetti su ${rightLabel}` : "Prevedi NO"}
                     >
-                      <span className="text-fg line-clamp-2 max-w-full text-center text-sm leading-tight">{rightLabel}</span>
-                      <span className={`text-sm sm:text-base font-extrabold font-chubby tabular-nums ${rightPctColor}`}>
+                      <span className="text-fg line-clamp-2 max-w-full text-center text-sm leading-tight font-semibold group-hover/bet:text-white transition-colors">{rightLabel}</span>
+                      <span
+                        className="text-xl sm:text-2xl font-extrabold font-chubby tabular-nums"
+                        style={{ color: "rgb(248,113,113)" }}
+                      >
                         {formatPct(noPct)}
                       </span>
                     </button>
@@ -1013,6 +1067,13 @@ function EventDetailPageContent({
             Dettagli completi
           </button>
         </section>
+
+        {/* Admin AI Feedback */}
+        {session?.user?.role === "ADMIN" && event && (
+          <section className="event-detail-embed-section py-5 md:py-6 border-t border-white/[0.06]">
+            <EventFeedbackPanel eventId={event.id} />
+          </section>
+        )}
 
         {/* Commenti */}
         <section className="event-detail-embed-section py-5 md:py-6 border-t border-white/[0.06]" aria-labelledby="comments-heading">

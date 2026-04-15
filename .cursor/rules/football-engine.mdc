@@ -43,21 +43,25 @@ lib/football-engine/
 │   ├── agents.ts         ← Implementazione 4 agenti AI
 │   ├── llm.ts            ← Astrazione LLM (OpenAI + Anthropic + fallback)
 │   └── prompts.ts        ← System prompts (buildCreativeSystemPrompt() inietta contesto stagionale)
-└── forge/
-    ├── index.ts          ← FORGE: BrainOutput → Candidate[] (context-aware timing)
-    └── market-templates.ts ← 14 template con edge cases e resolution criteria
+├── forge/
+│   ├── index.ts          ← FORGE: BrainOutput → Candidate[] (context-aware timing)
+│   └── market-templates.ts ← 14 template con edge cases e resolution criteria
+└── sentinel/
+    ├── index.ts          ← SENTINEL orchestrator: live monitor + Oracle resolution
+    ├── oracle.ts         ← Oracle 3-livelli: L1 auto, L2 semi-auto, L3 manuale
+    └── live-monitor.ts   ← Aggiornamento status partite live via API-Football
 ```
 
 ## Layer del pipeline
 
 ```
-RADAR → BRAIN → FORGE → SENTINEL (TODO)
+RADAR → BRAIN → FORGE → SENTINEL
 ```
 
-1. **RADAR**: raccoglie dati (API-Football + The Odds API + News RSS + Reddit) → `RadarOutput`
+1. **RADAR**: raccoglie dati (API-Football + The Odds API + News RSS + Reddit + Standings) → `RadarOutput`
 2. **BRAIN**: 4 agenti AI → `BrainOutput` (Analyst → Creative → Verifier → Resolver)
 3. **FORGE**: struttura eventi in `Candidate[]` per il publisher
-4. **SENTINEL**: (da implementare) monitoraggio live + risoluzione automatica
+4. **SENTINEL**: monitoraggio live + risoluzione automatica 3-livelli (Oracle L1/L2/L3)
 
 ## Convenzioni critiche
 
@@ -81,16 +85,23 @@ ANTHROPIC_MODEL=          # Opzionale — override modello Claude (default: clau
 
 ## Cosa manca (TODO prioritizzato)
 
-1. **SENTINEL (Fase 4)** — risoluzione automatica + live monitoring
-2. **Cron dedicato FIE** — job automatico ogni 6-12h
-3. **Standings nel contesto BRAIN** — arricchisce l'Analyst con classifica aggiornata
-4. **Twitter/Apify** — monitoring Fabrizio Romano, Di Marzio per trasferimenti real-time
-5. **OpenAI crediti** — ricaricare per usare GPT-4o come Creative primario
+1. **Twitter/Apify** — monitoring Fabrizio Romano, Di Marzio per trasferimenti real-time
+2. **Real-time event spawning** — eventi live durante le partite (WebSocket)
+3. **OpenAI crediti** — ricaricare per usare GPT-4o come Creative primario
+4. **Admin UI SENTINEL** — pannello per eventi NEEDS_REVIEW e metriche Oracle
 
 ## Entry point per run manuale
 
 - Admin dashboard: `/admin` → tab "Sport 2.0 — Football Intelligence Engine"
-- API: `POST /api/admin/run-football-engine` con body `{ dryRun, maxTier, maxMatches, skipResolver }`
+- API generazione: `POST /api/admin/run-football-engine` con body `{ dryRun, maxTier, maxMatches, skipResolver }`
+- API risoluzione: `POST /api/cron/resolve-sport-events?secret=$CRON_SECRET`
 - Script locale: `npx ts-node -r dotenv/config scripts/test-football-engine.ts`
+
+## Cron Jobs
+
+| Endpoint | Schedule | Descrizione |
+|----------|----------|-------------|
+| `POST /api/cron/run-football-engine` | Ogni 8h | Pipeline FIE: RADAR → BRAIN → FORGE → publish |
+| `POST /api/cron/resolve-sport-events` | Ogni 30min | SENTINEL: live monitor + Oracle resolution |
 
 *Ultimo aggiornamento: Aprile 2026*

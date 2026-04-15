@@ -9,6 +9,8 @@ import {
   Line,
   ComposedChart,
   ReferenceArea,
+  Area,
+  Tooltip,
 } from "recharts";
 
 interface BinaryPoint {
@@ -43,19 +45,12 @@ interface ChartSeries {
 interface EventProbabilityChartProps {
   eventId: string;
   range?: "24h" | "7d" | "30d";
-  /** Quando cambia (es. dopo una previsione), il grafico si aggiorna */
   refetchTrigger?: number;
-  /** Layout standalone: titolo centrato, grafico centrato con assi bilanciati */
   layout?: "default" | "standalone";
-  /** Numero di previsioni sull’evento: se 0 si mostra CTA "Diventa il primo...", altrimenti il grafico */
   predictionsCount?: number;
-  /** Tema: light per sfondo bianco (Kalshi), dark per sfondo scuro */
   theme?: "light" | "dark";
-  /** Formattazione asse/tooltip: percent oppure crediti (0-100c) */
   valueUnit?: "percent" | "credits";
-  /** Pagina dettaglio: niente titolo sopra, niente box, altezza mobile-first */
   embeddedInPage?: boolean;
-  /** Multi-outcome: opzioni da usare come fallback label legenda */
   outcomeOptions?: OutcomeOption[];
 }
 
@@ -76,6 +71,57 @@ function formatAxisTime(iso: string, range: string): string {
   return d.toLocaleDateString("it-IT", { day: "numeric", month: "short" });
 }
 
+function CustomTooltip({ active, payload, label, formatValue, seriesDefs, range }: {
+  active?: boolean;
+  payload?: Array<{ dataKey: string; value: number; color: string }>;
+  label?: number;
+  formatValue: (v: number | null | undefined) => string;
+  seriesDefs: ChartSeries[];
+  range: string;
+}) {
+  if (!active || !payload?.length || !label) return null;
+  const time = formatAxisTime(new Date(label).toISOString(), range);
+  return (
+    <div
+      style={{
+        background: "linear-gradient(135deg, rgba(12,14,20,0.94) 0%, rgba(10,42,106,0.25) 100%)",
+        backdropFilter: "blur(16px)",
+        border: "1px solid rgba(80,245,252,0.1)",
+        borderRadius: "14px",
+        padding: "10px 14px",
+        boxShadow: "0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)",
+      }}
+    >
+      <p style={{ fontSize: "10px", color: "rgba(169,180,208,0.5)", marginBottom: "8px", fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+        {time}
+      </p>
+      {payload.map((entry) => {
+        const series = seriesDefs.find((s) => s.field === entry.dataKey);
+        return (
+          <div key={entry.dataKey} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
+            <span
+              style={{
+                width: "6px",
+                height: "6px",
+                borderRadius: "50%",
+                background: entry.color,
+                boxShadow: `0 0 8px ${entry.color}50`,
+                flexShrink: 0,
+              }}
+            />
+            <span style={{ fontSize: "12px", color: "rgba(244,246,252,0.8)", fontWeight: 500, flex: 1 }}>
+              {series?.label ?? entry.dataKey}
+            </span>
+            <span style={{ fontSize: "12px", color: entry.color, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+              {formatValue(entry.value)}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function EventProbabilityChart({
   eventId,
   range = "7d",
@@ -90,14 +136,13 @@ export default function EventProbabilityChart({
   const isStandalone = layout === "standalone";
   const isLight = theme === "light";
   const chartHeadingText = valueUnit === "credits" ? "Prezzi nel tempo" : "Andamento probabilità nel tempo";
-  const gridStroke = isLight ? "rgb(148 163 184 / 0.28)" : "rgb(148 163 184 / 0.24)";
-  const axisStroke = isLight ? "rgb(100 116 139 / 0.7)" : "rgb(148 163 184 / 0.7)";
-  const tickFill = isLight ? "rgb(71 85 105)" : "rgb(148 163 184 / 0.9)";
-  const axisLineStroke = isLight ? "rgb(148 163 184 / 0.35)" : "rgb(148 163 184 / 0.35)";
-  // Palette multi-outcome stile market chart (come riferimenti Polymarket/Kalshi).
+  const gridStroke = isLight ? "rgb(148 163 184 / 0.28)" : "rgba(80,245,252,0.04)";
+  const axisStroke = isLight ? "rgb(100 116 139 / 0.7)" : "rgba(80,245,252,0.12)";
+  const tickFill = isLight ? "rgb(71 85 105)" : "rgba(169,180,208,0.45)";
+  const axisLineStroke = isLight ? "rgb(148 163 184 / 0.35)" : "rgba(80,245,252,0.08)";
   const colorPalette = isLight
-    ? ["#2F8DFF", "#6AB8FF", "#F2B705", "#ED8A1C", "#30CFAF", "#9D8CFF", "#FF6E84", "#5B9DFF"]
-    : ["#338FFF", "#82C5FF", "#F5C324", "#F59A23", "#3AD8B8", "#A897FF", "#FF7F97", "#6DAEFF"];
+    ? ["#2BA890", "#4A8AD4", "#9A6FD9", "#D48F3E", "#D46060", "#6FAF54"]
+    : ["#2DD4BF", "#50A5FC", "#A882FF", "#F8A348", "#F87171", "#82DC64"];
   const formatValue = useCallback(
     (value: number | null | undefined) => {
       if (value == null || !Number.isFinite(value)) return "—";
@@ -163,13 +208,12 @@ export default function EventProbabilityChart({
     if (isMultiOutcome && outcomeDefs.length >= 2) {
       return outcomeDefs.map((opt, idx) => {
         const color = colorPalette[idx % colorPalette.length];
-        const glow = "none";
         return {
           field: `outcome_${idx}`,
           key: opt.key,
           label: opt.label,
           color,
-          glow,
+          glow: isLight ? "none" : `drop-shadow(0 0 6px ${color}50)`,
         };
       });
     }
@@ -178,20 +222,20 @@ export default function EventProbabilityChart({
         field: "yesPct",
         key: "YES",
         label: "SÌ",
-        color: isLight ? "#35C38A" : "#4ED9A0",
-        glow: isLight ? "none" : "drop-shadow(0 0 5px rgb(78 217 160 / 0.28))",
+        color: isLight ? "#35C38A" : "#2DD4BF",
+        glow: isLight ? "none" : "drop-shadow(0 0 8px rgba(45,212,191,0.35))",
       },
       {
         field: "noPct",
         key: "NO",
         label: "NO",
-        color: isLight ? "#FF6B7A" : "#FF7F90",
-        glow: isLight ? "none" : "drop-shadow(0 0 5px rgb(255 127 144 / 0.28))",
+        color: isLight ? "#FF6B7A" : "#F87171",
+        glow: isLight ? "none" : "drop-shadow(0 0 8px rgba(248,113,113,0.35))",
       },
     ];
   }, [isMultiOutcome, outcomeDefs, colorPalette, isLight]);
 
-  const { data, isEmpty, timeDomain } = useMemo(() => {
+  const { data, isEmpty, timeDomain, yDomain, yTicks } = useMemo(() => {
     const rows = (history.points ?? []).map((rawPoint) => {
       const p = rawPoint as MultiPoint & BinaryPoint;
       const time = new Date(p.t).getTime();
@@ -224,10 +268,47 @@ export default function EventProbabilityChart({
       const padding = Math.max((maxT - minT) * 0.02, 60 * 1000);
       domain = [minT - padding, maxT + padding];
     }
+
+    let yMin = 0;
+    let yMax = 100;
+    const tickArr = [0, 25, 50, 75, 100];
+
+    if (!empty && rows.length > 1) {
+      const allValues: number[] = [];
+      for (const row of rows) {
+        for (const series of seriesDefs) {
+          const v = row[series.field];
+          if (typeof v === "number" && Number.isFinite(v)) allValues.push(v);
+        }
+      }
+      if (allValues.length > 0) {
+        const dataMin = Math.min(...allValues);
+        const dataMax = Math.max(...allValues);
+        const spread = dataMax - dataMin;
+
+        if (spread < 15) {
+          const mid = (dataMin + dataMax) / 2;
+          const halfRange = Math.max(spread * 1.5, 3);
+          yMin = Math.max(0, Math.floor(mid - halfRange));
+          yMax = Math.min(100, Math.ceil(mid + halfRange));
+          if (yMax - yMin < 4) {
+            yMin = Math.max(0, yMin - 2);
+            yMax = Math.min(100, yMax + 2);
+          }
+          const step = Math.max(1, Math.round((yMax - yMin) / 4));
+          tickArr.length = 0;
+          for (let v = yMin; v <= yMax; v += step) tickArr.push(v);
+          if (tickArr[tickArr.length - 1] < yMax) tickArr.push(yMax);
+        }
+      }
+    }
+
     return {
       data: rows,
       isEmpty: empty,
       timeDomain: domain,
+      yDomain: [yMin, yMax] as [number, number],
+      yTicks: tickArr,
     };
   }, [history.points, range, isMultiOutcome, seriesDefs]);
 
@@ -260,15 +341,31 @@ export default function EventProbabilityChart({
               : { background: isLight ? "rgb(249 250 251)" : "rgb(255 255 255 / 0.03)", borderRadius: "var(--radius-lg)" }
           }
         >
+          <div
+            className="w-12 h-12 rounded-full flex items-center justify-center"
+            style={{
+              background: "rgba(80,245,252,0.08)",
+              border: "1px solid rgba(80,245,252,0.15)",
+            }}
+          >
+            <svg className="w-5 h-5" style={{ color: "rgba(80,245,252,0.6)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+            </svg>
+          </div>
           <p className={`text-sm max-w-sm ${isLight ? "text-gray-600" : "text-fg-muted"}`}>
             Diventa il primo a prevedere questo evento
           </p>
           <a
             href="#prediction-section"
-            className={`inline-flex flex-col items-center gap-1 text-sm font-semibold underline rounded px-2 py-1 focus-visible:ring-2 focus-visible:ring-offset-2 ${isLight ? "text-[#0AC285] hover:text-[#09a870] focus-visible:ring-[#0AC285] focus-visible:ring-offset-gray-50" : "text-primary hover:text-primary-hover focus-visible:ring-primary focus-visible:ring-offset-bg"}`}
+            className="inline-flex items-center gap-2 text-sm font-semibold rounded-lg px-4 py-2 transition-all duration-200"
+            style={{
+              color: "rgb(80,245,252)",
+              background: "rgba(80,245,252,0.08)",
+              border: "1px solid rgba(80,245,252,0.2)",
+            }}
           >
             <span>Fai la tua previsione</span>
-            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
             </svg>
           </a>
@@ -288,7 +385,10 @@ export default function EventProbabilityChart({
         <div
           className={`flex items-center justify-center ${embeddedInPage ? "min-h-[min(44vh,260px)] sm:min-h-[240px]" : isStandalone ? "h-[260px] md:h-[300px]" : "h-[220px]"}`}
         >
-          <div className={`inline-block h-8 w-8 animate-spin rounded-full border-2 border-t-transparent ${isLight ? "border-[#0AC285]" : "border-primary"}`} />
+          <div
+            className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"
+            style={{ borderColor: "rgba(80,245,252,0.4)", borderTopColor: "transparent" }}
+          />
           <span className="sr-only">Caricamento grafico...</span>
         </div>
       </div>
@@ -304,36 +404,48 @@ export default function EventProbabilityChart({
           </span>
         )}
         <div
-          className={`flex flex-col items-center justify-center gap-2 text-sm ${isLight ? "text-gray-600" : "text-fg-muted"} ${embeddedInPage ? "min-h-[min(44vh,260px)] sm:min-h-[240px] text-center px-3" : isStandalone ? "h-[260px] md:h-[300px] text-center" : "h-[180px]"}`}
+          className={`flex flex-col items-center justify-center gap-3 text-sm ${isLight ? "text-gray-600" : "text-fg-muted"} ${embeddedInPage ? "min-h-[min(44vh,260px)] sm:min-h-[240px] text-center px-3" : isStandalone ? "h-[260px] md:h-[300px] text-center" : "h-[180px]"}`}
         >
-        <p>Non è stato possibile caricare lo storico.</p>
-        <button
-          type="button"
-          onClick={() => {
-            setError(null);
-            setLoading(true);
-            fetch(`/api/events/${eventId}/probability-history?range=${range}`)
-              .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Errore"))))
-              .then((data: HistoryResponse) =>
-                setHistory({
-                  mode: data.mode ?? "binary",
-                  points: data.points ?? [],
-                  outcomes: data.outcomes ?? outcomeOptions ?? [],
-                })
-              )
-              .catch(() => setError("Errore"))
-              .finally(() => setLoading(false));
-          }}
-          className={`font-medium underline ${isLight ? "text-[#0AC285] hover:text-[#09a870]" : "text-primary hover:text-primary-hover"}`}
-        >
-          Riprova
-        </button>
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.2)" }}
+          >
+            <svg className="w-5 h-5" style={{ color: "rgb(248,113,113)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+          </div>
+          <p>Non è stato possibile caricare lo storico.</p>
+          <button
+            type="button"
+            onClick={() => {
+              setError(null);
+              setLoading(true);
+              fetch(`/api/events/${eventId}/probability-history?range=${range}`)
+                .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Errore"))))
+                .then((data: HistoryResponse) =>
+                  setHistory({
+                    mode: data.mode ?? "binary",
+                    points: data.points ?? [],
+                    outcomes: data.outcomes ?? outcomeOptions ?? [],
+                  })
+                )
+                .catch(() => setError("Errore"))
+                .finally(() => setLoading(false));
+            }}
+            className="font-semibold text-sm px-4 py-1.5 rounded-lg transition-all duration-200"
+            style={{
+              color: "rgb(80,245,252)",
+              background: "rgba(80,245,252,0.08)",
+              border: "1px solid rgba(80,245,252,0.2)",
+            }}
+          >
+            Riprova
+          </button>
         </div>
       </div>
     );
   }
 
-  // Empty state: due punti per far disegnare assi X (tempo) e Y (%)
   const chartData = isEmpty
     ? (() => {
         const now = new Date();
@@ -366,8 +478,15 @@ export default function EventProbabilityChart({
     : data;
 
   const latestPoint = chartData.length > 0 ? (chartData[chartData.length - 1] as Record<string, number | string>) : null;
+
   const legendRows = !isMultiOutcome || seriesDefs.length < 2
-    ? []
+    ? (seriesDefs.length === 2 && !isMultiOutcome
+        ? seriesDefs.map((series) => {
+            const rawValue = latestPoint?.[series.field];
+            const value = typeof rawValue === "number" ? rawValue : null;
+            return { ...series, value };
+          })
+        : [])
     : seriesDefs
         .map((series) => {
           const rawValue = latestPoint?.[series.field];
@@ -397,22 +516,41 @@ export default function EventProbabilityChart({
           Andamento probabilità nel tempo
         </span>
       )}
-      <div className={`event-probability-chart-area w-full relative ${chartAreaH}`}>
+
+      <div
+        className={`event-probability-chart-area w-full relative ${chartAreaH} rounded-2xl overflow-hidden`}
+        style={{
+          background: isLight
+            ? "rgb(249 250 251)"
+            : "linear-gradient(135deg, rgba(80,245,252,0.03) 0%, rgba(45,212,191,0.01) 50%, rgba(248,113,113,0.01) 100%)",
+          border: isLight ? "1px solid rgba(148,163,184,0.2)" : "1px solid rgba(80,245,252,0.08)",
+          boxShadow: isLight ? "none" : "inset 0 1px 0 rgba(255,255,255,0.03), 0 0 40px -20px rgba(80,245,252,0.06)",
+        }}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={chartData}
             margin={
               embeddedInPage
-                ? { top: 10, right: 26, left: 0, bottom: 18 }
+                ? { top: 14, right: 26, left: 0, bottom: 18 }
                 : isStandalone
                   ? { top: 14, right: 34, left: 4, bottom: 22 }
                   : { top: 8, right: 28, left: 2, bottom: 14 }
             }
           >
+            <defs>
+              {seriesDefs.map((series) => (
+                <linearGradient key={`grad-${series.field}`} id={`areaGrad-${series.field}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={series.color} stopOpacity={0.15} />
+                  <stop offset="100%" stopColor={series.color} stopOpacity={0.01} />
+                </linearGradient>
+              ))}
+            </defs>
             <CartesianGrid
-              strokeDasharray="1 5"
+              strokeDasharray="3 12"
               stroke={gridStroke}
               vertical={false}
+              strokeLinecap="round"
             />
             <XAxis
               dataKey="time"
@@ -420,36 +558,55 @@ export default function EventProbabilityChart({
               domain={timeDomain ?? ["dataMin", "dataMax"]}
               tickFormatter={(ts) => formatAxisTime(new Date(ts).toISOString(), range)}
               stroke={axisStroke}
-              tick={{ fontSize: 10, fill: tickFill, fontWeight: 500 }}
+              tick={{ fontSize: 10, fill: tickFill, fontWeight: 600, letterSpacing: "0.02em" }}
               tickLine={false}
-              axisLine={{ stroke: axisLineStroke }}
-              minTickGap={24}
+              axisLine={{ stroke: axisLineStroke, strokeWidth: 1 }}
+              minTickGap={28}
               tickMargin={10}
               allowDataOverflow
             />
             <YAxis
-              domain={[0, 100]}
+              domain={yDomain}
               orientation="right"
               stroke={axisStroke}
-              ticks={[0, 20, 40, 60, 80, 100]}
-              tick={{ fontSize: 11, fill: tickFill, fontWeight: 500 }}
+              ticks={yTicks}
+              tick={{ fontSize: 10, fill: tickFill, fontWeight: 600, letterSpacing: "0.02em" }}
               tickLine={false}
               axisLine={false}
               tickFormatter={(v) => formatValue(Number(v))}
-              tickMargin={8}
-              width={valueUnit === "credits" ? 44 : 38}
+              tickMargin={10}
+              width={valueUnit === "credits" ? 44 : 40}
+            />
+            <Tooltip
+              content={<CustomTooltip formatValue={formatValue} seriesDefs={seriesDefs} range={range} />}
+              cursor={{
+                stroke: "rgba(80,245,252,0.1)",
+                strokeWidth: 1,
+              }}
             />
             {isEmpty && chartData[0] && "time" in chartData[0] && (
               <ReferenceArea
                 x1={(chartData[0] as { time: number }).time}
                 x2={(chartData[chartData.length - 1] as { time: number }).time}
-                y1={0}
-                y2={100}
+                y1={yDomain[0]}
+                y2={yDomain[1]}
                 fill="transparent"
               />
             )}
             {!isEmpty && (
               <>
+                {seriesDefs.map((series) => (
+                  <Area
+                    key={`area-${series.field}`}
+                    type={isMultiOutcome ? "linear" : "monotone"}
+                    dataKey={series.field}
+                    stroke="none"
+                    fill={`url(#areaGrad-${series.field})`}
+                    isAnimationActive
+                    animationDuration={600}
+                    connectNulls
+                  />
+                ))}
                 {seriesDefs.map((series) => (
                   <Line
                     key={series.field}
@@ -457,19 +614,20 @@ export default function EventProbabilityChart({
                     dataKey={series.field}
                     name={series.label}
                     stroke={series.color}
-                    strokeWidth={isMultiOutcome ? 2.2 : 2.6}
+                    strokeWidth={isMultiOutcome ? 2 : 2.5}
                     dot={false}
                     isAnimationActive
-                    animationDuration={400}
+                    animationDuration={600}
                     connectNulls
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     style={{ filter: series.glow }}
                     activeDot={{
-                      r: 4,
+                      r: 5,
                       fill: series.color,
-                      stroke: isLight ? "#ffffff" : "#0B0F14",
-                      strokeWidth: 1.5,
+                      stroke: "rgb(12,14,20)",
+                      strokeWidth: 2,
+                      style: { filter: `drop-shadow(0 0 6px ${series.color}60)` },
                     }}
                   />
                 ))}
@@ -488,33 +646,46 @@ export default function EventProbabilityChart({
           </div>
         )}
       </div>
+
+      {/* Multi-outcome legend */}
       {isMultiOutcome && seriesDefs.length >= 2 && (
-        <div className="mt-3 px-1 overflow-x-auto scrollbar-hide">
+        <div className="mt-4 px-1 overflow-x-auto scrollbar-hide">
           <div className="inline-grid grid-flow-col grid-rows-3 auto-cols-[minmax(165px,1fr)] gap-x-2 gap-y-1.5 min-w-full">
-          {legendRows.map((series) => {
-            return (
+            {legendRows.map((series) => (
               <div
                 key={`legend-${series.field}`}
-                className="min-w-0 px-1 py-0.5"
+                className="min-w-0 px-2 py-1.5 rounded-lg transition-colors"
+                style={{
+                  background: "rgba(255,255,255,0.02)",
+                  border: "1px solid rgba(255,255,255,0.05)",
+                }}
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0 inline-flex items-center gap-2">
                     <span
-                      className="inline-block h-2 w-2 rounded-full shrink-0"
-                      style={{ backgroundColor: series.color }}
+                      className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
+                      style={{
+                        backgroundColor: series.color,
+                        boxShadow: `0 0 6px ${series.color}40`,
+                      }}
                       aria-hidden
                     />
-                    <span className="truncate text-[11px] sm:text-xs font-medium" style={{ color: series.color }}>
+                    <span
+                      className="truncate text-[11px] sm:text-xs font-semibold"
+                      style={{ color: series.color }}
+                    >
                       {series.label}
                     </span>
                   </div>
-                  <span className="shrink-0 text-[11px] sm:text-xs font-semibold tabular-nums" style={{ color: series.color }}>
+                  <span
+                    className="shrink-0 text-[11px] sm:text-xs font-bold tabular-nums"
+                    style={{ color: series.color }}
+                  >
                     {series.value == null ? "—" : formatValue(series.value)}
                   </span>
                 </div>
               </div>
-            );
-          })}
+            ))}
           </div>
         </div>
       )}

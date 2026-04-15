@@ -90,6 +90,7 @@ export interface ApiFixture {
 }
 
 export async function fetchFixtures(params: {
+  id?: number;
   league?: number;
   season?: number;
   from?: string;
@@ -100,6 +101,7 @@ export async function fetchFixtures(params: {
   last?: number;
 }): Promise<ApiFixture[]> {
   const p: Record<string, string | number> = {};
+  if (params.id != null) p.id = params.id;
   if (params.league != null) p.league = params.league;
   if (params.season != null) p.season = params.season;
   if (params.from) p.from = params.from;

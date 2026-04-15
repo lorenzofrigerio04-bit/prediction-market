@@ -10,7 +10,7 @@ Trasformare la piattaforma da prediction market generalista a **prediction marke
 
 ```
 RADAR → BRAIN → FORGE → SENTINEL
-  ↑ dati    ↑ AI     ↑ struttura  ↑ risolve (TODO)
+  ↑ dati    ↑ AI     ↑ struttura  ↑ risolve
 ```
 
 ### Layer 1 — RADAR (Data Collection) ✅ COMPLETO
@@ -30,6 +30,8 @@ Aggrega dati da più fonti in parallelo:
 
 **floatingSignals**: ora popolati con notizie generali italiane (40 segnali max: trasferimenti, esoneri, gossip).
 
+**Standings**: classifiche di lega fetchate in parallelo e iniettate in ogni `MatchContext` come `homeStanding`/`awayStanding`. Le competizioni a coppa (Champions League, Coppa Italia, ecc.) sono escluse.
+
 **Output:** `RadarOutput` — lista di `MatchContext` ordinati per interesse + `floatingSignals`.
 
 ---
@@ -40,8 +42,8 @@ Aggrega dati da più fonti in parallelo:
 
 4 agenti specializzati in sequenza:
 
-1. **Analyst** (Claude `claude-3-5-sonnet-20241022`): trova pattern, correlazioni e **Event Chains** (catene causali tipo "se X perde → allenatore rischia"). Ora riceve i titoli delle notizie RSS nel contesto.
-2. **Creative** (GPT-4o / Claude fallback): genera idee evento creative con **contesto stagionale iniettato automaticamente** (es. "volata finale April 2026: lotta scudetto, semifinali Champions"). Quando l'Analyst segnala una Event Chain, il Creative genera coppie trigger→conseguenza.
+1. **Analyst** (Claude `claude-3-5-sonnet-20241022`): trova pattern, correlazioni e **Event Chains** (catene causali tipo "se X perde → allenatore rischia"). Riceve notizie RSS e **classifica aggiornata** (posizione, punti, form) nel contesto.
+2. **Creative** (GPT-4o / Claude fallback): genera idee evento creative con **contesto stagionale iniettato automaticamente** (es. "volata finale April 2026: lotta scudetto, semifinali Champions") + **contesto classifica narrativo** (lotta titolo, zona retrocessione, scontri diretti, form recente). Quando l'Analyst segnala una Event Chain, il Creative genera coppie trigger→conseguenza.
 3. **Verifier** (Claude): valida fattibilità, fonte di risoluzione, edge cases
 4. **Resolver** (GPT-4o-mini): pre-computa strategia di risoluzione — disabilitato di default nelle run admin per velocità
 
@@ -62,9 +64,23 @@ Trasforma idee approvate in `Candidate[]` compatibili con il publisher esistente
 
 ---
 
-### Layer 4 — SENTINEL (Monitoring & Resolution) 🔜 TODO FASE 4
+### Layer 4 — SENTINEL (Monitoring & Resolution) ✅ COMPLETO
 
-Monitoraggio live + risoluzione automatica 3-livelli. Da implementare.
+**File:** `lib/football-engine/sentinel/`
+
+Monitoraggio live + risoluzione automatica a 3 livelli Oracle:
+
+- **Oracle L1 — Automatico**: per mercati match-based (1X2, BTTS, Over 2.5, Clean Sheet, Total Goals, Half-Time State, Comeback, First Goal Timing, Total Cards). Cross-validazione football-data.org + API-Football. Se le fonti concordano → risolve automaticamente. Se discordano → NEEDS_REVIEW.
+- **Oracle L2 — Semi-automatico**: per mercati player performance (tiri in porta, marcatore). Usa statistiche giocatore API-Football. Propone esito ma segna sempre NEEDS_REVIEW per conferma admin.
+- **Oracle L3 — Manuale**: per mercati off-field (esonero allenatore, trasferimento). Cerca conferma su Google News RSS con almeno 3 fonti Tier 1-2 concordi. Propone esito con NEEDS_REVIEW.
+
+**Live Monitor** (`sentinel/live-monitor.ts`): aggiorna `Event.matchStatus` in DB consultando API-Football per partite live e sincronizzando quelle terminate.
+
+**Safety**: non risolve mai prima di `closesAt + resolutionBufferHours`. Ogni risoluzione loggata in AuditLog con source `sentinel-oracle-L1/L2/L3`. In caso di errore, lo stato resta OPEN.
+
+**Cron**: `POST /api/cron/resolve-sport-events` ogni 30 minuti (configurato in `vercel.json`).
+
+**Test**: 28 test unitari in `sentinel/__tests__/oracle.test.ts` coprono ogni `sport_market_kind`, buffer enforcement, disagreement handling, error safety.
 
 ---
 
@@ -83,7 +99,7 @@ Monitoraggio live + risoluzione automatica 3-livelli. Da implementare.
 |------|-------------|
 | `lib/football-engine/types.ts` | Tipi condivisi: Competition, FootballSignal, Match, MatchContext, RadarOutput |
 | `lib/football-engine/competitions.ts` | 28 campionati con tier, apiFootballId, oddsApiKey |
-| `lib/football-engine/radar/index.ts` | Orchestratore RADAR: fixtures + odds + injuries + news |
+| `lib/football-engine/radar/index.ts` | Orchestratore RADAR: fixtures + odds + injuries + standings + news |
 | `lib/football-engine/radar/clients/api-football.ts` | Client API-Football v3 |
 | `lib/football-engine/radar/clients/odds-api.ts` | Client The Odds API v4 |
 | `lib/football-engine/radar/sources/news-rss.ts` | Google News RSS + Reddit RSS per fixture e floating |
@@ -91,13 +107,18 @@ Monitoraggio live + risoluzione automatica 3-livelli. Da implementare.
 | `lib/football-engine/radar/source-tiers.ts` | Journalist Tier System: 40+ fonti classificate |
 | `lib/football-engine/radar/normalizers.ts` | Normalizzatori: API-Football → FootballSignal/Match |
 | `lib/football-engine/brain/index.ts` | Orchestratore BRAIN: Analyst → Creative → Verifier → Resolver |
-| `lib/football-engine/brain/agents.ts` | Implementazione 4 agenti AI |
+| `lib/football-engine/brain/agents.ts` | Implementazione 4 agenti AI + contesto classifica narrativo |
 | `lib/football-engine/brain/llm.ts` | Astrazione LLM (OpenAI + Anthropic) con fallback automatico |
 | `lib/football-engine/brain/prompts.ts` | System prompts: ANALYST, CREATIVE (+ seasonal), VERIFIER, RESOLVER |
 | `lib/football-engine/forge/index.ts` | FORGE: BRAIN output → Candidate[] + context-aware timing |
 | `lib/football-engine/forge/market-templates.ts` | 14 market templates con resolution criteria |
+| `lib/football-engine/sentinel/index.ts` | SENTINEL orchestrator: live monitor + Oracle resolution |
+| `lib/football-engine/sentinel/oracle.ts` | Oracle 3-livelli: L1 automatico, L2 semi-auto, L3 manuale |
+| `lib/football-engine/sentinel/live-monitor.ts` | Aggiornamento status partite live via API-Football |
 | `lib/football-engine/index.ts` | Pipeline orchestrator: RADAR → BRAIN → FORGE |
 | `app/api/admin/run-football-engine/route.ts` | API route admin per run manuale |
+| `app/api/cron/run-football-engine/route.ts` | Cron FIE: genera eventi ogni 8h (con AuditLog) |
+| `app/api/cron/resolve-sport-events/route.ts` | Cron SENTINEL: risolve eventi ogni 30min |
 | `app/admin/page.tsx` | Admin Dashboard: dual-panel FIE 2.0 vs Legacy |
 
 ---
@@ -130,14 +151,17 @@ URL: `/admin` → tab "Sport 2.0 — Football Intelligence Engine"
 
 ---
 
+## Completati Recentemente
+
+- ✅ **SENTINEL (Fase 4)**: Oracle 3-livelli (L1 automatico, L2 semi-auto, L3 manuale) + live monitor + cron ogni 30min
+- ✅ **Cron dedicato FIE**: ogni 8h con AuditLog e error handling granulare
+- ✅ **Standings nel contesto BRAIN**: classifiche league iniettate nel RADAR, contesto narrativo (lotta titolo, retrocessione, scontri diretti, form) nel Creative
+- ✅ **Cron resolve dedicato**: `POST /api/cron/resolve-sport-events` ogni 30min con buffer enforcement
+- ✅ **AuditLog per cron**: ogni esecuzione FIE e SENTINEL logga metriche in AuditLog
+
 ## TODO Rimanenti
 
-### Priorità Alta
-- **SENTINEL (Fase 4)**: risoluzione automatica live monitoring, 3-livelli Oracle
-- **Cron dedicato FIE**: job automatico ogni 6-12h che esegue la pipeline completa
-
 ### Priorità Media
-- **Standings nel contesto BRAIN**: aggiungere classifica aggiornata per ogni partita (il client può già fetcharla)
 - **Twitter/Apify**: monitoring giornalisti Tier 1 (Fabrizio Romano, Di Marzio) per trasferimenti in real-time
 - **Real-time event spawning**: generazione eventi live durante le partite (mini-pipeline veloce)
 
@@ -145,6 +169,7 @@ URL: `/admin` → tab "Sport 2.0 — Football Intelligence Engine"
 - **OpenAI crediti**: ricaricare per usare GPT-4o come Creative primario (più creativo di Claude in questo ruolo)
 - **Event chains avanzate**: UI per mostrare la relazione tra mercati correlati
 - **Post-match learning**: feedback loop dai risultati reali per migliorare i prompt
+- **Admin UI SENTINEL**: pannello per visualizzare stato risoluzioni, eventi NEEDS_REVIEW, metriche Oracle
 
 ---
 

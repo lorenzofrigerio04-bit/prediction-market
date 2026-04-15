@@ -6,6 +6,10 @@
     {
       "path": "/api/cron/run-football-engine",
       "schedule": "0 */8 * * *"
+    },
+    {
+      "path": "/api/cron/resolve-sport-events",
+      "schedule": "*/30 * * * *"
     }
   ]
 }

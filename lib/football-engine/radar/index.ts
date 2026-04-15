@@ -16,6 +16,7 @@ import type {
   MatchOdds,
   PlayerInfo,
   RadarOutput,
+  TeamStanding,
 } from "../types";
 import { COMPETITIONS, getCompetitionsByTier } from "../competitions";
 import {
@@ -230,6 +231,67 @@ async function fetchAllInjuries(
 }
 
 // ---------------------------------------------------------------------------
+// Cup competition IDs (no standings available for these)
+// ---------------------------------------------------------------------------
+
+const CUP_COMPETITION_IDS = new Set([
+  "champions-league",
+  "europa-league",
+  "conference-league",
+  "coppa-italia",
+  "supercoppa-italiana",
+  "fa-cup",
+  "copa-del-rey",
+  "dfb-pokal",
+  "efl-cup",
+  "nations-league",
+  "wc-qualifiers-europe",
+  "club-world-cup",
+  "world-cup",
+  "euro-championship",
+  "copa-america",
+]);
+
+function isLeagueCompetition(comp: Competition): boolean {
+  return !CUP_COMPETITION_IDS.has(comp.id);
+}
+
+// ---------------------------------------------------------------------------
+// Core: fetch standings for league competitions
+// ---------------------------------------------------------------------------
+
+async function fetchAllStandings(
+  competitions: Competition[]
+): Promise<Map<string, TeamStanding>> {
+  const standingsMap = new Map<string, TeamStanding>();
+
+  const leagues = competitions
+    .filter((c) => c.apiFootballId != null && isLeagueCompetition(c))
+    .slice(0, 8);
+
+  for (const comp of leagues) {
+    const season = await getCurrentSeasonCached(comp.apiFootballId!);
+
+    const standings = await safeCall(
+      () => fetchStandings(comp.apiFootballId!, season),
+      `standings ${comp.name}`
+    );
+    if (!standings) continue;
+
+    for (const group of standings) {
+      const normalized = normalizeStandings(group);
+      for (const entry of normalized) {
+        standingsMap.set(entry.teamId, entry);
+      }
+    }
+
+    await sleep(300);
+  }
+
+  return standingsMap;
+}
+
+// ---------------------------------------------------------------------------
 // Score interest
 // ---------------------------------------------------------------------------
 
@@ -334,20 +396,21 @@ export async function runRadar(options?: RadarOptions): Promise<RadarOutput> {
 
   console.log(`[RADAR] Starting scan — ${competitions.length} competitions (tier ≤ ${maxTier})`);
 
-  // Phase 1: Fetch fixtures + odds + injuries + floating news in parallel
-  const [fixturesResult, oddsMap, injuryData, floatingNews] = await Promise.all([
+  // Phase 1: Fetch fixtures + odds + injuries + standings + floating news in parallel
+  const [fixturesResult, oddsMap, injuryData, standingsMap, floatingNews] = await Promise.all([
     fetchAllFixtures(competitions),
     shouldFetchOdds ? fetchAllOdds(competitions) : Promise.resolve(new Map()),
     shouldFetchInjuries
       ? fetchAllInjuries(competitions)
       : Promise.resolve({ signals: [] as FootballSignal[], byTeam: new Map<string, PlayerInfo[]>() }),
+    fetchAllStandings(competitions),
     shouldFetchNews
       ? withTimeoutSafe(fetchFloatingNewsSignals(), 8000)
       : Promise.resolve([] as FootballSignal[]),
   ]);
 
   console.log(
-    `[RADAR] Fetched: ${fixturesResult.fixtures.length} fixtures, ${oddsMap.size} odds, ${injuryData.signals.length} injuries, ${floatingNews.length} floating news`
+    `[RADAR] Fetched: ${fixturesResult.fixtures.length} fixtures, ${oddsMap.size} odds, ${injuryData.signals.length} injuries, ${standingsMap.size} standings entries, ${floatingNews.length} floating news`
   );
 
   // Phase 2: Build MatchContext for each fixture (WITHOUT news — done after sort)
@@ -392,6 +455,10 @@ export async function runRadar(options?: RadarOptions): Promise<RadarOutput> {
       }
     }
 
+    // Standings lookup
+    const homeStanding = standingsMap.get(match.homeTeam.id);
+    const awayStanding = standingsMap.get(match.awayTeam.id);
+
     const interestScore = computeInterestScore(match, matchSignals, odds);
 
     // Extract themes from signals
@@ -402,6 +469,8 @@ export async function runRadar(options?: RadarOptions): Promise<RadarOutput> {
       signals: matchSignals,
       odds,
       h2h,
+      homeStanding,
+      awayStanding,
       homeInjuries,
       awayInjuries,
       interestScore,

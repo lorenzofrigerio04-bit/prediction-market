@@ -176,10 +176,7 @@ export default function PredictionModal({
   const yesPct =
     typeof binaryYesProbabilityPct === "number" ? binaryYesProbabilityPct : 50;
   const noPct = 100 - yesPct;
-  const yesBorder = yesPct >= noPct ? "border-emerald-400" : "border-rose-500";
-  const noBorder = noPct > yesPct ? "border-emerald-400" : "border-rose-500";
-  const yesPctColor = yesPct >= noPct ? "text-emerald-400" : "text-rose-500";
-  const noPctColor = noPct > yesPct ? "text-emerald-400" : "text-rose-500";
+  const yesIsLeading = yesPct >= noPct;
 
   return (
     <div
@@ -215,43 +212,65 @@ export default function PredictionModal({
 
                 {isMultiLayout ? (
                   <div
-                    className={`grid gap-2 w-full ${options.length === 4 ? "grid-cols-2" : "grid-cols-1"}`}
+                    className={`grid gap-3 w-full ${options.length <= 3 ? "grid-cols-1" : "grid-cols-2"}`}
                   >
-                    {options.map((opt) => {
-                      const optPct = outcomeProbabilityPctByKey?.[opt.key];
-                      const selected = selectedOutcome === opt.key;
-                      const dimmed = selectedOutcome !== null && !selected;
-                      return (
-                        <button
-                          key={opt.key}
-                          type="button"
-                          onClick={() => setSelectedOutcome(opt.key)}
-                          disabled={loading}
-                          className={`w-full min-h-[52px] py-2.5 px-3 rounded-xl text-left border-2 font-semibold transition-all duration-200 ease-out disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--admin-bg))] ${
-                            selected
-                              ? "border-white/28 bg-white/[0.08] text-fg shadow-[0_6px_28px_-10px_rgba(0,0,0,0.55)] scale-[1.01]"
-                              : dimmed
-                                ? "opacity-[0.38] border-white/[0.06] bg-black/20 text-fg-muted scale-[0.99]"
-                                : "border-white/15 hover:border-white/22 text-fg bg-transparent"
-                          }`}
-                        >
-                          <span className="flex items-center justify-between gap-2">
+                    {(() => {
+                      const accents = ["45,212,191", "80,165,252", "168,130,255", "248,163,72", "248,113,113", "130,220,100"];
+                      const pctValues = options.map((o) => outcomeProbabilityPctByKey?.[o.key] ?? 0);
+                      const maxPct = Math.max(...pctValues);
+                      return options.map((opt, idx) => {
+                        const optPct = outcomeProbabilityPctByKey?.[opt.key];
+                        const selected = selectedOutcome === opt.key;
+                        const dimmed = selectedOutcome !== null && !selected;
+                        const accent = accents[idx % accents.length];
+                        const isLeading = typeof optPct === "number" && optPct >= maxPct && maxPct > 0;
+                        return (
+                          <button
+                            key={opt.key}
+                            type="button"
+                            onClick={() => setSelectedOutcome(opt.key)}
+                            disabled={loading}
+                            className="w-full min-h-[68px] py-3.5 px-4 rounded-2xl transition-all duration-200 ease-out disabled:opacity-40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--admin-bg))] active:scale-[0.97] flex flex-col items-center justify-center gap-2"
+                            style={{
+                              background: selected
+                                ? `linear-gradient(135deg, rgba(${accent},0.18) 0%, rgba(${accent},0.05) 100%)`
+                                : dimmed
+                                  ? "rgba(0,0,0,0.15)"
+                                  : isLeading
+                                    ? `linear-gradient(135deg, rgba(${accent},0.12) 0%, rgba(${accent},0.03) 100%)`
+                                    : `linear-gradient(135deg, rgba(${accent},0.07) 0%, rgba(${accent},0.02) 100%)`,
+                              border: selected
+                                ? `1.5px solid rgba(${accent},0.55)`
+                                : dimmed
+                                  ? "1.5px solid rgba(255,255,255,0.04)"
+                                  : isLeading
+                                    ? `1.5px solid rgba(${accent},0.4)`
+                                    : `1.5px solid rgba(${accent},0.15)`,
+                              boxShadow: selected
+                                ? `0 0 32px -8px rgba(${accent},0.3), inset 0 1px 0 rgba(255,255,255,0.08)`
+                                : "inset 0 1px 0 rgba(255,255,255,0.05)",
+                              opacity: dimmed ? 0.38 : 1,
+                              transform: selected ? "scale(1.02)" : dimmed ? "scale(0.98)" : "scale(1)",
+                            }}
+                          >
                             <span
-                              className={`font-medium text-sm leading-snug line-clamp-2 ${dimmed ? "text-fg-muted" : "text-fg"}`}
+                              className="text-sm leading-tight font-semibold line-clamp-2 max-w-full text-center"
+                              style={{ color: dimmed ? "rgba(169,180,208,0.5)" : "var(--fg)" }}
                             >
                               {opt.label}
                             </span>
                             {typeof optPct === "number" && (
                               <span
-                                className={`shrink-0 text-sm font-extrabold font-chubby tabular-nums ${dimmed ? "text-fg-subtle opacity-80" : "text-fg-muted"}`}
+                                className="text-lg sm:text-xl font-extrabold font-chubby tabular-nums"
+                                style={{ color: dimmed ? "rgba(169,180,208,0.35)" : `rgb(${accent})` }}
                               >
                                 {formatPct(optPct)}
                               </span>
                             )}
-                          </span>
-                        </button>
-                      );
-                    })}
+                          </button>
+                        );
+                      });
+                    })()}
                   </div>
                 ) : canRenderBinaryProb && yesOpt && noOpt ? (
                   <div className="grid grid-cols-2 gap-3 w-full">
@@ -259,31 +278,51 @@ export default function PredictionModal({
                       const isYes = side === "YES";
                       const selected = selectedOutcome === side;
                       const dimmed = selectedOutcome !== null && !selected;
-                      const borderCls = dimmed ? "border-white/[0.08]" : isYes ? yesBorder : noBorder;
-                      const pctColor = isYes ? yesPctColor : noPctColor;
                       const pct = isYes ? yesPct : noPct;
                       const label = isYes ? yesOpt.label : noOpt.label;
+                      const isLeading = isYes ? yesIsLeading : !yesIsLeading;
+                      const accent = isYes ? "45,212,191" : "248,113,113";
                       return (
                         <button
                           key={side}
                           type="button"
                           onClick={() => setSelectedOutcome(side)}
                           disabled={loading}
-                          className={`min-h-[52px] py-3 px-2 rounded-xl font-semibold text-base flex flex-col items-center justify-center gap-1 border-2 transition-all duration-200 ease-out disabled:opacity-60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--admin-bg))] ${borderCls} ${
-                            selected
-                              ? "bg-white/[0.08] text-fg shadow-[0_8px_32px_-12px_rgba(0,0,0,0.55)] scale-[1.02] z-[1]"
+                          className="min-h-[68px] py-3.5 px-3 rounded-2xl font-semibold text-base flex flex-col items-center justify-center gap-2 transition-all duration-200 ease-out disabled:opacity-40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--admin-bg))] active:scale-[0.97]"
+                          style={{
+                            background: selected
+                              ? `linear-gradient(135deg, rgba(${accent},0.18) 0%, rgba(${accent},0.06) 100%)`
                               : dimmed
-                                ? "opacity-[0.38] bg-black/25 text-fg-muted scale-[0.98]"
-                                : "bg-transparent text-fg hover:opacity-95 active:scale-[0.99]"
-                          }`}
+                                ? "rgba(0,0,0,0.15)"
+                                : isLeading
+                                  ? `linear-gradient(135deg, rgba(${accent},0.1) 0%, rgba(${accent},0.03) 100%)`
+                                  : `linear-gradient(135deg, rgba(${accent},0.06) 0%, rgba(${accent},0.02) 100%)`,
+                            border: selected
+                              ? `1.5px solid rgba(${accent},0.55)`
+                              : dimmed
+                                ? "1.5px solid rgba(255,255,255,0.04)"
+                                : isLeading
+                                  ? `1.5px solid rgba(${accent},0.35)`
+                                  : `1.5px solid rgba(${accent},0.15)`,
+                            boxShadow: selected
+                              ? `0 0 32px -8px rgba(${accent},0.3), inset 0 1px 0 rgba(255,255,255,0.08)`
+                              : "inset 0 1px 0 rgba(255,255,255,0.05)",
+                            opacity: dimmed ? 0.38 : 1,
+                            transform: selected ? "scale(1.02)" : dimmed ? "scale(0.98)" : "scale(1)",
+                          }}
                         >
                           <span
-                            className={`line-clamp-2 max-w-full text-center text-sm sm:text-base leading-tight ${dimmed ? "text-fg-muted" : "text-fg"}`}
+                            className="line-clamp-2 max-w-full text-center text-sm leading-tight"
+                            style={{ color: dimmed ? "rgba(169,180,208,0.6)" : "var(--fg)" }}
                           >
                             {label}
                           </span>
                           <span
-                            className={`text-base sm:text-lg font-extrabold font-chubby tabular-nums ${pctColor} ${dimmed ? "opacity-50" : ""}`}
+                            className="text-lg sm:text-xl font-extrabold font-chubby tabular-nums"
+                            style={{
+                              color: `rgb(${accent})`,
+                              opacity: dimmed ? 0.45 : 1,
+                            }}
                           >
                             {formatPct(pct)}
                           </span>
@@ -293,22 +332,34 @@ export default function PredictionModal({
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-3 w-full">
-                    {options.map((opt) => {
+                    {options.map((opt, idx) => {
                       const selected = selectedOutcome === opt.key;
                       const dimmed = selectedOutcome !== null && !selected;
+                      const accent = idx === 0 ? "45,212,191" : "248,113,113";
                       return (
                         <button
                           key={opt.key}
                           type="button"
                           onClick={() => setSelectedOutcome(opt.key)}
                           disabled={loading}
-                          className={`min-h-[48px] px-3 rounded-xl border-2 font-kalshi text-base font-bold transition-all duration-200 ease-out disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--admin-bg))] ${
-                            selected
-                              ? "border-white/28 bg-white/[0.08] text-fg shadow-[0_6px_28px_-10px_rgba(0,0,0,0.55)]"
+                          className="min-h-[56px] px-3 rounded-2xl font-kalshi text-base font-bold transition-all duration-200 ease-out disabled:opacity-40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--admin-bg))] active:scale-[0.97]"
+                          style={{
+                            background: selected
+                              ? `linear-gradient(135deg, rgba(${accent},0.14) 0%, rgba(${accent},0.04) 100%)`
                               : dimmed
-                                ? "opacity-[0.38] border-white/[0.06] bg-black/20 text-fg-muted"
-                                : "border-white/15 bg-transparent text-fg hover:border-white/22"
-                          }`}
+                                ? "rgba(0,0,0,0.15)"
+                                : `linear-gradient(135deg, rgba(${accent},0.06) 0%, rgba(${accent},0.02) 100%)`,
+                            border: selected
+                              ? `1.5px solid rgba(${accent},0.5)`
+                              : dimmed
+                                ? "1.5px solid rgba(255,255,255,0.04)"
+                                : `1.5px solid rgba(${accent},0.15)`,
+                            boxShadow: selected
+                              ? `0 0 28px -6px rgba(${accent},0.25), inset 0 1px 0 rgba(255,255,255,0.08)`
+                              : "inset 0 1px 0 rgba(255,255,255,0.04)",
+                            opacity: dimmed ? 0.38 : 1,
+                            color: "var(--fg)",
+                          }}
                         >
                           {opt.label}
                         </button>

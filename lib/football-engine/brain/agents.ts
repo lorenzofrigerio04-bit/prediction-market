@@ -11,6 +11,7 @@ import {
   VERIFIER_SYSTEM,
   RESOLVER_SYSTEM,
 } from "./prompts";
+import { buildFeedbackPromptBlock } from "./feedback-context";
 
 // ---------------------------------------------------------------------------
 // Analyst
@@ -140,16 +141,65 @@ interface CreativeOutput {
   events: CreativeEvent[];
 }
 
+function buildStandingsNarrative(match: MatchContext): string {
+  const { homeStanding, awayStanding } = match;
+  if (!homeStanding && !awayStanding) return "";
+
+  const lines: string[] = ["\n### Contesto Classifica (per eventi narrativi):"];
+
+  const totalTeams = 20; // approximate for most top-flight leagues
+
+  if (homeStanding && awayStanding) {
+    const pointsGap = Math.abs(homeStanding.points - awayStanding.points);
+    const posGap = Math.abs(homeStanding.position - awayStanding.position);
+
+    if (pointsGap <= 3 && posGap <= 3) {
+      lines.push(`  ⚡ SCONTRO DIRETTO: ${homeStanding.teamName} (${homeStanding.position}°, ${homeStanding.points}pt) vs ${awayStanding.teamName} (${awayStanding.position}°, ${awayStanding.points}pt) — solo ${pointsGap}pt di distacco!`);
+    }
+  }
+
+  for (const standing of [homeStanding, awayStanding]) {
+    if (!standing) continue;
+
+    if (standing.position <= 2) {
+      lines.push(`  🏆 ${standing.teamName} è ${standing.position}° — in corsa per il titolo (${standing.points}pt, form: ${standing.form ?? "?"})`);
+    } else if (standing.position <= 4) {
+      lines.push(`  🌟 ${standing.teamName} è ${standing.position}° — zona Champions League (${standing.points}pt)`);
+    }
+
+    if (standing.position >= totalTeams - 2) {
+      lines.push(`  ⚠ ${standing.teamName} è ${standing.position}° — zona retrocessione! (${standing.points}pt, form: ${standing.form ?? "?"})`);
+    } else if (standing.position >= totalTeams - 4) {
+      lines.push(`  📉 ${standing.teamName} è ${standing.position}° — rischia la retrocessione (${standing.points}pt)`);
+    }
+
+    const recentForm = standing.form?.slice(0, 5) ?? "";
+    if (recentForm.length >= 4) {
+      const losses = (recentForm.match(/L/g) || []).length;
+      const wins = (recentForm.match(/W/g) || []).length;
+      if (losses >= 3) {
+        lines.push(`  📊 ${standing.teamName} in crisi: ${losses} sconfitte nelle ultime ${recentForm.length} partite (${recentForm})`);
+      } else if (wins >= 4) {
+        lines.push(`  📊 ${standing.teamName} in grande forma: ${wins} vittorie nelle ultime ${recentForm.length} partite (${recentForm})`);
+      }
+    }
+  }
+
+  return lines.length > 1 ? lines.join("\n") : "";
+}
+
 function buildCreativeContext(
   match: MatchContext,
   insights: AnalystInsight[]
 ): string {
   const base = buildAnalystContext(match);
+  const standingsNarrative = buildStandingsNarrative(match);
+
   const relevantInsights = insights
     .filter((i) => i.marketPotential >= 0.4)
     .slice(0, 8);
 
-  if (relevantInsights.length === 0) return base;
+  if (relevantInsights.length === 0 && !standingsNarrative) return base;
 
   const chainInsights = relevantInsights.filter((i) => i.isEventChain);
   const normalInsights = relevantInsights.filter((i) => !i.isEventChain);
@@ -163,7 +213,9 @@ function buildCreativeContext(
       chainInsights.map((i, idx) => `${idx + 1}. [CATENA] ${i.insight}\n   Genera: un evento "trigger" + uno "conseguenza" collegati`).join("\n")
     : "";
 
-  return `${base}\n\n### Insight dall'Analyst:\n${normalBlock}${chainBlock}`;
+  const insightBlock = normalBlock ? `\n\n### Insight dall'Analyst:\n${normalBlock}` : "";
+
+  return `${base}${standingsNarrative}${insightBlock}${chainBlock}`;
 }
 
 export async function runCreative(
@@ -173,8 +225,8 @@ export async function runCreative(
 ): Promise<CreativeEvent[]> {
   if (matches.length === 0) return [];
 
-  // Build system prompt ONCE — it's the same for all batches
-  const systemPrompt = buildCreativeSystemPrompt();
+  const feedbackBlock = await buildFeedbackPromptBlock();
+  const systemPrompt = buildCreativeSystemPrompt() + feedbackBlock;
   const MAX_MATCHES = 12;
   const BATCH_SIZE = 3; // 3 matches per call → ~12 events per call → ~4500 tokens output
 
@@ -301,6 +353,9 @@ export async function runVerifier(
 ): Promise<VerifiedEvent[]> {
   if (events.length === 0) return [];
 
+  const feedbackBlock = await buildFeedbackPromptBlock();
+  const verifierSystemPrompt = VERIFIER_SYSTEM + feedbackBlock;
+
   const matchSummary = matches
     .slice(0, 5)
     .map((m) => `${m.match.homeTeam.name} vs ${m.match.awayTeam.name} (${m.match.competition.name})`)
@@ -332,7 +387,7 @@ export async function runVerifier(
       const userMessage = `Verifica ${batch.length} eventi (id ${batchStart}-${batchStart + batch.length - 1}). Partite: ${matchSummary}\n\nEventi (id|titolo|tipo|chiusura|scores|risoluzione):\n${eventList}`;
 
       try {
-        const response = await callAgent("verifier", VERIFIER_SYSTEM, userMessage);
+        const response = await callAgent("verifier", verifierSystemPrompt, userMessage);
         const parsed = parseJsonResponse<VerifierOutput>(response.content);
 
         if (parsed?.verifications) {
