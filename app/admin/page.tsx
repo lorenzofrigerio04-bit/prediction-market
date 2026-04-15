@@ -328,7 +328,7 @@ export default function AdminDashboard() {
                       const res = await fetch("/api/admin/run-football-engine", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ dryRun: fieDryRun, maxTier: 2, maxMatches: 15 }),
+                        body: JSON.stringify({ dryRun: fieDryRun, maxTier: 2, maxMatches: 10, skipResolver: true }),
                       });
                       const data = await res.json();
                       setFieResult(data);
@@ -380,18 +380,28 @@ export default function AdminDashboard() {
                         )}
                       </div>
                       {(fieResult as { diagnostics?: Record<string, unknown> }).diagnostics && (
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-                          {[
-                            { label: "Partite RADAR", value: (fieResult.diagnostics as Record<string, number>)?.radarMatchCount },
-                            { label: "Insight Analyst", value: (fieResult.diagnostics as Record<string, number>)?.brainInsightCount },
-                            { label: "Idee Creative", value: (fieResult.diagnostics as Record<string, number>)?.brainIdeaCount },
-                            { label: "Approvate", value: (fieResult.diagnostics as Record<string, number>)?.brainApprovedCount },
-                          ].map((stat) => (
-                            <div key={stat.label} className="bg-white/[0.06] rounded-lg p-2 text-center">
-                              <div className="text-lg font-bold text-fg">{stat.value ?? 0}</div>
-                              <div className="text-[10px] text-fg-muted">{stat.label}</div>
+                        <div className="mb-3">
+                          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 mb-2">
+                            {[
+                              { label: "RADAR", value: (fieResult.diagnostics as Record<string, number>)?.radarMatchCount, sub: "partite" },
+                              { label: "News", value: (fieResult.diagnostics as Record<string, number>)?.radarNewsSignalCount, sub: "segnali" },
+                              { label: "Analyst", value: (fieResult.diagnostics as Record<string, number>)?.brainInsightCount, sub: "insight" },
+                              { label: "Creative", value: (fieResult.diagnostics as Record<string, number>)?.brainIdeaCount, sub: "idee" },
+                              { label: "Verifier", value: (fieResult.diagnostics as Record<string, number>)?.brainApprovedCount, sub: "ok" },
+                              { label: "FORGE", value: (fieResult.diagnostics as Record<string, number>)?.forgeCandidateCount, sub: "candidati" },
+                            ].map((stat) => (
+                              <div key={stat.label} className="bg-white/[0.06] rounded-lg p-2 text-center">
+                                <div className={`text-base font-bold ${(stat.value ?? 0) === 0 ? "text-amber-400" : "text-emerald-400"}`}>{stat.value ?? 0}</div>
+                                <div className="text-[9px] text-fg font-medium">{stat.label}</div>
+                                <div className="text-[9px] text-fg-muted">{stat.sub}</div>
+                              </div>
+                            ))}
+                          </div>
+                          {((fieResult.diagnostics as Record<string, number>)?.totalDurationMs ?? 0) > 0 && (
+                            <div className="text-[10px] text-fg-muted text-right">
+                              Pipeline completata in {(((fieResult.diagnostics as Record<string, number>)?.totalDurationMs ?? 0) / 1000).toFixed(1)}s
                             </div>
-                          ))}
+                          )}
                         </div>
                       )}
                       {fieDryRun && (fieResult as { candidates?: Array<{ title: string; marketType?: string; closesAt?: string }> }).candidates && (

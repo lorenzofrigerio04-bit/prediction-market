@@ -59,7 +59,7 @@ const TEMPERATURE: Record<AgentRole, number> = {
 const MAX_TOKENS: Record<AgentRole, number> = {
   analyst: 4000,
   creative: 6000,
-  verifier: 4000,
+  verifier: 6000,  // Must be high enough for 20 events × ~250 tokens each — never truncate
   resolver: 3000,
 };
 
@@ -125,6 +125,10 @@ async function callOpenAI(
   };
 }
 
+// Use env var to override model, default to a known-stable Claude model
+const ANTHROPIC_MODEL =
+  process.env.ANTHROPIC_MODEL ?? "claude-3-5-sonnet-20241022";
+
 async function callAnthropic(
   systemPrompt: string,
   userMessage: string,
@@ -134,7 +138,7 @@ async function callAnthropic(
   if (!client) throw new Error("Anthropic not available");
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: ANTHROPIC_MODEL,
     max_tokens: MAX_TOKENS[role],
     temperature: TEMPERATURE[role],
     system: systemPrompt,
@@ -146,7 +150,7 @@ async function callAnthropic(
 
   return {
     content,
-    model: "claude-sonnet",
+    model: ANTHROPIC_MODEL,
     usage: {
       promptTokens: response.usage.input_tokens,
       completionTokens: response.usage.output_tokens,

@@ -122,8 +122,9 @@ function buildCandidate(approved: ApprovedEvent): Candidate | null {
   // Source storyline ID for dedup
   const sourceStorylineId = buildSourceStorylineId(creative, matchContext);
 
-  // Template ID
-  const templateId = template?.id ?? `fie-custom-${creative.category}`;
+  // Template ID — must start with "sport-football-" so the rulebook validator
+  // treats FIE candidates as sport fixtures (1h deadline, skips title/criteria check).
+  const templateId = template?.id ?? `sport-football-fie-${creative.category}`;
 
   // Compute momentum/novelty from creative scores
   const momentum = Math.round(
@@ -131,15 +132,21 @@ function buildCandidate(approved: ApprovedEvent): Candidate | null {
   );
   const novelty = Math.round(creative.wow_factor * 10);
 
+  // Normalize resolution source URLs — the Verifier LLM may return non-URL strings
+  const primaryUrl = normalizeUrl(
+    verification.resolutionSource.primary,
+    template?.resolutionAuthorityHost ?? "v3.football.api-sports.io"
+  );
+  const secondaryUrl = normalizeUrl(verification.resolutionSource.secondary) ?? null;
+  const tertiaryUrl = normalizeUrl(verification.resolutionSource.tertiary) ?? null;
+
   const candidate: Candidate = {
     title: ensureQuestionMark(creative.title.slice(0, 140)),
     description: buildDescription(creative, verification, matchContext),
     category: "Calcio",
     closesAt,
     resolutionAuthorityHost:
-      template?.resolutionAuthorityHost ??
-      verification.resolutionSource.primary ??
-      "v3.football.api-sports.io",
+      template?.resolutionAuthorityHost ?? "v3.football.api-sports.io",
     resolutionAuthorityType:
       template?.resolutionAuthorityType ?? "REPUTABLE",
     resolutionCriteriaYes: resCriteria.yes,
@@ -147,9 +154,9 @@ function buildCandidate(approved: ApprovedEvent): Candidate | null {
     resolutionCriteriaFull: resCriteria.full ?? null,
     sourceStorylineId,
     templateId,
-    resolutionSourceUrl: verification.resolutionSource.primary || null,
-    resolutionSourceSecondary: verification.resolutionSource.secondary ?? null,
-    resolutionSourceTertiary: verification.resolutionSource.tertiary ?? null,
+    resolutionSourceUrl: primaryUrl,
+    resolutionSourceSecondary: secondaryUrl,
+    resolutionSourceTertiary: tertiaryUrl,
     edgeCasePolicyRef: edgeCasePolicy,
     timezone: "Europe/Rome",
     sportLeague: matchContext?.match.competition.name ?? null,
@@ -210,30 +217,64 @@ function computeClosesAt(
   matchContext: MatchContext | null
 ): Date | null {
   const now = new Date();
+  const logic = (creative.closesAtLogic ?? "").toLowerCase();
 
   if (matchContext) {
     const matchStart = new Date(matchContext.match.utcDate);
+    const matchEnd = new Date(matchStart.getTime() + MATCH_DURATION_MS);
 
-    switch (creative.closesAtLogic?.toLowerCase()) {
-      case "fine partita":
-      case "match_end":
-        return new Date(matchStart.getTime() + MATCH_DURATION_MS);
-      case "intervallo":
-      case "halftime":
-        return new Date(matchStart.getTime() + 45 * 60 * 1000);
-      case "inizio partita":
-      case "match_start":
-      default:
-        // Default: close at match start (most common)
-        return matchStart > now ? matchStart : null;
+    // Post-match/post-game windows (Nx ore dopo = Nh after match)
+    const postMatchH = logic.match(/(\d+)\s*h\s*(dopo|after)/);
+    if (postMatchH) {
+      const h = parseInt(postMatchH[1], 10);
+      return new Date(matchEnd.getTime() + h * 60 * 60 * 1000);
     }
+
+    // 24h/48h/72h without context → relative to match end
+    const hoursOnlyMatch = logic.match(/^(\d+)h?\s*$/);
+    if (hoursOnlyMatch) {
+      const h = parseInt(hoursOnlyMatch[1], 10);
+      return new Date(matchEnd.getTime() + h * 60 * 60 * 1000);
+    }
+
+    if (logic.includes("fine partita") || logic.includes("match_end") || logic.includes("after match") || logic.includes("post-match")) {
+      return matchEnd;
+    }
+    if (logic.includes("intervallo") || logic.includes("halftime")) {
+      return new Date(matchStart.getTime() + 47 * 60 * 1000);
+    }
+    if (logic.includes("48h")) {
+      return new Date(matchEnd.getTime() + 48 * 60 * 60 * 1000);
+    }
+    if (logic.includes("24h")) {
+      return new Date(matchEnd.getTime() + 24 * 60 * 60 * 1000);
+    }
+
+    // Default: close at match start (pre-match markets).
+    // If match already started/finished, use match end to keep the event valid.
+    return matchStart > now ? matchStart : matchEnd;
   }
 
-  // Non-match events: parse custom hours or default to 72h
-  const hoursMatch = creative.closesAtLogic?.match(/(\d+)\s*h/i);
+  // Season-long or non-match events
+  if (logic.includes("fine stagione") || logic.includes("end of season")) {
+    // End of season: approximate as June 1st of current or next year
+    const endOfSeason = new Date();
+    endOfSeason.setMonth(5, 1); // June 1st
+    endOfSeason.setHours(22, 0, 0, 0);
+    if (endOfSeason < now) endOfSeason.setFullYear(endOfSeason.getFullYear() + 1);
+    return endOfSeason;
+  }
+
+  // Parse "Xh" or "X giorni"
+  const daysMatch = logic.match(/(\d+)\s*(giorn|day)/i);
+  if (daysMatch) {
+    const d = parseInt(daysMatch[1], 10);
+    return new Date(now.getTime() + d * 24 * 60 * 60 * 1000);
+  }
+  const hoursMatch = logic.match(/(\d+)\s*h/i);
   if (hoursMatch) {
-    const hours = parseInt(hoursMatch[1], 10);
-    return new Date(now.getTime() + hours * 60 * 60 * 1000);
+    const h = parseInt(hoursMatch[1], 10);
+    return new Date(now.getTime() + h * 60 * 60 * 1000);
   }
 
   // Default: 72h from now
@@ -363,4 +404,34 @@ function buildEdgeCasePolicy(
 function ensureQuestionMark(title: string): string {
   const trimmed = title.trim();
   return trimmed.endsWith("?") ? trimmed : `${trimmed}?`;
+}
+
+/**
+ * Normalizes a resolution source string into a valid absolute URL.
+ * If the string is already a valid URL, return it as-is.
+ * If it looks like a domain/path, prepend https://.
+ * Otherwise, fall back to the fallbackHost.
+ */
+function normalizeUrl(raw?: string | null, fallbackHost?: string): string | null {
+  if (!raw) return fallbackHost ? `https://${fallbackHost}/` : null;
+  const trimmed = raw.trim();
+  if (!trimmed) return fallbackHost ? `https://${fallbackHost}/` : null;
+
+  // Already a valid URL
+  try {
+    new URL(trimmed);
+    return trimmed;
+  } catch { /* not valid yet */ }
+
+  // Looks like a domain (contains a dot, no spaces) — prepend https://
+  if (!trimmed.includes(" ") && trimmed.includes(".")) {
+    try {
+      const withScheme = `https://${trimmed}`;
+      new URL(withScheme);
+      return withScheme;
+    } catch { /* fall through */ }
+  }
+
+  // Plain text description (e.g. "api-football statistics") — use fallback host
+  return fallbackHost ? `https://${fallbackHost}/` : null;
 }

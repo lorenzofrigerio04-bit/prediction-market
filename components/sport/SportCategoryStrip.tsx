@@ -2,7 +2,6 @@
 
 import type { SportPageCategory } from "@/lib/sport-page-categories";
 import {
-  SPORT_PAGE_CATEGORIES,
   getSportPageDisplayName,
 } from "@/lib/sport-page-categories";
 
@@ -112,11 +111,13 @@ const CATEGORY_ICONS: Record<SportPageCategory, React.ReactNode> = {
 };
 
 interface SportCategoryStripProps {
+  categories: SportPageCategory[];
   activeCategory: SportPageCategory;
   onSelect: (category: SportPageCategory) => void;
 }
 
 export function SportCategoryStrip({
+  categories,
   activeCategory,
   onSelect,
 }: SportCategoryStripProps) {
@@ -126,7 +127,7 @@ export function SportCategoryStrip({
       aria-label="Categorie sport"
     >
       <div className="sport-category-strip__inner">
-          {SPORT_PAGE_CATEGORIES.map((cat) => {
+          {categories.map((cat) => {
           const isActive = activeCategory === cat;
           return (
             <button
@@ -138,7 +139,7 @@ export function SportCategoryStrip({
               aria-current={isActive ? "true" : undefined}
             >
               <span className="sport-category-strip__icon">
-                {CATEGORY_ICONS[cat]}
+                {CATEGORY_ICONS[cat] ?? <IconCalcio />}
               </span>
               <span className="sport-category-strip__label">
                 {getSportPageDisplayName(cat).toUpperCase()}

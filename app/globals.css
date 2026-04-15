@@ -111,9 +111,9 @@
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
   /* Admin: sfondo neutro scuro (charcoal) in linea con sidebar, senza blu vivace */
   --admin-bg: 12 14 20;
-  --bottom-nav-h: 80px;
-  --bottom-nav-gap: 12px;
-  --bottom-nav-total: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+  --bottom-nav-h: 60px;
+  --bottom-nav-gap: 10px;
+  --bottom-nav-total: calc(var(--bottom-nav-h) + var(--bottom-nav-gap) + env(safe-area-inset-bottom, 0px));
   --header-height: 3.5rem;
   --discover-tab-bar-h: 52px;
   /* Landing: altezza area sopra la fold (header + main pt + bottom nav esclusi) */
@@ -3349,28 +3349,23 @@ body.discover-consigliati-active .header-neon {
   border-bottom: 1px solid rgb(255 255 255 / 0.08) !important;
 }
 
-/* Strip categorie: look premium glass con profondita leggera */
+/* Strip categorie: sottile e clean */
 .market-categories-strip {
-  border-top: 1px solid rgb(255 255 255 / 0.06);
-  border-bottom: 1px solid rgb(255 255 255 / 0.08);
-  background:
-    linear-gradient(180deg, rgb(5 10 22 / 0.66) 0%, rgb(5 10 22 / 0.48) 100%);
-  backdrop-filter: blur(16px) saturate(1.15);
-  -webkit-backdrop-filter: blur(16px) saturate(1.15);
-  box-shadow:
-    0 1px 0 rgb(255 255 255 / 0.05) inset,
-    0 10px 24px -20px rgb(0 0 0 / 0.9);
+  border-bottom: 1px solid rgb(255 255 255 / 0.06);
+  background: rgb(5 10 22 / 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-/* Bottom nav: pill Apple/X style, sfondo unificato admin-bg */
+/* Bottom nav: pill floating stile Safari */
 .nav-bottom-neon {
   position: fixed;
-  bottom: -6px;
+  bottom: 0;
   left: 0;
   right: 0;
   z-index: 40;
-  background: rgb(var(--admin-bg));
-  padding: 0 0 env(safe-area-inset-bottom);
+  background: transparent;
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--bottom-nav-gap));
   display: flex;
   justify-content: center;
   align-items: flex-end;
@@ -3379,45 +3374,38 @@ body.discover-consigliati-active .header-neon {
 .nav-bottom-neon .nav-bottom-neon-inner {
   position: relative;
   pointer-events: auto;
-  width: min(96vw, 640px);
-  max-width: min(96vw, 640px);
+  width: min(calc(100vw - 32px - var(--safe-area-inset-left) - var(--safe-area-inset-right)), 460px);
+  max-width: min(calc(100vw - 32px - var(--safe-area-inset-left) - var(--safe-area-inset-right)), 460px);
   height: var(--bottom-nav-h);
   min-height: var(--bottom-nav-h);
-  border-radius: 20px 20px 0 0;
+  border-radius: 999px;
   overflow: visible;
   clip-path: none;
   -webkit-clip-path: none;
 }
-/* Sfondo barra: unificato admin-bg, bordo superiore sottile */
+/* Sfondo barra pill */
 .nav-bottom-neon .nav-bottom-neon-inner::before {
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: 20px 20px 0 0;
+  border-radius: 999px;
   clip-path: none;
   -webkit-clip-path: none;
-  background:
-    linear-gradient(180deg, rgb(var(--admin-bg) / 0.86) 0%, rgb(var(--admin-bg) / 0.96) 100%);
-  border-top: 1px solid rgb(255 255 255 / 0.16);
-  backdrop-filter: blur(30px) saturate(1.24);
-  -webkit-backdrop-filter: blur(30px) saturate(1.24);
-  border: 1px solid rgb(255 255 255 / 0.13);
-  border-bottom: none;
+  background: rgb(var(--admin-bg) / 0.88);
+  backdrop-filter: blur(28px) saturate(1.2);
+  -webkit-backdrop-filter: blur(28px) saturate(1.2);
+  border: 1px solid rgb(255 255 255 / 0.1);
   box-shadow:
-    0 0 0 1px rgb(0 0 0 / 0.24),
-    0 -20px 40px -30px rgb(0 0 0 / 0.95),
-    0 0 32px -18px rgb(var(--primary-glow) / 0.36);
+    0 4px 24px rgb(0 0 0 / 0.45),
+    0 1px 0 rgb(255 255 255 / 0.06) inset;
   z-index: 0;
 }
 .dark .nav-bottom-neon .nav-bottom-neon-inner::before {
-  background:
-    linear-gradient(180deg, rgb(var(--admin-bg) / 0.9) 0%, rgb(var(--admin-bg) / 0.98) 100%);
-  border: 1px solid rgb(255 255 255 / 0.14);
-  border-top: 1px solid rgb(255 255 255 / 0.2);
+  background: rgb(var(--admin-bg) / 0.92);
+  border: 1px solid rgb(255 255 255 / 0.12);
   box-shadow:
-    0 0 0 1px rgb(0 0 0 / 0.34),
-    0 -20px 40px -28px rgb(0 0 0 / 0.92),
-    0 0 34px -16px rgb(var(--primary-glow) / 0.34);
+    0 4px 28px rgb(0 0 0 / 0.6),
+    0 1px 0 rgb(255 255 255 / 0.08) inset;
 }
 /* Link: colori definiti, label e icona sempre visibili (opacity 1) */
 .nav-bottom-neon a {
@@ -3455,43 +3443,54 @@ body.discover-consigliati-active .header-neon {
 .dark .nav-bottom-neon .nav-bottom-neon-inner a svg {
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 1px rgba(255, 255, 255, 0.3));
 }
-/* Tab attiva: sempre visibile, linea in alto + illuminazione (layer colore più leggero) */
+/* Tab attiva: effetto retroilluminato, senza contorni */
 .nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active,
 .dark .nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active {
   position: relative !important;
   color: inherit !important;
-  background:
-    linear-gradient(180deg, rgb(var(--primary) / 0.2) 0%, rgb(var(--primary) / 0.08) 100%) !important;
+  background: transparent !important;
   border: none !important;
-  box-shadow:
-    0 0 24px -6px rgb(var(--primary-glow) / 0.56),
-    0 0 0 1px rgb(var(--primary) / 0.24) inset !important;
+  box-shadow: none !important;
 }
-/* Linea cyan in cima alla casella attiva (sempre visibile) */
-.nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active::before,
-.dark .nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active::before {
+.nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active::after,
+.dark .nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active::after {
   content: "" !important;
   position: absolute !important;
-  top: 0 !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  width: 60% !important;
-  min-width: 28px !important;
-  height: 3px !important;
-  background: rgb(var(--primary)) !important;
-  border-radius: 0 0 3px 3px !important;
-  box-shadow: 0 0 10px rgb(var(--primary-glow) / 0.8) !important;
-  z-index: 1 !important;
+  inset: 8px 6px !important;
+  z-index: -1 !important;
+  border-radius: 999px !important;
+  background: radial-gradient(
+    ellipse at center,
+    rgb(var(--primary) / 0.34) 0%,
+    rgb(var(--primary-glow) / 0.22) 42%,
+    rgb(var(--primary-glow) / 0) 78%
+  ) !important;
+  filter: blur(8px) saturate(1.08) !important;
   pointer-events: none !important;
+}
+.nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active svg,
+.dark .nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active svg {
+  filter:
+    drop-shadow(0 0 10px rgb(var(--primary-glow) / 0.68))
+    drop-shadow(0 1px 2px rgb(0 0 0 / 0.35)) !important;
+}
+.nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active .nav-bottom-label,
+.dark .nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active .nav-bottom-label {
+  text-shadow: 0 0 9px rgb(var(--primary-glow) / 0.44) !important;
 }
 .nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active:hover,
 .dark .nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active:hover {
-  background: rgb(var(--primary) / 0.1) !important;
-  box-shadow: 0 0 24px -4px rgb(var(--primary-glow) / 0.45) !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
-.nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active:hover::before,
-.dark .nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active:hover::before {
-  box-shadow: 0 0 14px rgb(var(--primary-glow)) !important;
+.nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active:hover::after,
+.dark .nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active:hover::after {
+  filter: blur(9px) saturate(1.12) !important;
+}
+/* Disattiva eventuale vecchio marker alto */
+.nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active::before,
+.dark .nav-bottom-neon .nav-bottom-neon-inner a.nav-item-neon-active::before {
+  content: none !important;
 }
 /* Tutte le icone della bottom nav: sempre visibili (evita scomparsa dopo navigazione) */
 .nav-bottom-neon svg {
@@ -3505,19 +3504,19 @@ body.discover-consigliati-active .header-neon {
 .nav-bottom-neon .nav-bottom-neon-inner a span:first-child {
   overflow: visible !important;
   aspect-ratio: 1 !important;
-  width: 24px !important;
-  height: 24px !important;
-  min-width: 24px !important;
-  min-height: 24px !important;
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  min-height: 22px !important;
   flex-shrink: 0 !important;
 }
 .nav-bottom-neon .nav-bottom-neon-inner a[href="/sport"] svg,
 .nav-bottom-neon .nav-bottom-neon-inner a svg {
   overflow: visible !important;
-  width: 24px !important;
-  height: 24px !important;
-  min-width: 24px !important;
-  min-height: 24px !important;
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  min-height: 22px !important;
 }
 .nav-bottom-neon .text-ds-micro {
   letter-spacing: 0.02em;
@@ -3534,14 +3533,14 @@ body.discover-consigliati-active .header-neon {
 .dark .nav-bottom-neon .nav-bottom-label,
 .nav-bottom-neon .nav-item-neon-active .nav-bottom-label {
   display: block !important;
-  font-size: clamp(0.625rem, 2.5vw, 0.6875rem);
-  font-weight: 600;
+  font-size: 0.5625rem;
+  font-weight: 500;
   line-height: 1.15;
   letter-spacing: 0.02em;
   opacity: 1 !important;
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
-  max-width: 60px;
+  max-width: 52px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3551,12 +3550,6 @@ body.discover-consigliati-active .header-neon {
   flex-shrink: 0;
   position: relative;
   z-index: 2;
-}
-/* Mobile: label sempre leggibili (font minimo 10px) */
-@media (max-width: 480px) {
-  .nav-bottom-neon .nav-bottom-label {
-    font-size: 0.625rem;
-  }
 }
 
 /* Sfera centrale: ferma, senza animazione */
@@ -4807,4 +4800,13 @@ html body .nav-bottom-neon a span.nav-bottom-label,
 .nav-bottom-neon .nav-bottom-label {
   font-weight: 600 !important;
   letter-spacing: 0.01em !important;
+}
+
+/* ─── Football Intelligence Engine (FIE 2.0) — card glow ─────────────────── */
+.fie-glow {
+  border-color: rgb(var(--primary) / 0.35) !important;
+  box-shadow:
+    0 0 0 1px rgb(var(--primary) / 0.12),
+    0 0 18px 4px rgb(var(--primary-glow) / 0.10),
+    0 2px 12px rgba(0, 0, 0, 0.08) !important;
 }

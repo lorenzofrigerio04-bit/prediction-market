@@ -27,7 +27,7 @@ const BOTTOM_NAV_RIGHT = [
 ] as const;
 
 const bottomLinkClass =
-  "flex flex-col items-center justify-center gap-1 min-w-[52px] min-h-[52px] py-1.5 rounded-xl transition-all duration-250 touch-manipulation active:scale-[0.97] opacity-100";
+  "flex flex-col items-center justify-center gap-0.5 min-w-[44px] min-h-[44px] py-1 px-2 rounded-full transition-all duration-250 touch-manipulation active:scale-[0.96] opacity-100";
 
 const SCROLL_TOP_THRESHOLD = 16;
 function getCategoryFromRoute(pathname: string, sortParam: string | null): MarketCategoryId {
@@ -138,22 +138,22 @@ export default function Header({ showCategoryStrip = true }: HeaderProps) {
             aria-label="Categorie mercati"
           >
             <div className="mx-auto max-w-7xl px-4">
-              <div className="flex h-11 items-center overflow-x-auto whitespace-nowrap scrollbar-hide">
+              <div className="flex h-9 items-center overflow-x-auto whitespace-nowrap scrollbar-hide">
                 {MARKET_CATEGORIES.map((category, index) => {
                   const isActive = activeCategoryId === category.id;
                   return (
                     <span key={category.id} className="inline-flex items-center">
                       {index > 0 && (
-                        <span className="mx-2.5 text-white/30" aria-hidden>
+                        <span className="mx-2 text-white/25 text-[10px]" aria-hidden>
                           &bull;
                         </span>
                       )}
                       <Link
                         href={category.href}
-                        className={`relative inline-flex items-center rounded-full border px-2.5 py-1 text-[15.5px] font-medium tracking-[0.01em] transition-all duration-200 ${
+                        className={`relative inline-flex items-center rounded-full border px-2 py-0.5 text-[13px] font-medium tracking-[0.01em] transition-all duration-200 ${
                           isActive
-                            ? "border-white/30 bg-white/10 text-white shadow-[0_8px_20px_-12px_rgba(128,250,255,0.55)]"
-                            : "border-transparent bg-transparent text-white/78 hover:border-white/20 hover:bg-white/6 hover:text-white/95"
+                            ? "border-white/25 bg-white/10 text-white shadow-[0_6px_16px_-10px_rgba(128,250,255,0.5)]"
+                            : "border-transparent bg-transparent text-white/60 hover:border-white/15 hover:bg-white/5 hover:text-white/85"
                         }`}
                         aria-current={isActive ? "true" : undefined}
                       >
@@ -191,10 +191,10 @@ export default function Header({ showCategoryStrip = true }: HeaderProps) {
                   className={`${bottomLinkClass} ${active ? "nav-item-neon-active" : ""}`}
                   aria-label={label}
                 >
-                  <span className="inline-flex shrink-0 overflow-visible items-center justify-center w-6 h-6 min-w-[24px] min-h-[24px] aspect-square">
-                    <NavIcon className="w-6 h-6 min-w-[24px] min-h-[24px] flex-shrink-0 aspect-square" strokeWidth={1.8} />
+                  <span className="inline-flex shrink-0 overflow-visible items-center justify-center w-[22px] h-[22px] min-w-[22px] min-h-[22px] aspect-square">
+                    <NavIcon className="w-[22px] h-[22px] min-w-[22px] min-h-[22px] flex-shrink-0 aspect-square" strokeWidth={1.7} />
                   </span>
-                  <span className="nav-bottom-label shrink-0 opacity-100" data-nav-label style={{ display: 'block', visibility: 'visible', opacity: 1, color: '#ffffff', fontSize: 10, lineHeight: 1.2 }}>{label}</span>
+                  <span className="nav-bottom-label shrink-0 opacity-100" data-nav-label style={{ display: 'block', visibility: 'visible', opacity: 1, color: '#ffffff', fontSize: 9, lineHeight: 1.2 }}>{label}</span>
                 </Link>
               );
             })}
@@ -207,8 +207,8 @@ export default function Header({ showCategoryStrip = true }: HeaderProps) {
               className={`${bottomLinkClass} ${isActive("/exchange") ? "nav-item-neon-active" : ""}`}
               aria-label="Exchange"
             >
-              <IconNavExchange className="w-6 h-6 shrink-0 flex-shrink-0" strokeWidth={1.8} />
-              <span className="nav-bottom-label shrink-0 opacity-100" data-nav-label style={{ display: 'block', visibility: 'visible', opacity: 1, color: '#ffffff', fontSize: 10, lineHeight: 1.2 }}>Exchange</span>
+              <IconNavExchange className="w-[22px] h-[22px] shrink-0 flex-shrink-0" strokeWidth={1.7} />
+              <span className="nav-bottom-label shrink-0 opacity-100" data-nav-label style={{ display: 'block', visibility: 'visible', opacity: 1, color: '#ffffff', fontSize: 9, lineHeight: 1.2 }}>Exchange</span>
             </Link>
           </div>
 
@@ -225,8 +225,8 @@ export default function Header({ showCategoryStrip = true }: HeaderProps) {
                   className={`${bottomLinkClass} ${active ? "nav-item-neon-active" : ""}`}
                   aria-label={label}
                 >
-                  <NavIcon className="w-6 h-6 shrink-0 flex-shrink-0" strokeWidth={1.8} />
-                  <span className="nav-bottom-label shrink-0 opacity-100" data-nav-label style={{ display: 'block', visibility: 'visible', opacity: 1, color: '#ffffff', fontSize: 10, lineHeight: 1.2 }}>{label}</span>
+                  <NavIcon className="w-[22px] h-[22px] shrink-0 flex-shrink-0" strokeWidth={1.7} />
+                  <span className="nav-bottom-label shrink-0 opacity-100" data-nav-label style={{ display: 'block', visibility: 'visible', opacity: 1, color: '#ffffff', fontSize: 9, lineHeight: 1.2 }}>{label}</span>
                 </Link>
               );
             })}

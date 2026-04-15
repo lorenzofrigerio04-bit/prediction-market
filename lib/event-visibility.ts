@@ -13,9 +13,9 @@ export const PUBLIC_EVENT_VISIBILITY: Prisma.EventWhereInput = {
 };
 
 /**
- * Solo eventi da feed notizie (Home): sourceType null o NEWS.
- * Gli eventi sport (sourceType=SPORT) non devono mai comparire in homepage; sono solo in /sport.
+ * Feed Home: sourceType null, NEWS, o SPORT.
+ * Gli eventi SPORT (calcio FIE) compaiono sia qui che in /sport.
  */
 export const HOME_FEED_SOURCE_TYPE: Prisma.EventWhereInput = {
-  OR: [{ sourceType: null }, { sourceType: "NEWS" }],
+  OR: [{ sourceType: null }, { sourceType: "NEWS" }, { sourceType: "SPORT" }],
 };

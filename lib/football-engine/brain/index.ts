@@ -11,7 +11,7 @@
  * Output: BrainOutput (verified events ready for FORGE to structure as markets)
  */
 
-import type { MatchContext, RadarOutput } from "../types";
+import type { FootballSignal, MatchContext, RadarOutput } from "../types";
 import {
   runAnalyst,
   runCreative,
@@ -105,7 +105,7 @@ export async function runBrain(
   console.log("[BRAIN] Step 2/4: Running Creative...");
   let creativeEvents: CreativeEvent[] = [];
   try {
-    creativeEvents = await runCreative(matches, insights);
+    creativeEvents = await runCreative(matches, insights, radarOutput.floatingSignals);
   } catch (err) {
     console.error("[BRAIN] Creative failed:", err instanceof Error ? err.message : err);
   }

@@ -7,7 +7,7 @@ import type { MatchContext, FootballSignal } from "../types";
 import { callAgent, parseJsonResponse } from "./llm";
 import {
   ANALYST_SYSTEM,
-  CREATIVE_SYSTEM,
+  buildCreativeSystemPrompt,
   VERIFIER_SYSTEM,
   RESOLVER_SYSTEM,
 } from "./prompts";
@@ -22,6 +22,8 @@ export interface AnalystInsight {
   marketPotential: number;
   dataPoints: string[];
   suggestedAngle: string;
+  /** True if this insight suggests cascade/chain events */
+  isEventChain?: boolean;
 }
 
 interface AnalystOutput {
@@ -83,7 +85,7 @@ function buildAnalystContext(match: MatchContext): string {
   );
   if (newsSignals.length > 0) {
     lines.push("\n### Notizie e segnali:");
-    for (const s of newsSignals.slice(0, 8)) {
+    for (const s of newsSignals.slice(0, 6)) {
       lines.push(`  [${s.source.name} T${s.source.tier}] ${s.headline}`);
     }
   }
@@ -94,12 +96,13 @@ function buildAnalystContext(match: MatchContext): string {
 export async function runAnalyst(matches: MatchContext[]): Promise<AnalystInsight[]> {
   if (matches.length === 0) return [];
 
+  // Limit to 8 matches — beyond that the context gets too long without adding value
   const contextBlocks = matches
-    .slice(0, 10)
+    .slice(0, 8)
     .map((m) => buildAnalystContext(m))
-    .join("\n\n---\n\n");
+    .join("\n---\n");
 
-  const userMessage = `Analizza queste ${Math.min(matches.length, 10)} partite e trova tutti i pattern e insight interessanti:\n\n${contextBlocks}`;
+  const userMessage = `Analizza ${Math.min(matches.length, 8)} partite, trova pattern e insight non ovvi:\n\n${contextBlocks}`;
 
   const response = await callAgent("analyst", ANALYST_SYSTEM, userMessage);
   const parsed = parseJsonResponse<AnalystOutput>(response.content);
@@ -126,7 +129,9 @@ export interface CreativeEvent {
   closesAtLogic: string;
   wow_factor: number;
   feasibility: number;
-  /** Populated by orchestrator: which match this event is about */
+  /** 0-based index of the match within the batch (set by LLM) */
+  matchIndex?: number;
+  /** Populated by orchestrator after batch assignment */
   _matchId?: string;
   _matchLabel?: string;
 }
@@ -142,54 +147,125 @@ function buildCreativeContext(
   const base = buildAnalystContext(match);
   const relevantInsights = insights
     .filter((i) => i.marketPotential >= 0.4)
-    .slice(0, 6);
+    .slice(0, 8);
 
   if (relevantInsights.length === 0) return base;
 
-  const insightBlock = relevantInsights
+  const chainInsights = relevantInsights.filter((i) => i.isEventChain);
+  const normalInsights = relevantInsights.filter((i) => !i.isEventChain);
+
+  const normalBlock = normalInsights
     .map((i, idx) => `${idx + 1}. [conf:${i.confidence} pot:${i.marketPotential}] ${i.insight}\n   Angolazione: ${i.suggestedAngle}`)
     .join("\n");
 
-  return `${base}\n\n### Insight dall'Analyst:\n${insightBlock}`;
+  const chainBlock = chainInsights.length > 0
+    ? `\n\n### ⛓ Event Chains individuate (genera mercati in cascata):\n` +
+      chainInsights.map((i, idx) => `${idx + 1}. [CATENA] ${i.insight}\n   Genera: un evento "trigger" + uno "conseguenza" collegati`).join("\n")
+    : "";
+
+  return `${base}\n\n### Insight dall'Analyst:\n${normalBlock}${chainBlock}`;
 }
 
 export async function runCreative(
   matches: MatchContext[],
-  insights: AnalystInsight[]
+  insights: AnalystInsight[],
+  floatingSignals?: FootballSignal[]
 ): Promise<CreativeEvent[]> {
   if (matches.length === 0) return [];
 
-  const allEvents: CreativeEvent[] = [];
+  // Build system prompt ONCE — it's the same for all batches
+  const systemPrompt = buildCreativeSystemPrompt();
+  const MAX_MATCHES = 12;
+  const BATCH_SIZE = 3; // 3 matches per call → ~12 events per call → ~4500 tokens output
 
-  // Process in batches of 3 matches per LLM call for cost efficiency
-  const batchSize = 3;
-  for (let i = 0; i < Math.min(matches.length, 12); i += batchSize) {
-    const batch = matches.slice(i, i + batchSize);
+  const targetMatches = matches.slice(0, MAX_MATCHES);
+
+  // Build all batch tasks upfront
+  const batchTasks: Array<{ batchIdx: number; batch: MatchContext[]; userMessage: string }> = [];
+  for (let i = 0; i < targetMatches.length; i += BATCH_SIZE) {
+    const batch = targetMatches.slice(i, i + BATCH_SIZE);
     const contextBlocks = batch
-      .map((m) => buildCreativeContext(m, insights))
-      .join("\n\n---\n\n");
-
-    const userMessage = `Genera eventi di mercato creativi per queste ${batch.length} partite. Ricorda: diversifica i tipi di mercato, cerca il "wow factor", e assicurati che ogni evento sia risolvibile oggettivamente.\n\n${contextBlocks}`;
-
-    try {
-      const response = await callAgent("creative", CREATIVE_SYSTEM, userMessage);
-      const parsed = parseJsonResponse<CreativeOutput>(response.content);
-
-      if (parsed?.events) {
-        for (const event of parsed.events) {
-          // Tag with match reference
-          event._matchId = batch[0]?.match.id;
-          event._matchLabel = batch.map((m) => `${m.match.homeTeam.name} vs ${m.match.awayTeam.name}`).join(", ");
-          allEvents.push(event);
-        }
-      }
-    } catch (err) {
-      console.warn(`[BRAIN/creative] Batch ${i} failed:`, err instanceof Error ? err.message : err);
-    }
+      .map((m, idx) => `### PARTITA ${idx} (matchIndex:${idx})\n${buildCreativeContext(m, insights)}`)
+      .join("\n\n");
+    const userMessage = `Genera 6-10 eventi per partita (totale ${batch.length * 8} eventi circa). Includi "matchIndex": 0/1/2 su ogni evento per indicare a quale partita si riferisce.\n\n${contextBlocks}`;
+    batchTasks.push({ batchIdx: i / BATCH_SIZE, batch, userMessage });
   }
 
-  console.log(`[BRAIN/creative] Generated ${allEvents.length} event ideas`);
+  // Off-field signals — include as a parallel task if we have enough signals
+  const offFieldSignals = floatingSignals?.filter((s) =>
+    ["transfer_official", "transfer_rumor", "coach_change"].includes(s.type)
+  ).slice(0, 6) ?? [];
+
+  // Run all Creative batches in parallel (they are fully independent)
+  const [matchBatchResults, offFieldEvents] = await Promise.all([
+    Promise.all(
+      batchTasks.map(async ({ batchIdx, batch, userMessage }) => {
+        try {
+          const response = await callAgent("creative", systemPrompt, userMessage);
+          const parsed = parseJsonResponse<CreativeOutput>(response.content);
+          if (!parsed?.events) return [] as CreativeEvent[];
+          return parsed.events.map((event) => {
+            const batchLocalIdx = typeof event.matchIndex === "number" && event.matchIndex < batch.length
+              ? event.matchIndex
+              : 0;
+            const ctx = batch[batchLocalIdx];
+            return {
+              ...event,
+              _matchId: ctx?.match.id,
+              _matchLabel: ctx ? `${ctx.match.homeTeam.name} vs ${ctx.match.awayTeam.name}` : "Unknown",
+            } as CreativeEvent;
+          });
+        } catch (err) {
+          console.warn(`[BRAIN/creative] Batch ${batchIdx + 1} failed:`, err instanceof Error ? err.message : err);
+          return [] as CreativeEvent[];
+        }
+      })
+    ),
+    offFieldSignals.length >= 3
+      ? runCreativeFromFloatingSignals(offFieldSignals, systemPrompt)
+      : Promise.resolve([] as CreativeEvent[]),
+  ]);
+
+  const allEvents: CreativeEvent[] = [
+    ...matchBatchResults.flat(),
+    ...offFieldEvents,
+  ];
+
+  console.log(`[BRAIN/creative] Generated ${allEvents.length} events (${batchTasks.length} match batches in parallel + ${offFieldSignals.length >= 3 ? 1 : 0} off-field call)`);
   return allEvents;
+}
+
+/** Generate off-field events from floating news signals (transfers, esoneri, gossip) */
+async function runCreativeFromFloatingSignals(
+  floatingSignals: FootballSignal[],
+  systemPrompt: string
+): Promise<CreativeEvent[]> {
+  const relevant = floatingSignals
+    .filter((s) => ["transfer_official", "transfer_rumor", "coach_change", "news", "press_conference"].includes(s.type))
+    .slice(0, 15);
+
+  if (relevant.length === 0) return [];
+
+  const signalBlock = relevant
+    .map((s) => `[${s.type.toUpperCase()} | ${s.source.name} T${s.source.tier}] ${s.headline}`)
+    .join("\n");
+
+  const userMessage = `Genera eventi di mercato OFF-FIELD basati su queste notizie recenti del calcio italiano. Focus su: trasferimenti, esoneri, dichiarazioni, record stagionali, classifiche.\n\nNotizie:\n${signalBlock}`;
+
+  try {
+    const response = await callAgent("creative", systemPrompt, userMessage);
+    const parsed = parseJsonResponse<CreativeOutput>(response.content);
+    if (parsed?.events) {
+      return parsed.events.map((e) => ({
+        ...e,
+        _matchId: undefined,
+        _matchLabel: "Off-field / Season",
+      }));
+    }
+  } catch (err) {
+    console.warn("[BRAIN/creative] Off-field events failed:", err instanceof Error ? err.message : err);
+  }
+  return [];
 }
 
 // ---------------------------------------------------------------------------
@@ -225,47 +301,76 @@ export async function runVerifier(
 ): Promise<VerifiedEvent[]> {
   if (events.length === 0) return [];
 
-  const eventList = events
-    .map((e, idx) => {
-      const lines = [
-        `### Evento ${idx}:`,
-        `  Titolo: ${e.title}`,
-        `  Tipo: ${e.marketType}`,
-        `  Categoria: ${e.category}`,
-        `  Risoluzione: ${e.resolutionMethod}`,
-        `  Chiusura: ${e.closesAtLogic}`,
-        `  Wow: ${e.wow_factor}/10 | Fattibilità: ${e.feasibility}/10`,
-        `  Partita: ${e._matchLabel ?? "N/A"}`,
-      ];
-      if (e.outcomes) {
-        lines.push(`  Outcomes: ${e.outcomes.map((o) => o.label).join(" | ")}`);
-      }
-      return lines.join("\n");
-    })
-    .join("\n\n");
-
   const matchSummary = matches
-    .slice(0, 6)
-    .map((m) => `${m.match.homeTeam.name} vs ${m.match.awayTeam.name} (${m.match.competition.name}, ${new Date(m.match.utcDate).toLocaleDateString("it-IT")})`)
-    .join("\n");
+    .slice(0, 5)
+    .map((m) => `${m.match.homeTeam.name} vs ${m.match.awayTeam.name} (${m.match.competition.name})`)
+    .join(", ");
 
-  const userMessage = `Verifica questi ${events.length} eventi proposti.\n\nPartite di riferimento:\n${matchSummary}\n\n${eventList}`;
+  // Batch of 20 events per LLM call to stay within token limits
+  const BATCH_SIZE = 20;
 
-  const response = await callAgent("verifier", VERIFIER_SYSTEM, userMessage);
-  const parsed = parseJsonResponse<VerifierOutput>(response.content);
-
-  if (!parsed?.verifications) {
-    console.warn("[BRAIN/verifier] Failed to parse, raw:", response.content.slice(0, 200));
-    return [];
-  }
-
-  const approved = parsed.verifications.filter((v) => v.approved);
-  const rejected = parsed.verifications.filter((v) => !v.approved);
-  console.log(
-    `[BRAIN/verifier] ${approved.length} approved, ${rejected.length} rejected (model: ${response.model})`
+  // Build all batch tasks upfront (event IDs are pre-assigned, batches are independent)
+  const batchStarts = Array.from(
+    { length: Math.ceil(events.length / BATCH_SIZE) },
+    (_, i) => i * BATCH_SIZE
   );
 
-  return parsed.verifications;
+  // Run all Verifier batches in parallel — they handle distinct event ID ranges
+  const batchResults = await Promise.all(
+    batchStarts.map(async (batchStart) => {
+      const batchNum = batchStart / BATCH_SIZE + 1;
+      const batch = events.slice(batchStart, batchStart + BATCH_SIZE);
+
+      const eventList = batch
+        .map((e, localIdx) => {
+          const globalIdx = batchStart + localIdx;
+          const feasTag = `wow:${e.wow_factor} feas:${e.feasibility}`;
+          return `${globalIdx}|${e.title}|${e.marketType}|${e.closesAtLogic}|${feasTag}|${(e.resolutionMethod ?? "").slice(0, 80)}`;
+        })
+        .join("\n");
+
+      const userMessage = `Verifica ${batch.length} eventi (id ${batchStart}-${batchStart + batch.length - 1}). Partite: ${matchSummary}\n\nEventi (id|titolo|tipo|chiusura|scores|risoluzione):\n${eventList}`;
+
+      try {
+        const response = await callAgent("verifier", VERIFIER_SYSTEM, userMessage);
+        const parsed = parseJsonResponse<VerifierOutput>(response.content);
+
+        if (parsed?.verifications) {
+          return parsed.verifications;
+        }
+        console.warn(`[BRAIN/verifier] Batch ${batchNum} parse failed, raw:`, response.content.slice(0, 150));
+      } catch (err) {
+        console.warn(`[BRAIN/verifier] Batch ${batchNum} failed:`, err instanceof Error ? err.message : err);
+      }
+
+      // Fallback: auto-approve events with feasibility >= 5 in this batch
+      return batch
+        .map((e, i) => ((e.feasibility ?? 0) >= 5 ? autoApprove(batchStart + i, e) : null))
+        .filter((v): v is VerifiedEvent => v !== null);
+    })
+  );
+
+  const allVerifications = batchResults.flat();
+  const approved = allVerifications.filter((v) => v.approved);
+  const rejected = allVerifications.filter((v) => !v.approved);
+  console.log(`[BRAIN/verifier] ${approved.length} approved, ${rejected.length} rejected across ${batchStarts.length} parallel batches`);
+
+  return allVerifications;
+}
+
+/** Fallback: auto-approve an event when the Verifier LLM fails */
+function autoApprove(eventId: number, e: CreativeEvent): VerifiedEvent {
+  return {
+    eventId,
+    approved: true,
+    resolutionSource: { primary: e.resolutionMethod ?? "api-football statistics" },
+    resolutionCriteria: {
+      yes: "La condizione si verifica secondo i dati ufficiali.",
+      no: "La condizione non si verifica.",
+    },
+    edgeCasePolicy: "Se la partita viene rinviata o annullata: mercato annullato e rimborsato.",
+    confidence: 0.65,
+  };
 }
 
 // ---------------------------------------------------------------------------

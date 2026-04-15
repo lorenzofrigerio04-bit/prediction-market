@@ -29,6 +29,8 @@ export interface FootballEnginePipelineResult {
   diagnostics: {
     radarMatchCount: number;
     radarFloatingSignalCount: number;
+    radarNewsSignalCount: number;
+    brainMatchesAnalyzed: number;
     brainInsightCount: number;
     brainIdeaCount: number;
     brainApprovedCount: number;
@@ -59,6 +61,12 @@ export async function runFootballEngine(
     `  ✓ ${radarOutput.matches.length} matches, ${radarOutput.floatingSignals.length} floating signals\n`
   );
 
+  // Count news signals for diagnostics
+  const radarNewsSignalCount = radarOutput.matches.reduce(
+    (sum, m) => sum + m.signals.filter((s) => s.type === "news" || s.type === "social").length,
+    0
+  ) + radarOutput.floatingSignals.filter((s) => s.type === "news" || s.type === "social").length;
+
   if (radarOutput.matches.length === 0) {
     console.log("  ⚠ No matches found, pipeline ending early.");
     return emptyResult(startTime);
@@ -78,6 +86,8 @@ export async function runFootballEngine(
       diagnostics: {
         radarMatchCount: radarOutput.matches.length,
         radarFloatingSignalCount: radarOutput.floatingSignals.length,
+        radarNewsSignalCount,
+        brainMatchesAnalyzed: brainOutput.matchesAnalyzed,
         brainInsightCount: brainOutput.insights.length,
         brainIdeaCount: brainOutput.totalIdeas,
         brainApprovedCount: 0,
@@ -108,6 +118,8 @@ export async function runFootballEngine(
     diagnostics: {
       radarMatchCount: radarOutput.matches.length,
       radarFloatingSignalCount: radarOutput.floatingSignals.length,
+      radarNewsSignalCount,
+      brainMatchesAnalyzed: brainOutput.matchesAnalyzed,
       brainInsightCount: brainOutput.insights.length,
       brainIdeaCount: brainOutput.totalIdeas,
       brainApprovedCount: brainOutput.approvedEvents.length,
@@ -125,6 +137,8 @@ function emptyResult(startTime: number): FootballEnginePipelineResult {
     diagnostics: {
       radarMatchCount: 0,
       radarFloatingSignalCount: 0,
+      radarNewsSignalCount: 0,
+      brainMatchesAnalyzed: 0,
       brainInsightCount: 0,
       brainIdeaCount: 0,
       brainApprovedCount: 0,

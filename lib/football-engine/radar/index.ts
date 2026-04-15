@@ -26,6 +26,7 @@ import {
   fetchCurrentSeason,
   type ApiFixture,
 } from "./clients/api-football";
+import { fetchFixtureNewsSignals, fetchFloatingNewsSignals } from "./sources/news-rss";
 import { fetchOddsForSport, extractConsensusProbability } from "./clients/odds-api";
 import {
   normalizeFixture,
@@ -45,8 +46,37 @@ import { getApiSource, buildNewsSignalSource } from "./source-tiers";
 const MAX_LEAGUES_PER_RUN = 12;
 /** Days ahead to look for fixtures */
 const FIXTURE_DAYS_AHEAD = 14;
-/** Max H2H calls per run (expensive, 1 req each) */
-const MAX_H2H_CALLS = 10;
+/** Max H2H calls per run — only for top matches (1 API req each) */
+const MAX_H2H_CALLS = 5;
+
+// ---------------------------------------------------------------------------
+// Season cache (avoid duplicate API calls for the same league)
+// ---------------------------------------------------------------------------
+
+const _seasonCache = new Map<number, number>();
+
+/**
+ * Fallback when API-Football cannot determine the current season.
+ * Football seasons run Aug-May. API uses the start year.
+ * April 2026 → month=3 < 7 → season = 2026-1 = 2025 (2025-2026 season).
+ */
+function getSeasonFallback(): number {
+  const now = new Date();
+  const month = now.getMonth(); // 0-indexed
+  const year = now.getFullYear();
+  return month >= 7 ? year : year - 1;
+}
+
+async function getCurrentSeasonCached(leagueId: number): Promise<number> {
+  if (_seasonCache.has(leagueId)) return _seasonCache.get(leagueId)!;
+  const apiSeason = await safeCall(
+    () => fetchCurrentSeason(leagueId),
+    `season-${leagueId}`
+  );
+  const season = apiSeason ?? getSeasonFallback();
+  _seasonCache.set(leagueId, season);
+  return season;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -108,11 +138,7 @@ async function fetchAllFixtures(
 
   // Batch by 3 concurrent requests to respect rate limits (10 req/min on free)
   const results = await mapConcurrent(leagues, 3, async (comp) => {
-    const season = await safeCall(
-      () => fetchCurrentSeason(comp.apiFootballId!),
-      `season ${comp.name}`
-    );
-    if (!season) return [];
+    const season = await getCurrentSeasonCached(comp.apiFootballId!);
 
     await sleep(200);
     const fixtures = await safeCall(
@@ -181,11 +207,7 @@ async function fetchAllInjuries(
     .slice(0, 8);
 
   for (const comp of leagues) {
-    const season = await safeCall(
-      () => fetchCurrentSeason(comp.apiFootballId!),
-      `injury-season ${comp.name}`
-    );
-    if (!season) continue;
+    const season = await getCurrentSeasonCached(comp.apiFootballId!);
 
     const injuries = await safeCall(
       () => fetchInjuries({ league: comp.apiFootballId!, season }),
@@ -221,8 +243,11 @@ function computeInterestScore(
   // Tier bonus
   score += match.competition.tier === 1 ? 30 : match.competition.tier === 2 ? 15 : 5;
 
-  // Signal density
-  score += Math.min(30, signals.length * 5);
+  // Signal density — news/social signals count more (3pts each vs 2pts for others)
+  const newsSignals = signals.filter((s) => s.type === "news" || s.type === "social");
+  const otherSignals = signals.filter((s) => s.type !== "news" && s.type !== "social");
+  score += Math.min(20, newsSignals.length * 3);
+  score += Math.min(15, otherSignals.length * 2);
 
   // Odds: closer odds = more interesting match
   if (odds) {
@@ -273,6 +298,18 @@ function findOddsForMatch(
 // Main: runRadar
 // ---------------------------------------------------------------------------
 
+/** Like withTimeout but resolves to empty array on timeout instead of rejecting */
+async function withTimeoutSafe<T>(promise: Promise<T[]>, ms: number): Promise<T[]> {
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T[]>((resolve) => setTimeout(() => resolve([]), ms)),
+    ]);
+  } catch {
+    return [];
+  }
+}
+
 export interface RadarOptions {
   /** Max competition tier to include (1-4). Default: 2 */
   maxTier?: number;
@@ -282,6 +319,8 @@ export interface RadarOptions {
   fetchInjuriesEnabled?: boolean;
   /** Whether to fetch H2H for top matches. Default: true */
   fetchH2HEnabled?: boolean;
+  /** Whether to fetch news/RSS signals. Default: true */
+  fetchNewsEnabled?: boolean;
 }
 
 export async function runRadar(options?: RadarOptions): Promise<RadarOutput> {
@@ -289,25 +328,29 @@ export async function runRadar(options?: RadarOptions): Promise<RadarOutput> {
   const shouldFetchOdds = options?.fetchOddsEnabled ?? true;
   const shouldFetchInjuries = options?.fetchInjuriesEnabled ?? true;
   const shouldFetchH2H = options?.fetchH2HEnabled ?? true;
+  const shouldFetchNews = options?.fetchNewsEnabled ?? true;
 
   const competitions = getCompetitionsByTier(maxTier);
 
   console.log(`[RADAR] Starting scan — ${competitions.length} competitions (tier ≤ ${maxTier})`);
 
-  // Phase 1: Fetch fixtures + odds + injuries in parallel
-  const [fixturesResult, oddsMap, injuryData] = await Promise.all([
+  // Phase 1: Fetch fixtures + odds + injuries + floating news in parallel
+  const [fixturesResult, oddsMap, injuryData, floatingNews] = await Promise.all([
     fetchAllFixtures(competitions),
     shouldFetchOdds ? fetchAllOdds(competitions) : Promise.resolve(new Map()),
     shouldFetchInjuries
       ? fetchAllInjuries(competitions)
       : Promise.resolve({ signals: [] as FootballSignal[], byTeam: new Map<string, PlayerInfo[]>() }),
+    shouldFetchNews
+      ? withTimeoutSafe(fetchFloatingNewsSignals(), 8000)
+      : Promise.resolve([] as FootballSignal[]),
   ]);
 
   console.log(
-    `[RADAR] Fetched: ${fixturesResult.fixtures.length} fixtures, ${oddsMap.size} odds, ${injuryData.signals.length} injuries`
+    `[RADAR] Fetched: ${fixturesResult.fixtures.length} fixtures, ${oddsMap.size} odds, ${injuryData.signals.length} injuries, ${floatingNews.length} floating news`
   );
 
-  // Phase 2: Build MatchContext for each fixture
+  // Phase 2: Build MatchContext for each fixture (WITHOUT news — done after sort)
   const matches: MatchContext[] = [];
   let h2hCalls = 0;
 
@@ -369,6 +412,47 @@ export async function runRadar(options?: RadarOptions): Promise<RadarOutput> {
   // Sort by interest score (most interesting first)
   matches.sort((a, b) => b.interestScore - a.interestScore);
 
+  // Phase 3: Fetch news ONLY for the top N matches (avoid N*100 RSS calls)
+  const NEWS_FETCH_LIMIT = 8;
+  if (shouldFetchNews) {
+    const topMatches = matches.slice(0, NEWS_FETCH_LIMIT);
+    console.log(`[RADAR] Fetching news for top ${topMatches.length} matches in parallel...`);
+
+    // Parallel fetch with 4s timeout per fixture to cap total time
+    const newsResults = await Promise.allSettled(
+      topMatches.map((ctx) =>
+        withTimeout(
+          fetchFixtureNewsSignals(
+            ctx.match.homeTeam.name,
+            ctx.match.awayTeam.name,
+            ctx.match.competition.name,
+            ctx.match.utcDate
+          ),
+          4000
+        )
+      )
+    );
+
+    for (let i = 0; i < topMatches.length; i++) {
+      const result = newsResults[i];
+      if (result.status === "fulfilled" && result.value.length > 0) {
+        topMatches[i].signals.push(...result.value);
+        // Recompute interest score now that we have news signals
+        topMatches[i].interestScore = computeInterestScore(
+          topMatches[i].match,
+          topMatches[i].signals,
+          topMatches[i].odds
+        );
+        // Update themes
+        topMatches[i].themes = extractThemes(topMatches[i].signals);
+      }
+    }
+
+    // Re-sort after news enrichment
+    matches.sort((a, b) => b.interestScore - a.interestScore);
+    console.log(`[RADAR] News enrichment done.`);
+  }
+
   console.log(
     `[RADAR] Built context for ${matches.length} matches. Top 3: ${matches
       .slice(0, 3)
@@ -379,8 +463,21 @@ export async function runRadar(options?: RadarOptions): Promise<RadarOutput> {
   return {
     timestamp: new Date().toISOString(),
     matches,
-    floatingSignals: [],
+    floatingSignals: floatingNews,
   };
+}
+
+/**
+ * Wraps a promise with a max timeout. Resolves with the original value or
+ * rejects with a timeout error if the promise takes too long.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)
+    ),
+  ]);
 }
 
 // ---------------------------------------------------------------------------

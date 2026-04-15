@@ -42,13 +42,15 @@ export async function POST(request: NextRequest) {
 
     let dryRun = false;
     let maxTier = 2;
-    let maxMatches = 15;
+    let maxMatches = 10;
+    let skipResolver = true;
 
     try {
       const body = await request.json().catch(() => ({}));
       if (typeof body?.dryRun === "boolean") dryRun = body.dryRun;
       if (typeof body?.maxTier === "number") maxTier = Math.min(4, Math.max(1, body.maxTier));
-      if (typeof body?.maxMatches === "number") maxMatches = Math.min(30, Math.max(1, body.maxMatches));
+      if (typeof body?.maxMatches === "number") maxMatches = Math.min(20, Math.max(1, body.maxMatches));
+      if (typeof body?.skipResolver === "boolean") skipResolver = body.skipResolver;
     } catch {
       // ignore
     }
@@ -58,16 +60,27 @@ export async function POST(request: NextRequest) {
     // ── Run the Football Intelligence Engine ──────────────────
     const engineResult = await runFootballEngine({
       radar: { maxTier, fetchOddsEnabled: true, fetchH2HEnabled: true },
-      brain: { maxMatches, minInterestScore: 15 },
+      brain: { maxMatches, minInterestScore: 5, skipResolver },
       dryRun,
     });
 
     if (engineResult.candidates.length === 0) {
+      const d = engineResult.diagnostics as Record<string, number> | undefined;
+      const hint =
+        d?.radarMatchCount === 0
+          ? "RADAR ha trovato 0 partite. Verifica API_FOOTBALL_KEY e che ci siano partite nei prossimi 14 giorni."
+          : d?.brainMatchesAnalyzed === 0
+            ? `BRAIN ha ricevuto 0 partite (filtro interest score troppo alto). RADAR ne aveva ${d?.radarMatchCount ?? "?"}.`
+            : d?.brainIdeaCount === 0
+              ? `Creative ha generato 0 idee su ${d?.brainMatchesAnalyzed ?? "?"} partite. Controlla OPENAI_API_KEY/ANTHROPIC_API_KEY.`
+              : d?.brainApprovedCount === 0
+                ? `Verifier ha rifiutato tutte le ${d?.brainIdeaCount ?? "?"} idee. Il modello potrebbe essere eccessivamente conservativo.`
+                : "Football Intelligence Engine ha prodotto 0 candidati dopo FORGE/dedup.";
       return NextResponse.json({
         success: true,
         dryRun,
         created: 0,
-        hint: "Il Football Intelligence Engine non ha prodotto candidati. Possibili cause: nessuna partita interessante nel periodo, tutti gli eventi già esistenti, o BRAIN non ha approvato nessuna idea.",
+        hint,
         diagnostics: engineResult.diagnostics,
       });
     }

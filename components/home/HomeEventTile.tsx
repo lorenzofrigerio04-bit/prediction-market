@@ -39,6 +39,8 @@ export interface HomeEventTileProps {
   outcomes?: Array<{ key: string; label: string }> | null;
   /** Probabilità per singola opzione nei mercati multi-outcome */
   outcomeProbabilities?: Array<{ key: string; label: string; probabilityPct: number }> | null;
+  /** Generato dal Football Intelligence Engine (FIE 2.0) — mostra contorno illuminato */
+  isFie?: boolean;
 }
 
 const MULTI_OUTCOME_ACCENT_CLASSES = [
@@ -75,6 +77,7 @@ export default function HomeEventTile({
   marketType,
   outcomes,
   outcomeProbabilities,
+  isFie = false,
 }: HomeEventTileProps) {
   const [now, setNow] = useState(0);
   useEffect(() => {
@@ -148,7 +151,7 @@ export default function HomeEventTile({
     <Link
       href={`/events/${id}`}
       onClick={onNavigate}
-      className={`home-event-tile group relative block ${minH} ${flexFill} overflow-hidden rounded-2xl border border-white/20 dark:border-white/10 bg-white/5 dark:bg-black/20 backdrop-blur-sm transition-all duration-300 hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg active:scale-[0.99] shadow-[0_2px_12px_rgba(0,0,0,0.08)]`}
+      className={`home-event-tile group relative block ${minH} ${flexFill} overflow-hidden rounded-2xl border border-white/20 dark:border-white/10 bg-white/5 dark:bg-black/20 backdrop-blur-sm transition-all duration-300 hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg active:scale-[0.99] shadow-[0_2px_12px_rgba(0,0,0,0.08)]${isFie ? " fie-glow" : ""}`}
     >
       {/* Sfondo: foto AI se disponibile, altrimenti img categoria, fallback gradiente */}
       <div

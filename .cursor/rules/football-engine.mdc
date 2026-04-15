@@ -28,75 +28,69 @@ lib/football-engine/
 ├── index.ts              ← Orchestratore: runFootballEngine()
 ├── types.ts              ← Tipi condivisi (FootballSignal, Match, MatchContext, RadarOutput)
 ├── competitions.ts       ← 28 campionati su 4 tier (Serie A, CL, EL, etc.)
-├── radar/                ← LAYER 1: raccoglie dati da API-Football, Odds API, RSS
-├── brain/                ← LAYER 2: 4 agenti AI (Analyst, Creative, Verifier, Resolver)
-├── forge/                ← LAYER 3: struttura eventi in Candidate[] per il publisher
-└── sentinel/             ← LAYER 4: monitoring live + risoluzione (DA IMPLEMENTARE)
+├── radar/
+│   ├── index.ts          ← Orchestratore RADAR (fixtures + odds + injuries + news)
+│   ├── seasonal.ts       ← Seasonal Intelligence: fase calendario → creative hints
+│   ├── source-tiers.ts   ← Journalist Tier System (Tier 1-3)
+│   ├── normalizers.ts    ← API-Football → FootballSignal/Match
+│   ├── clients/
+│   │   ├── api-football.ts  ← Client API-Football v3
+│   │   └── odds-api.ts      ← Client The Odds API v4
+│   └── sources/
+│       └── news-rss.ts   ← Google News RSS + Reddit RSS + feed italiani
+├── brain/
+│   ├── index.ts          ← Orchestratore BRAIN: Analyst → Creative → Verifier → [Resolver]
+│   ├── agents.ts         ← Implementazione 4 agenti AI
+│   ├── llm.ts            ← Astrazione LLM (OpenAI + Anthropic + fallback)
+│   └── prompts.ts        ← System prompts (buildCreativeSystemPrompt() inietta contesto stagionale)
+└── forge/
+    ├── index.ts          ← FORGE: BrainOutput → Candidate[] (context-aware timing)
+    └── market-templates.ts ← 14 template con edge cases e resolution criteria
 ```
 
-Flusso: RADAR → BRAIN → FORGE → publisher esistente (`lib/event-gen-v2/publisher.ts`)
+## Layer del pipeline
 
-Il FORGE produce `Candidate[]` **identici** a quelli della pipeline legacy — non modificare il publisher esistente.
+```
+RADAR → BRAIN → FORGE → SENTINEL (TODO)
+```
 
-## Agenti AI nel BRAIN
+1. **RADAR**: raccoglie dati (API-Football + The Odds API + News RSS + Reddit) → `RadarOutput`
+2. **BRAIN**: 4 agenti AI → `BrainOutput` (Analyst → Creative → Verifier → Resolver)
+3. **FORGE**: struttura eventi in `Candidate[]` per il publisher
+4. **SENTINEL**: (da implementare) monitoraggio live + risoluzione automatica
 
-| Agente | Modello | Ruolo |
-|--------|---------|-------|
-| Analyst | Claude Sonnet | Trova pattern e correlazioni nei dati RADAR |
-| Creative | GPT-4o (→ Claude fallback) | Genera idee evento creative e diversificate |
-| Verifier | Claude Sonnet | Valida fattibilità, fonti risoluzione, edge cases |
-| Resolver | GPT-4o-mini | Pre-computa strategia risoluzione esatta |
+## Convenzioni critiche
 
-Il file `lib/football-engine/brain/llm.ts` gestisce il fallback automatico. Se OpenAI è in quota (429) usa Claude, e viceversa.
+- **Tipi**: usa sempre i tipi da `lib/football-engine/types.ts` — non ridefinire
+- **Season cache**: usa `getCurrentSeasonCached()` in radar/index.ts (non chiamare `fetchCurrentSeason` direttamente fuori dal RADAR)
+- **Modello Claude**: configurabile via `ANTHROPIC_MODEL` (default: `claude-3-5-sonnet-20241022`)
+- **Admin defaults**: `maxMatches=5`, `skipResolver=true`, `minInterestScore=10` per evitare timeout
+- **floatingSignals**: ora popolati con news RSS italiane (Gazzetta, Sky, etc.) — non lasciarli vuoti
+- **Seasonal context**: `buildCreativeSystemPrompt()` inietta automaticamente la fase stagionale nel Creative agent
 
 ## Variabili d'ambiente necessarie
 
 ```
-API_FOOTBALL_KEY        # api-sports.io — piano Pro ($19/mese), OBBLIGATORIO
-FOOTBALL_DATA_ORG_API_TOKEN  # football-data.org — gratuito, già attivo
-ODDS_API_KEY            # The Odds API — gratuito, già attivo
-OPENAI_API_KEY          # GPT-4o per Creative — può essere in quota, fallback Claude
-ANTHROPIC_API_KEY       # Claude Sonnet per Analyst/Verifier — già attivo
+API_FOOTBALL_KEY=         # OBBLIGATORIA — api-sports.io Pro plan ($19/mese)
+ANTHROPIC_API_KEY=        # OBBLIGATORIA — console.anthropic.com
+FOOTBALL_DATA_ORG_API_TOKEN=  # OBBLIGATORIA — football-data.org
+OPENAI_API_KEY=           # Raccomandata — per Creative Agent (GPT-4o)
+ODDS_API_KEY=             # Raccomandata — the-odds-api.com
+ANTHROPIC_MODEL=          # Opzionale — override modello Claude (default: claude-3-5-sonnet-20241022)
 ```
 
-## Endpoint admin
+## Cosa manca (TODO prioritizzato)
 
-`POST /api/admin/run-football-engine` — lancia la pipeline completa
-Body: `{ dryRun?: boolean, maxTier?: 1-4, maxMatches?: number }`
+1. **SENTINEL (Fase 4)** — risoluzione automatica + live monitoring
+2. **Cron dedicato FIE** — job automatico ogni 6-12h
+3. **Standings nel contesto BRAIN** — arricchisce l'Analyst con classifica aggiornata
+4. **Twitter/Apify** — monitoring Fabrizio Romano, Di Marzio per trasferimenti real-time
+5. **OpenAI crediti** — ricaricare per usare GPT-4o come Creative primario
 
-L'admin dashboard (`app/admin/page.tsx`) ha un doppio pannello con tab:
-- Tab "Sport 2.0 — Football Intelligence Engine" (default, verde)
-- Tab "Pipeline Legacy" (grigio, tutti i vecchi pulsanti)
+## Entry point per run manuale
 
-## Campionati
+- Admin dashboard: `/admin` → tab "Sport 2.0 — Football Intelligence Engine"
+- API: `POST /api/admin/run-football-engine` con body `{ dryRun, maxTier, maxMatches, skipResolver }`
+- Script locale: `npx ts-node -r dotenv/config scripts/test-football-engine.ts`
 
-Tier 1 (copertura totale): Serie A (135), Champions League (2), Europa League (3), Conference League (848), Premier League (39), La Liga (140), Bundesliga (78), Ligue 1 (61)
-
-I numeri sono gli `apiFootballId` per API-Football.
-
-## Convenzioni codice
-
-- Tutti i tipi condivisi in `lib/football-engine/types.ts`
-- I client API in `lib/football-engine/radar/clients/`
-- I segnali sono `FootballSignal` — unità atomica di informazione
-- Ogni partita diventa un `MatchContext` con signals, odds, h2h, injuries, interestScore
-- Il FORGE usa i template in `lib/football-engine/forge/market-templates.ts` — se aggiungi tipi di mercato, aggiungili lì
-- Il `sourceStorylineId` ha formato `fie:{apiFootballMatchId}:{slug}` per il dedup
-
-## Cosa resta da fare (SENTINEL è la priorità)
-
-1. **SENTINEL** (Layer 4): auto-resolve potenziato con più template, live monitoring, Resolution Oracle a 3 livelli
-2. **Event Chains**: mercati collegati in cascata
-3. **Standings nel BRAIN**: portare la classifica nel contesto dell'Analyst
-4. **Cron job** dedicato per il FIE
-5. **Infortuni e formazioni** nel contesto RADAR → BRAIN
-
-## Test
-
-Script di test: `scripts/test-football-engine.ts`
-```bash
-npx tsx scripts/test-football-engine.ts
-```
-Richiede `dotenv/config` per caricare `.env`.
-
-Risultato test del 15/04/2026: 107 partite RADAR → 6 insight → 12 idee → 7 approvate → 7 candidati.
+*Ultimo aggiornamento: Aprile 2026*
