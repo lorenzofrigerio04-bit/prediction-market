@@ -68,6 +68,10 @@ export default function AdminDashboard() {
   const [generateSportLoading, setGenerateSportLoading] = useState(false);
   const [generateSportResult, setGenerateSportResult] = useState<Record<string, unknown> | null>(null);
   const [sportRateLimit, setSportRateLimit] = useState<{ canGenerate: boolean; retryAfterSeconds: number } | null>(null);
+  const [generationPanel, setGenerationPanel] = useState<"legacy" | "fie">("fie");
+  const [fieLoading, setFieLoading] = useState(false);
+  const [fieResult, setFieResult] = useState<Record<string, unknown> | null>(null);
+  const [fieDryRun, setFieDryRun] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectingAll, setSelectingAll] = useState(false);
@@ -275,9 +279,152 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Generazione eventi — Home vs Sport (linee parallele) */}
-        <div className="mb-6 p-5 rounded-2xl flex flex-wrap items-center justify-between gap-4 bg-white/[0.08] border border-white/10">
-          <h2 className="text-lg font-semibold text-fg">Generazione eventi</h2>
+        {/* Generazione eventi — pannello a tab */}
+        <div className="mb-6 rounded-2xl bg-white/[0.08] border border-white/10 overflow-hidden">
+          {/* Tab header */}
+          <div className="flex border-b border-white/10">
+            <button
+              onClick={() => setGenerationPanel("fie")}
+              className={`flex-1 px-5 py-3.5 text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
+                generationPanel === "fie"
+                  ? "bg-emerald-500/15 text-emerald-400 border-b-2 border-emerald-400"
+                  : "text-fg-muted hover:text-fg hover:bg-white/[0.04]"
+              }`}
+            >
+              <span className="text-base">⚡</span>
+              Sport 2.0 — Football Intelligence Engine
+            </button>
+            <button
+              onClick={() => setGenerationPanel("legacy")}
+              className={`flex-1 px-5 py-3.5 text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
+                generationPanel === "legacy"
+                  ? "bg-white/[0.08] text-fg border-b-2 border-fg"
+                  : "text-fg-muted hover:text-fg hover:bg-white/[0.04]"
+              }`}
+            >
+              <span className="text-base">🔧</span>
+              Pipeline Legacy
+            </button>
+          </div>
+
+          {/* FIE Panel */}
+          {generationPanel === "fie" && (
+            <div className="p-5">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="flex-1">
+                  <h3 className="text-base font-semibold text-fg mb-1">Football Intelligence Engine</h3>
+                  <p className="text-xs text-fg-muted leading-relaxed">
+                    Pipeline AI multi-agente: RADAR (107+ partite da 28 campionati) → BRAIN (Analyst + Creative + Verifier + Resolver) → FORGE (strutturazione mercati).
+                    Genera eventi creativi e diversificati con risoluzione automatica.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  onClick={async () => {
+                    setFieLoading(true);
+                    setFieResult(null);
+                    try {
+                      const res = await fetch("/api/admin/run-football-engine", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ dryRun: fieDryRun, maxTier: 2, maxMatches: 15 }),
+                      });
+                      const data = await res.json();
+                      setFieResult(data);
+                      if (res.ok && !fieDryRun && (data.created ?? 0) > 0) {
+                        setSuccessCreatedCount(data.created ?? 0);
+                        fetchEvents();
+                        setTimeout(() => fetchEvents(), 2000);
+                      }
+                    } catch (e) {
+                      setFieResult({ error: String(e) });
+                    } finally {
+                      setFieLoading(false);
+                    }
+                  }}
+                  disabled={fieLoading}
+                  className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl hover:bg-emerald-500 disabled:opacity-50 font-semibold transition-colors shadow-lg shadow-emerald-600/20"
+                >
+                  {fieLoading ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                      Generazione in corso…
+                    </span>
+                  ) : fieDryRun ? "Anteprima (Dry Run)" : "Genera eventi Sport 2.0"}
+                </button>
+                <label className="flex items-center gap-2 text-xs text-fg-muted cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={fieDryRun}
+                    onChange={(e) => setFieDryRun(e.target.checked)}
+                    className="rounded border-white/20 bg-white/10 text-emerald-500 focus:ring-emerald-500/30"
+                  />
+                  Dry Run (anteprima senza pubblicare)
+                </label>
+              </div>
+              {fieResult && (
+                <div className="mt-4 rounded-xl bg-black/20 border border-white/10 p-4">
+                  {(fieResult as { error?: string }).error ? (
+                    <div className="text-red-400 text-sm">{(fieResult as { error?: string }).error}</div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className={`text-lg font-bold ${(fieResult as { created?: number }).created ? "text-emerald-400" : "text-fg"}`}>
+                          {fieDryRun
+                            ? `${((fieResult as { candidates?: unknown[] }).candidates ?? []).length} candidati in anteprima`
+                            : `${(fieResult as { created?: number }).created ?? 0} eventi creati`}
+                        </span>
+                        {(fieResult as { hint?: string }).hint && (
+                          <span className="text-xs text-amber-400/90">{(fieResult as { hint?: string }).hint}</span>
+                        )}
+                      </div>
+                      {(fieResult as { diagnostics?: Record<string, unknown> }).diagnostics && (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                          {[
+                            { label: "Partite RADAR", value: (fieResult.diagnostics as Record<string, number>)?.radarMatchCount },
+                            { label: "Insight Analyst", value: (fieResult.diagnostics as Record<string, number>)?.brainInsightCount },
+                            { label: "Idee Creative", value: (fieResult.diagnostics as Record<string, number>)?.brainIdeaCount },
+                            { label: "Approvate", value: (fieResult.diagnostics as Record<string, number>)?.brainApprovedCount },
+                          ].map((stat) => (
+                            <div key={stat.label} className="bg-white/[0.06] rounded-lg p-2 text-center">
+                              <div className="text-lg font-bold text-fg">{stat.value ?? 0}</div>
+                              <div className="text-[10px] text-fg-muted">{stat.label}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {fieDryRun && (fieResult as { candidates?: Array<{ title: string; marketType?: string; closesAt?: string }> }).candidates && (
+                        <div className="space-y-1.5 max-h-60 overflow-y-auto">
+                          {((fieResult as { candidates?: Array<{ title: string; marketType?: string; closesAt?: string }> }).candidates ?? []).map((c, i) => (
+                            <div key={i} className="flex items-center gap-2 text-xs py-1 border-b border-white/5 last:border-0">
+                              <span className="shrink-0 px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[10px]">
+                                {c.marketType ?? "BINARY"}
+                              </span>
+                              <span className="text-fg truncate">{c.title}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {!fieDryRun && (fieResult as { pipeline?: Record<string, unknown> }).pipeline && (
+                        <pre className="text-[10px] bg-black/30 p-2 rounded overflow-x-auto max-h-32 overflow-y-auto text-fg-muted">
+                          {JSON.stringify((fieResult as { pipeline?: Record<string, unknown> }).pipeline, null, 2)}
+                        </pre>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Legacy Panel */}
+          {generationPanel === "legacy" && (
+          <div className="p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <h3 className="text-base font-semibold text-fg">Pipeline Legacy</h3>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-fg-muted">precedente</span>
+          </div>
           <div className="flex items-center gap-3 flex-wrap">
             <button
               onClick={async () => {
@@ -557,6 +704,8 @@ export default function AdminDashboard() {
               </span>
             )}
           </div>
+          </div>
+          )}
         </div>
 
         {/* Filtri + toolbar visibilità + tabella unica */}

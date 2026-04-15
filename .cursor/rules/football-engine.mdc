@@ -1,0 +1,102 @@
+---
+description: Football Intelligence Engine — context and conventions for all AI agents working on this project
+globs:
+  - "lib/football-engine/**"
+  - "app/api/admin/run-football-engine/**"
+  - "app/admin/**"
+alwaysApply: true
+---
+
+# Football Intelligence Engine — Regola di Contesto
+
+## Cosa stiamo costruendo
+
+Stiamo trasformando questa piattaforma da prediction market generalista a **prediction market calcistico specializzato**. Il progetto principale è il **Football Intelligence Engine (FIE)**: un sistema multi-agente AI autonomo che genera, struttura e risolve eventi di mercato su partite di calcio.
+
+La visione è che quando un appassionato di calcio entra sulla piattaforma e vede gli eventi generati, pensi "cazzo che figo, non avrei mai pensato di poter scommettere su una cosa del genere".
+
+## Documentazione di riferimento
+
+Leggi sempre prima di modificare il FIE:
+- `docs/FOOTBALL_ENGINE_STATUS.md` — stato completo, cosa è fatto, cosa resta da fare
+- `docs/FOOTBALL_ENGINE_API_GUIDE.md` — guida alle API keys e campionati
+
+## Architettura: 4 Layer
+
+```
+lib/football-engine/
+├── index.ts              ← Orchestratore: runFootballEngine()
+├── types.ts              ← Tipi condivisi (FootballSignal, Match, MatchContext, RadarOutput)
+├── competitions.ts       ← 28 campionati su 4 tier (Serie A, CL, EL, etc.)
+├── radar/                ← LAYER 1: raccoglie dati da API-Football, Odds API, RSS
+├── brain/                ← LAYER 2: 4 agenti AI (Analyst, Creative, Verifier, Resolver)
+├── forge/                ← LAYER 3: struttura eventi in Candidate[] per il publisher
+└── sentinel/             ← LAYER 4: monitoring live + risoluzione (DA IMPLEMENTARE)
+```
+
+Flusso: RADAR → BRAIN → FORGE → publisher esistente (`lib/event-gen-v2/publisher.ts`)
+
+Il FORGE produce `Candidate[]` **identici** a quelli della pipeline legacy — non modificare il publisher esistente.
+
+## Agenti AI nel BRAIN
+
+| Agente | Modello | Ruolo |
+|--------|---------|-------|
+| Analyst | Claude Sonnet | Trova pattern e correlazioni nei dati RADAR |
+| Creative | GPT-4o (→ Claude fallback) | Genera idee evento creative e diversificate |
+| Verifier | Claude Sonnet | Valida fattibilità, fonti risoluzione, edge cases |
+| Resolver | GPT-4o-mini | Pre-computa strategia risoluzione esatta |
+
+Il file `lib/football-engine/brain/llm.ts` gestisce il fallback automatico. Se OpenAI è in quota (429) usa Claude, e viceversa.
+
+## Variabili d'ambiente necessarie
+
+```
+API_FOOTBALL_KEY        # api-sports.io — piano Pro ($19/mese), OBBLIGATORIO
+FOOTBALL_DATA_ORG_API_TOKEN  # football-data.org — gratuito, già attivo
+ODDS_API_KEY            # The Odds API — gratuito, già attivo
+OPENAI_API_KEY          # GPT-4o per Creative — può essere in quota, fallback Claude
+ANTHROPIC_API_KEY       # Claude Sonnet per Analyst/Verifier — già attivo
+```
+
+## Endpoint admin
+
+`POST /api/admin/run-football-engine` — lancia la pipeline completa
+Body: `{ dryRun?: boolean, maxTier?: 1-4, maxMatches?: number }`
+
+L'admin dashboard (`app/admin/page.tsx`) ha un doppio pannello con tab:
+- Tab "Sport 2.0 — Football Intelligence Engine" (default, verde)
+- Tab "Pipeline Legacy" (grigio, tutti i vecchi pulsanti)
+
+## Campionati
+
+Tier 1 (copertura totale): Serie A (135), Champions League (2), Europa League (3), Conference League (848), Premier League (39), La Liga (140), Bundesliga (78), Ligue 1 (61)
+
+I numeri sono gli `apiFootballId` per API-Football.
+
+## Convenzioni codice
+
+- Tutti i tipi condivisi in `lib/football-engine/types.ts`
+- I client API in `lib/football-engine/radar/clients/`
+- I segnali sono `FootballSignal` — unità atomica di informazione
+- Ogni partita diventa un `MatchContext` con signals, odds, h2h, injuries, interestScore
+- Il FORGE usa i template in `lib/football-engine/forge/market-templates.ts` — se aggiungi tipi di mercato, aggiungili lì
+- Il `sourceStorylineId` ha formato `fie:{apiFootballMatchId}:{slug}` per il dedup
+
+## Cosa resta da fare (SENTINEL è la priorità)
+
+1. **SENTINEL** (Layer 4): auto-resolve potenziato con più template, live monitoring, Resolution Oracle a 3 livelli
+2. **Event Chains**: mercati collegati in cascata
+3. **Standings nel BRAIN**: portare la classifica nel contesto dell'Analyst
+4. **Cron job** dedicato per il FIE
+5. **Infortuni e formazioni** nel contesto RADAR → BRAIN
+
+## Test
+
+Script di test: `scripts/test-football-engine.ts`
+```bash
+npx tsx scripts/test-football-engine.ts
+```
+Richiede `dotenv/config` per caricare `.env`.
+
+Risultato test del 15/04/2026: 107 partite RADAR → 6 insight → 12 idee → 7 approvate → 7 candidati.
