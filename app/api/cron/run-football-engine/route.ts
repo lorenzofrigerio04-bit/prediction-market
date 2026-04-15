@@ -4,7 +4,7 @@
  * Esegue automaticamente la pipeline FIE ogni 8 ore:
  *   RADAR → BRAIN → FORGE → validate → score → dedup → publish
  *
- * Schedule: 0 */8 * * *  (00:00, 08:00, 16:00 UTC)
+ * Schedule: every 8 hours at minute 0 (00:00, 08:00, 16:00 UTC)
  * Endpoint: POST /api/cron/run-football-engine
  *
  * Auth: Bearer token via header Authorization o query param ?secret=
