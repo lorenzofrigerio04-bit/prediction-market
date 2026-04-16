@@ -24,7 +24,15 @@ const CATEGORY_LABEL: Record<string, string> = Object.fromEntries(
   CATEGORIES.map((c) => [c.value, c.label])
 );
 
-export default function EventFeedbackPanel({ eventId }: { eventId: string }) {
+export default function EventFeedbackPanel({
+  eventId,
+  onFeedbackSubmitted,
+  defaultExpanded = false,
+}: {
+  eventId: string;
+  onFeedbackSubmitted?: () => void;
+  defaultExpanded?: boolean;
+}) {
   const [feedbacks, setFeedbacks] = useState<FeedbackEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -33,7 +41,7 @@ export default function EventFeedbackPanel({ eventId }: { eventId: string }) {
   const [reason, setReason] = useState("");
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(!defaultExpanded);
 
   const fetchFeedbacks = useCallback(async () => {
     try {
@@ -76,8 +84,12 @@ export default function EventFeedbackPanel({ eventId }: { eventId: string }) {
       setRating(null);
       setReason("");
       setCategory("OVERALL");
-      setTimeout(() => setSuccessMsg(null), 3000);
       await fetchFeedbacks();
+      if (onFeedbackSubmitted) {
+        setTimeout(() => onFeedbackSubmitted(), 800);
+      } else {
+        setTimeout(() => setSuccessMsg(null), 3000);
+      }
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : "Errore");
     } finally {
