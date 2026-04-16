@@ -15,7 +15,7 @@ interface PendingEvent {
   sourceType: string | null;
   _count: {
     feedbacks: number;
-    predictions: number;
+    Prediction: number;
   };
 }
 
@@ -207,7 +207,7 @@ export default function FeedbackReviewPage() {
                         year: "numeric",
                       })}
                     </span>
-                    <span>{event._count.predictions} predizioni</span>
+                    <span>{event._count.Prediction} predizioni</span>
                     {event.marketType && <span>{event.marketType}</span>}
                     {event.sourceType && (
                       <span

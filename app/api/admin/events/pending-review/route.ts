@@ -27,7 +27,7 @@ export async function GET() {
         _count: {
           select: {
             feedbacks: true,
-            predictions: true,
+            Prediction: true,
           },
         },
       },
