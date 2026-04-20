@@ -26,11 +26,6 @@ export function ForYouSection({
     ? "Trending per te"
     : "Trending ora";
   const title = isPersonalized ? "Per Te" : "Consigliati";
-  const subtitle = isPersonalized
-    ? "Basato sulle tue predictions recenti"
-    : isLoggedIn
-    ? "Gioca per ottenere una selezione personalizzata"
-    : undefined;
 
   return (
     <section
@@ -39,7 +34,6 @@ export function ForYouSection({
       <SectionHeader
         eyebrow={eyebrow}
         title={title}
-        subtitle={subtitle}
         accent="violet"
         leftSlot={
           !isLoggedIn ? (

@@ -70,7 +70,7 @@ export function SectionHeader({
             </span>
             {leftSlot}
           </div>
-          <h2 className="mt-1.5 font-display text-[1.5rem] font-extrabold leading-[1.04] tracking-tight text-white sm:text-[1.75rem]">
+          <h2 className="mt-1.5 font-kalshi text-[1.75rem] font-bold leading-[1.0] tracking-wide text-white sm:text-[2rem]">
             {title}
           </h2>
           {subtitle && (

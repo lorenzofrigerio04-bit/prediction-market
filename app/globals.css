@@ -4817,3 +4817,22 @@ html body .nav-bottom-neon a span.nav-bottom-label,
     0 0 18px 4px rgb(var(--primary-glow) / 0.10),
     0 2px 12px rgba(0, 0, 0, 0.08) !important;
 }
+
+/* ─── Trending auto-scroll rail ───────────────────────────────────────────── */
+@keyframes trending-rail-left {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes trending-rail-right {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+
+.trending-rail-track {
+  animation-play-state: running;
+}
+
+.trending-rail-wrap:hover .trending-rail-track {
+  animation-play-state: paused;
+}

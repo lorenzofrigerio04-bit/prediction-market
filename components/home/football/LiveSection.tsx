@@ -17,7 +17,6 @@ export function LiveSection({ events, onNavigate }: Props) {
       <SectionHeader
         eyebrow="In diretta ora"
         title="Live"
-        subtitle={`${events.length} ${events.length === 1 ? "partita" : "partite"} in corso`}
         accent="crimson"
         href="/sport"
       />

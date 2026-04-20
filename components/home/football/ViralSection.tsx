@@ -17,7 +17,6 @@ export function ViralSection({ events, onNavigate }: Props) {
       <SectionHeader
         eyebrow="Viral"
         title="Sta esplodendo ora"
-        subtitle="I mercati con la crescita più rapida"
         accent="crimson"
       />
 

@@ -17,7 +17,6 @@ export function ExpiringSection({ events, onNavigate }: Props) {
       <SectionHeader
         eyebrow="Ultima chance"
         title="In Scadenza"
-        subtitle="Mercati che chiudono nelle prossime 48 ore"
         accent="emerald"
       />
 
@@ -31,6 +30,7 @@ export function ExpiringSection({ events, onNavigate }: Props) {
               event={event}
               onNavigate={onNavigate}
               accent="emerald"
+              showExpiry
             />
           </div>
         ))}

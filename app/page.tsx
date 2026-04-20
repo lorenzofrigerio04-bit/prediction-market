@@ -347,7 +347,7 @@ function HomeContent() {
   if (status === "loading") {
     return (
       <div className="min-h-screen bg-bg">
-        <Header />
+        <Header showCategoryStrip={false} />
         <div className="flex items-center justify-center min-h-[60vh]">
           <LoadingBlock message="" />
         </div>
@@ -438,7 +438,7 @@ function HomeContent() {
       {showOnboarding && (
         <OnboardingTour onComplete={handleOnboardingComplete} />
       )}
-      <Header />
+      <Header showCategoryStrip={false} />
       <main id="main-content" className="mx-auto px-page-x pt-0 pb-page-y md:pt-0 md:pb-8 max-w-6xl">
         {/* Debug panel: only when ?debug=1 or NEXT_PUBLIC_DEBUG_MODE=true. */}
         {debugMode && (

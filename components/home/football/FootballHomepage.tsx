@@ -6,7 +6,7 @@ import { ForYouSection } from "./ForYouSection";
 import { ViralSection } from "./ViralSection";
 import { LiveSection } from "./LiveSection";
 import { ExpiringSection } from "./ExpiringSection";
-import { HomeFeedGrid } from "@/components/home/HomeFeedGrid";
+import { HomeTrendingRail } from "@/components/home/HomeTrendingRail";
 
 interface Props {
   isLoggedIn: boolean;
@@ -38,27 +38,13 @@ function RailSkeleton() {
   );
 }
 
-function GridSkeleton() {
-  return (
-    <div className="grid grid-cols-2 gap-2.5 sm:gap-3" aria-hidden>
-      {[1, 2, 3, 4].map((i) => (
-        <div
-          key={i}
-          className="animate-pulse rounded-2xl border border-white/[0.07] bg-gradient-to-br from-white/[0.04] to-white/[0.01]"
-          style={{ aspectRatio: "16/13" }}
-        />
-      ))}
-    </div>
-  );
-}
-
 function HomepageSkeleton() {
   return (
     <div className="space-y-10" aria-label="Caricamento homepage">
       <RailSkeleton />
-      <GridSkeleton />
       <RailSkeleton />
-      <GridSkeleton />
+      <RailSkeleton />
+      <RailSkeleton />
       <RailSkeleton />
     </div>
   );
@@ -117,7 +103,12 @@ function PoweredByStarcks() {
     <footer className="mt-14 flex items-center justify-center pb-8" aria-label="Footer">
       <p className="select-none text-[11px] font-medium tracking-[0.18em] text-white/22 uppercase">
         powered by{" "}
-        <span className="font-bold tracking-[0.22em] text-white/38">STARCKS</span>
+        <span
+          className="font-bold tracking-[0.22em]"
+          style={{ color: "#0ABAB5" }}
+        >
+          starcks
+        </span>
       </p>
     </footer>
   );
@@ -144,12 +135,6 @@ export function FootballHomepage({ isLoggedIn, onEventNavigate }: Props) {
 
   if (!data) return null;
 
-  // Build interstitial pools: use events from adjacent sections
-  // Grid A (between Top24h and ForYou): first 4 viral events
-  const gridAEvents = data.viralEvents.slice(0, 4);
-  // Grid B (between ForYou and Viral): first 4 expiring events
-  const gridBEvents = data.expiringEvents.slice(0, 4);
-
   const hasAnyContent =
     data.top24hEvents.length > 0 ||
     data.forYouMarkets.length > 0 ||
@@ -158,65 +143,79 @@ export function FootballHomepage({ isLoggedIn, onEventNavigate }: Props) {
     data.expiringEvents.length > 0;
 
   return (
-    <section
-      aria-label="Homepage — Prediction Master"
-      className="space-y-10 sm:space-y-12"
-    >
+    <section aria-label="Homepage — Prediction Master" className="flex flex-col">
       {data.isEmpty && process.env.NODE_ENV !== "production" && (
-        <EmptyPipelineWarning />
+        <div className="mb-8">
+          <EmptyPipelineWarning />
+        </div>
       )}
 
-      {/* 1. TOP 5 ULTIME 24H */}
-      <Top24hSection
-        events={data.top24hEvents}
-        onNavigate={onEventNavigate}
-      />
+      {/* 1. TOP 5 OGGI */}
+      <div className="mb-12 pt-6 sm:mb-14 sm:pt-8">
+        <Top24hSection events={data.top24hEvents} onNavigate={onEventNavigate} />
+      </div>
 
-      {/* Interstitial A: 2×2 grid */}
-      {gridAEvents.length >= 2 && (
-        <HomeFeedGrid
-          events={gridAEvents}
+      {/* 2. CONSIGLIATI */}
+      <div className="mb-14 sm:mb-16">
+        <ForYouSection
+          events={data.forYouMarkets}
+          isPersonalized={data.isPersonalized}
+          isLoggedIn={isLoggedIn}
           onNavigate={onEventNavigate}
-          accent="rose"
         />
+      </div>
+
+      {/* Rail A — separatore */}
+      {data.top24hEvents.length >= 2 && (
+        <div className="mb-14 sm:mb-16">
+          <HomeTrendingRail
+            events={data.top24hEvents.slice(0, 8)}
+            onNavigate={onEventNavigate}
+            cardAccent="gold"
+          />
+        </div>
       )}
 
-      {/* 2. PER TE */}
-      <ForYouSection
-        events={data.forYouMarkets}
-        isPersonalized={data.isPersonalized}
-        isLoggedIn={isLoggedIn}
-        onNavigate={onEventNavigate}
-      />
+      {/* 3. STA ESPLODENDO ORA */}
+      <div className="mb-14 sm:mb-16">
+        <ViralSection events={data.viralEvents} onNavigate={onEventNavigate} />
+      </div>
 
-      {/* Interstitial B: 2×2 grid */}
-      {gridBEvents.length >= 2 && (
-        <HomeFeedGrid
-          events={gridBEvents}
-          onNavigate={onEventNavigate}
-          accent="emerald"
-        />
+      {/* Rail B — separatore */}
+      {data.expiringEvents.length >= 2 && (
+        <div className="mb-14 sm:mb-16">
+          <HomeTrendingRail
+            events={data.expiringEvents.slice(0, 8)}
+            onNavigate={onEventNavigate}
+            cardAccent="emerald"
+          />
+        </div>
       )}
 
-      {/* 3. EVENTI VIRALI */}
-      <ViralSection
-        events={data.viralEvents}
-        onNavigate={onEventNavigate}
-      />
+      {/* 4. IN SCADENZA */}
+      <div className="mb-14 sm:mb-16">
+        <ExpiringSection events={data.expiringEvents} onNavigate={onEventNavigate} />
+      </div>
 
-      {/* 4. LIVE (solo se presenti) */}
-      <LiveSection
-        events={data.liveEvents}
-        onNavigate={onEventNavigate}
-      />
+      {/* Rail C — separatore */}
+      {data.viralEvents.length >= 2 && (
+        <div className="mb-14 sm:mb-16">
+          <HomeTrendingRail
+            events={data.viralEvents.slice(0, 8)}
+            onNavigate={onEventNavigate}
+            cardAccent="rose"
+          />
+        </div>
+      )}
 
-      {/* 5. IN SCADENZA */}
-      <ExpiringSection
-        events={data.expiringEvents}
-        onNavigate={onEventNavigate}
-      />
+      {/* 5. LIVE (solo se presenti) */}
+      {data.liveEvents.length > 0 && (
+        <div className="mb-12 sm:mb-14">
+          <LiveSection events={data.liveEvents} onNavigate={onEventNavigate} />
+        </div>
+      )}
 
-      {/* Empty state when no events at all */}
+      {/* Empty state */}
       {!hasAnyContent && (
         <div className="relative overflow-hidden rounded-[1.25rem] border border-white/[0.08] bg-white/[0.02] px-6 py-16 text-center">
           <div
