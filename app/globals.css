@@ -4740,14 +4740,14 @@ html body .nav-bottom-neon a span.nav-bottom-label,
 
 /* Bottom nav premium floating: raised, no hard outlines, active backlit */
 .nav-bottom-neon {
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 4px) !important;
+  bottom: env(safe-area-inset-bottom, 0px) !important;
   background: transparent !important;
   padding: 0 !important;
 }
 
 .nav-bottom-neon .nav-bottom-neon-inner {
-  width: min(94vw, 560px) !important;
-  max-width: min(94vw, 560px) !important;
+  width: min(calc(100vw - 12px), 600px) !important;
+  max-width: min(calc(100vw - 12px), 600px) !important;
   height: 64px !important;
   min-height: 64px !important;
   border-radius: 999px !important;
