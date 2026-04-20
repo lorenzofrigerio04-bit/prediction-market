@@ -40,7 +40,7 @@ export async function GET() {
               select: { id: true, name: true, image: true },
             },
             _count: {
-              select: { Prediction: true, Trade: true, comments: true },
+              select: { Prediction: true, Trade: true, comments: true, feedbacks: true },
             },
             ammState: {
               select: { qYesMicros: true, qNoMicros: true, bMicros: true },
@@ -120,6 +120,7 @@ export async function GET() {
             outcomeProbabilities,
             sportLeague: meta?.sport_league ?? null,
             isFie: meta?.fie_version != null,
+            hasFeedback: (_count.feedbacks ?? 0) > 0,
             _count: { predictions: predCount, comments: _count.comments },
             fomo: stats ?? {
               countdownMs: new Date(event.closesAt).getTime() - now.getTime(),

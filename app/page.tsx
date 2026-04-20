@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import OnboardingTour from "@/components/OnboardingTour";
-import { HomeUnifiedFeed } from "@/components/home/HomeUnifiedFeed";
+import { FootballHomepage } from "@/components/home/football/FootballHomepage";
 import LandingTrendingMarketCard from "@/components/landing/LandingTrendingMarketCard";
 import { LoadingBlock } from "@/components/ui";
 import { getDisplayTitle, isDebugTitle } from "@/lib/debug-display";
@@ -449,7 +449,10 @@ function HomeContent() {
         )}
 
         <div className="pt-0 px-2 sm:px-4 max-w-6xl mx-auto">
-          <HomeUnifiedFeed onEventNavigate={handleEventClick} />
+          <FootballHomepage
+            isLoggedIn={status === "authenticated"}
+            onEventNavigate={handleEventClick}
+          />
         </div>
 
       </main>

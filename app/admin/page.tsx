@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getMarketTypeLabel } from "@/lib/market-types";
 import type { MarketTypeId } from "@/lib/market-types";
+import { DailyStatsBanner } from "@/components/admin/DailyStatsBanner";
 
 interface Event {
   id: string;
@@ -262,6 +263,9 @@ export default function AdminDashboard() {
             + Crea Evento
           </Link>
         </div>
+
+        {/* Pipeline Monitor — daily stats */}
+        <DailyStatsBanner />
 
         {/* Banner eventi da risolvere */}
         {pendingResolutionCount > 0 && (

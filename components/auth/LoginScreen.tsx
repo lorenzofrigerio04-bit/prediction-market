@@ -166,7 +166,7 @@ export default function LoginScreen({ variant }: { variant: LoginScreenVariant }
 
   const card = (
     <section
-      className="relative w-full max-w-[430px] rounded-[24px] border border-white/10 bg-[#0b0f17]/58 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.95)] backdrop-blur-md p-5 sm:p-6"
+      className="relative w-full max-w-[430px] rounded-[24px] border border-white/10 bg-[#0b0f17]/90 supports-[backdrop-filter:blur(0px)]:bg-[#0b0f17]/58 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.95)] supports-[backdrop-filter:blur(0px)]:backdrop-blur-md p-5 sm:p-6"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="relative mb-6">
@@ -282,13 +282,12 @@ export default function LoginScreen({ variant }: { variant: LoginScreenVariant }
       </form>
 
       <div className="mt-5">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center" aria-hidden>
-            <div className="w-full border-t border-white/10" />
-          </div>
-          <p className="relative mx-auto w-fit px-3 text-xs text-fg-muted/75 bg-[#0b0f17]">
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-white/10" aria-hidden />
+          <p className="text-xs text-fg-muted/75 whitespace-nowrap">
             Oppure continua con
           </p>
+          <div className="flex-1 h-px bg-white/10" aria-hidden />
         </div>
 
         <div className="mt-4 flex justify-center">
@@ -345,7 +344,7 @@ export default function LoginScreen({ variant }: { variant: LoginScreenVariant }
 
   return (
     <div className="min-h-dvh bg-transparent text-fg flex flex-col">
-      <main className="relative flex-1 flex items-center justify-center px-4 py-8 sm:py-10 bg-admin-bg/14 backdrop-blur-[1px]">
+      <main className="relative flex-1 flex items-center justify-center px-4 py-8 sm:py-10 bg-admin-bg/14">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 opacity-22"

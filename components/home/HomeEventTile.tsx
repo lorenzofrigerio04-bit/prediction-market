@@ -41,6 +41,8 @@ export interface HomeEventTileProps {
   outcomeProbabilities?: Array<{ key: string; label: string; probabilityPct: number }> | null;
   /** Generato dal Football Intelligence Engine (FIE 2.0) — mostra contorno illuminato */
   isFie?: boolean;
+  /** True when at least one admin AI feedback exists for the event */
+  hasFeedback?: boolean;
 }
 
 const MULTI_OUTCOME_ACCENT_CLASSES = [
@@ -78,6 +80,7 @@ export default function HomeEventTile({
   outcomes,
   outcomeProbabilities,
   isFie = false,
+  hasFeedback = false,
 }: HomeEventTileProps) {
   const [now, setNow] = useState(0);
   useEffect(() => {
@@ -98,6 +101,7 @@ export default function HomeEventTile({
   const useImage = useEventImage || useCategoryImage;
   const closesAtMs = new Date(closesAt).getTime();
   const isClosedOrClosing = variant === "closing" || (now > 0 && closesAtMs <= now);
+  const showFeedbackBadge = process.env.NODE_ENV !== "production" && hasFeedback;
 
   const teams = parseSportMatchTitle(title);
   const isCalcioMatch = category === "Calcio" && teams !== null;
@@ -181,17 +185,26 @@ export default function HomeEventTile({
       {/* Overlay scuro per leggibilità testo (ridotto per far risaltare la foto) */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/60 to-black/35" />
       <div className={`relative z-10 flex h-full flex-col justify-between ${pClass}`}>
-        <div className="flex items-center justify-end gap-2">
-          {isClosedOrClosing && (
-            <span className="text-xs font-bold text-amber-100 sm:text-ds-micro w-fit">
-              {formatTimeLeftShort(closesAt, now)}
-            </span>
-          )}
-          {topRightLabel && !(teams && !isMultiOutcome) && !(isMultiOutcome && outcomeOptions && outcomeOptions.length > 0) && (
-            <span className="shrink-0 text-[10px] sm:text-xs font-semibold text-white/95">
-              {topRightLabel}
-            </span>
-          )}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-h-[20px] items-center">
+            {showFeedbackBadge && (
+              <span className="rounded-full border border-emerald-300/65 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-emerald-200">
+                Feedback fatto
+              </span>
+            )}
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            {isClosedOrClosing && (
+              <span className="text-xs font-bold text-amber-100 sm:text-ds-micro w-fit">
+                {formatTimeLeftShort(closesAt, now)}
+              </span>
+            )}
+            {topRightLabel && !(teams && !isMultiOutcome) && !(isMultiOutcome && outcomeOptions && outcomeOptions.length > 0) && (
+              <span className="shrink-0 text-[10px] sm:text-xs font-semibold text-white/95">
+                {topRightLabel}
+              </span>
+            )}
+          </div>
         </div>
         <div className={teams && !isMultiOutcome ? "flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden" : isMultiOutcome && outcomeOptions && outcomeOptions.length > 0 ? "flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden" : "flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden"}>
           {isMultiOutcome && outcomeOptions && outcomeOptions.length > 0 ? (

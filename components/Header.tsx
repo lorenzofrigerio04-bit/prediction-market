@@ -9,20 +9,17 @@ import { PredictionMasterLogoCompact } from "./PredictionMasterMark";
 import {
   IconMenu,
   IconNavHome,
-  IconNavSport,
-  IconNavExchange,
-  IconBell,
+  IconNavLive,
+  IconNavStarcks,
   IconUser,
 } from "@/components/ui/Icons";
 import { MARKET_CATEGORIES, type MarketCategoryId } from "@/lib/market-categories";
 
-// Bottom bar: Home, Sport, Exchange, Notifiche, Profilo
-const BOTTOM_NAV_LEFT = [
+// Bottom bar: Home, Live, Starcks, Profilo
+const BOTTOM_NAV_ITEMS = [
   { href: "/", label: "Home", NavIcon: IconNavHome },
-  { href: "/sport", label: "Sport", NavIcon: IconNavSport },
-] as const;
-const BOTTOM_NAV_RIGHT = [
-  { href: "/notifications", label: "Notifiche", NavIcon: IconBell },
+  { href: "/live", label: "Live", NavIcon: IconNavLive },
+  { href: "/starcks", label: "Starcks", NavIcon: IconNavStarcks },
   { href: "/profile", label: "Profilo", NavIcon: IconUser },
 ] as const;
 
@@ -93,10 +90,6 @@ export default function Header({ showCategoryStrip = true }: HeaderProps) {
     status === "unauthenticated"
       ? `/auth/login?callbackUrl=${encodeURIComponent(pathname || "/")}`
       : "/profile";
-  const notificationsHref =
-    status === "unauthenticated"
-      ? `/auth/login?callbackUrl=${encodeURIComponent("/notifications")}`
-      : "/notifications";
 
   return (
     <>
@@ -179,58 +172,44 @@ export default function Header({ showCategoryStrip = true }: HeaderProps) {
         className="nav-bottom-neon transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform translate-y-0"
         aria-label="Navigazione principale"
       >
-        <div className="nav-bottom-neon-inner flex items-center justify-between px-3 relative z-[1]">
-          {/* Sinistra: Home, Sport — icona + label, icona sempre visibile */}
-          <div className="flex items-center justify-center gap-2 flex-1 min-w-0">
-            {BOTTOM_NAV_LEFT.map(({ href, label, NavIcon }) => {
-              const active = isActive(href);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`${bottomLinkClass} ${active ? "nav-item-neon-active" : ""}`}
-                  aria-label={label}
+        <div className="nav-bottom-neon-inner grid grid-cols-4 items-center gap-1 px-2 md:gap-2 md:px-3 relative z-[1]">
+          {BOTTOM_NAV_ITEMS.map(({ href, label, NavIcon }) => {
+            const linkHref = href === "/profile" ? profileHref : href;
+            const active = isActive(linkHref);
+            return (
+              <Link
+                key={href}
+                href={linkHref}
+                className={`${bottomLinkClass} w-full ${active ? "nav-item-neon-active" : ""} ${href === "/starcks" ? "nav-item-starcks" : ""}`}
+                aria-label={label}
+              >
+                <span
+                  className="inline-flex shrink-0 overflow-visible items-center justify-center w-[22px] h-[22px] min-w-[22px] min-h-[22px] aspect-square"
+                  style={href === "/starcks" ? { color: '#50f5fc', filter: 'drop-shadow(0 0 4px rgba(80,245,252,0.55))' } : undefined}
                 >
-                  <span className="inline-flex shrink-0 overflow-visible items-center justify-center w-[22px] h-[22px] min-w-[22px] min-h-[22px] aspect-square">
-                    <NavIcon className="w-[22px] h-[22px] min-w-[22px] min-h-[22px] flex-shrink-0 aspect-square" strokeWidth={1.7} />
-                  </span>
-                  <span className="nav-bottom-label shrink-0 opacity-100" data-nav-label style={{ display: 'block', visibility: 'visible', opacity: 1, color: '#ffffff', fontSize: 9, lineHeight: 1.2 }}>{label}</span>
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Centro: Exchange — icona + label */}
-          <div className="flex items-center justify-center shrink-0">
-            <Link
-              href="/exchange"
-              className={`${bottomLinkClass} ${isActive("/exchange") ? "nav-item-neon-active" : ""}`}
-              aria-label="Exchange"
-            >
-              <IconNavExchange className="w-[22px] h-[22px] shrink-0 flex-shrink-0" strokeWidth={1.7} />
-              <span className="nav-bottom-label shrink-0 opacity-100" data-nav-label style={{ display: 'block', visibility: 'visible', opacity: 1, color: '#ffffff', fontSize: 9, lineHeight: 1.2 }}>Exchange</span>
-            </Link>
-          </div>
-
-          {/* Destra: Notifiche, Profilo — sempre icona + label */}
-          <div className="flex items-center justify-center gap-2 flex-1 min-w-0">
-            {BOTTOM_NAV_RIGHT.map(({ href, label, NavIcon }) => {
-              const linkHref =
-                href === "/profile" ? profileHref : href === "/notifications" ? notificationsHref : href;
-              const active = isActive(linkHref);
-              return (
-                <Link
-                  key={href}
-                  href={linkHref}
-                  className={`${bottomLinkClass} ${active ? "nav-item-neon-active" : ""}`}
-                  aria-label={label}
+                  <NavIcon className="w-[22px] h-[22px] min-w-[22px] min-h-[22px] flex-shrink-0 aspect-square" strokeWidth={1.7} />
+                </span>
+                <span
+                  className="nav-bottom-label shrink-0 opacity-100"
+                  data-nav-label
+                  style={{
+                    display: 'block',
+                    visibility: 'visible',
+                    opacity: 1,
+                    color: href === "/starcks" ? '#50f5fc' : '#ffffff',
+                    WebkitTextFillColor: href === "/starcks" ? '#50f5fc' : '#ffffff',
+                    fontSize: 9,
+                    lineHeight: 1.2,
+                    fontWeight: href === "/starcks" ? 700 : undefined,
+                    letterSpacing: href === "/starcks" ? '0.05em' : undefined,
+                    filter: href === "/starcks" ? 'drop-shadow(0 0 3px rgba(80,245,252,0.6))' : undefined,
+                  }}
                 >
-                  <NavIcon className="w-[22px] h-[22px] shrink-0 flex-shrink-0" strokeWidth={1.7} />
-                  <span className="nav-bottom-label shrink-0 opacity-100" data-nav-label style={{ display: 'block', visibility: 'visible', opacity: 1, color: '#ffffff', fontSize: 9, lineHeight: 1.2 }}>{label}</span>
-                </Link>
-              );
-            })}
-          </div>
+                  {label}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </nav>
 

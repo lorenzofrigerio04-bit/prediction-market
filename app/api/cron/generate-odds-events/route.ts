@@ -37,6 +37,15 @@ async function handleRequest(request: Request) {
         { status: 503 }
       );
     }
+
+    if (process.env.DISABLE_EVENT_GENERATION === "true") {
+      return NextResponse.json({
+        success: true,
+        disabled: true,
+        message: "Event generation is disabled (DISABLE_EVENT_GENERATION=true)",
+      });
+    }
+
     const cronSecret = process.env.CRON_SECRET;
     if (!cronSecret) {
       console.warn("[Cron generate-odds-events] CRON_SECRET not set");

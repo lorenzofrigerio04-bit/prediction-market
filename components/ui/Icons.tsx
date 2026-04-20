@@ -527,3 +527,30 @@ export function IconNavCrystalBall({ className, ...props }: SVGProps<SVGSVGEleme
     </NavIcon>
   );
 }
+
+/** Icona LIVE per bottom nav: dot pulsante + archi segnale */
+export function IconNavLive({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <NavIcon className={className} {...props}>
+      {/* Arco esterno sinistro */}
+      <path d="M5.5 7.5 A8.5 8.5 0 0 0 5.5 16.5" strokeWidth={1.4} />
+      {/* Arco esterno destro */}
+      <path d="M18.5 7.5 A8.5 8.5 0 0 1 18.5 16.5" strokeWidth={1.4} />
+      {/* Arco interno sinistro */}
+      <path d="M8.5 9.5 A5 5 0 0 0 8.5 14.5" strokeWidth={1.4} />
+      {/* Arco interno destro */}
+      <path d="M15.5 9.5 A5 5 0 0 1 15.5 14.5" strokeWidth={1.4} />
+      {/* Dot centrale */}
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+    </NavIcon>
+  );
+}
+
+/** Icona STARCKS per bottom nav: stella a 5 punte premium */
+export function IconNavStarcks({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <NavIcon className={className} {...props}>
+      <path d="M12 2 L14.09 8.26 L20.78 8.27 L15.45 12.14 L17.55 18.39 L12 14.51 L6.45 18.39 L8.55 12.14 L3.22 8.27 L9.91 8.26 Z" strokeWidth={1.2} />
+    </NavIcon>
+  );
+}

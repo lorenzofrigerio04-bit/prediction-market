@@ -230,7 +230,9 @@ html {
 
 body {
   color: rgb(var(--fg));
-  background: rgb(var(--bg));
+  /* usa --admin-bg come fallback: se la classe Tailwind bg-admin-bg non venisse applicata
+     il body non appare del colore sbagliato (blu invece di quasi nero) */
+  background: rgb(var(--admin-bg));
   font-family: 'Outfit', system-ui, sans-serif;
   font-size: 1rem; /* min 16px for readability (UI spec) */
   -webkit-font-smoothing: antialiased;
@@ -846,6 +848,9 @@ textarea:focus-visible {
   z-index: -2;
   overflow: hidden;
   pointer-events: none;
+  /* clip-path garantisce il clipping anche su figli con filter: blur() in Safari,
+     dove overflow: hidden da solo non basta a troncare l'alone del blur sui bordi */
+  clip-path: inset(0);
 }
 .landing-background-carousel__slide {
   position: absolute;
@@ -855,14 +860,16 @@ textarea:focus-visible {
   background-size: cover;
   filter: blur(10px);
   -webkit-filter: blur(10px);
-  transform: scale(1.05);
+  /* scale(1.1) invece di scale(1.05): su schermi < 400px il 5% non bastava
+     a coprire i ~10px di alone del blur, lasciando i bordi visibili */
+  transform: scale(1.1);
   opacity: 0;
   transition: opacity var(--landing-carousel-duration) var(--landing-carousel-ease);
 }
 .landing-background-carousel__slide[data-active="true"] {
   opacity: 1;
   z-index: 0;
-  transform: scale(1.05);
+  transform: scale(1.1);
 }
 
 /* Box crea evento: sfondo unificato (no foto) */
