@@ -18,6 +18,7 @@ export function ExpiringSection({ events, onNavigate }: Props) {
         eyebrow="Ultima chance"
         title="In Scadenza"
         accent="emerald"
+        href="/sezioni/in-scadenza"
       />
 
       <div className="netflix-rail-scroll scrollbar-hide -mx-1 flex snap-x snap-proximity gap-2.5 overflow-x-auto px-1 pb-2 sm:gap-3">

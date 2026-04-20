@@ -10,6 +10,7 @@ import ActiveMarketsList from "./components/ActiveMarketsList";
 import LongTermMarkets from "./components/LongTermMarkets";
 import FeaturedMarket from "./components/FeaturedMarket";
 import PriceTicker from "./components/PriceTicker";
+import TopStarcksPlayers from "./components/TopStarcksPlayers";
 import { usePlayerTokens } from "./hooks/usePlayerTokens";
 
 const PAGE_STYLES = `
@@ -334,6 +335,9 @@ export default function StarckMarketPage() {
         >
           {/* Hero section with Hot Movers carousel */}
           <HeroSection />
+
+          {/* Top 10 players by 30d return */}
+          <TopStarcksPlayers />
 
           {/* Tabs */}
           <MarketTabs active={activeTab} onChange={setActiveTab} />

@@ -18,7 +18,7 @@ export function LiveSection({ events, onNavigate }: Props) {
         eyebrow="In diretta ora"
         title="Live"
         accent="crimson"
-        href="/sport"
+        href="/sezioni/live"
       />
 
       <div className="netflix-rail-scroll scrollbar-hide -mx-1 flex snap-x snap-proximity gap-2.5 overflow-x-auto px-1 pb-2 sm:gap-3">

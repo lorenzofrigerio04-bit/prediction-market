@@ -35,6 +35,7 @@ export function ForYouSection({
         eyebrow={eyebrow}
         title={title}
         accent="violet"
+        href="/sezioni/per-te"
         leftSlot={
           !isLoggedIn ? (
             <Link

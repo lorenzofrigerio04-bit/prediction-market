@@ -18,6 +18,7 @@ export function ViralSection({ events, onNavigate }: Props) {
         eyebrow="Viral"
         title="Sta esplodendo ora"
         accent="crimson"
+        href="/sezioni/viral"
       />
 
       <div className="netflix-rail-scroll scrollbar-hide -mx-1 flex snap-x snap-proximity gap-2.5 overflow-x-auto px-1 pb-2 sm:gap-3">

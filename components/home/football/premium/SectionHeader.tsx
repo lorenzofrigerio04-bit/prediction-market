@@ -80,15 +80,22 @@ export function SectionHeader({
         {href && (
           <Link
             href={href}
-            className="group shrink-0 pb-1 text-[0.78rem] font-semibold tracking-wide text-white/70 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded"
+            className={`group relative shrink-0 pb-1 flex items-center gap-1 font-[Oswald] text-[10px] font-semibold uppercase tracking-[0.22em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded ${a.text} hover:opacity-80`}
           >
-            {hrefLabel}{" "}
-            <span
+            <span className={`absolute -inset-x-2 -inset-y-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-current/[0.07]`} aria-hidden />
+            {hrefLabel}
+            <svg
               aria-hidden
-              className="inline-block translate-x-0 transition-transform group-hover:translate-x-0.5"
+              className="w-3 h-3 inline-block translate-x-0 transition-transform duration-200 group-hover:translate-x-0.5"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              →
-            </span>
+              <path d="M2 6h8M7 3l3 3-3 3" />
+            </svg>
           </Link>
         )}
       </div>

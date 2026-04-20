@@ -231,6 +231,7 @@ export default function Header({ showCategoryStrip = true }: HeaderProps) {
                     fontWeight: isStarcks ? 700 : undefined,
                     letterSpacing: isStarcks ? '0.05em' : undefined,
                     filter: isStarcks ? 'drop-shadow(0 0 3px rgba(80,245,252,0.6))' : undefined,
+                    textTransform: 'uppercase',
                   }}
                 >
                   {label}

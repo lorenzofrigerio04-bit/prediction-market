@@ -41,8 +41,11 @@ function getKickoffDate(event: {
  * Returns structured sections for the football-focused homepage.
  * All events come from the Sport 2.0 pipeline (sourceType = "SPORT").
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const sectionFilter = searchParams.get("section") ?? null;
+
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id ?? null;
     const now = new Date();
@@ -193,43 +196,56 @@ export async function GET() {
       })
     );
 
+    // When ?section= is set we return all results (no slice cap) for that section.
+    const cap = (arr: ProcessedEvent[], n: number) =>
+      sectionFilter ? arr : arr.slice(0, n);
+
     // ── Section 1: Live events ──────────────────────────────────────────────
-    const liveEvents = processed
-      .filter((e) => LIVE_MATCH_STATUSES.has(e.matchStatus ?? ""))
-      .slice(0, 6);
+    const liveEvents = cap(
+      processed.filter((e) => LIVE_MATCH_STATUSES.has(e.matchStatus ?? "")),
+      75
+    );
 
     const nonLive = processed.filter((e) => !LIVE_MATCH_STATUSES.has(e.matchStatus ?? ""));
 
     // ── Section 2: Top events of the week ───────────────────────────────────
     const sevenDaysLater = new Date(now.getTime() + SEVEN_DAYS_MS);
-    const topEvents = nonLive
-      .filter((e) => e.kickoffDate.getTime() <= sevenDaysLater.getTime())
-      .sort((a, b) => b.sortScore - a.sortScore)
-      .slice(0, 8);
+    const topEvents = cap(
+      nonLive
+        .filter((e) => e.kickoffDate.getTime() <= sevenDaysLater.getTime())
+        .sort((a, b) => b.sortScore - a.sortScore),
+      8
+    );
 
     // ── Section 3: Popular markets (highest engagement) ─────────────────────
-    const popularMarkets = [...processed]
-      .sort((a, b) => b.predictionsCount - a.predictionsCount)
-      .slice(0, 5);
+    const popularMarkets = cap(
+      [...processed].sort((a, b) => b.predictionsCount - a.predictionsCount),
+      5
+    );
 
     // ── Section 4: For You (personalized or trending) ───────────────────────
     let forYouMarkets: ProcessedEvent[];
     if (isPersonalized) {
       const preferred = nonLive.filter((e) => userCategories.includes(e.category));
       const rest = nonLive.filter((e) => !userCategories.includes(e.category));
-      forYouMarkets = [...preferred, ...rest.sort((a, b) => b.sortScore - a.sortScore)]
-        .slice(0, 6);
+      forYouMarkets = cap(
+        [...preferred, ...rest.sort((a, b) => b.sortScore - a.sortScore)],
+        75
+      );
     } else {
-      forYouMarkets = [...nonLive]
-        .sort((a, b) => b.sortScore - a.sortScore)
-        .slice(0, 6);
+      forYouMarkets = cap(
+        [...nonLive].sort((a, b) => b.sortScore - a.sortScore),
+        75
+      );
     }
 
     // ── Section 5: Unique markets ────────────────────────────────────────────
-    const uniqueMarkets = nonLive
-      .filter((e) => isUniqueMarket(e.title))
-      .sort((a, b) => b.sortScore - a.sortScore)
-      .slice(0, 5);
+    const uniqueMarkets = cap(
+      nonLive
+        .filter((e) => isUniqueMarket(e.title))
+        .sort((a, b) => b.sortScore - a.sortScore),
+      5
+    );
 
     // ── Section 6: Upcoming calendar (next 7 days) ──────────────────────────
     const upcomingForCalendar = nonLive
@@ -258,31 +274,36 @@ export async function GET() {
 
     // ── New section: Top 5 eventi ultime 24h ────────────────────────────────
     const h24ago = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const top24hEvents = [...processed]
-      .sort((a, b) => b.sortScore - a.sortScore)
-      .slice(0, 5);
+    const top24hEvents = cap(
+      [...processed].sort((a, b) => b.sortScore - a.sortScore),
+      5
+    );
     void h24ago; // kept for reference; using all events ranked by score as "top"
 
     // ── New section: Viral events (highest engagement velocity) ─────────────
-    const viralEvents = [...processed]
-      .map((e) => {
-        const createdMs = new Date(e.createdAt).getTime();
-        const ageHours = Math.max(1, (now.getTime() - createdMs) / (1000 * 60 * 60));
-        const velocity = e.predictionsCount / ageHours;
-        return { ...e, velocity };
-      })
-      .sort((a, b) => b.velocity - a.velocity)
-      .slice(0, 6);
+    const viralEvents = cap(
+      [...processed]
+        .map((e) => {
+          const createdMs = new Date(e.createdAt).getTime();
+          const ageHours = Math.max(1, (now.getTime() - createdMs) / (1000 * 60 * 60));
+          const velocity = e.predictionsCount / ageHours;
+          return { ...e, velocity };
+        })
+        .sort((a, b) => b.velocity - a.velocity),
+      75
+    );
 
     // ── New section: Expiring events (closing in next 48h) ───────────────────
     const h48ahead = new Date(now.getTime() + 48 * 60 * 60 * 1000);
-    const expiringEvents = [...processed]
-      .filter((e) => {
-        const t = new Date(e.closesAt).getTime();
-        return t > now.getTime() && t <= h48ahead.getTime();
-      })
-      .sort((a, b) => new Date(a.closesAt).getTime() - new Date(b.closesAt).getTime())
-      .slice(0, 6);
+    const expiringEvents = cap(
+      [...processed]
+        .filter((e) => {
+          const t = new Date(e.closesAt).getTime();
+          return t > now.getTime() && t <= h48ahead.getTime();
+        })
+        .sort((a, b) => new Date(a.closesAt).getTime() - new Date(b.closesAt).getTime()),
+      75
+    );
 
     // ── Strip internal fields and return ────────────────────────────────────
     const strip = ({ kickoffDate: _kd, sortScore: _ss, ...e }: ProcessedEvent): FootballEvent => e;
