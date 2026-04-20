@@ -318,7 +318,7 @@ export async function GET(request: Request) {
       uniqueMarkets: uniqueMarkets.map(strip),
       calendar,
       top24hEvents: top24hEvents.map(strip),
-      viralEvents: viralEvents.map(stripViral),
+      viralEvents: (viralEvents as (ProcessedEvent & { velocity: number })[]).map(stripViral),
       expiringEvents: expiringEvents.map(strip),
       isEmpty: false,
       isPersonalized,
