@@ -197,7 +197,7 @@ export default function FeaturedMarket() {
                   fontFamily: "'JetBrains Mono', monospace",
                 }}
               >
-                💰 Pool: €{fm.totalPool.toLocaleString()}
+                💰 Pool: €{fm.totalPool.toLocaleString("it-IT")}
               </span>
             </div>
 

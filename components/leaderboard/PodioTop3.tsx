@@ -39,7 +39,7 @@ export function PodioTop3({ entries }: PodioTop3Props) {
             <div className="podio-stats">
               <div className="podio-stat">
                 <span className="podio-stat-label">Punteggio</span>
-                <span className="podio-stat-value">{second.score.toLocaleString()}</span>
+                <span className="podio-stat-value">{second.score.toLocaleString("it-IT")}</span>
               </div>
               <div className="podio-stat">
                 <span className="podio-stat-label">Accuratezza</span>
@@ -71,7 +71,7 @@ export function PodioTop3({ entries }: PodioTop3Props) {
             <div className="podio-stats">
               <div className="podio-stat">
                 <span className="podio-stat-label">Punteggio</span>
-                <span className="podio-stat-value">{first.score.toLocaleString()}</span>
+                <span className="podio-stat-value">{first.score.toLocaleString("it-IT")}</span>
               </div>
               <div className="podio-stat">
                 <span className="podio-stat-label">Accuratezza</span>
@@ -102,7 +102,7 @@ export function PodioTop3({ entries }: PodioTop3Props) {
             <div className="podio-stats">
               <div className="podio-stat">
                 <span className="podio-stat-label">Punteggio</span>
-                <span className="podio-stat-value">{third.score.toLocaleString()}</span>
+                <span className="podio-stat-value">{third.score.toLocaleString("it-IT")}</span>
               </div>
               <div className="podio-stat">
                 <span className="podio-stat-label">Accuratezza</span>

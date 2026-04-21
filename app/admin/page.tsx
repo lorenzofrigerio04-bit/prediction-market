@@ -972,7 +972,7 @@ export default function AdminDashboard() {
                             {event._count.predictions}
                           </td>
                           <td className="px-5 py-3 text-sm text-fg font-numeric text-right">
-                            {(event.totalCredits ?? 0).toLocaleString()}
+                            {(event.totalCredits ?? 0).toLocaleString("it-IT")}
                           </td>
                           <td className="px-5 py-3 text-sm text-fg-muted">
                             {event.marketType

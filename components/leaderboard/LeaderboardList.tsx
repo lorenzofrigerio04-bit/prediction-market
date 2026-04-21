@@ -50,7 +50,7 @@ export function LeaderboardList({ entries, currentUserPosition, showTop3 = false
                   </div>
                 </div>
                 <div className="leaderboard-score">
-                  {showTop3 ? entry.score.toLocaleString() : `${entry.streak} giorni`}
+                  {showTop3 ? entry.score.toLocaleString("it-IT") : `${entry.streak} giorni`}
                 </div>
               </div>
             ))}
@@ -85,7 +85,7 @@ export function LeaderboardList({ entries, currentUserPosition, showTop3 = false
                   </div>
                 </div>
                 <div className="leaderboard-score">
-                  {showTop3 ? currentUserEntry.score.toLocaleString() : `${currentUserEntry.streak} giorni`}
+                  {showTop3 ? currentUserEntry.score.toLocaleString("it-IT") : `${currentUserEntry.streak} giorni`}
                 </div>
               </div>
             </div>

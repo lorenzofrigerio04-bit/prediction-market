@@ -680,17 +680,30 @@ textarea:focus-visible {
   inset: 0;
   background-image: url("/images/landing-prelogin-hero-bg.png");
   background-size: cover;
-  background-position: center;
+  background-position: center top;
   background-repeat: no-repeat;
-  transform: scale(1.02);
+  transform: scale(1.04);
+  filter: brightness(0.36) saturate(0.55) blur(1.5px);
+  will-change: transform;
 }
 
 .landing-prelogin-photo-bg__overlay {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgb(1 4 10 / 0.44) 0%, rgb(1 4 10 / 0.26) 42%, rgb(var(--admin-bg) / 0.9) 100%),
-    radial-gradient(72% 56% at 50% 40%, rgb(0 0 0 / 0.06) 0%, rgb(0 0 0 / 0.34) 75%);
+    /* Cyan ambient spotlight — illumina la zona contenuto */
+    radial-gradient(ellipse 88% 48% at 50% 58%, rgba(56, 228, 238, 0.08) 0%, transparent 68%),
+    /* Edge vignette */
+    radial-gradient(ellipse 110% 100% at 50% 50%, transparent 28%, rgba(2, 6, 16, 0.65) 100%),
+    /* Vertical gradient — apre una "finestra" di atmosfera al centro */
+    linear-gradient(
+      180deg,
+      rgba(2, 6, 16, 0.94) 0%,
+      rgba(2, 6, 16, 0.54) 20%,
+      rgba(2, 6, 16, 0.28) 44%,
+      rgba(2, 6, 16, 0.64) 68%,
+      rgb(var(--admin-bg)) 100%
+    );
 }
 
 .landing-markets-backdrop-wall {
@@ -1946,6 +1959,63 @@ textarea:focus-visible {
   :root {
     --landing-hero-min-h: calc(100dvh - var(--header-height) - var(--safe-area-inset-top) - var(--bottom-nav-total) - 1.5rem);
   }
+}
+
+/* ── Pre-login hero: full viewport feel ── */
+@keyframes landing-starcks-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+@keyframes landing-live-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6); }
+  50%       { opacity: 0.7; box-shadow: 0 0 0 4px rgba(52, 211, 153, 0); }
+}
+
+.landing-starcks-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px 7px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 228, 238, 0.3);
+  background: rgba(56, 228, 238, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+  box-shadow: 0 0 28px rgba(56, 228, 238, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+.landing-starcks-pill::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(127, 250, 255, 0.14) 50%,
+    transparent 65%
+  );
+  background-size: 200% 100%;
+  animation: landing-starcks-shimmer 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+.landing-starcks-pill:hover {
+  border-color: rgba(56, 228, 238, 0.55);
+  background: rgba(56, 228, 238, 0.11);
+  box-shadow: 0 0 40px rgba(56, 228, 238, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.landing-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+  flex-shrink: 0;
+  animation: landing-live-pulse 2s ease-in-out infinite;
 }
 
 .landing-hero-section--prelogin {

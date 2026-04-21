@@ -53,7 +53,7 @@ export function EventCardCompact({ event, showCountdown }: EventCardCompactProps
       <OddsBadge eventId={event.id} />
       {event.volume !== undefined && (
         <div className="event-volume">
-          Volume: {event.volume.toLocaleString()} crediti
+          Volume: {event.volume.toLocaleString("it-IT")} crediti
         </div>
       )}
       <style jsx>{`

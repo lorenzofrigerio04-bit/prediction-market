@@ -367,20 +367,137 @@ function HomeContent() {
               <div className="landing-prelogin-photo-bg__image" />
               <div className="landing-prelogin-photo-bg__overlay" />
             </div>
-            <div className="landing-hero-card relative z-10 flex flex-1 min-h-0 items-end justify-center px-4 pb-[clamp(86px,16vh,168px)] sm:pb-[clamp(96px,14vh,188px)]">
-              <div className="w-full max-w-[19rem] mx-auto flex flex-col gap-3" aria-label="Azioni accesso">
-                <Link
-                  href="/auth/login"
-                  className="inline-flex w-full min-h-[54px] items-center justify-center rounded-[16px] border border-cyan-200/40 bg-gradient-to-b from-[#7EFAFF] via-[#51DCE8] to-[#39C6D5] text-[#03111C] font-extrabold text-[16px] tracking-[0.02em] transition-all duration-250 hover:brightness-110 hover:-translate-y-[1px] hover:shadow-[0_14px_34px_-14px_rgba(103,243,255,0.95)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-100/65 focus-visible:ring-offset-2 focus-visible:ring-offset-[#031126]"
+            <div className="landing-hero-card relative z-10 flex flex-1 min-h-0 items-center justify-center px-5 pb-[clamp(32px,7vh,72px)] pt-[clamp(16px,4vh,48px)]">
+              <div className="w-full max-w-[21rem] mx-auto flex flex-col items-center text-center">
+
+                {/* ── Live activity indicator ── */}
+                <div className="flex items-center gap-[7px] mb-6">
+                  <span className="landing-live-dot" aria-hidden />
+                  <span
+                    className="font-numeric text-[10px] font-medium tracking-[0.14em] uppercase"
+                    style={{ color: 'rgba(255,255,255,0.32)' }}
+                  >
+                    Mercati attivi ora
+                  </span>
+                </div>
+
+                {/* ── Main headline ── */}
+                <h1
+                  className="font-display font-extrabold leading-[1.02] mb-4"
+                  style={{ fontSize: 'clamp(2.1rem,8.5vw,2.8rem)', letterSpacing: '-0.025em' }}
                 >
-                  Accedi
+                  <span className="block text-white">Prevedi il futuro.</span>
+                  <span
+                    className="block"
+                    style={{
+                      background: 'linear-gradient(125deg, #ffffff 0%, #7EFAFF 38%, #38E4EE 68%, #29C6D5 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                    }}
+                  >
+                    Vinci sui mercati.
+                  </span>
+                </h1>
+
+                {/* ── Tagline ── */}
+                <p
+                  className="font-sans text-[12.5px] font-medium mb-7 leading-relaxed"
+                  style={{ color: 'rgba(255,255,255,0.36)', letterSpacing: '0.045em' }}
+                >
+                  Il primo prediction market sportivo italiano
+                </p>
+
+                {/* ── NOVITÀ · Starcks Partnership ── */}
+                <Link
+                  href="/starcks"
+                  className="landing-starcks-pill mb-7 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(56,228,238,0.6)]"
+                  aria-label="Novità: partnership con Starcks — scopri i Player Token"
+                >
+                  <span
+                    className="font-numeric text-[8.5px] font-extrabold tracking-[0.22em] uppercase leading-none px-2 py-[4px] rounded-full"
+                    style={{ background: 'linear-gradient(130deg,#7EFAFF,#38E4EE)', color: '#021018' }}
+                  >
+                    NOVITÀ
+                  </span>
+                  <span className="font-sans text-[11.5px] font-medium" style={{ color: 'rgba(255,255,255,0.55)', letterSpacing: '0.03em' }}>
+                    Powered by{' '}
+                    <span className="font-bold" style={{ color: '#7EFAFF' }}>Starcks</span>
+                    <span style={{ color: 'rgba(255,255,255,0.25)', margin: '0 5px' }}>·</span>
+                    <span style={{ color: 'rgba(255,255,255,0.42)' }}>Player Token</span>
+                  </span>
+                  <svg
+                    width="10" height="10" viewBox="0 0 24 24" fill="none"
+                    stroke="rgba(127,250,255,0.65)" strokeWidth="2.5"
+                    strokeLinecap="round" strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
                 </Link>
+
+                {/* ── Thin accent separator ── */}
+                <div
+                  className="w-full h-px mb-6"
+                  style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(56,228,238,0.2) 30%, rgba(56,228,238,0.35) 50%, rgba(56,228,238,0.2) 70%, transparent 100%)' }}
+                  aria-hidden
+                />
+
+                {/* ── Primary CTA: Registrati ── */}
                 <Link
                   href="/auth/signup"
-                  className="inline-flex w-full min-h-[54px] items-center justify-center rounded-[16px] border border-white/35 bg-[linear-gradient(180deg,rgba(255,255,255,0.28)_0%,rgba(255,255,255,0.14)_100%)] text-white font-bold text-[16px] tracking-[0.02em] shadow-[inset_0_1px_0_rgba(255,255,255,0.28)] transition-all duration-250 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.33)_0%,rgba(255,255,255,0.16)_100%)] hover:-translate-y-[1px] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/55 focus-visible:ring-offset-2 focus-visible:ring-offset-[#031126]"
+                  className="inline-flex w-full min-h-[56px] items-center justify-center gap-[9px] rounded-[18px] font-sans font-extrabold text-[15.5px] tracking-[0.02em] transition-all duration-200 mb-[10px] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0C0E14]"
+                  style={{
+                    background: 'linear-gradient(160deg, #7EFAFF 0%, #51DCE8 52%, #2FC8D8 100%)',
+                    color: '#021018',
+                    border: '1px solid rgba(127,250,255,0.35)',
+                    boxShadow: '0 0 40px rgba(56,228,238,0.28), 0 8px 32px -10px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.3)',
+                  }}
+                  onMouseEnter={(e) => {
+                    const el = e.currentTarget;
+                    el.style.boxShadow = '0 0 56px rgba(56,228,238,0.42), 0 12px 40px -10px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.3)';
+                    el.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget;
+                    el.style.boxShadow = '0 0 40px rgba(56,228,238,0.28), 0 8px 32px -10px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.3)';
+                    el.style.transform = 'translateY(0)';
+                  }}
                 >
-                  Registrati
+                  Inizia ora — è gratis
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
                 </Link>
+
+                {/* ── Secondary CTA: Accedi ── */}
+                <Link
+                  href="/auth/login"
+                  className="inline-flex w-full min-h-[48px] items-center justify-center gap-[6px] rounded-[14px] font-sans font-semibold text-[13px] tracking-[0.02em] transition-all duration-200 active:scale-[0.985] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/25"
+                  style={{
+                    color: 'rgba(255,255,255,0.46)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'rgba(255,255,255,0.025)',
+                  }}
+                  onMouseEnter={(e) => {
+                    const el = e.currentTarget;
+                    el.style.color = 'rgba(255,255,255,0.75)';
+                    el.style.borderColor = 'rgba(255,255,255,0.18)';
+                    el.style.background = 'rgba(255,255,255,0.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget;
+                    el.style.color = 'rgba(255,255,255,0.46)';
+                    el.style.borderColor = 'rgba(255,255,255,0.1)';
+                    el.style.background = 'rgba(255,255,255,0.025)';
+                  }}
+                >
+                  Ho già un account · Accedi
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </Link>
+
               </div>
             </div>
           </section>

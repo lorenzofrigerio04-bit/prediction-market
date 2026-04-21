@@ -154,7 +154,7 @@ export default function AdminResolvePage() {
                       Chiuso il{" "}
                       {new Date(event.closesAt).toLocaleString("it-IT")} ·{" "}
                       {event._count.predictions} previsioni ·{" "}
-                      {(event.totalCredits ?? 0).toLocaleString()} crediti in gioco
+                      {(event.totalCredits ?? 0).toLocaleString("it-IT")} crediti in gioco
                     </p>
                   </div>
 

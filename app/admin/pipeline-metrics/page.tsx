@@ -33,7 +33,7 @@ function MetricCard({
       ? "—"
       : format === "percent"
         ? `${(value * 100).toFixed(1)}%`
-        : value.toLocaleString();
+        : value.toLocaleString("it-IT");
   return (
     <div className="rounded-xl border border-border dark:border-white/10 bg-surface/30 p-4">
       <p className="text-sm text-fg-muted mb-1">{title}</p>

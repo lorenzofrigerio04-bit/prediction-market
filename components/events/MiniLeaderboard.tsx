@@ -97,7 +97,7 @@ export function MiniLeaderboard({ entries, isLoading }: MiniLeaderboardProps) {
               <div className="item-nickname">{entry.nickname}</div>
               <div className="item-stats">
                 {entry.points !== undefined && (
-                  <span className="stat">{entry.points.toLocaleString()} punti</span>
+                  <span className="stat">{entry.points.toLocaleString("it-IT")} punti</span>
                 )}
                 {entry.accuracy !== undefined && (
                   <span className="stat">{Math.round(entry.accuracy)}% accuratezza</span>

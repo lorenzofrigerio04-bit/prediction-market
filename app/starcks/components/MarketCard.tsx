@@ -219,7 +219,7 @@ export default function MarketCard({ player, index = 0 }: MarketCardProps) {
             fontFamily: "'JetBrains Mono', monospace",
           }}
         >
-          7g: {formatChange(player.change7d)} · {player.holders.toLocaleString()} holders
+          7g: {formatChange(player.change7d)} · {player.holders.toLocaleString("it-IT")} holders
         </div>
 
         {/* Chart */}
