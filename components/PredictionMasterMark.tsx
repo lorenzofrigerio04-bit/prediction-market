@@ -188,7 +188,7 @@ export function PredictionMasterLogoCompact() {
   return (
     <Link
       href="/"
-      aria-label="PredictionMaster — Powered by Starcks"
+      aria-label="PredictionMaster"
       className={[
         "pm-logo-header inline-flex h-full min-h-[44px] max-w-[min(100%,54dvw)] min-w-0 shrink flex-col items-start justify-center gap-[1px] overflow-hidden px-1 md:px-1.5",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-xl",
@@ -198,43 +198,6 @@ export function PredictionMasterLogoCompact() {
       <span className="pm-logo-header__text text-[1.7rem] sm:text-[1.9rem] md:text-[2.35rem] leading-none select-none whitespace-nowrap">
         <span className="pm-logo-header__prediction">Prediction</span>
         <span className="pm-logo-header__master">Master</span>
-      </span>
-
-      {/* "Powered by Starcks" ultra-premium badge */}
-      <span
-        className="pm-powered-by select-none whitespace-nowrap flex items-baseline gap-[3px]"
-        aria-hidden="true"
-      >
-        <span
-          className="pm-powered-by__label"
-          style={{
-            fontSize: "8.5px",
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: "rgba(255,255,255,0.38)",
-            fontWeight: 500,
-            lineHeight: 1,
-          }}
-        >
-          Powered by
-        </span>
-        <span
-          className="pm-powered-by__starcks"
-          style={{
-            fontSize: "9.5px",
-            letterSpacing: "0.09em",
-            textTransform: "uppercase",
-            fontWeight: 700,
-            lineHeight: 1,
-            background: "linear-gradient(90deg, #50f5fc 0%, #80faff 55%, #38e4ee 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-            filter: "drop-shadow(0 0 4px rgba(80,245,252,0.55))",
-          }}
-        >
-          Starcks
-        </span>
       </span>
     </Link>
   );

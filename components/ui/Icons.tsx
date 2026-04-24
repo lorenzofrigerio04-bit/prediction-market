@@ -546,11 +546,18 @@ export function IconNavLive({ className, ...props }: SVGProps<SVGSVGElement>) {
   );
 }
 
-/** Icona STARCKS per bottom nav: stella a 5 punte premium */
-export function IconNavStarcks({ className, ...props }: SVGProps<SVGSVGElement>) {
+/** Icona SHOP per bottom nav: borsa della spesa */
+export function IconNavShop({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <NavIcon className={className} {...props}>
-      <path d="M12 2 L14.09 8.26 L20.78 8.27 L15.45 12.14 L17.55 18.39 L12 14.51 L6.45 18.39 L8.55 12.14 L3.22 8.27 L9.91 8.26 Z" strokeWidth={1.2} />
+      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <path d="M16 10a4 4 0 0 1-8 0" />
     </NavIcon>
   );
+}
+
+/** @deprecated use IconNavShop */
+export function IconNavStarcks({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return <IconNavShop className={className} {...props} />;
 }

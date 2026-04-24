@@ -96,23 +96,6 @@ function EmptyPipelineWarning() {
   );
 }
 
-// ─── Footer ───────────────────────────────────────────────────────────────────
-
-function PoweredByStarcks() {
-  return (
-    <footer className="mt-14 flex items-center justify-center pb-8" aria-label="Footer">
-      <p className="select-none text-[11px] font-medium tracking-[0.18em] text-white/22 uppercase">
-        powered by{" "}
-        <span
-          className="font-bold tracking-[0.22em]"
-          style={{ color: "#0ABAB5" }}
-        >
-          starcks
-        </span>
-      </p>
-    </footer>
-  );
-}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -233,8 +216,6 @@ export function FootballHomepage({ isLoggedIn, onEventNavigate }: Props) {
         </div>
       )}
 
-      {/* Footer */}
-      <PoweredByStarcks />
     </section>
   );
 }

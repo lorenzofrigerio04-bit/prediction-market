@@ -357,195 +357,382 @@ function HomeContent() {
 
   if (showLanding) {
     return (
-      <div className="min-h-screen relative overflow-x-hidden landing-page">
+      <div className="lp-root landing-page">
         <Header showCategoryStrip={false} />
-        <main id="main-content" className="relative mx-auto px-4 pt-0 pb-4 sm:px-6 sm:pt-0 sm:pb-6 md:pb-8 lg:pb-10 max-w-5xl">
-          <section
-            className="landing-hero-section landing-hero-section--prelogin relative left-1/2 w-screen -translate-x-1/2 overflow-hidden flex flex-col"
-          >
-            <div className="landing-prelogin-photo-bg" aria-hidden>
-              <div className="landing-prelogin-photo-bg__image" />
-              <div className="landing-prelogin-photo-bg__overlay" />
+
+        {/* ══════════════════════════════════════════════════════════════
+            HERO — full viewport, cinematic, maximum conversion
+        ══════════════════════════════════════════════════════════════ */}
+        <section className="lp-hero">
+          {/* Cinematic photo bg (reuses existing system) */}
+          <div className="landing-prelogin-photo-bg" aria-hidden>
+            <div className="landing-prelogin-photo-bg__image" />
+            <div className="landing-prelogin-photo-bg__overlay" />
+          </div>
+          {/* Animated ambient orbs */}
+          <div className="lp-orbs" aria-hidden>
+            <div className="lp-orb lp-orb--a" />
+            <div className="lp-orb lp-orb--b" />
+            <div className="lp-orb lp-orb--c" />
+          </div>
+
+          <div className="lp-hero-body">
+            {/* Live pill */}
+            <div className="lp-hero-live">
+              <span className="landing-live-dot" aria-hidden />
+              <span>
+                {landingTrendingEvents.length > 0
+                  ? `${landingTrendingEvents.length} mercati attivi ora`
+                  : "Mercati attivi ora"}
+              </span>
             </div>
-            <div className="landing-hero-card relative z-10 flex flex-1 min-h-0 items-center justify-center px-5 pb-[clamp(32px,7vh,72px)] pt-[clamp(16px,4vh,48px)]">
-              <div className="w-full max-w-[21rem] mx-auto flex flex-col items-center text-center">
 
-                {/* ── Live activity indicator ── */}
-                <div className="flex items-center gap-[7px] mb-6">
-                  <span className="landing-live-dot" aria-hidden />
-                  <span
-                    className="font-numeric text-[10px] font-medium tracking-[0.14em] uppercase"
-                    style={{ color: 'rgba(255,255,255,0.32)' }}
-                  >
-                    Mercati attivi ora
-                  </span>
-                </div>
+            {/* Main headline */}
+            <h1 className="lp-hero-headline">
+              <span className="lp-hero-hl-white">Prevedi il futuro.</span>
+              <span className="lp-hero-hl-cyan">Vinci sui mercati.</span>
+            </h1>
 
-                {/* ── Main headline ── */}
-                <h1
-                  className="font-display font-extrabold leading-[1.02] mb-4"
-                  style={{ fontSize: 'clamp(2.1rem,8.5vw,2.8rem)', letterSpacing: '-0.025em' }}
-                >
-                  <span className="block text-white">Prevedi il futuro.</span>
-                  <span
-                    className="block"
-                    style={{
-                      background: 'linear-gradient(125deg, #ffffff 0%, #7EFAFF 38%, #38E4EE 68%, #29C6D5 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                    }}
-                  >
-                    Vinci sui mercati.
-                  </span>
-                </h1>
+            {/* Sub-headline */}
+            <p className="lp-hero-sub">
+              Il primo prediction market sportivo italiano.{" "}
+              <br className="lp-br" />
+              Prevedi gli eventi, sfida gli altri, scala le classifiche.
+            </p>
 
-                {/* ── Tagline ── */}
-                <p
-                  className="font-sans text-[12.5px] font-medium mb-7 leading-relaxed"
-                  style={{ color: 'rgba(255,255,255,0.36)', letterSpacing: '0.045em' }}
-                >
-                  Il primo prediction market sportivo italiano
-                </p>
-
-                {/* ── NOVITÀ · Starcks Partnership ── */}
-                <Link
-                  href="/starcks"
-                  className="landing-starcks-pill mb-7 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(56,228,238,0.6)]"
-                  aria-label="Novità: partnership con Starcks — scopri i Player Token"
-                >
-                  <span
-                    className="font-numeric text-[8.5px] font-extrabold tracking-[0.22em] uppercase leading-none px-2 py-[4px] rounded-full"
-                    style={{ background: 'linear-gradient(130deg,#7EFAFF,#38E4EE)', color: '#021018' }}
-                  >
-                    NOVITÀ
-                  </span>
-                  <span className="font-sans text-[11.5px] font-medium" style={{ color: 'rgba(255,255,255,0.55)', letterSpacing: '0.03em' }}>
-                    Powered by{' '}
-                    <span className="font-bold" style={{ color: '#7EFAFF' }}>Starcks</span>
-                    <span style={{ color: 'rgba(255,255,255,0.25)', margin: '0 5px' }}>·</span>
-                    <span style={{ color: 'rgba(255,255,255,0.42)' }}>Player Token</span>
-                  </span>
-                  <svg
-                    width="10" height="10" viewBox="0 0 24 24" fill="none"
-                    stroke="rgba(127,250,255,0.65)" strokeWidth="2.5"
-                    strokeLinecap="round" strokeLinejoin="round"
-                    aria-hidden
-                  >
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </Link>
-
-                {/* ── Thin accent separator ── */}
+            {/* ── AUTO-SLIDING EVENT CARDS ── */}
+            {(landingHasEvents || homeFeedLoading) && (
+              <div className="lp-marquee" aria-label="Mercati in evidenza">
+                <div className="lp-marquee__fade lp-marquee__fade--l" aria-hidden />
+                <div className="lp-marquee__fade lp-marquee__fade--r" aria-hidden />
                 <div
-                  className="w-full h-px mb-6"
-                  style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(56,228,238,0.2) 30%, rgba(56,228,238,0.35) 50%, rgba(56,228,238,0.2) 70%, transparent 100%)' }}
+                  className="lp-marquee__track"
+                  style={homeFeedLoading ? { animationPlayState: "paused" } : undefined}
                   aria-hidden
-                />
-
-                {/* ── Primary CTA: Registrati ── */}
-                <Link
-                  href="/auth/signup"
-                  className="inline-flex w-full min-h-[56px] items-center justify-center gap-[9px] rounded-[18px] font-sans font-extrabold text-[15.5px] tracking-[0.02em] transition-all duration-200 mb-[10px] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0C0E14]"
-                  style={{
-                    background: 'linear-gradient(160deg, #7EFAFF 0%, #51DCE8 52%, #2FC8D8 100%)',
-                    color: '#021018',
-                    border: '1px solid rgba(127,250,255,0.35)',
-                    boxShadow: '0 0 40px rgba(56,228,238,0.28), 0 8px 32px -10px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.3)',
-                  }}
-                  onMouseEnter={(e) => {
-                    const el = e.currentTarget;
-                    el.style.boxShadow = '0 0 56px rgba(56,228,238,0.42), 0 12px 40px -10px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.3)';
-                    el.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    const el = e.currentTarget;
-                    el.style.boxShadow = '0 0 40px rgba(56,228,238,0.28), 0 8px 32px -10px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.3)';
-                    el.style.transform = 'translateY(0)';
-                  }}
                 >
-                  Inizia ora — è gratis
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </Link>
-
-                {/* ── Secondary CTA: Accedi ── */}
-                <Link
-                  href="/auth/login"
-                  className="inline-flex w-full min-h-[48px] items-center justify-center gap-[6px] rounded-[14px] font-sans font-semibold text-[13px] tracking-[0.02em] transition-all duration-200 active:scale-[0.985] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/25"
-                  style={{
-                    color: 'rgba(255,255,255,0.46)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    background: 'rgba(255,255,255,0.025)',
-                  }}
-                  onMouseEnter={(e) => {
-                    const el = e.currentTarget;
-                    el.style.color = 'rgba(255,255,255,0.75)';
-                    el.style.borderColor = 'rgba(255,255,255,0.18)';
-                    el.style.background = 'rgba(255,255,255,0.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    const el = e.currentTarget;
-                    el.style.color = 'rgba(255,255,255,0.46)';
-                    el.style.borderColor = 'rgba(255,255,255,0.1)';
-                    el.style.background = 'rgba(255,255,255,0.025)';
-                  }}
-                >
-                  Ho già un account · Accedi
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </Link>
-
-              </div>
-            </div>
-          </section>
-
-          <section
-            className="landing-trending-section relative left-1/2 w-screen -translate-x-1/2 mb-8 md:mb-10"
-            aria-label="Mercati in tendenza"
-          >
-            <div className="px-4 sm:px-6">
-              <h2 className="font-kalshi text-[1.55rem] sm:text-[1.85rem] md:text-[2rem] lg:text-[2.1rem] font-bold text-white/95 leading-[1.1] tracking-[0.01em] mb-3 sm:mb-4">
-                Trending now
-              </h2>
-            </div>
-            {homeFeedLoading ? (
-              <LoadingBlock message="Caricamento mercati in tendenza..." fullscreen={false} />
-            ) : !landingHasEvents ? (
-              <p className="text-ds-body-sm text-white/70 py-3 px-4 sm:px-6">Nessun mercato disponibile al momento.</p>
-            ) : (
-              <div className="landing-trending-row-wrap">
-                <div className="landing-trending-row" role="list" aria-label="Mercati in tendenza">
-                  {landingTrendingEvents.map((event, idx) => (
-                    <div
-                      key={event.id}
-                      ref={(node) => setLandingEventRef(event.id, node)}
-                      className={`landing-trending-row__item landing-trending-row__item--ranked ${
-                        idx + 1 >= 10
-                          ? "landing-trending-row__item--double"
-                          : "landing-trending-row__item--single"
-                      }`}
-                      role="listitem"
-                    >
-                      <LandingTrendingMarketCard
-                        id={event.id}
-                        title={event.title}
-                        category={event.category}
-                        imageUrl={event.aiImageUrl}
-                        onNavigate={handleEventClick}
-                      />
-                      <span className="landing-trending-rank" aria-hidden>
-                        {idx + 1}
-                      </span>
+                  {[...landingTrendingEvents, ...landingTrendingEvents].map((ev, i) => (
+                    <div key={`mq-${ev.id}-${i}`} className="lp-mq-card">
+                      {ev.aiImageUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={ev.aiImageUrl}
+                          alt=""
+                          className="lp-mq-card__img"
+                          loading="lazy"
+                        />
+                      )}
+                      <div className="lp-mq-card__overlay" />
+                      <div className="lp-mq-card__body">
+                        <span className="lp-mq-card__cat">{ev.category}</span>
+                        <p className="lp-mq-card__title">{ev.title}</p>
+                        <div className="lp-mq-card__probs">
+                          <div className="lp-mq-card__prob lp-mq-card__prob--yes">
+                            <span>SÌ</span>
+                            <span className="lp-mq-card__pct">{Math.round(ev.yesPct)}%</span>
+                          </div>
+                          <div className="lp-mq-card__prob lp-mq-card__prob--no">
+                            <span>NO</span>
+                            <span className="lp-mq-card__pct">{Math.round(100 - ev.yesPct)}%</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-          </section>
-        </main>
+
+            {/* Stats bar */}
+            <div className="lp-stats">
+              <div className="lp-stat">
+                <span className="lp-stat__num">10k+</span>
+                <span className="lp-stat__lbl">Predittori</span>
+              </div>
+              <div className="lp-stat__sep" />
+              <div className="lp-stat">
+                <span className="lp-stat__num">500+</span>
+                <span className="lp-stat__lbl">Mercati</span>
+              </div>
+              <div className="lp-stat__sep" />
+              <div className="lp-stat">
+                <span className="lp-stat__num">#1</span>
+                <span className="lp-stat__lbl">In Italia</span>
+              </div>
+            </div>
+
+            {/* CTAs */}
+            <div className="lp-cta-group">
+              <Link
+                href="/auth/signup"
+                className="lp-cta-primary"
+                onMouseEnter={(e) => {
+                  const el = e.currentTarget;
+                  el.style.boxShadow =
+                    "0 0 60px rgba(56,228,238,0.5), 0 14px 44px -10px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.32)";
+                  el.style.transform = "translateY(-2px) scale(1.012)";
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget;
+                  el.style.boxShadow = "";
+                  el.style.transform = "";
+                }}
+              >
+                <span>Inizia ora — è gratis</span>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </Link>
+              <Link href="/auth/login" className="lp-cta-secondary">
+                Ho già un account · Accedi
+              </Link>
+            </div>
+
+            {/* Trust micro-copy */}
+            <p className="lp-trust">
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+                style={{ display: "inline", verticalAlign: "middle", marginRight: 5, opacity: 0.45 }}
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              Nessuna carta di credito · Solo previsioni, nessuna scommessa
+            </p>
+          </div>
+
+          <div className="lp-hero-bottom-fade" aria-hidden />
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════
+            HOW IT WORKS — 3 passi chiari e visivi
+        ══════════════════════════════════════════════════════════════ */}
+        <section className="lp-steps-section" aria-label="Come funziona">
+          <div className="lp-section-wrap">
+            <p className="lp-section-eyebrow">Come funziona</p>
+            <h2 className="lp-section-title">3 passi verso la vittoria</h2>
+            <div className="lp-steps">
+              <div className="lp-step">
+                <div className="lp-step__num-badge">01</div>
+                <div className="lp-step__icon-wrap lp-step__icon-wrap--1">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="3" />
+                    <line x1="12" y1="2" x2="12" y2="5" /><line x1="12" y1="19" x2="12" y2="22" />
+                    <line x1="2" y1="12" x2="5" y2="12" /><line x1="19" y1="12" x2="22" y2="12" />
+                  </svg>
+                </div>
+                <h3 className="lp-step__title">Prevedi</h3>
+                <p className="lp-step__desc">Scegli un mercato sportivo e prevedi il risultato. Usa la tua conoscenza per battere la media.</p>
+              </div>
+              <div className="lp-step-connector" aria-hidden>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(56,228,238,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </div>
+              <div className="lp-step">
+                <div className="lp-step__num-badge">02</div>
+                <div className="lp-step__icon-wrap lp-step__icon-wrap--2">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                </div>
+                <h3 className="lp-step__title">Sfida</h3>
+                <p className="lp-step__desc">Entra nelle classifiche globali e misura il tuo talento contro migliaia di predittori italiani.</p>
+              </div>
+              <div className="lp-step-connector" aria-hidden>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(56,228,238,0.35)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </div>
+              <div className="lp-step">
+                <div className="lp-step__num-badge">03</div>
+                <div className="lp-step__icon-wrap lp-step__icon-wrap--3">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                    <path d="M4 22h16" />
+                    <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                    <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+                  </svg>
+                </div>
+                <h3 className="lp-step__title">Vinci</h3>
+                <p className="lp-step__desc">Previsioni giuste = punti, premi e riconoscimenti esclusivi. I migliori scalano verso la vetta.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════
+            TRENDING MARKETS — mercati live
+        ══════════════════════════════════════════════════════════════ */}
+        <section
+          className="lp-trending-section landing-trending-section"
+          aria-label="Mercati in tendenza"
+        >
+          <div className="lp-trending-header px-4 sm:px-6">
+            <div>
+              <p className="lp-section-eyebrow lp-section-eyebrow--live">
+                <span className="landing-live-dot" aria-hidden />
+                Live ora
+              </p>
+              <h2 className="lp-section-title lp-section-title--trending">Trending now</h2>
+            </div>
+            <Link href="/auth/signup" className="lp-trending-see-all">
+              Vedi tutti
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
+          {homeFeedLoading ? (
+            <LoadingBlock message="Caricamento mercati in tendenza..." fullscreen={false} />
+          ) : !landingHasEvents ? (
+            <p className="text-ds-body-sm text-white/70 py-3 px-4 sm:px-6">Nessun mercato disponibile al momento.</p>
+          ) : (
+            <div className="landing-trending-row-wrap">
+              <div className="landing-trending-row" role="list" aria-label="Mercati in tendenza">
+                {landingTrendingEvents.map((event, idx) => (
+                  <div
+                    key={event.id}
+                    ref={(node) => setLandingEventRef(event.id, node)}
+                    className={`landing-trending-row__item landing-trending-row__item--ranked ${
+                      idx + 1 >= 10
+                        ? "landing-trending-row__item--double"
+                        : "landing-trending-row__item--single"
+                    }`}
+                    role="listitem"
+                  >
+                    <LandingTrendingMarketCard
+                      id={event.id}
+                      title={event.title}
+                      category={event.category}
+                      imageUrl={event.aiImageUrl}
+                      onNavigate={handleEventClick}
+                    />
+                    <span className="landing-trending-rank" aria-hidden>
+                      {idx + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════
+            FEATURES — perché sceglierci
+        ══════════════════════════════════════════════════════════════ */}
+        <section className="lp-features-section" aria-label="Caratteristiche principali">
+          <div className="lp-section-wrap">
+            <p className="lp-section-eyebrow">Perché scegliere noi</p>
+            <h2 className="lp-section-title">La piattaforma che cambia tutto</h2>
+            <div className="lp-features">
+              <div className="lp-feature">
+                <div className="lp-feature__icon-wrap lp-feature__icon-wrap--1">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                  </svg>
+                </div>
+                <h3 className="lp-feature__title">Mercati in tempo reale</h3>
+                <p className="lp-feature__desc">Le probabilità si aggiornano in diretta con le previsioni di tutta la community. Nessun ritardo, tutto live.</p>
+              </div>
+              <div className="lp-feature">
+                <div className="lp-feature__icon-wrap lp-feature__icon-wrap--2">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                </div>
+                <h3 className="lp-feature__title">AI-Powered</h3>
+                <p className="lp-feature__desc">Immagini, analisi e insight generati dall&apos;intelligenza artificiale per ogni evento. Il futuro è già qui.</p>
+              </div>
+              <div className="lp-feature">
+                <div className="lp-feature__icon-wrap lp-feature__icon-wrap--3">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                </div>
+                <h3 className="lp-feature__title">Premi esclusivi</h3>
+                <p className="lp-feature__desc">I predittori migliori guadagnano premi esclusivi e badge legati ai campioni dello sport.</p>
+              </div>
+              <div className="lp-feature">
+                <div className="lp-feature__icon-wrap lp-feature__icon-wrap--4">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+                  </svg>
+                </div>
+                <h3 className="lp-feature__title">Classifiche globali</h3>
+                <p className="lp-feature__desc">Scala la classifica globale, guadagna punti esperienza e dimostra chi sei davvero nell&apos;arena italiana.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════
+            FINAL CTA — conversione massima
+        ══════════════════════════════════════════════════════════════ */}
+        <section className="lp-final-cta" aria-label="Registrati ora">
+          <div className="lp-final-cta__orb" aria-hidden />
+          <div className="lp-section-wrap lp-final-cta__inner">
+            <p className="lp-section-eyebrow lp-section-eyebrow--light">Entra nell&apos;elite</p>
+            <h2 className="lp-final-cta__title">
+              Pronto a dimostrare<br />il tuo talento?
+            </h2>
+            <p className="lp-final-cta__sub">
+              Unisciti a 10.000+ predittori. Gratis, senza carta di credito, in 30 secondi.
+            </p>
+            <Link
+              href="/auth/signup"
+              className="lp-cta-primary lp-cta-primary--lg"
+              onMouseEnter={(e) => {
+                const el = e.currentTarget;
+                el.style.boxShadow =
+                  "0 0 60px rgba(56,228,238,0.5), 0 14px 44px -10px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.32)";
+                el.style.transform = "translateY(-2px) scale(1.012)";
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget;
+                el.style.boxShadow = "";
+                el.style.transform = "";
+              }}
+            >
+              <span>Crea il tuo account gratis</span>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </Link>
+            <Link href="/auth/login" className="lp-cta-secondary lp-cta-secondary--sm">
+              Ho già un account · Accedi
+            </Link>
+          </div>
+        </section>
       </div>
     );
   }

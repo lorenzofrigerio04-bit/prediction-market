@@ -10,16 +10,16 @@ import {
   IconMenu,
   IconNavHome,
   IconNavLive,
-  IconNavStarcks,
+  IconNavShop,
   IconUser,
 } from "@/components/ui/Icons";
 import { MARKET_CATEGORIES, type MarketCategoryId } from "@/lib/market-categories";
 
-// Bottom bar: Home, Live, Starcks, Profilo
+// Bottom bar: Home, Live, Shop, Profilo
 const BOTTOM_NAV_ITEMS = [
   { href: "/", label: "Home", NavIcon: IconNavHome },
   { href: "/live", label: "Live", NavIcon: IconNavLive },
-  { href: "/starcks", label: "Starcks", NavIcon: IconNavStarcks },
+  { href: "/shop", label: "Shop", NavIcon: IconNavShop },
   { href: "/profile", label: "Profilo", NavIcon: IconUser },
 ] as const;
 
@@ -176,46 +176,15 @@ export default function Header({ showCategoryStrip = true }: HeaderProps) {
           {BOTTOM_NAV_ITEMS.map(({ href, label, NavIcon }) => {
             const linkHref = href === "/profile" ? profileHref : href;
             const active = isActive(linkHref);
-            const isStarcks = href === "/starcks";
             return (
               <Link
                 key={href}
                 href={linkHref}
-                className={`${bottomLinkClass} w-full ${active ? "nav-item-neon-active" : ""} ${isStarcks ? "nav-item-starcks" : ""}`}
+                className={`${bottomLinkClass} w-full ${active ? "nav-item-neon-active" : ""}`}
                 aria-label={label}
               >
-                <span
-                  className="relative inline-flex shrink-0 overflow-visible items-center justify-center w-[22px] h-[22px] min-w-[22px] min-h-[22px] aspect-square"
-                  style={isStarcks ? { color: '#50f5fc', filter: 'drop-shadow(0 0 4px rgba(80,245,252,0.55))' } : undefined}
-                >
+                <span className="relative inline-flex shrink-0 overflow-visible items-center justify-center w-[22px] h-[22px] min-w-[22px] min-h-[22px] aspect-square">
                   <NavIcon className="w-[22px] h-[22px] min-w-[22px] min-h-[22px] flex-shrink-0 aspect-square" strokeWidth={1.7} />
-                  {isStarcks && (
-                    <span
-                      aria-hidden
-                      style={{
-                        position: 'absolute',
-                        top: '-10px',
-                        right: '-18px',
-                        fontSize: '6px',
-                        fontWeight: 800,
-                        letterSpacing: '0.2em',
-                        lineHeight: 1,
-                        padding: '3px 6px',
-                        borderRadius: '3px',
-                        color: '#fff',
-                        background: 'linear-gradient(135deg, #e8201a 0%, #c0100b 100%)',
-                        border: '0.5px solid rgba(255,120,110,0.35)',
-                        boxShadow: '0 2px 12px rgba(220,30,20,0.55), 0 1px 0 rgba(255,150,140,0.18) inset',
-                        transform: 'rotate(22deg)',
-                        whiteSpace: 'nowrap',
-                        pointerEvents: 'none',
-                        textTransform: 'uppercase',
-                        textShadow: '0 1px 2px rgba(0,0,0,0.3)',
-                      }}
-                    >
-                      NOVITÀ
-                    </span>
-                  )}
                 </span>
                 <span
                   className="nav-bottom-label shrink-0 opacity-100"
@@ -224,13 +193,10 @@ export default function Header({ showCategoryStrip = true }: HeaderProps) {
                     display: 'block',
                     visibility: 'visible',
                     opacity: 1,
-                    color: isStarcks ? '#50f5fc' : '#ffffff',
-                    WebkitTextFillColor: isStarcks ? '#50f5fc' : '#ffffff',
+                    color: '#ffffff',
+                    WebkitTextFillColor: '#ffffff',
                     fontSize: 9,
                     lineHeight: 1.2,
-                    fontWeight: isStarcks ? 700 : undefined,
-                    letterSpacing: isStarcks ? '0.05em' : undefined,
-                    filter: isStarcks ? 'drop-shadow(0 0 3px rgba(80,245,252,0.6))' : undefined,
                     textTransform: 'uppercase',
                   }}
                 >
