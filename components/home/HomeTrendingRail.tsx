@@ -359,10 +359,10 @@ export function HomeTrendingRail({ events, onNavigate }: Props) {
 
   const wrapRef      = useRef<HTMLDivElement>(null);
   const touchStartX  = useRef<number | null>(null);
-  const timerA       = useRef<ReturnType<typeof setTimeout>>();
-  const timerB       = useRef<ReturnType<typeof setTimeout>>();
+  const timerA       = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const timerB       = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // Debounce ref: prevents hover-clear from firing while moving between cards
-  const hoverTimer   = useRef<ReturnType<typeof setTimeout>>();
+  const hoverTimer   = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const clearTimers = useCallback(() => {
     clearTimeout(timerA.current);
