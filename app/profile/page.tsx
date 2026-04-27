@@ -5,13 +5,8 @@ import { useSession, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
-import StatsCard from "@/components/StatsCard";
 import { trackView } from "@/lib/analytics-client";
-import {
-  SectionContainer,
-  Card,
-  LoadingBlock,
-} from "@/components/ui";
+import { LoadingBlock } from "@/components/ui";
 
 const AVATAR_MAX_SIZE = 400;
 const AVATAR_JPEG_QUALITY = 0.88;
@@ -118,19 +113,30 @@ function validateUsernameClient(value: string): string | null {
   return null;
 }
 
-/** Badge sbloccati: blu sfumato più vivo, contorno verde su tutto il box */
-const UNLOCKED_BADGE_STYLE =
-  "bg-bg border border-[#81D8D0]/45 shadow-[0_8px_20px_-18px_rgba(129,216,208,0.6)]";
+/* ── UI UX Pro Max: Dark Mode OLED + Fintech/Prediction Market ── */
 
-/** Badge ancora da sbloccare: blu leggero sfumato, più tenue degli sbloccati */
+const RARITY_BADGE_STYLES: Record<string, string> = {
+  legendary: "border border-[#CA8A04]/50 bg-[#0a0900] shadow-[0_0_16px_-4px_rgba(202,138,4,0.4)]",
+  epic:      "border border-violet-400/40 bg-[#080610] shadow-[0_0_16px_-4px_rgba(167,139,250,0.3)]",
+  rare:      "border border-[#50F5FC]/35 bg-[#000d0e] shadow-[0_0_16px_-4px_rgba(80,245,252,0.25)]",
+  common:    "border border-white/[0.10] bg-[#0c0e14]",
+};
+
+const RARITY_TEXT_STYLES: Record<string, string> = {
+  legendary: "text-[#CA8A04]",
+  epic:      "text-violet-400",
+  rare:      "text-[#50F5FC]",
+  common:    "text-white/50",
+};
+
 const LOCKED_BADGE_STYLE =
-  "bg-bg border border-border/70";
+  "border border-white/[0.05] bg-[#0c0e14]";
 
 const PROFILE_SECTION_TITLE_CLASS =
-  "font-kalshi text-[1.35rem] sm:text-[1.55rem] leading-[1.05] tracking-[0.01em]";
+  "text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35";
 
 const PROFILE_DOCUMENT_LINK_CLASS =
-  "group relative flex items-center justify-between gap-3 rounded-2xl border border-border/70 bg-admin-bg px-4 py-3.5 text-left transition-all duration-ds-normal ease-ds-ease hover:border-[#81D8D0]/50 hover:bg-admin-bg hover:shadow-[0_10px_24px_-18px_rgba(129,216,208,0.65)]";
+  "group flex items-center justify-between gap-3 px-4 py-3.5 text-left cursor-pointer transition-colors duration-200 ease-out hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#50F5FC]/50";
 
 export default function ProfilePage() {
   const { data: session, status, update: updateSession } = useSession();
@@ -361,64 +367,130 @@ export default function ProfilePage() {
     return null;
   }
 
+  const roiPositive = profileData.stats.roi >= 0;
+
   return (
-    <div className="min-h-screen bg-admin-bg">
+    <div className="min-h-screen bg-[#000000]">
       <Header />
-      <main id="main-content" className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl profile-kalshi-page">
+      <main
+        id="main-content"
+        className="mx-auto px-page-x py-page-y md:py-8 max-w-2xl"
+      >
         {error && (
-          <div className="mb-6 p-4 bg-danger/15 border border-danger/40 rounded-2xl text-danger text-ds-body-sm">
+          <div className="mb-5 p-4 bg-danger/10 border border-danger/30 rounded-xl text-danger text-sm">
             {error}
           </div>
         )}
 
-        {/* Mini box: nome, streak, data iscrizione */}
-        <Card className="p-4 md:p-5 mb-6 relative border border-border/70 bg-admin-bg">
-          <button
-            type="button"
-            onClick={openEditModal}
-            className="absolute top-3 right-3 px-2 py-1 rounded-md text-xs font-medium bg-admin-bg border border-[#81D8D0]/45 text-fg shadow-[0_0_0_1px_rgba(129,216,208,0.1)] hover:shadow-[0_0_0_1px_rgba(129,216,208,0.35)] transition-shadow"
-          >
-            Modifica
-          </button>
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 md:w-16 md:h-16 rounded-full border border-[#81D8D0]/45 bg-[#81D8D0]/15 flex items-center justify-center text-fg text-2xl font-bold shrink-0 overflow-hidden">
-              {profileData.user.image ? (
-                <img src={profileData.user.image} alt="" className="w-full h-full object-cover" />
-              ) : (
-                (displayName[0] || "?").toUpperCase()
-              )}
+        {/* ── HERO: Identity Card ── */}
+        <div
+          className="relative mb-5 rounded-2xl overflow-hidden border border-white/[0.07]"
+          style={{ background: "linear-gradient(160deg, #111111 0%, #0a0a0a 100%)" }}
+        >
+          {/* Ambient teal glow — OLED-safe, pointer-events:none */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-16 -left-16 w-56 h-56 rounded-full"
+            style={{ background: "radial-gradient(circle, rgba(80,245,252,0.08) 0%, transparent 70%)" }}
+          />
+          {/* Gold accent line at top */}
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#CA8A04]/40 to-transparent" aria-hidden />
+
+          <div className="relative p-5 md:p-6">
+            {/* Edit button — ghost, gold border on hover */}
+            <button
+              type="button"
+              onClick={openEditModal}
+              aria-label="Modifica profilo"
+              className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold tracking-[0.07em] uppercase border border-white/[0.12] text-white/50 cursor-pointer transition-colors duration-200 ease-out hover:border-[#CA8A04]/60 hover:text-[#CA8A04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CA8A04]/50"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+              Modifica
+            </button>
+
+            {/* Avatar + Identity */}
+            <div className="flex items-center gap-4 pr-24">
+              <div className="relative shrink-0">
+                <div
+                  className="w-16 h-16 md:w-[72px] md:h-[72px] rounded-full bg-[#111] flex items-center justify-center font-bold text-xl text-[#50F5FC] overflow-hidden"
+                  style={{ boxShadow: "0 0 0 1.5px rgba(80,245,252,0.25), 0 0 16px -4px rgba(80,245,252,0.2)" }}
+                >
+                  {profileData.user.image ? (
+                    <img src={profileData.user.image} alt={displayName} className="w-full h-full object-cover" />
+                  ) : (
+                    (displayName[0] || "?").toUpperCase()
+                  )}
+                </div>
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="font-kalshi text-[1.45rem] md:text-[1.6rem] text-white leading-[1.05] tracking-[0.02em] truncate">
+                  {displayName}
+                </h1>
+                <p className="text-white/35 text-[11px] mt-0.5 tracking-[0.04em]">
+                  Membro dal {formatDate(profileData.user.createdAt)}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0 flex-1 pr-20">
-              <h1 className="font-kalshi text-[1.45rem] md:text-[1.65rem] font-bold text-fg leading-[1.05] tracking-[0.01em] truncate">
-                {displayName}
-              </h1>
-              <span className="text-fg-muted text-sm font-normal">🔥 {profileData.stats.streak} giorni</span>
-              <p className="text-fg-muted text-xs mt-0.5">Membro dal {formatDate(profileData.user.createdAt)}</p>
+
+            {/* Separator */}
+            <div className="mt-5 h-px bg-gradient-to-r from-transparent via-white/[0.07] to-transparent" aria-hidden />
+
+            {/* Micro-stats strip — Crediti / Streak / ROI */}
+            <div className="mt-4 grid grid-cols-3 gap-0">
+              <div className="flex flex-col items-center gap-1 py-1">
+                <span className="font-numeric text-[1.1rem] font-semibold text-white tabular-nums leading-none">
+                  {profileData.stats.credits.toLocaleString("it-IT")}
+                </span>
+                <span className={`${PROFILE_SECTION_TITLE_CLASS} mt-0.5`}>Crediti</span>
+              </div>
+              <div className="flex flex-col items-center gap-1 py-1 border-x border-white/[0.06]">
+                <span className="font-numeric text-[1.1rem] font-semibold text-[#CA8A04] tabular-nums leading-none">
+                  {profileData.stats.streak}
+                </span>
+                <span className={`${PROFILE_SECTION_TITLE_CLASS} mt-0.5`}>Streak</span>
+              </div>
+              <div className="flex flex-col items-center gap-1 py-1">
+                <span className={`font-numeric text-[1.1rem] font-semibold tabular-nums leading-none ${roiPositive ? "text-emerald-400" : "text-red-400"}`}>
+                  {roiPositive ? "+" : ""}{formatPercentage(profileData.stats.roi)}
+                </span>
+                <span className={`${PROFILE_SECTION_TITLE_CLASS} mt-0.5`}>ROI</span>
+              </div>
             </div>
           </div>
-        </Card>
+        </div>
 
-        {/* Modal Modifica profilo */}
+        {/* ── EDIT MODAL ── */}
         {editModalOpen && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-admin-bg/80"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.88)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)" }}
             role="dialog"
             aria-modal="true"
             aria-labelledby="edit-profile-title"
             onClick={() => !editSaving && setEditModalOpen(false)}
           >
             <div
-              className="bg-admin-bg border border-border/70 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden"
+              className="w-full max-w-sm rounded-2xl border border-white/[0.09] overflow-hidden"
+              style={{ background: "#111111", boxShadow: "0 25px 60px -12px rgba(0,0,0,0.8)" }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-5 border-b border-border/70">
-                <h2 id="edit-profile-title" className="text-lg font-bold text-fg">
+              {/* Gold top line on modal */}
+              <div className="h-px bg-gradient-to-r from-transparent via-[#CA8A04]/50 to-transparent" aria-hidden />
+              <div className="px-6 py-5 border-b border-white/[0.07]">
+                <h2 id="edit-profile-title" className="font-kalshi text-[1.2rem] tracking-[0.02em] text-white">
                   Modifica profilo
                 </h2>
               </div>
-              <div className="p-5 space-y-5">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-24 h-24 rounded-full border border-[#81D8D0]/45 bg-[#81D8D0]/15 flex items-center justify-center text-fg text-3xl font-bold overflow-hidden shrink-0">
+              <div className="p-6 space-y-5">
+                {/* Avatar preview */}
+                <div className="flex flex-col items-center gap-4">
+                  <div
+                    className="w-20 h-20 rounded-full bg-[#0a0a0a] flex items-center justify-center font-bold text-2xl text-[#50F5FC] overflow-hidden shrink-0"
+                    style={{ boxShadow: "0 0 0 1.5px rgba(80,245,252,0.2)" }}
+                  >
                     {editImagePreview ? (
                       <img src={editImagePreview} alt="" className="w-full h-full object-cover" />
                     ) : (
@@ -426,89 +498,66 @@ export default function ProfilePage() {
                     )}
                   </div>
                   <div className="flex gap-2 w-full">
-                    <input
-                      ref={photoInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="user"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        handlePhotoFile(f ?? null);
-                        e.target.value = "";
-                      }}
+                    <input ref={photoInputRef} type="file" accept="image/*" capture="user" className="hidden"
+                      onChange={(e) => { handlePhotoFile(e.target.files?.[0] ?? null); e.target.value = ""; }}
                       aria-label="Scatta foto"
                     />
-                    <input
-                      ref={galleryInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        handlePhotoFile(f ?? null);
-                        e.target.value = "";
-                      }}
+                    <input ref={galleryInputRef} type="file" accept="image/*" className="hidden"
+                      onChange={(e) => { handlePhotoFile(e.target.files?.[0] ?? null); e.target.value = ""; }}
                       aria-label="Scegli dalla galleria"
                     />
-                    <button
-                      type="button"
-                      onClick={() => photoInputRef.current?.click()}
-                      className="flex-1 py-2.5 rounded-xl border border-border/70 bg-surface/50 text-fg text-sm font-medium hover:bg-surface transition-colors"
+                    <button type="button" onClick={() => photoInputRef.current?.click()}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-white/[0.09] bg-white/[0.03] text-white/70 text-sm font-medium cursor-pointer transition-colors duration-200 hover:border-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
                     >
-                      📷 Scatta foto
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                        <circle cx="12" cy="13" r="4" />
+                      </svg>
+                      Camera
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => galleryInputRef.current?.click()}
-                      className="flex-1 py-2.5 rounded-xl border border-border/70 bg-surface/50 text-fg text-sm font-medium hover:bg-surface transition-colors"
+                    <button type="button" onClick={() => galleryInputRef.current?.click()}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-white/[0.09] bg-white/[0.03] text-white/70 text-sm font-medium cursor-pointer transition-colors duration-200 hover:border-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
                     >
-                      🖼️ Galleria
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
+                      </svg>
+                      Galleria
                     </button>
                   </div>
                 </div>
+
+                {/* Username field */}
                 <div>
-                  <label htmlFor="edit-username" className="block text-sm font-medium text-fg mb-1">
+                  <label htmlFor="edit-username" className={`block ${PROFILE_SECTION_TITLE_CLASS} mb-2`}>
                     Nome utente
                   </label>
                   <input
                     id="edit-username"
                     type="text"
                     value={editUsername}
-                    onChange={(e) => {
-                      setEditUsername(e.target.value);
-                      setEditError(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") saveProfile();
-                      if (e.key === "Escape") setEditModalOpen(false);
-                    }}
-                    placeholder="Username"
-                    className="w-full px-4 py-2.5 rounded-xl border border-border/70 bg-admin-bg text-fg focus:outline-none focus:ring-2 focus:ring-[#81D8D0]/60"
+                    onChange={(e) => { setEditUsername(e.target.value); setEditError(null); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") saveProfile(); if (e.key === "Escape") setEditModalOpen(false); }}
+                    placeholder="username"
+                    className="w-full px-4 py-3 rounded-xl border border-white/[0.09] bg-[#0a0a0a] text-white placeholder:text-white/25 font-numeric text-sm transition-colors duration-200 focus:outline-none focus:border-[#50F5FC]/50 focus:shadow-[0_0_0_3px_rgba(80,245,252,0.08)]"
                     disabled={editSaving}
                     aria-invalid={!!editError}
                   />
                 </div>
+
                 {editError && (
-                  <p className="text-sm text-danger" role="alert">
-                    {editError}
-                  </p>
+                  <p className="text-sm text-danger" role="alert">{editError}</p>
                 )}
               </div>
-              <div className="p-5 pt-0 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setEditModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-border/70 text-fg font-medium hover:bg-surface/50 transition-colors disabled:opacity-50"
-                  disabled={editSaving}
+
+              <div className="px-6 pb-6 flex gap-3">
+                <button type="button" onClick={() => setEditModalOpen(false)} disabled={editSaving}
+                  className="flex-1 py-2.5 rounded-xl border border-white/[0.09] text-white/50 text-sm font-medium cursor-pointer transition-colors duration-200 hover:bg-white/[0.04] hover:text-white/70 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
                 >
                   Annulla
                 </button>
-                <button
-                  type="button"
-                  onClick={saveProfile}
-                  className="flex-1 py-2.5 rounded-xl bg-primary text-bg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-                  disabled={editSaving}
+                <button type="button" onClick={saveProfile} disabled={editSaving}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-opacity duration-200 hover:opacity-90 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CA8A04]/50"
+                  style={{ background: "linear-gradient(135deg, #CA8A04 0%, #92660a 100%)", color: "#000" }}
                 >
                   {editSaving ? "Salvataggio…" : "Salva"}
                 </button>
@@ -517,159 +566,200 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* CTA Crea evento */}
+        {/* ── PERFORMANCE ── */}
+        <p className={`${PROFILE_SECTION_TITLE_CLASS} mb-3`}>Performance</p>
+        <div className="grid grid-cols-2 gap-2 md:gap-2.5 mb-5">
+
+          {/* ROI — full accent treatment */}
+          <div className="rounded-xl border border-white/[0.07] bg-[#0a0a0a] p-4 md:p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className={PROFILE_SECTION_TITLE_CLASS}>ROI</span>
+              <div className="w-7 h-7 rounded-lg border border-white/[0.07] bg-white/[0.03] flex items-center justify-center">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={roiPositive ? "text-emerald-400" : "text-red-400"} aria-hidden>
+                  <polyline points={roiPositive ? "23 6 13.5 15.5 8.5 10.5 1 18" : "23 18 13.5 8.5 8.5 13.5 1 6"} />
+                  {roiPositive
+                    ? <polyline points="17 6 23 6 23 12" />
+                    : <polyline points="17 18 23 18 23 12" />}
+                </svg>
+              </div>
+            </div>
+            <p className={`font-numeric text-2xl md:text-3xl font-bold tabular-nums leading-none ${roiPositive ? "text-emerald-400" : "text-red-400"}`}>
+              {roiPositive ? "+" : ""}{formatPercentage(profileData.stats.roi)}
+            </p>
+            <p className="text-white/30 text-[10px] mt-2">Ritorno investimento</p>
+          </div>
+
+          {/* Precisione */}
+          <div className="rounded-xl border border-white/[0.07] bg-[#0a0a0a] p-4 md:p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className={PROFILE_SECTION_TITLE_CLASS}>Precisione</span>
+              <div className="w-7 h-7 rounded-lg border border-white/[0.07] bg-white/[0.03] flex items-center justify-center">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#50F5FC]" aria-hidden>
+                  <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="3" />
+                </svg>
+              </div>
+            </div>
+            <p className="font-numeric text-2xl md:text-3xl font-bold tabular-nums leading-none text-[#50F5FC]">
+              {formatPercentage(profileData.stats.accuracy)}
+            </p>
+            <p className="text-white/30 text-[10px] mt-2">
+              {profileData.stats.correctPredictions} / {profileData.stats.totalPredictions}
+            </p>
+          </div>
+
+          {/* Previsioni */}
+          <div className="rounded-xl border border-white/[0.07] bg-[#0a0a0a] p-4 md:p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className={PROFILE_SECTION_TITLE_CLASS}>Previsioni</span>
+              <div className="w-7 h-7 rounded-lg border border-white/[0.07] bg-white/[0.03] flex items-center justify-center">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/40" aria-hidden>
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                </svg>
+              </div>
+            </div>
+            <p className="font-numeric text-2xl md:text-3xl font-bold tabular-nums leading-none text-white">
+              {profileData.stats.totalPredictions}
+            </p>
+            <p className="text-white/30 text-[10px] mt-2">{profileData.stats.activePredictions} attive</p>
+          </div>
+
+          {/* Eventi creati — clickable, gold hover */}
+          <Link
+            href="/discover?tab=seguiti#creati"
+            className="rounded-xl border border-white/[0.07] bg-[#0a0a0a] p-4 md:p-5 cursor-pointer transition-colors duration-200 hover:border-[#CA8A04]/30 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CA8A04]/40"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className={`${PROFILE_SECTION_TITLE_CLASS} group-hover:text-[#CA8A04]/70 transition-colors duration-200`}>
+                Creati
+              </span>
+              <div className="w-7 h-7 rounded-lg border border-white/[0.07] bg-white/[0.03] flex items-center justify-center">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#CA8A04]/60 group-hover:text-[#CA8A04] transition-colors duration-200" aria-hidden>
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+                </svg>
+              </div>
+            </div>
+            <p className="font-numeric text-2xl md:text-3xl font-bold tabular-nums leading-none text-white">
+              {profileData.stats.eventsCreatedCount ?? 0}
+            </p>
+            <p className="text-white/30 text-[10px] mt-2 group-hover:text-[#CA8A04]/50 transition-colors duration-200">
+              Visualizza tutti
+            </p>
+          </Link>
+        </div>
+
+        {/* ── CTA: CREA EVENTO (Gold accent — Premium fintech) ── */}
         <Link
           href="/crea"
-          className="block mb-6"
+          className="block mb-5 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#CA8A04]/50 rounded-xl"
         >
-          <Card className="p-4 md:p-5 bg-admin-bg border border-border/70 hover:border-[#81D8D0]/45 transition-all group">
+          <div
+            className="rounded-xl border border-[#CA8A04]/20 p-4 md:p-5 transition-all duration-200 motion-reduce:transition-none group-hover:border-[#CA8A04]/45"
+            style={{ background: "linear-gradient(135deg, #0e0b00 0%, #0a0a0a 100%)" }}
+          >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl border border-[#81D8D0]/35 bg-admin-bg flex items-center justify-center text-2xl group-hover:scale-105 transition-transform">
-                🔮
+              <div className="w-10 h-10 rounded-lg border border-[#CA8A04]/25 flex items-center justify-center shrink-0 transition-colors duration-200 group-hover:border-[#CA8A04]/50"
+                style={{ background: "rgba(202,138,4,0.06)" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#CA8A04]/70 group-hover:text-[#CA8A04] transition-colors duration-200" aria-hidden>
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" />
+                </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="font-kalshi text-xl leading-[1.02] tracking-[0.01em] text-fg">Crea evento</h2>
-                <p className="text-ds-body-sm text-fg-muted mt-0.5">
-                  Proponi un nuovo evento per il prediction market
-                </p>
+                <p className="font-kalshi text-[1.05rem] tracking-[0.03em] text-white/90 leading-tight">Crea evento</p>
+                <p className="text-[11px] text-white/30 mt-0.5">Proponi un nuovo mercato di previsione</p>
               </div>
-              <span className="text-fg-muted text-sm" aria-hidden>→</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                className="text-white/20 group-hover:text-[#CA8A04]/60 motion-reduce:translate-x-0 group-hover:translate-x-0.5 transition-all duration-200 shrink-0" aria-hidden>
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
             </div>
-          </Card>
+          </div>
         </Link>
 
-        <SectionContainer title="Statistiche" titleClassName={PROFILE_SECTION_TITLE_CLASS}>
-          <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6">
-            <StatsCard
-              title="ROI"
-              value={`${profileData.stats.roi >= 0 ? "+" : ""}${formatPercentage(profileData.stats.roi)}`}
-              icon="📈"
-              color={profileData.stats.roi >= 0 ? "green" : "red"}
-              subtitle="Ritorno investimento"
-            />
-            <StatsCard
-              title="Precisione"
-              value={formatPercentage(profileData.stats.accuracy)}
-              icon="🎯"
-              color="blue"
-              subtitle={`${profileData.stats.correctPredictions}/${profileData.stats.totalPredictions}`}
-            />
-            <StatsCard
-              title="Previsioni totali"
-              value={profileData.stats.totalPredictions}
-              icon="🔮"
-              color="purple"
-              subtitle={`${profileData.stats.activePredictions} attive`}
-            />
-            <Link href="/discover?tab=seguiti#creati" className="block rounded-2xl hover:opacity-95 transition-opacity">
-              <StatsCard
-                title="Eventi creati"
-                value={profileData.stats.eventsCreatedCount ?? 0}
-                icon="📋"
-                color="blue"
-                subtitle="Eventi che hai pubblicato"
-              />
-            </Link>
-          </div>
-        </SectionContainer>
-
-        <SectionContainer title="Badge" titleClassName={PROFILE_SECTION_TITLE_CLASS}>
-          <Card className="p-5 md:p-6">
-            {allBadges.length === 0 ? (
-              <p className="text-fg-muted text-sm text-center py-6">
-                Completa missioni e previsioni per sbloccare badge.
-              </p>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {allBadges.map((badge) => {
-                  const unlocked = badge.unlocked;
-                  return (
-                    <div
-                      key={badge.id}
-                      className={`relative p-4 rounded-2xl transition-all ${
-                        unlocked ? UNLOCKED_BADGE_STYLE : LOCKED_BADGE_STYLE
-                      }`}
-                    >
-                      {!unlocked && (
-                        <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-surface/80 flex items-center justify-center" title="Da sbloccare">
-                          <span className="text-xs" aria-hidden>🔒</span>
-                        </div>
-                      )}
-                      <div className="text-2xl mb-1 text-center">
-                        {badge.icon || "🏆"}
+        {/* ── ACHIEVEMENTS ── */}
+        <p className={`${PROFILE_SECTION_TITLE_CLASS} mb-3`}>Achievements</p>
+        <div className="rounded-xl border border-white/[0.07] bg-[#0a0a0a] p-4 mb-5">
+          {allBadges.length === 0 ? (
+            <p className="text-white/30 text-sm text-center py-8">
+              Completa missioni e previsioni per sbloccare achievement.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {allBadges.map((badge) => {
+                const unlocked = badge.unlocked;
+                const rarityKey = (badge.rarity ?? "common").toLowerCase();
+                const rarityStyle = unlocked
+                  ? (RARITY_BADGE_STYLES[rarityKey] ?? RARITY_BADGE_STYLES.common)
+                  : LOCKED_BADGE_STYLE;
+                const rarityTextStyle = unlocked
+                  ? (RARITY_TEXT_STYLES[rarityKey] ?? RARITY_TEXT_STYLES.common)
+                  : "text-white/20";
+                return (
+                  <div
+                    key={badge.id}
+                    className={`relative p-3.5 rounded-xl transition-colors duration-200 motion-reduce:transition-none ${rarityStyle} ${unlocked ? "" : "opacity-40"}`}
+                  >
+                    {!unlocked && (
+                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/[0.05] flex items-center justify-center" title="Da sbloccare">
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/30" aria-hidden>
+                          <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
                       </div>
-                      <h3 className={`font-semibold text-center text-sm mb-0.5 ${unlocked ? "text-fg" : "text-fg"}`}>
-                        {badge.name}
-                      </h3>
-                      <p className={`text-[10px] text-center line-clamp-2 ${unlocked ? "text-fg-muted" : "text-fg-subtle"}`}>
-                        {badge.description}
-                      </p>
-                      <p
-                        className={`text-[10px] text-center mt-2 font-medium ${
-                          unlocked ? "text-[#81D8D0]" : "text-fg-muted"
-                        }`}
-                      >
-                        {unlocked ? "✓ Sbloccato" : "Da sbloccare"}
-                      </p>
+                    )}
+                    {/* Badge icon — use emoji from data as image/text, not UI icon */}
+                    <div className="text-xl mb-2 text-center leading-none" aria-hidden>
+                      {badge.icon || "★"}
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </Card>
-        </SectionContainer>
+                    <h3 className="font-semibold text-center text-[11px] mb-0.5 text-white/80 leading-tight">
+                      {badge.name}
+                    </h3>
+                    <p className="text-[9px] text-center line-clamp-2 text-white/30 leading-tight">
+                      {badge.description}
+                    </p>
+                    <p className={`text-[9px] text-center mt-2 font-semibold uppercase tracking-[0.09em] ${rarityTextStyle}`}>
+                      {unlocked ? (badge.rarity || "Common") : "Locked"}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
-        <SectionContainer title="Impostazioni" titleClassName={PROFILE_SECTION_TITLE_CLASS}>
-          <Card className="p-3 md:p-4 border border-border/70 bg-admin-bg">
-            <ul className="space-y-2">
-              <li>
-                <Link
-                  href="/settings"
-                  className={PROFILE_DOCUMENT_LINK_CLASS}
-                >
-                  <span className="font-medium text-fg">Account e preferenze</span>
-                  <span className="text-fg-muted text-xs transition-transform group-hover:translate-x-0.5" aria-hidden>→</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/legal/terms"
-                  className={PROFILE_DOCUMENT_LINK_CLASS}
-                >
-                  <span className="text-fg">Termini di servizio</span>
-                  <span className="text-fg-muted text-xs transition-transform group-hover:translate-x-0.5" aria-hidden>→</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/legal/privacy"
-                  className={PROFILE_DOCUMENT_LINK_CLASS}
-                >
-                  <span className="text-fg">Privacy policy</span>
-                  <span className="text-fg-muted text-xs transition-transform group-hover:translate-x-0.5" aria-hidden>→</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/legal/content-rules"
-                  className={PROFILE_DOCUMENT_LINK_CLASS}
-                >
-                  <span className="text-fg">Regole contenuti</span>
-                  <span className="text-fg-muted text-xs transition-transform group-hover:translate-x-0.5" aria-hidden>→</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/legal/credits"
-                  className={PROFILE_DOCUMENT_LINK_CLASS}
-                >
-                  <span className="text-fg">Disclaimer crediti</span>
-                  <span className="text-fg-muted text-xs transition-transform group-hover:translate-x-0.5" aria-hidden>→</span>
-                </Link>
-              </li>
-            </ul>
-          </Card>
-        </SectionContainer>
+        {/* ── IMPOSTAZIONI ── */}
+        <p className={`${PROFILE_SECTION_TITLE_CLASS} mb-3`}>Impostazioni</p>
+        <div className="rounded-xl border border-white/[0.07] bg-[#0a0a0a] overflow-hidden mb-8">
+          {[
+            { href: "/settings",           label: "Account e preferenze",
+              icon: <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /> },
+            { href: "/legal/terms",        label: "Termini di servizio",
+              icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></> },
+            { href: "/legal/privacy",      label: "Privacy policy",
+              icon: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></> },
+            { href: "/legal/content-rules", label: "Regole contenuti",
+              icon: <><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></> },
+            { href: "/legal/credits",      label: "Disclaimer crediti",
+              icon: <><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></> },
+          ].map((item, idx, arr) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`${PROFILE_DOCUMENT_LINK_CLASS}${idx < arr.length - 1 ? " border-b border-white/[0.05]" : ""}`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-lg border border-white/[0.07] bg-white/[0.02] flex items-center justify-center shrink-0">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-white/35" aria-hidden>
+                    {item.icon}
+                  </svg>
+                </div>
+                <span className="text-sm font-medium text-white/70">{item.label}</span>
+              </div>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                className="text-white/20 group-hover:text-white/45 motion-reduce:translate-x-0 group-hover:translate-x-0.5 transition-all duration-200 shrink-0" aria-hidden>
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </Link>
+          ))}
+        </div>
       </main>
     </div>
   );

@@ -11,13 +11,17 @@
  *
  * Env vars richieste:
  *   CRON_SECRET                — segreto condiviso con Vercel Cron
+ *   API_FOOTBALL_KEY           — chiave API-Football (fixtures, injuries, H2H, standings)
+ *   OPENAI_API_KEY o ANTHROPIC_API_KEY — almeno una chiave LLM per gli agenti BRAIN
  *
  * Env vars opzionali:
- *   DISABLE_CRON_AUTOMATION    — se "true", disabilita tutti i cron
- *   DISABLE_EVENT_GENERATION   — se "true", disabilita la generazione
+ *   DISABLE_CRON_AUTOMATION    — se "true", disabilita tutti i cron (inclusa FIE)
  *   FIE_CRON_MAX_MATCHES       — override maxMatches (default: 12)
  *   FIE_CRON_MAX_TIER          — override maxTier (default: 2)
  *   FIE_CRON_MIN_INTEREST      — override minInterestScore (default: 5)
+ *
+ * NOTE: DISABLE_EVENT_GENERATION non influenza questo cron — la FIE è la pipeline
+ * sport dedicata e rimane attiva in FIE-ONLY mode.
  */
 
 import { NextResponse } from "next/server";
@@ -61,13 +65,8 @@ export async function POST(request: Request) {
     );
   }
 
-  if (process.env.DISABLE_EVENT_GENERATION === "true") {
-    return NextResponse.json({
-      success: true,
-      disabled: true,
-      message: "Event generation is disabled (DISABLE_EVENT_GENERATION=true)",
-    });
-  }
+  // NOTE: DISABLE_EVENT_GENERATION non blocca la FIE — questa è la pipeline sport
+  // dedicata, sempre attiva in FIE-ONLY mode (vedi commento in .env.example).
 
   // ── Auth ─────────────────────────────────────────────────────
   const cronSecret = process.env.CRON_SECRET;
@@ -79,6 +78,20 @@ export async function POST(request: Request) {
   const provided = getSecret(request);
   if (!provided || provided !== cronSecret) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // ── Validate required env vars ───────────────────────────────
+  const missingVars: string[] = [];
+  if (!process.env.API_FOOTBALL_KEY?.trim()) missingVars.push("API_FOOTBALL_KEY");
+  if (!process.env.OPENAI_API_KEY?.trim() && !process.env.ANTHROPIC_API_KEY?.trim()) {
+    missingVars.push("OPENAI_API_KEY o ANTHROPIC_API_KEY (almeno una)");
+  }
+  if (missingVars.length > 0) {
+    console.error(`[FIE Cron] Env vars mancanti: ${missingVars.join(", ")}`);
+    return NextResponse.json(
+      { error: "Env vars richieste mancanti", missing: missingVars },
+      { status: 500 }
+    );
   }
 
   // ── Pipeline config ──────────────────────────────────────────
@@ -135,11 +148,28 @@ export async function POST(request: Request) {
 
   if (candidates.length === 0) {
     const durationMs = Date.now() - startTime;
+
+    // Build a human-readable hint to aid debugging
+    const d = diagnostics;
+    const hint =
+      d.radarMatchCount === 0
+        ? "RADAR ha trovato 0 partite. Verifica API_FOOTBALL_KEY e che ci siano partite nei prossimi 14 giorni."
+        : d.brainMatchesAnalyzed === 0
+          ? `BRAIN ha ricevuto 0 partite (interest score troppo alto? minInterest=${minInterestScore}). RADAR aveva ${d.radarMatchCount} partite.`
+          : d.brainIdeaCount === 0
+            ? `Creative ha generato 0 idee su ${d.brainMatchesAnalyzed} partite. Controlla OPENAI_API_KEY/ANTHROPIC_API_KEY.`
+            : d.brainApprovedCount === 0
+              ? `Verifier ha rifiutato tutte le ${d.brainIdeaCount} idee. Modello troppo conservativo.`
+              : `FORGE ha prodotto 0 candidati da ${d.brainApprovedCount} eventi approvati.`;
+
+    console.warn(`[FIE Cron] 0 candidati — ${hint}`);
+
     await safeAuditLog("FIE_CRON_RUN", {
       timestamp: new Date().toISOString(),
       durationMs,
       candidatesProduced: 0,
       eventsCreated: 0,
+      hint,
       diagnostics,
     });
 
@@ -147,6 +177,7 @@ export async function POST(request: Request) {
       success: true,
       created: 0,
       message: "FIE produced 0 candidates — nothing to publish",
+      hint,
       diagnostics,
       durationMs,
     });

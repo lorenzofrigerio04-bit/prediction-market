@@ -6,6 +6,7 @@ import ThemeScript from "./ThemeScript";
 import AppBackground from "@/components/AppBackground";
 import ConditionalFooter from "@/components/ConditionalFooter";
 import { LandingBackgroundProviderWithRoute } from "@/components/landing/LandingBackgroundCarousel";
+import FeedbackWidget from "@/components/feedback/FeedbackWidget";
 
 /* Colore barre sistema: status bar + barra browser (Android Chrome, iOS). Stesso valore in manifest.json. */
 const THEME_COLOR = "#001B51";
@@ -73,6 +74,7 @@ export default function RootLayout({
             </a>
             <div className="flex-1 platform-content" suppressHydrationWarning>{children}</div>
             {modal}
+            <FeedbackWidget />
             <ConditionalFooter />
           </SessionProvider>
         </LandingBackgroundProviderWithRoute>

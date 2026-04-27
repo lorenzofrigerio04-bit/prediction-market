@@ -712,6 +712,19 @@ model OracleReport {
   @@map("oracle_reports")
 }
 
+model Feedback {
+  id        String   @id @default(cuid())
+  category  String
+  message   String
+  email     String?
+  userId    String?  @map("user_id")
+  page      String?
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now())
+
+  @@map("feedbacks")
+}
+
 enum PostType {
   SLIDE
   AI_IMAGE

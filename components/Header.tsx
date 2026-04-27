@@ -110,17 +110,34 @@ export default function Header({ showCategoryStrip = true }: HeaderProps) {
               <PredictionMasterLogoCompact />
             </div>
 
-            {/* Destra: hamburger menu (al posto del profilo) */}
-            <div className="flex-shrink-0 w-12 flex items-center justify-end">
-              <button
-                type="button"
-                onClick={() => setDrawerOpen(true)}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-fg-muted hover:text-fg hover:bg-surface/70 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg touch-manipulation active:scale-[0.96]"
-                aria-label="Apri menu"
-                aria-expanded={drawerOpen}
-              >
-                <IconMenu className="w-6 h-6" />
-              </button>
+            {/* Destra: auth buttons (pre-login) o hamburger menu */}
+            <div className="flex-shrink-0 flex items-center justify-end gap-2">
+              {status === "unauthenticated" ? (
+                <>
+                  <Link
+                    href="/auth/login"
+                    className="header-auth-btn header-auth-btn--ghost"
+                  >
+                    Accedi
+                  </Link>
+                  <Link
+                    href="/auth/signup"
+                    className="header-auth-btn header-auth-btn--primary"
+                  >
+                    Registrati
+                  </Link>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setDrawerOpen(true)}
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-fg-muted hover:text-fg hover:bg-surface/70 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg touch-manipulation active:scale-[0.96]"
+                  aria-label="Apri menu"
+                  aria-expanded={drawerOpen}
+                >
+                  <IconMenu className="w-6 h-6" />
+                </button>
+              )}
             </div>
           </div>
         </div>
