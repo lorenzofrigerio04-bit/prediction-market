@@ -6,8 +6,6 @@ import { ForYouSection } from "./ForYouSection";
 import { ViralSection } from "./ViralSection";
 import { LiveSection } from "./LiveSection";
 import { ExpiringSection } from "./ExpiringSection";
-import { HomeTrendingRail } from "@/components/home/HomeTrendingRail";
-
 interface Props {
   isLoggedIn: boolean;
   onEventNavigate?: () => void;
@@ -148,48 +146,15 @@ export function FootballHomepage({ isLoggedIn, onEventNavigate }: Props) {
         />
       </div>
 
-      {/* Rail A — separatore */}
-      {data.top24hEvents.length >= 2 && (
-        <div className="mb-14 sm:mb-16">
-          <HomeTrendingRail
-            events={data.top24hEvents.slice(0, 8)}
-            onNavigate={onEventNavigate}
-            cardAccent="gold"
-          />
-        </div>
-      )}
-
       {/* 3. STA ESPLODENDO ORA */}
       <div className="mb-14 sm:mb-16">
         <ViralSection events={data.viralEvents} onNavigate={onEventNavigate} />
       </div>
 
-      {/* Rail B — separatore */}
-      {data.expiringEvents.length >= 2 && (
-        <div className="mb-14 sm:mb-16">
-          <HomeTrendingRail
-            events={data.expiringEvents.slice(0, 8)}
-            onNavigate={onEventNavigate}
-            cardAccent="emerald"
-          />
-        </div>
-      )}
-
       {/* 4. IN SCADENZA */}
       <div className="mb-14 sm:mb-16">
         <ExpiringSection events={data.expiringEvents} onNavigate={onEventNavigate} />
       </div>
-
-      {/* Rail C — separatore */}
-      {data.viralEvents.length >= 2 && (
-        <div className="mb-14 sm:mb-16">
-          <HomeTrendingRail
-            events={data.viralEvents.slice(0, 8)}
-            onNavigate={onEventNavigate}
-            cardAccent="rose"
-          />
-        </div>
-      )}
 
       {/* 5. LIVE (solo se presenti) */}
       {data.liveEvents.length > 0 && (

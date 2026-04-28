@@ -529,6 +529,22 @@ export function IconNavCrystalBall({ className, ...props }: SVGProps<SVGSVGEleme
 }
 
 /** Icona LIVE per bottom nav: dot pulsante + archi segnale */
+export function IconNavNews({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <NavIcon className={className} {...props}>
+      {/* Foglio/giornale: rettangolo principale */}
+      <rect x="3" y="4" width="18" height="16" rx="2" strokeWidth={1.3} />
+      {/* Titolo: riga larga */}
+      <path d="M7 9h10" strokeWidth={1.4} />
+      {/* Corpo: righe testo */}
+      <path d="M7 12.5h7" strokeWidth={1.2} />
+      <path d="M7 15.5h5" strokeWidth={1.2} />
+      {/* Angolino accent: linea verticale decorativa */}
+      <path d="M16 12.5h1" strokeWidth={1.4} />
+    </NavIcon>
+  );
+}
+
 export function IconNavLive({ className, ...props }: SVGProps<SVGSVGElement>) {
   return (
     <NavIcon className={className} {...props}>

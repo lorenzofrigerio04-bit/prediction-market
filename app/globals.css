@@ -4858,23 +4858,55 @@ html body .nav-bottom-neon a span.nav-bottom-label,
  * transform-origin: center bottom pivots the whole fan from its "grip" point.
  */
 /*
- * Pure rotation sway — no vertical bobbing.
- * Asymmetric keyframe timing gives a lifelike, hand-held quality.
- * The fan pivots from the grip point (center bottom) like someone
- * gently shifting the weight of cards in their palm.
+ * Premium multi-axis deck sway — asymmetric rotation + micro vertical drift.
+ * Evokes a real hand lightly rocking held cards; pivot anchors at grip point.
+ * Three irregular time-points prevent a robotic metronome feel.
  */
 @keyframes fan-deck-breathe {
-  0%   { transform: rotate(-1.0deg); }
-  20%  { transform: rotate( 0.3deg); }
-  42%  { transform: rotate( 1.4deg); }
-  60%  { transform: rotate( 0.7deg); }
-  78%  { transform: rotate(-0.3deg); }
-  100% { transform: rotate(-1.0deg); }
+  0%   { transform: rotate(-0.7deg) translateY( 0.0px); }
+  14%  { transform: rotate( 0.5deg) translateY(-1.2px); }
+  35%  { transform: rotate( 1.1deg) translateY(-2.2px); }
+  52%  { transform: rotate( 0.6deg) translateY(-1.4px); }
+  70%  { transform: rotate(-0.0deg) translateY(-0.4px); }
+  86%  { transform: rotate(-0.5deg) translateY( 0.4px); }
+  100% { transform: rotate(-0.7deg) translateY( 0.0px); }
 }
 
 .fan-deck-breathe {
-  animation:        fan-deck-breathe 10s ease-in-out infinite;
+  animation:        fan-deck-breathe 12s ease-in-out infinite;
   transform-origin: center bottom;
+}
+
+/* ─── Fan-card shimmer — holographic tiffany light sweep on hover ───────── */
+/*
+ * A narrow band of warm light sweeps diagonally across the card face on a loop,
+ * evoking premium holographic trading card stock catching ambient illumination.
+ */
+@keyframes fan-card-shimmer {
+  0%   { transform: translateX(-180%) skewX(-16deg); opacity: 0;   }
+  6%   { opacity: 1; }
+  94%  { opacity: 1; }
+  100% { transform: translateX(380%) skewX(-16deg);  opacity: 0;   }
+}
+
+.fan-card-shimmer::before {
+  content:        '';
+  position:       absolute;
+  top:            0;
+  bottom:         0;
+  left:           0;
+  width:          36%;
+  background:     linear-gradient(
+    90deg,
+    transparent               0%,
+    rgba(10, 186, 181, 0.08) 22%,
+    rgba(180, 255, 252, 0.10) 50%,
+    rgba(10, 186, 181, 0.08) 78%,
+    transparent               100%
+  );
+  animation:       fan-card-shimmer 3.8s ease-in-out infinite;
+  animation-delay: 0.4s;
+  pointer-events:  none;
 }
 
 /* ─── (Legacy) Trending auto-scroll rail — kept for reference ─────────────── */
@@ -5900,4 +5932,51 @@ html body .nav-bottom-neon a span.nav-bottom-label,
   box-shadow:
     0 0 0 3px rgba(33, 185, 180, 0.50),
     0 0 18px -4px rgba(33, 185, 180, 0.55);
+}
+
+/* ── Top 5 ─────────────────────────────────────────────────────────────── */
+
+/* Staggered card entrance — slide up + fade + micro-blur */
+@keyframes top5-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.985);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.top5-card-enter {
+  animation: top5-card-enter 0.68s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Card hover: lift + expand glow via CSS custom properties */
+.top5-card {
+  transition:
+    transform 0.38s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.38s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.top5-card:hover {
+  transform: translateY(-3px) scale(1.006);
+  box-shadow: var(--shadow-hover) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .top5-card-enter {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+  .top5-card {
+    transition: none !important;
+  }
+  .top5-card:hover {
+    transform: none;
+  }
 }

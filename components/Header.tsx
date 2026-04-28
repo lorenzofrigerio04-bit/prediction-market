@@ -9,16 +9,16 @@ import { PredictionMasterLogoCompact } from "./PredictionMasterMark";
 import {
   IconMenu,
   IconNavHome,
-  IconNavLive,
+  IconNavNews,
   IconNavShop,
   IconUser,
 } from "@/components/ui/Icons";
 import { MARKET_CATEGORIES, type MarketCategoryId } from "@/lib/market-categories";
 
-// Bottom bar: Home, Live, Shop, Profilo
+// Bottom bar: Home, News, Shop, Profilo
 const BOTTOM_NAV_ITEMS = [
   { href: "/", label: "Home", NavIcon: IconNavHome },
-  { href: "/live", label: "Live", NavIcon: IconNavLive },
+  { href: "/news", label: "News", NavIcon: IconNavNews },
   { href: "/shop", label: "Shop", NavIcon: IconNavShop },
   { href: "/profile", label: "Profilo", NavIcon: IconUser },
 ] as const;
@@ -84,6 +84,8 @@ export default function Header({ showCategoryStrip = true }: HeaderProps) {
 
   const isActive = (path: string) =>
     pathname === path || (path !== "/" && pathname.startsWith(path));
+
+  // Redirect /live to /news for backward compatibility handled at page level
 
   /* Solo "unauthenticated" → login. Con loading o sessione non ancora idratata, link a /profile evita di mostrare login con cookie già valido. */
   const profileHref =

@@ -3,7 +3,7 @@
 import type { FootballEvent } from "@/types/homepage";
 import { SectionHeader } from "./premium/SectionHeader";
 import { HomeEventCard } from "@/components/home/HomeEventCard";
-
+import { ArcCarousel } from "@/components/home/ArcCarousel";
 interface Props {
   events: FootballEvent[];
   onNavigate?: () => void;
@@ -18,24 +18,17 @@ export function LiveSection({ events, onNavigate }: Props) {
         eyebrow="In diretta ora"
         title="Live"
         accent="crimson"
+        articleHeadlineTitle
         href="/sezioni/live"
       />
 
-      <div className="netflix-rail-scroll scrollbar-hide -mx-1 flex snap-x snap-proximity gap-2.5 overflow-x-auto px-1 pb-2 sm:gap-3">
-        {events.map((event) => (
-          <div
-            key={event.id}
-            className="w-[190px] min-w-[190px] snap-start sm:w-[240px] sm:min-w-[240px] lg:w-[272px] lg:min-w-[272px]"
-          >
-            <HomeEventCard
-              event={event}
-              onNavigate={onNavigate}
-              isLive
-              accent="rose"
-            />
-          </div>
-        ))}
-      </div>
+      <ArcCarousel
+        items={events}
+        keyExtractor={(e) => e.id}
+        renderItem={(event) => (
+          <HomeEventCard event={event} onNavigate={onNavigate} isLive accent="rose" />
+        )}
+      />
     </section>
   );
 }

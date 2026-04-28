@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { FootballEvent } from "@/types/homepage";
 import { SectionHeader } from "./premium/SectionHeader";
 import { HomeEventCard } from "@/components/home/HomeEventCard";
-
+import { ArcCarousel } from "@/components/home/ArcCarousel";
 interface Props {
   events: FootballEvent[];
   isPersonalized: boolean;
@@ -35,6 +35,7 @@ export function ForYouSection({
         eyebrow={eyebrow}
         title={title}
         accent="violet"
+        articleHeadlineTitle
         href="/sezioni/per-te"
         leftSlot={
           !isLoggedIn ? (
@@ -48,16 +49,13 @@ export function ForYouSection({
         }
       />
 
-      <div className="netflix-rail-scroll scrollbar-hide -mx-1 flex snap-x snap-proximity gap-2.5 overflow-x-auto px-1 pb-2 sm:gap-3">
-        {events.map((event) => (
-          <div
-            key={event.id}
-            className="w-[190px] min-w-[190px] snap-start sm:w-[240px] sm:min-w-[240px] lg:w-[272px] lg:min-w-[272px]"
-          >
-            <HomeEventCard event={event} onNavigate={onNavigate} accent="violet" />
-          </div>
-        ))}
-      </div>
+      <ArcCarousel
+        items={events}
+        keyExtractor={(e) => e.id}
+        renderItem={(event) => (
+          <HomeEventCard event={event} onNavigate={onNavigate} accent="violet" />
+        )}
+      />
     </section>
   );
 }

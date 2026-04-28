@@ -10,6 +10,10 @@
     {
       "path": "/api/cron/resolve-sport-events",
       "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/news-engine",
+      "schedule": "0 */6 * * *"
     }
   ]
 }

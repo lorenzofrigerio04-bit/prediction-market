@@ -8,6 +8,8 @@ interface Props {
   title: string;
   subtitle?: string;
   accent?: "primary" | "gold" | "crimson" | "violet" | "emerald";
+  /** Stesso stack e metriche dell’h1 articolo news (Barlow Condensed, tracking stretto, titolo naturale). */
+  articleHeadlineTitle?: boolean;
   href?: string;
   hrefLabel?: string;
   leftSlot?: ReactNode;
@@ -49,6 +51,7 @@ export function SectionHeader({
   title,
   subtitle,
   accent = "primary",
+  articleHeadlineTitle = false,
   href,
   hrefLabel = "Vedi tutti",
   leftSlot,
@@ -70,7 +73,17 @@ export function SectionHeader({
             </span>
             {leftSlot}
           </div>
-          <h2 className="mt-1.5 font-kalshi text-[1.75rem] font-bold leading-[1.0] tracking-wide text-white sm:text-[2rem]">
+          <h2
+            className={
+              articleHeadlineTitle
+                ? "mt-2.5 text-[1.62rem] font-bold leading-[1.1] tracking-[-0.022em] text-white sm:text-[1.9rem]"
+                : "mt-2.5 text-[2rem] leading-[1.0] text-white sm:text-[2.25rem] uppercase font-bold"
+            }
+            style={{
+              fontFamily: "var(--font-kalshi-title)",
+              ...(!articleHeadlineTitle ? { letterSpacing: "0.04em" } : {}),
+            }}
+          >
             {title}
           </h2>
           {subtitle && (
