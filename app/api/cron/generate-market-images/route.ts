@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateMarketImageForEvent } from "@/lib/ai-image-generation/generate-market-image";
+import { getPendingImageEventIdsFeedPriority } from "@/lib/ai-image-generation/feed-image-priority";
 
 export const dynamic = "force-dynamic";
 /** Più slot per smaltire la coda quando molti eventi sono senza copertina (es. dopo deploy). */
@@ -16,7 +17,8 @@ const STALE_IN_PROGRESS_MS = 12 * 60 * 1000;
  * Prima causa reale degli eventi senza copertina in prod:
  * - `enqueueMarketImageGeneration` girava in fire-and-forget: la funzione si chiudeva prima del completamento.
  * - Stato IN_PROGRESS bloccante: questo cron non selezionava mai IN_PROGRESS, quindi eventi congelati per sempre.
- * - Filtro `generatorVersion === 2.0` escludeva eventi più vecchi o senza quel campo.
+ * - Ordine: stesso criterio "trending" di /api/feed/home-unified così le copertine
+ *   arrivano prima sugli eventi in cima al feed.
  *
  * Richiede: GET o POST + header Authorization: Bearer <CRON_SECRET>.
  */
@@ -58,31 +60,41 @@ async function handleGenerateMarketImages(request: NextRequest) {
       data: { imageGenerationStatus: "PENDING" },
     });
 
-    const pending = await prisma.event.findMany({
-      where: {
-        hidden: false,
-        AND: [
-          { OR: [{ imageUrl: null }, { imageUrl: "" }] },
-          {
-            OR: [
-              { imageGenerationStatus: { in: ["PENDING", "FAILED"] } },
-              {
-                imageGenerationStatus: "IN_PROGRESS",
-                updatedAt: { lt: staleBefore },
-              },
-            ],
-          },
-        ],
-      },
-      orderBy: { createdAt: "asc" },
-      take: MAX_EVENTS_PER_RUN,
-      select: { id: true },
+    let pendingIds = await getPendingImageEventIdsFeedPriority(prisma, {
+      staleBefore,
+      limit: MAX_EVENTS_PER_RUN,
     });
+
+    if (pendingIds.length < MAX_EVENTS_PER_RUN) {
+      const need = MAX_EVENTS_PER_RUN - pendingIds.length;
+      const extra = await prisma.event.findMany({
+        where: {
+          hidden: false,
+          AND: [
+            { OR: [{ imageUrl: null }, { imageUrl: "" }] },
+            {
+              OR: [
+                { imageGenerationStatus: { in: ["PENDING", "FAILED"] } },
+                {
+                  imageGenerationStatus: "IN_PROGRESS",
+                  updatedAt: { lt: staleBefore },
+                },
+              ],
+            },
+            ...(pendingIds.length > 0 ? [{ id: { notIn: pendingIds } }] : []),
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+        take: need,
+        select: { id: true },
+      });
+      pendingIds = [...pendingIds, ...extra.map((e) => e.id)];
+    }
 
     let generated = 0;
     const errors: { eventId: string; error: string }[] = [];
 
-    for (const { id: eventId } of pending) {
+    for (const eventId of pendingIds) {
       const result = await generateMarketImageForEvent(eventId);
       if (result.ok) generated++;
       else errors.push({ eventId, error: result.error });
@@ -93,7 +105,7 @@ async function handleGenerateMarketImages(request: NextRequest) {
         ok: true,
         staleLocksReset: resetStaleLocks.count,
         inconsistentSuccessReset: fixInconsistentSuccess.count,
-        processed: pending.length,
+        processed: pendingIds.length,
         generated,
         errors: errors.length > 0 ? errors : undefined,
         timestamp: new Date().toISOString(),
