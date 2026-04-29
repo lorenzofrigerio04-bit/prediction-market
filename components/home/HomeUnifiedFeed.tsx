@@ -259,7 +259,7 @@ function RankedRailTile({
   const isDoubleDigit = rank >= 10;
   return (
     <div
-      className={`relative flex w-[214px] min-w-[214px] snap-start items-stretch sm:w-[232px] sm:min-w-[232px] ${
+      className={`relative inline-flex shrink-0 snap-start items-stretch ${
         isDoubleDigit ? "pl-11 sm:pl-13" : "pl-8 sm:pl-9"
       }`}
     >
@@ -283,7 +283,7 @@ function RankedRailTile({
       >
         {rank}
       </span>
-      <div className="relative z-30 w-full">
+      <div className="relative z-30 w-[260px] min-w-[260px] shrink-0 sm:w-[268px] sm:min-w-[268px]">
         <HomeEventTile
           id={event.id}
           title={event.title}
@@ -347,7 +347,7 @@ function HorizontalRail({
           ) : (
             <div
               key={event.id}
-              className="w-[198px] min-w-[198px] snap-start sm:w-[214px] sm:min-w-[214px]"
+              className="w-[260px] min-w-[260px] shrink-0 snap-start sm:w-[268px] sm:min-w-[268px]"
             >
               <HomeEventTile
                 id={event.id}

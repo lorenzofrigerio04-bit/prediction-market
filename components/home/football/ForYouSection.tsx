@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { FootballEvent } from "@/types/homepage";
 import { SectionHeader } from "./premium/SectionHeader";
 import { HomeEventCard } from "@/components/home/HomeEventCard";
-import { ArcCarousel } from "@/components/home/ArcCarousel";
+import { HomeEventRail } from "@/components/home/HomeEventRail";
 interface Props {
   events: FootballEvent[];
   isPersonalized: boolean;
@@ -49,13 +49,16 @@ export function ForYouSection({
         }
       />
 
-      <ArcCarousel
-        items={events}
-        keyExtractor={(e) => e.id}
-        renderItem={(event) => (
-          <HomeEventCard event={event} onNavigate={onNavigate} accent="violet" />
-        )}
-      />
+      <HomeEventRail>
+        {events.map((event) => (
+          <div
+            key={event.id}
+            className="w-[260px] min-w-[260px] shrink-0 sm:w-[268px] sm:min-w-[268px]"
+          >
+            <HomeEventCard event={event} onNavigate={onNavigate} accent="violet" />
+          </div>
+        ))}
+      </HomeEventRail>
     </section>
   );
 }

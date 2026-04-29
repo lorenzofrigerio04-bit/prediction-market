@@ -14,8 +14,17 @@ import {
   getEventDisplayTitle,
   deriveOutcomesFromTitle,
 } from "@/lib/market-types";
+import { ProbabilityBadge, type ProbabilityRailAccent } from "@/components/home/football/premium/ProbabilityBadge";
+import { getBinaryLeadingDisplay } from "@/lib/home-event-binary-layout";
 
 export type HomeEventTileVariant = "popular" | "closing" | "foryou";
+
+const VARIANT_RAIL_ACCENT: Record<HomeEventTileVariant, ProbabilityRailAccent> =
+  {
+    popular: "primary",
+    closing: "emerald",
+    foryou: "violet",
+  };
 
 export interface HomeEventTileProps {
   id: string;
@@ -24,6 +33,8 @@ export interface HomeEventTileProps {
   closesAt: string;
   yesPct: number;
   predictionsCount?: number;
+  /** Override colore numero % rispetto alla mappa `variant` → accent rail */
+  railAccent?: ProbabilityRailAccent;
   variant: HomeEventTileVariant;
   /** Se true, l’evento è risolto con esito */
   resolved?: boolean;
@@ -81,6 +92,7 @@ export default function HomeEventTile({
   outcomeProbabilities,
   isFie = false,
   hasFeedback = false,
+  railAccent,
 }: HomeEventTileProps) {
   const [now, setNow] = useState(0);
   useEffect(() => {
@@ -91,6 +103,8 @@ export default function HomeEventTile({
   }, []);
 
   const noPct = 100 - yesPct;
+  const { leadingPct } = getBinaryLeadingDisplay(yesPct);
+  const badgeAccent = railAccent ?? VARIANT_RAIL_ACCENT[variant];
   const categoryImagePath = getCategoryImagePath(category);
   const fallbackGradient = getCategoryFallbackGradient(category);
   const [categoryImageFailed, setCategoryImageFailed] = useState(false);
@@ -149,7 +163,6 @@ export default function HomeEventTile({
   const titleClampClass = compact ? "line-clamp-2" : "line-clamp-3";
   const titleSizeClass = compact ? "text-[0.98rem] sm:text-[1.05rem]" : "text-[1.08rem] sm:text-[1.2rem]";
   const responseAreaClass = compact ? "h-[82px] sm:h-[88px]" : "h-[92px] sm:h-[100px]";
-  const binaryResponseAreaClass = compact ? "h-[112px] sm:h-[120px]" : "h-[122px] sm:h-[132px]";
 
   return (
     <Link
@@ -185,6 +198,16 @@ export default function HomeEventTile({
       {/* Overlay scuro per leggibilità testo (ridotto per far risaltare la foto) */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/60 to-black/35" />
       <div className={`relative z-10 flex h-full flex-col justify-between ${pClass}`}>
+        {!isMultiOutcome && (
+          <div className="pointer-events-none absolute right-3 top-3 z-30 sm:right-3.5 sm:top-3.5">
+            <ProbabilityBadge
+              variant="rail"
+              railAccent={badgeAccent}
+              pct={leadingPct}
+              size="compact"
+            />
+          </div>
+        )}
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-h-[20px] items-center">
             {showFeedbackBadge && (
@@ -193,7 +216,9 @@ export default function HomeEventTile({
               </span>
             )}
           </div>
-          <div className="flex items-center justify-end gap-2">
+          <div
+            className={`flex items-center justify-end gap-2 ${!isMultiOutcome ? "min-w-0 pr-[3.45rem] sm:pr-[3.6rem]" : ""}`}
+          >
             {isClosedOrClosing && (
               <span className="text-xs font-bold text-amber-100 sm:text-ds-micro w-fit">
                 {formatTimeLeftShort(closesAt, now)}
@@ -261,7 +286,7 @@ export default function HomeEventTile({
                   </span>
                 )}
                 <h3
-                  className={`font-semibold text-white/95 tracking-wide text-center shrink-0 ${compact ? "text-sm sm:text-base" : "text-base sm:text-lg"}`}
+                  className="font-kalshi font-semibold leading-[1.15] tracking-[0.02em] text-center text-white/95 shrink-0"
                   style={{ textShadow: "0 2px 12px rgba(0,0,0,0.9), 0 0 1px rgba(0,0,0,0.8)" }}
                 >
                   Chi vincerà?
@@ -290,34 +315,16 @@ export default function HomeEventTile({
               </div>
             </>
           ) : (
-            /* Variante generica: titolo + barra SÌ/NO */
             <>
               <h3
-                className={`font-kalshi font-semibold leading-[1.15] tracking-[0.01em] break-words text-white mb-2 ${titleClampClass} ${titleSizeClass}`}
-                style={{ textShadow: "0 2px 8px rgba(0,0,0,1), 0 0 1px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9)" }}
+                className={`font-kalshi font-semibold leading-[1.18] tracking-[0.036em] break-words text-white/97 mt-auto ${titleClampClass} ${titleSizeClass}`}
+                style={{
+                  textShadow:
+                    "0 2px 18px rgba(0,0,0,0.95), 0 0 32px rgba(0,0,0,0.35), 0 1px 0 rgba(0,0,0,0.2)",
+                }}
               >
                 {displayTitle}
               </h3>
-              <div className={`mt-auto w-full ${binaryResponseAreaClass} flex flex-col justify-end pt-4 sm:pt-6`}>
-                <div className="grid grid-rows-2 gap-1.5">
-                  <div className="flex min-h-[36px] items-center justify-between rounded-2xl border border-emerald-400/75 bg-black/20 px-3.5 py-1.5 backdrop-blur-[1px]">
-                    <span className="text-sm font-semibold uppercase tracking-wide text-emerald-400">
-                      SI
-                    </span>
-                    <span className="font-kalshi text-base sm:text-lg font-semibold tabular-nums text-white/95">
-                      {yesPct}%
-                    </span>
-                  </div>
-                  <div className="flex min-h-[36px] items-center justify-between rounded-2xl border border-rose-500/80 bg-black/20 px-3.5 py-1.5 backdrop-blur-[1px]">
-                    <span className="text-sm font-semibold uppercase tracking-wide text-rose-500">
-                      NO
-                    </span>
-                    <span className="font-kalshi text-base sm:text-lg font-semibold tabular-nums text-white/95">
-                      {noPct}%
-                    </span>
-                  </div>
-                </div>
-              </div>
             </>
           )}
         </div>

@@ -9,6 +9,7 @@ import crypto from "crypto";
 import type { RawNewsInput, EnrichedArticle, NewsFormat, NewsCategory } from "./types";
 import { PERSONAS } from "./types";
 import { getPublicSourceLabelFromInput } from "./public-source";
+import { passesFootballNewsFilter } from "./football-filter";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -121,6 +122,7 @@ async function generateContent(
   const systemPrompt = `${persona.style}
 
 Regole ferree:
+- Argomento obbligatorio: solo calcio (football/soccer). Se il materiale d’origine non riguarda il calcio, rispondi con JSON {"reject":true,"reason":"non-football"}
 - Scrivi SEMPRE in italiano corretto e fluente
 - NON inventare fatti non presenti nella notizia originale
 - NON usare emoji nel body (solo nel title se appropriato)
@@ -168,7 +170,11 @@ Scrivi un articolo in formato ${format} seguendo il tuo personaggio.`;
     const raw = completion.choices[0]?.message?.content;
     if (!raw) return null;
 
-    const parsed = JSON.parse(raw) as Partial<EditorialDraft>;
+    const parsed = JSON.parse(raw) as Partial<EditorialDraft> & {
+      reject?: boolean;
+      reason?: string;
+    };
+    if (parsed.reject === true) return null;
     if (!parsed.title || !parsed.body || !parsed.excerpt) return null;
 
     return {
@@ -221,6 +227,9 @@ export async function enrichArticle(
   format: NewsFormat,
   isPlatformData: boolean
 ): Promise<EnrichedArticle | null> {
+  const combined = `${input.title}\n${input.content}`;
+  if (!isPlatformData && !passesFootballNewsFilter(combined)) return null;
+
   const sourceHash = hashArticle(input);
   const category = assignCategory(input.title, input.content);
 

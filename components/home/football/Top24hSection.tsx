@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useId } from "react";
+import { useState, type CSSProperties } from "react";
 import Link from "next/link";
 import type { FootballEvent } from "@/types/homepage";
+import { getBinaryLeadingDisplay } from "@/lib/home-event-binary-layout";
 import { SectionHeader } from "./premium/SectionHeader";
+import { ProbabilityBadge } from "./premium/ProbabilityBadge";
 
 interface Props {
   events: FootballEvent[];
@@ -94,159 +96,6 @@ const RANK_CONFIGS: RankConfig[] = [
   },
 ];
 
-function getPctZone(pct: number): "bull" | "bear" | "neutral" {
-  if (pct > 50) return "bull";
-  if (pct < 50) return "bear";
-  return "neutral";
-}
-
-const PCT_COLORS: Record<
-  "bull" | "bear" | "neutral",
-  { arc: string; text: string; glow: string }
-> = {
-  bull: {
-    arc: "#10b981",
-    text: "#34d399",
-    glow: "rgba(16,185,129,0.55)",
-  },
-  bear: {
-    arc: "#f43f5e",
-    text: "#fb7185",
-    glow: "rgba(244,63,94,0.55)",
-  },
-  neutral: {
-    arc: "#fbbf24",
-    text: "#fde68a",
-    glow: "rgba(251,191,36,0.55)",
-  },
-};
-
-/** Ultra-premium probability gauge — glassmorphism backdrop, layered glow arc, animated tip dot */
-function ProbabilityBadge({ pct }: { pct: number }) {
-  const uid = useId().replace(/:/g, "");
-  const zone = getPctZone(pct);
-  const c = PCT_COLORS[zone];
-  const r = 38;
-  const circ = 2 * Math.PI * r;
-  const filled = circ * (pct / 100);
-  const empty = circ - filled;
-
-  const tipRad = ((pct / 100) * 360 - 90) * (Math.PI / 180);
-  const dotX = 50 + r * Math.cos(tipRad);
-  const dotY = 50 + r * Math.sin(tipRad);
-
-  return (
-    <div
-      className="relative flex shrink-0 items-center justify-center"
-      style={{ width: "3.5rem", height: "3.5rem" }}
-    >
-      <svg
-        aria-hidden
-        viewBox="0 0 100 100"
-        className="pointer-events-none absolute inset-0 h-full w-full"
-        style={{ transform: "rotate(-90deg)" }}
-      >
-        <defs>
-          {/* Frosted-glass radial fill */}
-          <radialGradient id={`bg-${uid}`} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(8,8,12,0.72)" />
-            <stop offset="100%" stopColor="rgba(8,8,12,0.42)" />
-          </radialGradient>
-          {/* Blur filter for the glow copy of the arc */}
-          <filter id={`blur-${uid}`} x="-60%" y="-60%" width="220%" height="220%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="4" />
-          </filter>
-        </defs>
-
-        {/* ── Glass backdrop ── */}
-        <circle
-          cx="50" cy="50" r="33"
-          fill={`url(#bg-${uid})`}
-          stroke="rgba(255,255,255,0.09)"
-          strokeWidth="0.75"
-        />
-
-        {/* ── Subtle outer ring ── */}
-        <circle
-          cx="50" cy="50" r={r + 5}
-          fill="none"
-          stroke="rgba(255,255,255,0.04)"
-          strokeWidth="0.8"
-        />
-
-        {/* ── Track ── */}
-        <circle
-          cx="50" cy="50" r={r}
-          fill="none"
-          stroke="rgba(255,255,255,0.09)"
-          strokeWidth="3"
-        />
-
-        {/* ── Arc glow layer (blurred, pulsing) ── */}
-        <circle
-          cx="50" cy="50" r={r}
-          fill="none"
-          stroke={c.arc}
-          strokeWidth="7"
-          strokeLinecap="round"
-          strokeDasharray={`${filled} ${empty}`}
-          filter={`url(#blur-${uid})`}
-          opacity="0.5"
-        >
-          <animate
-            attributeName="opacity"
-            values="0.3;0.62;0.3"
-            dur="2.6s"
-            repeatCount="indefinite"
-          />
-        </circle>
-
-        {/* ── Main arc ── */}
-        <circle
-          cx="50" cy="50" r={r}
-          fill="none"
-          stroke={c.arc}
-          strokeWidth="3.4"
-          strokeLinecap="round"
-          strokeDasharray={`${filled} ${empty}`}
-          style={{ filter: `drop-shadow(0 0 3.5px ${c.glow})` }}
-        />
-
-        {/* ── Tip dot (animated pulse) ── */}
-        {pct > 3 && pct < 98 && (
-          <circle cx={dotX} cy={dotY} r="3.6" fill={c.arc} opacity="0.95">
-            <animate
-              attributeName="r"
-              values="3;4.6;3"
-              dur="2.6s"
-              repeatCount="indefinite"
-            />
-            <animate
-              attributeName="opacity"
-              values="0.75;1;0.75"
-              dur="2.6s"
-              repeatCount="indefinite"
-            />
-          </circle>
-        )}
-      </svg>
-
-      {/* ── Number ── */}
-      <span
-        className="relative z-[1] select-none leading-none antialiased"
-        style={{
-          color: "#ffffff",
-          fontFamily: "Impact, 'Arial Narrow', sans-serif",
-          fontSize: "1.1rem",
-          textShadow: `0 0 10px ${c.glow}, 0 0 22px ${c.glow}, 0 1px 3px rgba(0,0,0,0.9)`,
-        }}
-      >
-        {pct}%
-      </span>
-    </div>
-  );
-}
-
 const RANK_FONT_SIZES = ["5.5rem", "5rem", "4.75rem", "4.375rem", "4rem"];
 
 const RANK_FALLBACK_IMAGES = [
@@ -272,8 +121,8 @@ function RankedEventCard({
   const fallbackUrl = RANK_FALLBACK_IMAGES[rank - 1] ?? RANK_FALLBACK_IMAGES[4];
   const coverUrl = (imgFailed || !aiUrl) ? fallbackUrl : aiUrl;
   const hasCover = !!coverUrl;
-  const label = event.sportLeague?.trim() || event.category?.trim() || null;
   const rankFontSize = RANK_FONT_SIZES[rank - 1] ?? RANK_FONT_SIZES[4];
+  const { leadingPct } = getBinaryLeadingDisplay(event.yesPct);
 
   return (
     <div
@@ -311,7 +160,7 @@ function RankedEventCard({
             "--shadow-hover": cfg.hoverShadow,
             boxShadow: cfg.boxShadow,
             backgroundColor: "#050b18",
-          } as React.CSSProperties
+          } as CSSProperties
         }
       >
         {/* Cover image */}
@@ -351,7 +200,7 @@ function RankedEventCard({
 
         {/* TOP ROW */}
         <div className="absolute inset-x-3.5 top-2.5 flex items-center justify-end">
-          <ProbabilityBadge pct={event.yesPct} />
+          <ProbabilityBadge variant="top5" pct={leadingPct} size="default" />
         </div>
 
         {/* BOTTOM CONTENT */}

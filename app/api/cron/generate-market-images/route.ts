@@ -3,13 +3,21 @@ import { prisma } from "@/lib/prisma";
 import { generateMarketImageForEvent } from "@/lib/ai-image-generation/generate-market-image";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+/** Più slot per smaltire la coda quando molti eventi sono senza copertina (es. dopo deploy). */
+export const maxDuration = 300;
 
-const MAX_EVENTS_PER_RUN = 5;
+const MAX_EVENTS_PER_RUN = 12;
+
+/** Lock IN_PROGRESS lasciati da istanze serverless interrotte: tornano PENDING. */
+const STALE_IN_PROGRESS_MS = 12 * 60 * 1000;
 
 /**
- * Cron: processa Event con imageGenerationStatus PENDING o FAILED (Event Gen v2.0).
- * Genera immagini AI per market e aggiorna Event.imageUrl e metadata.
+ * Cron: eventi visibili senza `imageUrl` (o con generazione in errore / stuck).
+ * Prima causa reale degli eventi senza copertina in prod:
+ * - `enqueueMarketImageGeneration` girava in fire-and-forget: la funzione si chiudeva prima del completamento.
+ * - Stato IN_PROGRESS bloccante: questo cron non selezionava mai IN_PROGRESS, quindi eventi congelati per sempre.
+ * - Filtro `generatorVersion === 2.0` escludeva eventi più vecchi o senza quel campo.
+ *
  * Richiede: GET o POST + header Authorization: Bearer <CRON_SECRET>.
  */
 const CRON_DISABLED_JSON = { error: "Cron automation disabled", code: "CRON_DISABLED" as const };
@@ -33,10 +41,38 @@ async function handleGenerateMarketImages(request: NextRequest) {
       return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
     }
 
+    const staleBefore = new Date(Date.now() - STALE_IN_PROGRESS_MS);
+    const resetStaleLocks = await prisma.event.updateMany({
+      where: {
+        imageGenerationStatus: "IN_PROGRESS",
+        updatedAt: { lt: staleBefore },
+      },
+      data: { imageGenerationStatus: "PENDING" },
+    });
+
+    const fixInconsistentSuccess = await prisma.event.updateMany({
+      where: {
+        imageGenerationStatus: "SUCCESS",
+        OR: [{ imageUrl: null }, { imageUrl: "" }],
+      },
+      data: { imageGenerationStatus: "PENDING" },
+    });
+
     const pending = await prisma.event.findMany({
       where: {
-        imageGenerationStatus: { in: ["PENDING", "FAILED"] },
-        generatorVersion: "2.0",
+        hidden: false,
+        AND: [
+          { OR: [{ imageUrl: null }, { imageUrl: "" }] },
+          {
+            OR: [
+              { imageGenerationStatus: { in: ["PENDING", "FAILED"] } },
+              {
+                imageGenerationStatus: "IN_PROGRESS",
+                updatedAt: { lt: staleBefore },
+              },
+            ],
+          },
+        ],
       },
       orderBy: { createdAt: "asc" },
       take: MAX_EVENTS_PER_RUN,
@@ -55,6 +91,8 @@ async function handleGenerateMarketImages(request: NextRequest) {
     return NextResponse.json(
       {
         ok: true,
+        staleLocksReset: resetStaleLocks.count,
+        inconsistentSuccessReset: fixInconsistentSuccess.count,
         processed: pending.length,
         generated,
         errors: errors.length > 0 ? errors : undefined,

@@ -187,7 +187,7 @@ export function ArcCarousel<T>({
             <div
               key={keyExtractor(item)}
               ref={(el) => { itemRefs.current[idx] = el; }}
-              className="w-[190px] min-w-[190px] sm:w-[240px] sm:min-w-[240px] lg:w-[272px] lg:min-w-[272px]"
+              className="w-[260px] min-w-[260px] shrink-0 sm:w-[268px] sm:min-w-[268px]"
               style={{
                 scrollSnapAlign: "center",
                 willChange: "transform, opacity",

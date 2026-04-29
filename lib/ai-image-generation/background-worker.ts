@@ -1,3 +1,4 @@
+import { after } from 'next/server';
 import { isAiImageGenerationDisabled } from '@/lib/check-ai-image-disabled';
 import { generateMarketImageForEvent } from './generate-market-image';
 
@@ -35,13 +36,27 @@ async function runInBackground(eventIds: string[]): Promise<void> {
 }
 
 /**
- * Fire-and-forget image generation for newly published events.
- * Publish flow never waits for image generation completion.
+ * Schedules market image generation after the HTTP response on Vercel/Next.js
+ * (`after()` keeps the serverless invocation alive until work finishes).
+ * Fuori da un request context Next, esegue il worker come fire-and-forget.
  */
 export function enqueueMarketImageGeneration(eventIds: string[]): void {
-  if (eventIds.length === 0) return;
+  if (eventIds.length === 0 || isAiImageGenerationDisabled()) return;
 
-  void runInBackground(eventIds).catch((error) => {
-    console.error('[ai-image-generation/background-worker] Unexpected failure', error);
-  });
+  const run = () =>
+    runInBackground(eventIds).catch((error) => {
+      console.error('[ai-image-generation/background-worker] Unexpected failure', error);
+    });
+
+  try {
+    after(async () => {
+      try {
+        await runInBackground(eventIds);
+      } catch (error) {
+        console.error("[ai-image-generation/background-worker] Unexpected failure", error);
+      }
+    });
+  } catch {
+    void run();
+  }
 }

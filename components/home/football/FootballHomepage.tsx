@@ -27,7 +27,7 @@ function RailSkeleton() {
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="w-[190px] min-w-[190px] shrink-0 animate-pulse rounded-2xl border border-white/[0.07] bg-gradient-to-br from-white/[0.04] to-white/[0.01] sm:w-[240px] sm:min-w-[240px]"
+            className="w-[260px] min-w-[260px] shrink-0 animate-pulse rounded-2xl border border-white/[0.07] bg-gradient-to-br from-white/[0.04] to-white/[0.01] sm:w-[268px] sm:min-w-[268px]"
             style={{ aspectRatio: "16/13" }}
           />
         ))}

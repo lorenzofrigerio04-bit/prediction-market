@@ -3,7 +3,7 @@
 import type { FootballEvent } from "@/types/homepage";
 import { SectionHeader } from "./premium/SectionHeader";
 import { HomeEventCard } from "@/components/home/HomeEventCard";
-import { ArcCarousel } from "@/components/home/ArcCarousel";
+import { HomeEventRail } from "@/components/home/HomeEventRail";
 interface Props {
   events: FootballEvent[];
   onNavigate?: () => void;
@@ -22,13 +22,16 @@ export function ViralSection({ events, onNavigate }: Props) {
         href="/sezioni/viral"
       />
 
-      <ArcCarousel
-        items={events}
-        keyExtractor={(e) => e.id}
-        renderItem={(event) => (
-          <HomeEventCard event={event} onNavigate={onNavigate} accent="rose" />
-        )}
-      />
+      <HomeEventRail>
+        {events.map((event) => (
+          <div
+            key={event.id}
+            className="w-[260px] min-w-[260px] shrink-0 sm:w-[268px] sm:min-w-[268px]"
+          >
+            <HomeEventCard event={event} onNavigate={onNavigate} accent="rose" />
+          </div>
+        ))}
+      </HomeEventRail>
     </section>
   );
 }

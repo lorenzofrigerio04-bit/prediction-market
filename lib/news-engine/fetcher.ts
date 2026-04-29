@@ -6,6 +6,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { passesFootballNewsFilter } from "./football-filter";
 import type { RawNewsInput } from "./types";
 
 const FOOTBALL_RSS_FEEDS = [
@@ -15,19 +16,6 @@ const FOOTBALL_RSS_FEEDS = [
   { url: "https://feeds.bbci.co.uk/sport/football/rss.xml", id: "bbc-sport" },
   { url: "https://www.football365.com/feed", id: "football365" },
 ];
-
-const FOOTBALL_KEYWORDS = [
-  "calcio", "football", "soccer", "serie a", "champions", "juventus", "inter",
-  "milan", "napoli", "roma", "lazio", "atalanta", "fiorentina", "torino",
-  "premier league", "la liga", "bundesliga", "messi", "ronaldo", "mbappé",
-  "allenatore", "gol", "partita", "trasferimento", "mercato", "nazionale",
-  "mondiale", "europeo", "coppa italia", "arbitro", "infortunio",
-];
-
-function isFootballRelated(text: string): boolean {
-  const lower = text.toLowerCase();
-  return FOOTBALL_KEYWORDS.some((kw) => lower.includes(kw));
-}
 
 /** Fetch recent articles already stored in SourceArticle table */
 async function fetchFromSourceArticles(limit = 40): Promise<RawNewsInput[]> {
@@ -52,16 +40,26 @@ async function fetchFromSourceArticles(limit = 40): Promise<RawNewsInput[]> {
         ],
       },
       orderBy: { fetchedAt: "desc" },
-      take: limit,
+      take: Math.min(limit * 3, 120),
     });
 
-    return articles.map((a) => ({
-      title: a.title,
-      content: a.content ?? "",
-      url: a.canonicalUrl,
-      publishedAt: a.publishedAt ?? a.fetchedAt,
-      sourceId: a.sourceType,
-    }));
+    const mapped: RawNewsInput[] = [];
+    for (const a of articles) {
+      const title = a.title;
+      const content = a.content ?? "";
+      const blob = `${title}\n${content}`;
+      if (!passesFootballNewsFilter(blob)) continue;
+      mapped.push({
+        title,
+        content,
+        url: a.canonicalUrl,
+        publishedAt: a.publishedAt ?? a.fetchedAt,
+        sourceId: a.sourceType,
+      });
+      if (mapped.length >= limit) break;
+    }
+
+    return mapped;
   } catch (err) {
     console.warn("[news-engine/fetcher] SourceArticle fetch failed:", err);
     return [];
@@ -84,7 +82,7 @@ async function fetchFromRSS(): Promise<RawNewsInput[]> {
         const url = item.link ?? item.guid ?? "";
 
         if (!title || !url) continue;
-        if (!isFootballRelated(title + " " + content)) continue;
+        if (!passesFootballNewsFilter(`${title}\n${content}`)) continue;
 
         results.push({
           title,
@@ -162,26 +160,49 @@ async function fetchPlatformEventData(): Promise<RawNewsInput[]> {
       where: {
         status: "OPEN",
         hidden: false,
-        category: { in: ["sport", "calcio", "football", "SPORT"] },
+        category: {
+          in: [
+            "sport",
+            "Sport",
+            "calcio",
+            "football",
+            "SPORT",
+            "serie-a",
+            "champions",
+            "calcio-mercato",
+            "premier-league",
+            "la-liga",
+            "bundesliga",
+            "nazionale",
+          ],
+        },
       },
       orderBy: { totalCredits: "desc" },
-      take: 10,
+      take: 24,
       include: {
         _count: { select: { Prediction: true, Trade: true } },
       },
     });
 
-    return events.map((e) => {
+    const out: RawNewsInput[] = [];
+    for (const e of events) {
+      const desc = e.description ?? "";
+      const blob = `${e.title}\n${desc}`;
+      if (!passesFootballNewsFilter(blob)) continue;
+
       const yesPct = e.probability ? Math.round(e.probability * 100) : 50;
       const noPct = 100 - yesPct;
-      return {
+      out.push({
         title: `[PLATFORM DATA] ${e.title}`,
         content: `Evento sulla piattaforma: "${e.title}". Probabilità attuale: Sì ${yesPct}% / No ${noPct}%. Predizioni totali: ${e._count.Prediction}. Trade: ${e._count.Trade}. Crediti in gioco: ${e.totalCredits ?? 0}. Categoria: ${e.category}.`,
         url: `https://predictionmaster.app/eventi/${e.id}`,
         publishedAt: e.createdAt,
         sourceId: "platform",
-      };
-    });
+      });
+      if (out.length >= 10) break;
+    }
+
+    return out;
   } catch {
     return [];
   }

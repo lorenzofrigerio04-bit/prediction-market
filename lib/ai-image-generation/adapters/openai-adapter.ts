@@ -10,7 +10,7 @@ export function createOpenAIImageAdapter(): ImageProviderAdapter {
   const config = getAiImageGenerationConfig();
   const client = new OpenAI({ apiKey: config.openaiApiKey });
   const isDalle = config.model.startsWith('dall-e-');
-  const isGptImage = config.model.startsWith('gpt-image-');
+  const isGptImage = config.model.startsWith('gpt-image');
 
   return {
     async generate(prompt, options) {
@@ -27,7 +27,7 @@ export function createOpenAIImageAdapter(): ImageProviderAdapter {
                 : {}),
             }
           : isGptImage
-            ? { quality: 'low' as const }
+            ? { quality: config.quality }
             : {}),
       });
 

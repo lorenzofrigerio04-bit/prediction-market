@@ -17,6 +17,13 @@ const CATEGORY_TO_PRESET: Record<string, StylePresetId> = {
   Economy: 'market_chart_abstract',
   Sport: 'sports_action',
   Sports: 'sports_action',
+  Calcio: 'sports_action',
+  Tennis: 'sports_action',
+  Pallacanestro: 'sports_action',
+  Pallavolo: 'sports_action',
+  'Formula 1': 'sports_action',
+  Formula: 'sports_action',
+  MotoGP: 'sports_action',
   Politica: 'political_symbolic',
   Politics: 'political_symbolic',
   Tecnologia: 'minimal_iconic',
@@ -170,15 +177,17 @@ export function buildFinalPrompt(
   symbolism?: string
 ): string {
   const preset = getPresetById(presetId);
-  const topicBlock = `Topic to illustrate (translate into one clear visual): "${input.title}". ${scene}`;
+  const topicBlock = `Primary subject — the prediction question to visualize literally (one scene): "${input.title}". ${scene}`;
   const symbolismBlock = symbolism ? ` Symbolism: ${symbolism}.` : '';
   return (
-    `Create a single photorealistic photograph. ${topicBlock}.${symbolismBlock} ` +
+    `Create one premium editorial photograph: epic scale and energy, still believable and realistic (no fantasy creatures, no sci-fi unless the title clearly implies it). ` +
+    `${topicBlock}.${symbolismBlock} ` +
     `${preset.promptFragment} ` +
     `Composition: ${composition}. ` +
-    `The scene must be immediately understandable and visually represent the theme. ` +
-    `No text, no logos, no captions, no watermark, no cartoon or illustration, no identifiable faces. ` +
-    `Suitable for social media: visually striking, professional, universally appealing.`
+    `The image must feel tightly connected to the title—viewers should grasp the event theme in one second. ` +
+    `Cinematic lighting, high production value, hype stadium-keynote energy but sober and professional. ` +
+    `No text, no logos, no captions, no watermark, no cartoon or illustration, no identifiable real people or team logos. ` +
+    `Photorealistic, sharp focus, suitable as a prediction-market hero cover.`
   );
 }
 
