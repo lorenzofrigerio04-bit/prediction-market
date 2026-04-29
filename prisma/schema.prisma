@@ -737,6 +737,7 @@ model NewsArticle {
   excerpt         String    // teaser di 1-2 frasi
   authorPersona   String    @map("author_persona")
   sourceUrls      String[]  @map("source_urls")
+  sourceLabel     String?   @map("source_label") // Testata / agenzia mostrata al lettore (es. "Corriere dello Sport")
   relatedEventId  String?   @map("related_event_id")
   imageUrl        String?   @map("image_url")
   readingTimeMin  Int       @default(2) @map("reading_time_min")

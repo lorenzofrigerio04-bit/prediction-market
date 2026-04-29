@@ -10,6 +10,10 @@ interface Props {
   accent?: "primary" | "gold" | "crimson" | "violet" | "emerald";
   /** Stesso stack e metriche dell’h1 articolo news (Barlow Condensed, tracking stretto, titolo naturale). */
   articleHeadlineTitle?: boolean;
+  /** Eyebrow (es. "Ultime ore") sulla stessa riga del titolo, allineata a destra — tipico pagina News. */
+  eyebrowTrailing?: boolean;
+  /** Solo link CTA a destra, senza badge eyebrow (homepage News "vedi tutti →"). */
+  ctaOnly?: boolean;
   href?: string;
   hrefLabel?: string;
   leftSlot?: ReactNode;
@@ -52,27 +56,72 @@ export function SectionHeader({
   subtitle,
   accent = "primary",
   articleHeadlineTitle = false,
+  eyebrowTrailing = false,
+  ctaOnly = false,
   href,
   hrefLabel = "Vedi tutti",
   leftSlot,
 }: Props) {
   const a = ACCENT_MAP[accent];
+
+  const eyebrowRow = (
+    <div className="flex items-center gap-2 shrink-0">
+      <span className={`inline-block h-1.5 w-1.5 rounded-full ${a.dot}`} aria-hidden />
+      <span className={`news-format-badge text-[12px] font-semibold leading-none tracking-[0.01em] ${a.text}`}>
+        {eyebrow}
+      </span>
+      {leftSlot}
+    </div>
+  );
+
+  const trailingLink = href ? (
+    <Link
+      href={href}
+      className={`news-format-badge group relative flex shrink-0 items-center gap-1 text-[12px] font-semibold leading-none tracking-[0.01em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded ${a.text} hover:opacity-80`}
+    >
+      <span
+        className={`absolute -inset-x-2 -inset-y-1 rounded-lg opacity-0 transition-opacity duration-200 group-hover:opacity-100 bg-current/[0.07]`}
+        aria-hidden
+      />
+      {hrefLabel}
+      <svg
+        aria-hidden
+        className="inline-block h-3 w-3 translate-x-0 transition-transform group-hover:translate-x-0.5"
+        viewBox="0 0 12 12"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M2 6h8M7 3l3 3-3 3" />
+      </svg>
+    </Link>
+  ) : null;
+
+  if (articleHeadlineTitle && eyebrowTrailing) {
+    return (
+      <header className="mb-5">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="min-w-0 flex-1 text-[1.62rem] font-bold leading-[1.1] tracking-[-0.022em] text-white sm:text-[1.9rem]" style={{ fontFamily: "var(--font-kalshi-title)" }}>
+            {title}
+          </h2>
+          <div className="flex shrink-0 items-center gap-4">
+            {ctaOnly ? null : eyebrowRow}
+            {trailingLink}
+          </div>
+        </div>
+        {subtitle ? <p className="mt-1 text-[0.8125rem] text-white/50">{subtitle}</p> : null}
+        <div className={`mt-3 h-px w-full bg-gradient-to-r ${a.line}`} aria-hidden />
+      </header>
+    );
+  }
+
   return (
     <header className="mb-5">
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span
-              className={`inline-block h-1.5 w-1.5 rounded-full ${a.dot}`}
-              aria-hidden
-            />
-            <span
-              className={`font-[Oswald] text-[10px] font-semibold uppercase tracking-[0.28em] ${a.text}`}
-            >
-              {eyebrow}
-            </span>
-            {leftSlot}
-          </div>
+          {eyebrowRow}
           <h2
             className={
               articleHeadlineTitle
@@ -93,7 +142,7 @@ export function SectionHeader({
         {href && (
           <Link
             href={href}
-            className={`group relative shrink-0 pb-1 flex items-center gap-1 font-[Oswald] text-[10px] font-semibold uppercase tracking-[0.22em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded ${a.text} hover:opacity-80`}
+            className={`news-format-badge group relative shrink-0 flex items-center gap-1 text-[12px] font-semibold leading-none tracking-[0.01em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded ${a.text} hover:opacity-80`}
           >
             <span className={`absolute -inset-x-2 -inset-y-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-current/[0.07]`} aria-hidden />
             {hrefLabel}

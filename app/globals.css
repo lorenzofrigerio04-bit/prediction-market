@@ -5,6 +5,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Badge formato news (Breaking, Gossip, …): stesso stack degli h1/h2 titolo, forzato sopra inherit da body/link */
+.news-format-badge {
+  font-family: var(--font-kalshi-title), 'Oswald', system-ui, sans-serif !important;
+}
+
 /* —— Design system: spacing scale (mobile-first, 4px base) —— */
 :root {
   --font-sans: 'Outfit', system-ui, sans-serif;

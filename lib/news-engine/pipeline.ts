@@ -7,8 +7,25 @@ import { prisma } from "@/lib/prisma";
 import { fetchAllNewsInputs } from "./fetcher";
 import { enrichArticle, planEnrichmentQueue } from "./enricher";
 import type { NewsEngineResult } from "./types";
+import { getPublicSourceLabelFromUrls } from "./public-source";
 
 const DISABLE_OPENAI = process.env.DISABLE_OPENAI === "true";
+
+/** Compila source_label sugli articoli già in DB (deriva da source_urls). Idempotente. */
+export async function syncNewsArticleSourceLabels(): Promise<void> {
+  const articles = await prisma.newsArticle.findMany({
+    where: { OR: [{ sourceLabel: null }, { sourceLabel: "" }] },
+    select: { id: true, sourceUrls: true },
+    take: 400,
+  });
+  for (const a of articles) {
+    const label = getPublicSourceLabelFromUrls(a.sourceUrls);
+    await prisma.newsArticle.update({
+      where: { id: a.id },
+      data: { sourceLabel: label },
+    });
+  }
+}
 
 /** Verifica se un articolo è già stato processato */
 async function isAlreadyProcessed(sourceHash: string): Promise<boolean> {
@@ -34,6 +51,7 @@ async function saveArticle(article: Awaited<ReturnType<typeof enrichArticle>>) {
       excerpt: article.excerpt,
       authorPersona: article.authorPersona,
       sourceUrls: article.sourceUrls,
+      sourceLabel: article.sourceLabel,
       relatedEventId: article.relatedEventId ?? null,
       imageUrl: article.imageUrl ?? null,
       readingTimeMin: article.readingTimeMin,
@@ -129,6 +147,8 @@ export async function runNewsEnginePipeline(): Promise<NewsEngineResult> {
 
 /** Genera contenuto di fallback se non ci sono articoli nel DB */
 export async function ensureMinimumContent(): Promise<void> {
+  await syncNewsArticleSourceLabels();
+
   const count = await prisma.newsArticle.count({ where: { published: true } });
   if (count >= 5) return;
 
@@ -144,6 +164,7 @@ export async function ensureMinimumContent(): Promise<void> {
       excerpt: "La nuova sezione News è live — breaking news, gossip e analisi esclusive sul calcio che ami.",
       authorPersona: "Redazione",
       sourceUrls: [],
+      sourceLabel: "Redazione PredictionMaster",
       readingTimeMin: 1,
       featured: true,
       published: true,
@@ -161,6 +182,7 @@ export async function ensureMinimumContent(): Promise<void> {
           subtitle: article.subtitle,
           body: article.body,
           excerpt: article.excerpt,
+          sourceLabel: article.sourceLabel,
         },
       });
     } catch {

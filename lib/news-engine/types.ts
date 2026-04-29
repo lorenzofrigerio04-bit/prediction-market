@@ -29,6 +29,8 @@ export interface EnrichedArticle {
   excerpt: string;
   authorPersona: string;
   sourceUrls: string[];
+  /** Nome pubblico della fonte (testata riconoscibile), persistito in DB. */
+  sourceLabel: string;
   relatedEventId?: string;
   imageUrl?: string;
   readingTimeMin: number;

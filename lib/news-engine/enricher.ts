@@ -8,6 +8,7 @@ import OpenAI from "openai";
 import crypto from "crypto";
 import type { RawNewsInput, EnrichedArticle, NewsFormat, NewsCategory } from "./types";
 import { PERSONAS } from "./types";
+import { getPublicSourceLabelFromInput } from "./public-source";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -112,6 +113,7 @@ interface EditorialDraft {
 async function generateContent(
   input: RawNewsInput,
   format: NewsFormat,
+  publicSource: string,
   relatedEventContext?: string
 ): Promise<EditorialDraft | null> {
   const persona = PERSONAS[format];
@@ -124,6 +126,7 @@ Regole ferree:
 - NON usare emoji nel body (solo nel title se appropriato)
 - Il tone of voice deve essere coerente con il tuo personaggio
 - NON menzionare intelligenza artificiale, chatbot, automazione della scrittura, né dire o insinuare che il pezzo sia "generato" o prodotto da software
+- NON citare nel corpo nomi di API, feed tecnici, aggregator di dati sportivi o strumenti interni alla produzione del pezzo
 - Pubblico: rivolgiti a lettori/tifosi in modo neutro (es. "chi segue il calcio", "i tifosi", "il lettore"). È VIETATO indirizzare o presupporre un pubblico femminile: niente "care lettrici", "ragazze", "amiche", "per le donne", angolature da lifestyle o gossip rivolto alle donne, seconda persona femminile plurale o qualsiasi incitamento rivolto specificamente alle donne. Questa regola vale per titolo, sottotitolo, corpo ed excerpt.
 - Body: da 150 a 350 parole, paragrafi brevi (max 3-4 righe)
 - Excerpt: 1 sola frase di max 25 parole, deve far venire voglia di leggere
@@ -141,7 +144,7 @@ Rispondi SOLO con JSON valido nel formato:
   const userPrompt = `Notizia originale:
 TITOLO: ${input.title}
 CONTENUTO: ${input.content.slice(0, 1500)}
-FONTE: ${input.sourceId ?? "web"}
+CONTESTO REDAZIONALE (non va ripetuto nel testo; a fine articolo la redazione attribuirà la fonte in modo formale): ${publicSource}
 DATA: ${input.publishedAt?.toLocaleDateString("it-IT") ?? "oggi"}
 
 ${format === "ANALYTICS" && input.url.includes("predictionmaster") 
@@ -226,7 +229,9 @@ export async function enrichArticle(
     ? `Esiste un evento correlato sulla piattaforma (id: ${relatedEventId}) dove gli utenti possono scommettere.`
     : undefined;
 
-  const draft = await generateContent(input, format, relatedEventContext);
+  const publicSource = getPublicSourceLabelFromInput(input);
+
+  const draft = await generateContent(input, format, publicSource, relatedEventContext);
   if (!draft) return null;
 
   const baseSlug = slugify(draft.title);
@@ -244,6 +249,7 @@ export async function enrichArticle(
     excerpt: draft.excerpt,
     authorPersona: persona.name,
     sourceUrls: [input.url],
+    sourceLabel: publicSource,
     relatedEventId,
     imageUrl: undefined,
     readingTimeMin: estimateReadingTime(draft.body),

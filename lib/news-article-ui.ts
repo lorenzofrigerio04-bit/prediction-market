@@ -15,7 +15,13 @@ export function timeAgo(dateInput: string | Date): string {
 
 export const FORMAT_ACCENT: Record<
   NewsFormat,
-  { glow: string; dot: string; labelColor: string; cardBorder: string; topBar: string }
+  {
+    glow: string;
+    dot: string;
+    labelColor: string;
+    cardBorder: string;
+    topBar: string;
+  }
 > = {
   BREAKING: {
     glow: "rgba(244,63,94,0.18)",

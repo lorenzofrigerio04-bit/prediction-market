@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { Inter } from "next/font/google";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import BackLink from "@/components/ui/BackLink";
@@ -15,14 +14,8 @@ import {
 } from "@/lib/news-article-ui";
 import { RelatedNewsRail } from "@/components/news/RelatedNewsRail";
 import { getRelatedNewsArticles, relatedArticleToSerializable } from "@/lib/news-related";
+import { getNewsArticleDisplaySource, syncNewsArticleSourceLabels } from "@/lib/news-engine";
 import { prisma } from "@/lib/prisma";
-
-/** Corpo articolo: Inter (solo paragrafi) */
-const articleBody = Inter({
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug: raw } = await params;
@@ -41,6 +34,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function NewsArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug: raw } = await params;
   const slug = decodeURIComponent(raw);
+  await syncNewsArticleSourceLabels();
   const article = await prisma.newsArticle.findFirst({
     where: { slug, published: true },
     select: {
@@ -54,6 +48,8 @@ export default async function NewsArticlePage({ params }: { params: Promise<{ sl
       imageUrl: true,
       readingTimeMin: true,
       publishedAt: true,
+      sourceLabel: true,
+      sourceUrls: true,
     },
   });
   if (!article) notFound();
@@ -81,6 +77,10 @@ export default async function NewsArticlePage({ params }: { params: Promise<{ sl
     .slice(0, 2)
     .toUpperCase();
   const paragraphs = article.body.split("\n").filter((p) => p.trim());
+  const displaySource = getNewsArticleDisplaySource({
+    sourceLabel: article.sourceLabel,
+    sourceUrls: article.sourceUrls,
+  });
 
   return (
     <div className="min-h-screen" style={{ background: "rgb(var(--background-primary))" }}>
@@ -144,7 +144,7 @@ export default async function NewsArticlePage({ params }: { params: Promise<{ sl
               </div>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span
-                  className={`inline-flex items-center gap-1.5 font-[Oswald] text-[10px] font-semibold uppercase tracking-[0.2em] ${accent.labelColor}`}
+                  className={`news-format-badge inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em] ${accent.labelColor}`}
                 >
                   <span className={`h-1 w-1 shrink-0 rounded-full ${accent.dot}`} />
                   {formatArticleKindLabel(format)}
@@ -191,21 +191,40 @@ export default async function NewsArticlePage({ params }: { params: Promise<{ sl
           ) : null}
 
           <div
-            className={`${articleBody.className} mx-auto mt-11 max-w-[33rem] space-y-7 selection:bg-primary/20 selection:text-white sm:mt-12 sm:space-y-[1.85rem] antialiased`}
+            className="font-sans mx-auto mt-11 max-w-[33rem] space-y-6 selection:bg-primary/20 selection:text-white sm:mt-12 sm:space-y-7 antialiased"
           >
             {paragraphs.map((p, i) => (
               <p
                 key={i}
                 className={
                   i === 0
-                    ? "text-[1.125rem] font-normal leading-[1.78] tracking-[0.01em] text-white/[0.9] sm:flow-root sm:text-[1.2rem] sm:leading-[1.76] sm:first-letter:float-left sm:first-letter:mr-3 sm:first-letter:mt-0.5 sm:first-letter:font-semibold sm:first-letter:text-[2.65rem] sm:first-letter:leading-[0.78] sm:first-letter:tracking-[-0.02em] sm:first-letter:text-white"
-                    : "text-[1.045rem] font-normal leading-[1.92] tracking-[0.012em] text-white/[0.82] sm:text-[1.0625rem] sm:leading-[1.94]"
+                    ? "text-[1.05rem] font-normal leading-[1.72] tracking-[0.01em] text-white/[0.9] sm:flow-root sm:text-[1.125rem] sm:leading-[1.68] sm:first-letter:float-left sm:first-letter:mr-3 sm:first-letter:mt-0.5 sm:first-letter:font-semibold sm:first-letter:text-[2.4rem] sm:first-letter:leading-[0.76] sm:first-letter:tracking-[-0.02em] sm:first-letter:text-white"
+                    : "text-[0.9875rem] font-normal leading-[1.84] tracking-[0.012em] text-white/[0.82] sm:text-[1.025rem] sm:leading-[1.86]"
                 }
               >
                 {p}
               </p>
             ))}
           </div>
+
+          <footer className="mx-auto mt-7 max-w-[33rem] sm:mt-8">
+            <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span
+                className="text-[0.8125rem] font-medium leading-snug text-white/55"
+                style={{
+                  fontFamily: "var(--font-sans)",
+                  letterSpacing: "0.02em",
+                }}
+              >
+                Fonte:
+              </span>
+              <span
+                className="font-sans text-[13px] font-light tracking-[0.04em] text-white/[0.48] antialiased"
+              >
+                {displaySource}
+              </span>
+            </p>
+          </footer>
 
           <RelatedNewsRail items={relatedItems} />
         </article>
