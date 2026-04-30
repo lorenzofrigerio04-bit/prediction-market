@@ -147,7 +147,6 @@ export async function getPendingImageEventIdsFeedPriority(
     const replicaScore = clamp01(Math.log10(event.replicaRankValue + 1));
     const daysToClose = (event.closesAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
     const urgencyScore = clamp01(1 - Math.min(Math.max(daysToClose, 0), 45) / 45);
-    void maxAgeMs; // recency usato nel for-you loggato, non nel trending
     const trendingScore =
       0.75 * popularityScore + 0.15 * replicaScore + 0.1 * urgencyScore;
     return {
