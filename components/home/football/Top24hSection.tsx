@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { FootballEvent } from "@/types/homepage";
 import { getBinaryLeadingDisplay } from "@/lib/home-event-binary-layout";
 import { SectionHeader } from "./premium/SectionHeader";
-import { ProbabilityBadge } from "./premium/ProbabilityBadge";
+import { ProbabilityBadge, type Top5Rank } from "./premium/ProbabilityBadge";
 
 interface Props {
   events: FootballEvent[];
@@ -24,75 +24,79 @@ type RankConfig = {
 
 const RANK_CONFIGS: RankConfig[] = [
   {
-    // #1 — Gold
-    border: "rgba(255,215,0,0.30)",
+    // #1 — Tiffany ultra premium (ombre più leggere)
+    border: "rgba(94,234,212,0.38)",
     boxShadow:
-      "0 0 0 1px rgba(255,215,0,0.16), 0 24px 64px -14px rgba(255,215,0,0.22), 0 48px 96px -24px rgba(0,0,0,0.90)",
+      "0 0 0 1px rgba(10,186,181,0.20), 0 0 28px -10px rgba(10,186,181,0.22), 0 18px 52px -18px rgba(45,212,191,0.12), 0 40px 84px -28px rgba(0,0,0,0.86)",
     hoverShadow:
-      "0 0 0 1px rgba(255,215,0,0.34), 0 28px 72px -12px rgba(255,215,0,0.38), 0 -4px 40px -10px rgba(255,215,0,0.10), 0 48px 96px -24px rgba(0,0,0,0.94)",
+      "0 0 0 1px rgba(153,246,228,0.34), 0 0 36px -8px rgba(10,186,181,0.34), 0 0 62px -18px rgba(94,234,212,0.16), 0 26px 72px -16px rgba(0,0,0,0.90)",
     topBar:
-      "linear-gradient(90deg,rgba(255,215,0,1.00) 0%,rgba(255,215,0,0.52) 42%,transparent 100%)",
+      "linear-gradient(90deg,rgba(204,251,241,0.98) 0%,rgba(10,186,181,0.78) 20%,rgba(45,212,191,0.40) 48%,transparent 100%)",
     leftAccent:
-      "linear-gradient(180deg,rgba(255,215,0,0.90) 0%,rgba(255,215,0,0.10) 100%)",
-    rankStroke: "rgba(255,215,0,0.52)",
+      "linear-gradient(180deg,rgba(167,243,228,0.96) 0%,rgba(10,186,181,0.48) 44%,rgba(10,186,181,0.09) 100%)",
+    rankStroke: "rgba(110,231,213,0.64)",
     rankFilter:
-      "drop-shadow(0 0 14px rgba(255,215,0,0.42)) drop-shadow(0 0 36px rgba(255,215,0,0.18))",
+      "drop-shadow(0 0 18px rgba(10,186,181,0.58)) drop-shadow(0 0 42px rgba(45,212,191,0.30)) drop-shadow(0 0 78px rgba(94,234,212,0.14))",
   },
   {
-    // #2 — Silver
-    border: "rgba(208,215,240,0.20)",
+    // #2 — Argento / cromo (ombre più leggere)
+    border: "rgba(236,242,255,0.36)",
     boxShadow:
-      "0 0 0 1px rgba(208,215,240,0.12), 0 18px 52px -12px rgba(208,215,240,0.10), 0 36px 72px -20px rgba(0,0,0,0.84)",
+      "0 0 0 1px rgba(255,255,255,0.16), 0 0 34px -12px rgba(216,228,255,0.24), 0 16px 52px -16px rgba(180,198,235,0.10), 0 36px 76px -24px rgba(0,0,0,0.84)",
     hoverShadow:
-      "0 0 0 1px rgba(208,215,240,0.26), 0 22px 60px -10px rgba(208,215,240,0.20), 0 36px 72px -20px rgba(0,0,0,0.88)",
+      "0 0 0 1px rgba(255,255,255,0.30), 0 0 48px -10px rgba(232,242,255,0.32), 0 0 72px -20px rgba(200,215,245,0.18), 0 24px 68px -14px rgba(0,0,0,0.88)",
     topBar:
-      "linear-gradient(90deg,rgba(222,228,250,0.84) 0%,rgba(210,216,240,0.30) 45%,transparent 100%)",
+      "linear-gradient(90deg,rgba(255,255,255,0.94) 0%,rgba(230,238,255,0.78) 16%,rgba(198,212,245,0.44) 42%,transparent 100%)",
     leftAccent:
-      "linear-gradient(180deg,rgba(214,220,244,0.70) 0%,rgba(214,220,244,0.06) 100%)",
-    rankStroke: "rgba(208,215,240,0.42)",
+      "linear-gradient(180deg,rgba(250,252,255,0.94) 0%,rgba(214,224,248,0.58) 38%,rgba(175,195,230,0.14) 100%)",
+    rankStroke: "rgba(236,242,252,0.60)",
     rankFilter:
-      "drop-shadow(0 0 12px rgba(208,215,240,0.28)) drop-shadow(0 0 30px rgba(208,215,240,0.12))",
+      "drop-shadow(0 0 16px rgba(255,255,255,0.38)) drop-shadow(0 0 36px rgba(200,215,245,0.34)) drop-shadow(0 0 58px rgba(165,185,225,0.16))",
   },
   {
-    // #3 — Bronze
-    border: "rgba(205,127,50,0.22)",
+    // #3 — Bronzo ultra premium (rame luminoso + alone riccio)
+    border: "rgba(230,160,95,0.38)",
     boxShadow:
-      "0 0 0 1px rgba(205,127,50,0.12), 0 14px 42px -10px rgba(205,127,50,0.12), 0 30px 62px -18px rgba(0,0,0,0.80)",
+      "0 0 0 1px rgba(205,127,50,0.22), 0 0 40px -8px rgba(205,127,50,0.28), 0 20px 64px -12px rgba(180,95,40,0.18), 0 40px 88px -20px rgba(0,0,0,0.86)",
     hoverShadow:
-      "0 0 0 1px rgba(205,127,50,0.26), 0 18px 50px -8px rgba(205,127,50,0.22), 0 30px 62px -18px rgba(0,0,0,0.84)",
+      "0 0 0 1px rgba(245,180,110,0.36), 0 0 58px -6px rgba(205,127,50,0.42), 0 0 82px -14px rgba(220,140,70,0.22), 0 28px 76px -10px rgba(0,0,0,0.90)",
     topBar:
-      "linear-gradient(90deg,rgba(205,127,50,0.80) 0%,rgba(205,127,50,0.26) 45%,transparent 100%)",
+      "linear-gradient(90deg,rgba(255,200,140,0.92) 0%,rgba(205,127,50,0.74) 22%,rgba(180,95,45,0.36) 48%,transparent 100%)",
     leftAccent:
-      "linear-gradient(180deg,rgba(205,127,50,0.72) 0%,rgba(205,127,50,0.07) 100%)",
-    rankStroke: "rgba(205,127,50,0.42)",
+      "linear-gradient(180deg,rgba(255,190,130,0.88) 0%,rgba(205,127,50,0.52) 42%,rgba(160,85,35,0.12) 100%)",
+    rankStroke: "rgba(235,165,105,0.58)",
     rankFilter:
-      "drop-shadow(0 0 12px rgba(205,127,50,0.32)) drop-shadow(0 0 28px rgba(205,127,50,0.14))",
+      "drop-shadow(0 0 16px rgba(205,127,50,0.45)) drop-shadow(0 0 38px rgba(220,140,70,0.26)) drop-shadow(0 0 64px rgba(180,95,40,0.12))",
   },
   {
-    // #4
-    border: "rgba(255,255,255,0.09)",
-    boxShadow: "0 8px 28px -8px rgba(0,0,0,0.64)",
+    // #4 — Perla / grafite ultra premium (alone freddo stratificato)
+    border: "rgba(220,226,238,0.30)",
+    boxShadow:
+      "0 0 0 1px rgba(255,255,255,0.10), 0 0 44px -10px rgba(190,200,220,0.30), 0 18px 56px -12px rgba(255,255,255,0.07), 0 38px 82px -18px rgba(0,0,0,0.82)",
     hoverShadow:
-      "0 0 0 1px rgba(255,255,255,0.13), 0 12px 36px -6px rgba(0,0,0,0.72)",
+      "0 0 0 1px rgba(255,255,255,0.22), 0 0 62px -8px rgba(210,220,240,0.36), 0 0 86px -14px rgba(255,255,255,0.11), 0 26px 70px -8px rgba(0,0,0,0.88)",
     topBar:
-      "linear-gradient(90deg,rgba(255,255,255,0.28) 0%,transparent 60%)",
+      "linear-gradient(90deg,rgba(255,255,255,0.58) 0%,rgba(210,218,235,0.42) 32%,rgba(160,175,200,0.20) 54%,transparent 100%)",
     leftAccent:
-      "linear-gradient(180deg,rgba(255,255,255,0.32) 0%,rgba(255,255,255,0.04) 100%)",
-    rankStroke: "rgba(255,255,255,0.20)",
-    rankFilter: "drop-shadow(0 0 8px rgba(255,255,255,0.10))",
+      "linear-gradient(180deg,rgba(255,255,255,0.50) 0%,rgba(200,210,228,0.34) 40%,rgba(150,162,185,0.12) 100%)",
+    rankStroke: "rgba(228,234,245,0.40)",
+    rankFilter:
+      "drop-shadow(0 0 14px rgba(255,255,255,0.30)) drop-shadow(0 0 34px rgba(190,205,230,0.24)) drop-shadow(0 0 54px rgba(140,155,180,0.13))",
   },
   {
-    // #5
-    border: "rgba(255,255,255,0.07)",
-    boxShadow: "0 6px 20px -6px rgba(0,0,0,0.58)",
+    // #5 — Grafite soft ultra premium (leggermente più attenuato del #4)
+    border: "rgba(200,210,225,0.24)",
+    boxShadow:
+      "0 0 0 1px rgba(255,255,255,0.08), 0 0 38px -10px rgba(175,188,210,0.24), 0 16px 50px -10px rgba(255,255,255,0.05), 0 32px 74px -16px rgba(0,0,0,0.80)",
     hoverShadow:
-      "0 0 0 1px rgba(255,255,255,0.10), 0 10px 28px -4px rgba(0,0,0,0.66)",
+      "0 0 0 1px rgba(255,255,255,0.18), 0 0 54px -8px rgba(195,208,228,0.30), 0 0 74px -14px rgba(255,255,255,0.09), 0 22px 62px -8px rgba(0,0,0,0.86)",
     topBar:
-      "linear-gradient(90deg,rgba(255,255,255,0.16) 0%,transparent 55%)",
+      "linear-gradient(90deg,rgba(255,255,255,0.45) 0%,rgba(195,205,220,0.30) 38%,rgba(130,145,170,0.14) 58%,transparent 100%)",
     leftAccent:
-      "linear-gradient(180deg,rgba(255,255,255,0.20) 0%,rgba(255,255,255,0.02) 100%)",
-    rankStroke: "rgba(255,255,255,0.14)",
-    rankFilter: "drop-shadow(0 0 6px rgba(255,255,255,0.08))",
+      "linear-gradient(180deg,rgba(255,255,255,0.38) 0%,rgba(185,195,215,0.26) 45%,rgba(130,142,165,0.09) 100%)",
+    rankStroke: "rgba(212,220,234,0.32)",
+    rankFilter:
+      "drop-shadow(0 0 12px rgba(255,255,255,0.24)) drop-shadow(0 0 28px rgba(175,192,215,0.19)) drop-shadow(0 0 48px rgba(125,140,165,0.11))",
   },
 ];
 
@@ -112,7 +116,7 @@ function RankedEventCard({
   onNavigate,
 }: {
   event: FootballEvent;
-  rank: number;
+  rank: Top5Rank;
   onNavigate?: () => void;
 }) {
   const cfg = RANK_CONFIGS[rank - 1] ?? RANK_CONFIGS[4];
@@ -200,7 +204,7 @@ function RankedEventCard({
 
         {/* TOP ROW */}
         <div className="absolute inset-x-3.5 top-2.5 flex items-center justify-end">
-          <ProbabilityBadge variant="top5" pct={leadingPct} size="default" />
+          <ProbabilityBadge topRank={rank} pct={leadingPct} size="default" />
         </div>
 
         {/* BOTTOM CONTENT */}
@@ -218,11 +222,10 @@ export function Top24hSection({ events, onNavigate }: Props) {
   if (events.length === 0) return null;
 
   return (
-    <section aria-label="Top 5 eventi delle ultime 24h">
+    <section aria-label="Top 5 Oggi">
       <SectionHeader
-        eyebrow="Ultime 24 ore"
         title="Top 5 Oggi"
-        accent="gold"
+        accent="tiffany"
         articleHeadlineTitle
       />
 
@@ -231,7 +234,7 @@ export function Top24hSection({ events, onNavigate }: Props) {
           <RankedEventCard
             key={event.id}
             event={event}
-            rank={i + 1}
+            rank={(i + 1) as Top5Rank}
             onNavigate={onNavigate}
           />
         ))}

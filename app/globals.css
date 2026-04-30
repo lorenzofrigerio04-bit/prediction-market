@@ -10,6 +10,41 @@
   font-family: var(--font-kalshi-title), 'Oswald', system-ui, sans-serif !important;
 }
 
+/**
+ * News ticker homepage (loop senza giunzione): --home-ticker-dx = metà scrollWidth (due sequenze identiche).
+ */
+@keyframes home-news-ticker-marquee-ltr {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(var(--home-ticker-dx, 0px), 0, 0);
+  }
+}
+
+@keyframes home-news-ticker-marquee-rtl {
+  0% {
+    transform: translate3d(var(--home-ticker-dx, 0px), 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.home-news-ticker-track--ltr.is-armed {
+  animation: home-news-ticker-marquee-ltr 96s linear infinite;
+}
+
+.home-news-ticker-track--rtl.is-armed {
+  animation: home-news-ticker-marquee-rtl 112s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-news-ticker-track.is-armed {
+    animation: none !important;
+  }
+}
+
 /* —— Design system: spacing scale (mobile-first, 4px base) —— */
 :root {
   --font-sans: 'Outfit', system-ui, sans-serif;

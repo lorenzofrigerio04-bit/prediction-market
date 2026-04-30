@@ -13,11 +13,10 @@ export function ViralSection({ events, onNavigate }: Props) {
   if (events.length === 0) return null;
 
   return (
-    <section aria-label="Eventi virali">
+    <section aria-label="Mercati in evidenza">
       <SectionHeader
-        eyebrow="Viral"
-        title="Sta esplodendo ora"
-        accent="crimson"
+        title="In evidenza"
+        accent="emerald"
         articleHeadlineTitle
         href="/sezioni/viral"
       />
@@ -28,7 +27,7 @@ export function ViralSection({ events, onNavigate }: Props) {
             key={event.id}
             className="w-[260px] min-w-[260px] shrink-0 sm:w-[268px] sm:min-w-[268px]"
           >
-            <HomeEventCard event={event} onNavigate={onNavigate} accent="rose" />
+            <HomeEventCard event={event} onNavigate={onNavigate} accent="emerald" />
           </div>
         ))}
       </HomeEventRail>

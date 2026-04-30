@@ -1,6 +1,8 @@
 "use client";
 
 import { useHomepageData } from "@/lib/hooks/useHomepageData";
+import { useHomepageNewsTickers } from "@/lib/hooks/useHomepageNewsTickers";
+import { HomeNewsTickerSeparator } from "@/components/home/HomeNewsTickerSeparator";
 import { Top24hSection } from "./Top24hSection";
 import { ForYouSection } from "./ForYouSection";
 import { ViralSection } from "./ViralSection";
@@ -101,6 +103,8 @@ export function FootballHomepage({ isLoggedIn, onEventNavigate }: Props) {
   const { data, loading, error, refresh } = useHomepageData(
     "/api/feed/football-homepage"
   );
+  const { items: newsTickerItems, ready: newsTickerReady } = useHomepageNewsTickers(28);
+  const showNewsTickers = newsTickerReady && newsTickerItems.length >= 2;
 
   if (loading && !data) {
     return (
@@ -131,32 +135,47 @@ export function FootballHomepage({ isLoggedIn, onEventNavigate }: Props) {
         </div>
       )}
 
-      {/* 1. TOP 5 OGGI */}
+      {/* Top 5 */}
       <div className="mb-12 pt-6 sm:mb-14 sm:pt-8">
         <Top24hSection events={data.top24hEvents} onNavigate={onEventNavigate} />
       </div>
 
-      {/* 2. CONSIGLIATI */}
+      {showNewsTickers ? (
+        <HomeNewsTickerSeparator items={newsTickerItems} direction="left" phaseShift={0} />
+      ) : null}
+
+      {/* Consigliati */}
       <div className="mb-14 sm:mb-16">
         <ForYouSection
           events={data.forYouMarkets}
-          isPersonalized={data.isPersonalized}
           isLoggedIn={isLoggedIn}
           onNavigate={onEventNavigate}
         />
       </div>
 
-      {/* 3. STA ESPLODENDO ORA */}
+      {showNewsTickers ? (
+        <HomeNewsTickerSeparator items={newsTickerItems} direction="right" phaseShift={5} />
+      ) : null}
+
+      {/* In evidenza */}
       <div className="mb-14 sm:mb-16">
         <ViralSection events={data.viralEvents} onNavigate={onEventNavigate} />
       </div>
 
-      {/* 4. IN SCADENZA */}
+      {showNewsTickers ? (
+        <HomeNewsTickerSeparator items={newsTickerItems} direction="left" phaseShift={10} />
+      ) : null}
+
+      {/* In scadenza */}
       <div className="mb-14 sm:mb-16">
         <ExpiringSection events={data.expiringEvents} onNavigate={onEventNavigate} />
       </div>
 
-      {/* 5. LIVE (solo se presenti) */}
+      {showNewsTickers ? (
+        <HomeNewsTickerSeparator items={newsTickerItems} direction="right" phaseShift={15} />
+      ) : null}
+
+      {/* Live (solo se presenti) */}
       {data.liveEvents.length > 0 && (
         <div className="mb-12 sm:mb-14">
           <LiveSection events={data.liveEvents} onNavigate={onEventNavigate} />

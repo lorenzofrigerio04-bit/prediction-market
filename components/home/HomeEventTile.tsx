@@ -14,7 +14,7 @@ import {
   getEventDisplayTitle,
   deriveOutcomesFromTitle,
 } from "@/lib/market-types";
-import { ProbabilityBadge, type ProbabilityRailAccent } from "@/components/home/football/premium/ProbabilityBadge";
+import { ProbabilityBadge, type ProbabilityRailAccent, getRailChrome } from "@/components/home/football/premium/ProbabilityBadge";
 import { getBinaryLeadingDisplay } from "@/lib/home-event-binary-layout";
 
 export type HomeEventTileVariant = "popular" | "closing" | "foryou";
@@ -33,7 +33,7 @@ export interface HomeEventTileProps {
   closesAt: string;
   yesPct: number;
   predictionsCount?: number;
-  /** Override colore numero % rispetto alla mappa `variant` → accent rail */
+  /** Override colore bordo / accent rispetto alla mappa `variant` → rail */
   railAccent?: ProbabilityRailAccent;
   variant: HomeEventTileVariant;
   /** Se true, l’evento è risolto con esito */
@@ -105,6 +105,7 @@ export default function HomeEventTile({
   const noPct = 100 - yesPct;
   const { leadingPct } = getBinaryLeadingDisplay(yesPct);
   const badgeAccent = railAccent ?? VARIANT_RAIL_ACCENT[variant];
+  const probAccent = getRailChrome(badgeAccent);
   const categoryImagePath = getCategoryImagePath(category);
   const fallbackGradient = getCategoryFallbackGradient(category);
   const [categoryImageFailed, setCategoryImageFailed] = useState(false);
@@ -118,7 +119,6 @@ export default function HomeEventTile({
   const showFeedbackBadge = process.env.NODE_ENV !== "production" && hasFeedback;
 
   const teams = parseSportMatchTitle(title);
-  const isCalcioMatch = category === "Calcio" && teams !== null;
   const hasMultiOptionType =
     !!marketType &&
     isMarketTypeId(marketType) &&
@@ -200,12 +200,7 @@ export default function HomeEventTile({
       <div className={`relative z-10 flex h-full flex-col justify-between ${pClass}`}>
         {!isMultiOutcome && (
           <div className="pointer-events-none absolute right-3 top-3 z-30 sm:right-3.5 sm:top-3.5">
-            <ProbabilityBadge
-              variant="rail"
-              railAccent={badgeAccent}
-              pct={leadingPct}
-              size="compact"
-            />
+            <ProbabilityBadge railAccent={badgeAccent} pct={leadingPct} size="compact" />
           </div>
         )}
         <div className="flex items-center justify-between gap-2">
@@ -224,54 +219,55 @@ export default function HomeEventTile({
                 {formatTimeLeftShort(closesAt, now)}
               </span>
             )}
-            {topRightLabel && !(teams && !isMultiOutcome) && !(isMultiOutcome && outcomeOptions && outcomeOptions.length > 0) && (
-              <span className="shrink-0 text-[10px] sm:text-xs font-semibold text-white/95">
-                {topRightLabel}
-              </span>
-            )}
+            {topRightLabel &&
+              !(teams && !isMultiOutcome) &&
+              !(isMultiOutcome && outcomeOptions && outcomeOptions.length > 0) && (
+                <span className="shrink-0 text-[10px] sm:text-xs font-semibold text-white/95">
+                  {topRightLabel}
+                </span>
+              )}
           </div>
         </div>
-        <div className={teams && !isMultiOutcome ? "flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden" : isMultiOutcome && outcomeOptions && outcomeOptions.length > 0 ? "flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden" : "flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden"}>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           {isMultiOutcome && outcomeOptions && outcomeOptions.length > 0 ? (
-            /* Variante multi-outcome: 4 opzioni top in spazio fisso */
             <>
-              <div className="flex-1 flex flex-col min-h-0 gap-3 w-full min-w-0 overflow-hidden">
+              <div className="flex min-h-0 min-w-0 w-full flex-1 flex-col gap-3 overflow-hidden">
                 {topRightLabel && (
-                  <span className="text-[10px] sm:text-xs font-semibold text-white/80 shrink-0">
+                  <span className="shrink-0 text-[10px] font-semibold text-white/80 sm:text-xs">
                     {topRightLabel}
                   </span>
                 )}
                 <h3
-                  className={`font-kalshi font-semibold leading-[1.15] tracking-[0.01em] break-words text-white shrink-0 ${titleClampClass} ${titleSizeClass}`}
+                  className={`shrink-0 break-words font-kalshi font-semibold leading-[1.15] tracking-[0.01em] text-white ${titleClampClass} ${titleSizeClass}`}
                   style={{ textShadow: "0 2px 12px rgba(0,0,0,0.9), 0 0 1px rgba(0,0,0,0.8)" }}
                 >
                   {displayTitle}
                 </h3>
                 <div className={`mt-auto w-full min-w-0 ${responseAreaClass}`}>
                   <div className="grid h-full grid-rows-4 gap-1.5">
-                  {visibleOutcomeEntries.map((entry, index) => {
-                    const { opt, probabilityPct: displayPct } = entry;
-                    const accent =
-                      MULTI_OUTCOME_ACCENT_CLASSES[
-                        index % MULTI_OUTCOME_ACCENT_CLASSES.length
-                      ];
-                    return (
-                    <div
-                      key={opt.key}
-                      className={`min-w-0 flex h-full items-center justify-between rounded-xl border bg-black/20 px-2.5 py-1 overflow-hidden backdrop-blur-[1px] ${accent.border}`}
-                    >
-                      <span
-                        className={`text-[11px] sm:text-xs font-semibold truncate leading-tight ${accent.label}`}
-                        title={opt.label}
-                      >
-                        {opt.label}
-                      </span>
-                      <span className="ml-2 shrink-0 font-kalshi text-[13px] sm:text-sm font-semibold tabular-nums text-white/95">
-                        {displayPct}%
-                      </span>
-                    </div>
-                    );
-                  })}
+                    {visibleOutcomeEntries.map((entry, index) => {
+                      const { opt, probabilityPct: displayPct } = entry;
+                      const accent =
+                        MULTI_OUTCOME_ACCENT_CLASSES[
+                          index % MULTI_OUTCOME_ACCENT_CLASSES.length
+                        ];
+                      return (
+                        <div
+                          key={opt.key}
+                          className={`flex min-h-0 w-full min-w-0 items-center justify-between overflow-hidden rounded-xl border bg-black/20 px-2.5 py-1 backdrop-blur-[1px] ${accent.border}`}
+                        >
+                          <span
+                            className={`truncate text-[11px] font-semibold leading-tight sm:text-xs ${accent.label}`}
+                            title={opt.label}
+                          >
+                            {opt.label}
+                          </span>
+                          <span className="ml-2 shrink-0 font-kalshi text-[13px] font-semibold tabular-nums text-white/95 sm:text-sm">
+                            {displayPct}%
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -292,22 +288,34 @@ export default function HomeEventTile({
                   Chi vincerà?
                 </h3>
                 <div className="w-full min-w-0 grid grid-cols-[1fr_auto_1fr] gap-1.5 sm:gap-2 items-stretch">
-                  <div className={`min-w-0 flex flex-col py-2.5 px-2 sm:px-3 rounded-xl border-2 bg-transparent overflow-hidden min-h-[52px] sm:min-h-[56px] ${yesPct >= noPct ? "border-emerald-400" : "border-rose-500"}`}>
+                  <div
+                    className="min-w-0 flex flex-col py-2.5 px-2 sm:px-3 rounded-xl border border-solid bg-black/25 overflow-hidden min-h-[52px] sm:min-h-[56px] backdrop-blur-[1px]"
+                    style={{
+                      borderColor: probAccent.border,
+                      boxShadow: `inset 0 1px 0 0 rgba(255,255,255,0.05), 0 10px 30px -14px ${probAccent.glow}`,
+                    }}
+                  >
                     <span className="text-[11px] sm:text-sm font-medium text-white/95 break-words text-center leading-tight line-clamp-2 flex-1 flex items-center justify-center" title={teams.teamA}>
                       {teams.teamA}
                     </span>
-                    <span className={`text-base sm:text-lg font-extrabold font-chubby tabular-nums mt-1 text-center shrink-0 ${yesPct >= noPct ? "text-emerald-400" : "text-rose-500"}`}>
+                    <span className="text-base sm:text-lg font-semibold font-chubby tabular-nums mt-1 text-center shrink-0 text-white">
                       {yesPct}%
                     </span>
                   </div>
-                  <span className="flex items-center justify-center text-[10px] sm:text-xs font-semibold text-white/50 uppercase tracking-wider shrink-0 px-0.5">
+                  <span className="flex items-center justify-center text-[10px] sm:text-xs font-semibold text-white/45 uppercase tracking-wider shrink-0 px-0.5">
                     vs
                   </span>
-                  <div className={`min-w-0 flex flex-col py-2.5 px-2 sm:px-3 rounded-xl border-2 bg-transparent overflow-hidden min-h-[52px] sm:min-h-[56px] ${noPct > yesPct ? "border-emerald-400" : "border-rose-500"}`}>
+                  <div
+                    className="min-w-0 flex flex-col py-2.5 px-2 sm:px-3 rounded-xl border border-solid bg-black/25 overflow-hidden min-h-[52px] sm:min-h-[56px] backdrop-blur-[1px]"
+                    style={{
+                      borderColor: probAccent.border,
+                      boxShadow: `inset 0 1px 0 0 rgba(255,255,255,0.05), 0 10px 30px -14px ${probAccent.glow}`,
+                    }}
+                  >
                     <span className="text-[11px] sm:text-sm font-medium text-white/95 break-words text-center leading-tight line-clamp-2 flex-1 flex items-center justify-center" title={teams.teamB}>
                       {teams.teamB}
                     </span>
-                    <span className={`text-base sm:text-lg font-extrabold font-chubby tabular-nums mt-1 text-center shrink-0 ${noPct > yesPct ? "text-emerald-400" : "text-rose-500"}`}>
+                    <span className="text-base sm:text-lg font-semibold font-chubby tabular-nums mt-1 text-center shrink-0 text-white">
                       {noPct}%
                     </span>
                   </div>
@@ -317,7 +325,7 @@ export default function HomeEventTile({
           ) : (
             <>
               <h3
-                className={`font-kalshi font-semibold leading-[1.18] tracking-[0.036em] break-words text-white/97 mt-auto ${titleClampClass} ${titleSizeClass}`}
+                className={`mt-auto break-words font-kalshi font-semibold leading-[1.18] tracking-[0.036em] text-white/97 ${titleClampClass} ${titleSizeClass}`}
                 style={{
                   textShadow:
                     "0 2px 18px rgba(0,0,0,0.95), 0 0 32px rgba(0,0,0,0.35), 0 1px 0 rgba(0,0,0,0.2)",

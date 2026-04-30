@@ -4,10 +4,11 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 interface Props {
-  eyebrow: string;
+  /** Piccolo label sopra il titolo; se assente o vuoto non viene mostrato. */
+  eyebrow?: string;
   title: string;
   subtitle?: string;
-  accent?: "primary" | "gold" | "crimson" | "violet" | "emerald";
+  accent?: "primary" | "gold" | "tiffany" | "crimson" | "violet" | "emerald";
   /** Stesso stack e metriche dell’h1 articolo news (Barlow Condensed, tracking stretto, titolo naturale). */
   articleHeadlineTitle?: boolean;
   /** Eyebrow (es. "Ultime ore") sulla stessa riga del titolo, allineata a destra — tipico pagina News. */
@@ -32,6 +33,12 @@ const ACCENT_MAP: Record<
     line: "from-amber-300/70 via-amber-400/20 to-transparent",
     dot: "bg-amber-300 shadow-[0_0_12px_rgba(252,211,77,0.55)]",
     text: "text-amber-300",
+  },
+  /** Blu Tiffany (~Pantone 1837) — linea sotto titoli sezione. */
+  tiffany: {
+    line: "from-[#0ABAB5]/75 via-[#2dd4bf]/25 to-transparent",
+    dot: "bg-[#0ABAB5] shadow-[0_0_12px_rgba(10,186,181,0.6)]",
+    text: "text-[#7DD3D0]",
   },
   crimson: {
     line: "from-rose-500/70 via-rose-500/20 to-transparent",
@@ -63,16 +70,25 @@ export function SectionHeader({
   leftSlot,
 }: Props) {
   const a = ACCENT_MAP[accent];
+  const trimmedEyebrow = eyebrow?.trim() ?? "";
+  const showEyebrow = trimmedEyebrow.length > 0;
 
-  const eyebrowRow = (
-    <div className="flex items-center gap-2 shrink-0">
-      <span className={`inline-block h-1.5 w-1.5 rounded-full ${a.dot}`} aria-hidden />
-      <span className={`news-format-badge text-[12px] font-semibold leading-none tracking-[0.01em] ${a.text}`}>
-        {eyebrow}
-      </span>
-      {leftSlot}
-    </div>
-  );
+  const eyebrowRow =
+    showEyebrow || leftSlot ? (
+      <div className="flex items-center gap-2 shrink-0">
+        {showEyebrow ? (
+          <>
+            <span className={`inline-block h-1.5 w-1.5 rounded-full ${a.dot}`} aria-hidden />
+            <span
+              className={`news-format-badge text-[12px] font-semibold leading-none tracking-[0.01em] ${a.text}`}
+            >
+              {trimmedEyebrow}
+            </span>
+          </>
+        ) : null}
+        {leftSlot}
+      </div>
+    ) : null;
 
   const trailingLink = href ? (
     <Link
@@ -103,7 +119,9 @@ export function SectionHeader({
     return (
       <header className="mb-5">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="min-w-0 flex-1 text-[1.62rem] font-bold leading-[1.1] tracking-[-0.022em] text-white sm:text-[1.9rem]" style={{ fontFamily: "var(--font-kalshi-title)" }}>
+          <h2
+            className="min-w-0 flex-1 font-kalshi text-[1.62rem] font-bold leading-[1.1] tracking-[-0.022em] text-white sm:text-[1.9rem]"
+          >
             {title}
           </h2>
           <div className="flex shrink-0 items-center gap-4">
@@ -125,13 +143,10 @@ export function SectionHeader({
           <h2
             className={
               articleHeadlineTitle
-                ? "mt-2.5 text-[1.62rem] font-bold leading-[1.1] tracking-[-0.022em] text-white sm:text-[1.9rem]"
-                : "mt-2.5 text-[2rem] leading-[1.0] text-white sm:text-[2.25rem] uppercase font-bold"
+                ? `${eyebrowRow ? "mt-2.5 " : ""}font-kalshi text-[1.62rem] font-bold leading-[1.1] tracking-[-0.022em] text-white sm:text-[1.9rem]`
+                : `${eyebrowRow ? "mt-2.5 " : ""}font-kalshi text-[2rem] leading-[1.0] text-white sm:text-[2.25rem] uppercase font-bold`
             }
-            style={{
-              fontFamily: "var(--font-kalshi-title)",
-              ...(!articleHeadlineTitle ? { letterSpacing: "0.04em" } : {}),
-            }}
+            style={!articleHeadlineTitle ? { letterSpacing: "0.04em" } : undefined}
           >
             {title}
           </h2>

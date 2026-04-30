@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { Fragment, useState, useEffect, useCallback } from "react";
 import Header from "@/components/Header";
 import { SectionHeader } from "@/components/home/football/premium/SectionHeader";
 import { NewsCard } from "@/components/news/NewsCard";
+import { NewsEventsTickerSeparator } from "@/components/news/NewsEventsTickerSeparator";
+import { useNewsPageEventsMarquee } from "@/lib/hooks/useNewsPageEventsMarquee";
 import type { NewsFormat } from "@/lib/news-engine/types";
 import { NEWS_SECTIONS, slugFromNewsFormat } from "@/lib/news-format-sections";
 import { newsRailEdgeMaskStyle } from "@/lib/news-rail-mask";
@@ -104,6 +106,8 @@ function NewsSection({
 export default function NewsPage() {
   const [allArticles, setAllArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const { events: marqueeEvents, ready: eventsMarqueeReady } = useNewsPageEventsMarquee(28);
+  const showEventsMarquee = eventsMarqueeReady && marqueeEvents.length >= 2;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -154,14 +158,22 @@ export default function NewsPage() {
           </div>
         ) : (
           <div className="space-y-14">
-            {NEWS_SECTIONS.map((section) => (
-              <NewsSection
-                key={section.format}
-                format={section.format}
-                title={section.title}
-                accent={section.accent}
-                articles={byFormat(section.format)}
-              />
+            {NEWS_SECTIONS.map((section, index) => (
+              <Fragment key={section.format}>
+                <NewsSection
+                  format={section.format}
+                  title={section.title}
+                  accent={section.accent}
+                  articles={byFormat(section.format)}
+                />
+                {showEventsMarquee && index < NEWS_SECTIONS.length - 1 ? (
+                  <NewsEventsTickerSeparator
+                    events={marqueeEvents}
+                    direction={index % 2 === 0 ? "left" : "right"}
+                    phaseShift={index * 5}
+                  />
+                ) : null}
+              </Fragment>
             ))}
           </div>
         )}

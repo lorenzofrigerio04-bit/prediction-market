@@ -7,33 +7,21 @@ import { HomeEventCard } from "@/components/home/HomeEventCard";
 import { HomeEventRail } from "@/components/home/HomeEventRail";
 interface Props {
   events: FootballEvent[];
-  isPersonalized: boolean;
   isLoggedIn: boolean;
   onNavigate?: () => void;
 }
 
 export function ForYouSection({
   events,
-  isPersonalized,
   isLoggedIn,
   onNavigate,
 }: Props) {
   if (events.length === 0) return null;
 
-  const eyebrow = isPersonalized
-    ? "Selezionati per te"
-    : isLoggedIn
-    ? "Trending per te"
-    : "Trending ora";
-  const title = isPersonalized ? "Per Te" : "Consigliati";
-
   return (
-    <section
-      aria-label={isPersonalized ? "Mercati scelti per te" : "Mercati trending"}
-    >
+    <section aria-label="Mercati consigliati">
       <SectionHeader
-        eyebrow={eyebrow}
-        title={title}
+        title="Consigliati"
         accent="violet"
         articleHeadlineTitle
         href="/sezioni/per-te"
@@ -41,7 +29,7 @@ export function ForYouSection({
           !isLoggedIn ? (
             <Link
               href="/auth/login"
-              className="font-[Oswald] text-[10px] font-semibold uppercase tracking-[0.24em] text-primary transition-colors hover:text-primary/80"
+              className="font-kalshi text-[10px] font-semibold uppercase tracking-[0.24em] text-primary transition-colors hover:text-primary/80"
             >
               · Accedi →
             </Link>

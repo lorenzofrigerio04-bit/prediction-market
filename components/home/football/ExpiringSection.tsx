@@ -15,9 +15,8 @@ export function ExpiringSection({ events, onNavigate }: Props) {
   return (
     <section aria-label="Eventi in scadenza">
       <SectionHeader
-        eyebrow="Ultima chance"
-        title="In Scadenza"
-        accent="emerald"
+        title="In scadenza"
+        accent="crimson"
         articleHeadlineTitle
         href="/sezioni/in-scadenza"
       />
@@ -28,7 +27,7 @@ export function ExpiringSection({ events, onNavigate }: Props) {
             key={event.id}
             className="w-[260px] min-w-[260px] shrink-0 sm:w-[268px] sm:min-w-[268px]"
           >
-            <HomeEventCard event={event} onNavigate={onNavigate} accent="emerald" showExpiry />
+            <HomeEventCard event={event} onNavigate={onNavigate} accent="rose" showExpiry />
           </div>
         ))}
       </HomeEventRail>

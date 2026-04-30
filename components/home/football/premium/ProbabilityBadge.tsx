@@ -1,6 +1,6 @@
 "use client";
 
-/** Stessi accent dei rail `HomeEventCard` / sezioni homepage. */
+/** Accent della sezione homepage / rail (allineato a `HomeEventCard` `accent`). */
 export type ProbabilityRailAccent =
   | "primary"
   | "gold"
@@ -9,51 +9,30 @@ export type ProbabilityRailAccent =
   | "emerald"
   | "cyan";
 
-const RAIL_PALETTE: Record<
-  ProbabilityRailAccent,
-  {
-    textCls: string;
-    textGlow: string;
-    hue: string;
-  }
-> = {
-  primary: {
-    textCls: "text-primary",
-    textGlow: "0 0 22px rgba(80, 245, 252, 0.48)",
-    hue: "shadow-[0_0_28px_-6px_rgba(80,245,252,0.42)]",
-  },
-  gold: {
-    textCls: "text-amber-300",
-    textGlow: "0 0 22px rgba(252, 211, 77, 0.45)",
-    hue: "shadow-[0_0_28px_-6px_rgba(252,211,77,0.4)]",
-  },
-  rose: {
-    textCls: "text-rose-400",
-    textGlow: "0 0 22px rgba(244, 63, 94, 0.45)",
-    hue: "shadow-[0_0_28px_-6px_rgba(244,63,94,0.4)]",
-  },
-  violet: {
-    textCls: "text-violet-300",
-    textGlow: "0 0 22px rgba(167, 139, 250, 0.45)",
-    hue: "shadow-[0_0_28px_-6px_rgba(167,139,250,0.4)]",
-  },
-  emerald: {
-    textCls: "text-emerald-400",
-    textGlow: "0 0 22px rgba(52, 211, 153, 0.45)",
-    hue: "shadow-[0_0_28px_-6px_rgba(52,211,153,0.4)]",
-  },
-  cyan: {
-    textCls: "text-cyan-400",
-    textGlow: "0 0 22px rgba(34, 211, 238, 0.45)",
-    hue: "shadow-[0_0_28px_-6px_rgba(34,211,238,0.4)]",
-  },
+export type Top5Rank = 1 | 2 | 3 | 4 | 5;
+
+const RAIL_FALLBACK_CHROME: Record<ProbabilityRailAccent, { border: string; glow: string }> = {
+  primary: { border: "rgba(80, 245, 252, 0.5)", glow: "rgba(80, 245, 252, 0.16)" },
+  gold: { border: "rgba(252, 211, 77, 0.48)", glow: "rgba(252, 211, 77, 0.14)" },
+  rose: { border: "rgba(251, 113, 133, 0.5)", glow: "rgba(251, 113, 133, 0.14)" },
+  violet: { border: "rgba(167, 139, 250, 0.5)", glow: "rgba(167, 139, 250, 0.14)" },
+  emerald: { border: "rgba(52, 211, 153, 0.5)", glow: "rgba(52, 211, 153, 0.14)" },
+  cyan: { border: "rgba(34, 211, 238, 0.5)", glow: "rgba(34, 211, 238, 0.14)" },
 };
 
-const TOP5_WHITE = {
-  textCls: "text-white",
-  textGlow: "0 0 20px rgba(255, 255, 255, 0.28)",
-  hue: "shadow-[0_0_24px_-8px_rgba(255,255,255,0.18)]",
-} as const;
+/** Allineato ai colori posizione `RANK_CONFIGS` in Top24h (tutte le posizioni ultra premium). */
+const TOP5_RANK_CHROME: Record<Top5Rank, { border: string; glow: string }> = {
+  1: { border: "rgba(110, 231, 213, 0.62)", glow: "rgba(10, 186, 181, 0.32)" },
+  2: { border: "rgba(236, 242, 255, 0.58)", glow: "rgba(210, 225, 255, 0.30)" },
+  3: { border: "rgba(235, 165, 105, 0.58)", glow: "rgba(205, 127, 50, 0.30)" },
+  4: { border: "rgba(228, 234, 245, 0.48)", glow: "rgba(200, 215, 235, 0.22)" },
+  5: { border: "rgba(210, 220, 235, 0.40)", glow: "rgba(185, 200, 220, 0.18)" },
+};
+
+/** Bordo / glow per riquadri % nelle tile (stessa logica della sezione). */
+export function getRailChrome(accent: ProbabilityRailAccent): { border: string; glow: string } {
+  return RAIL_FALLBACK_CHROME[accent];
+}
 
 const SIZE: Record<
   "default" | "prominent" | "compact",
@@ -61,64 +40,62 @@ const SIZE: Record<
 > = {
   default: {
     chrome:
-      "rounded-[11px] px-[0.62rem] py-[0.42rem] sm:px-[0.72rem] sm:py-[0.45rem]",
-    text: "text-[1.2rem] sm:text-[1.3rem]",
+      "rounded-[10px] px-[0.56rem] py-[0.36rem] sm:px-[0.65rem] sm:py-[0.4rem]",
+    text: "text-[1.12rem] sm:text-[1.22rem]",
   },
   prominent: {
     chrome:
-      "rounded-[13px] px-[0.78rem] py-[0.48rem] sm:px-[0.92rem] sm:py-[0.52rem]",
-    text: "text-[1.44rem] sm:text-[1.58rem]",
+      "rounded-[11px] px-[0.72rem] py-[0.42rem] sm:px-[0.85rem] sm:py-[0.46rem]",
+    text: "text-[1.32rem] sm:text-[1.44rem]",
   },
   compact: {
-    chrome: "rounded-[10px] px-[0.52rem] py-[0.34rem] sm:px-[0.6rem] sm:py-[0.38rem]",
-    text: "text-[1.08rem] sm:text-[1.15rem]",
+    chrome: "rounded-[9px] px-[0.48rem] py-[0.3rem] sm:px-[0.54rem] sm:py-[0.34rem]",
+    text: "text-[1.02rem] sm:text-[1.08rem]",
   },
 };
 
 export type ProbabilityBadgeSize = keyof typeof SIZE;
 
 /**
- * Top 5: numero sempre bianco (`variant="top5"`).
- * Altri rail: colore dell’accento di sezione (`variant="rail"` + `railAccent`).
+ * % in bianco. Bordo da sezione (`railAccent`) o da posizione Top 5 (`topRank`).
  */
 export function ProbabilityBadge({
   pct,
   size = "default",
-  variant = "rail",
   railAccent = "primary",
+  topRank,
 }: {
   pct: number;
   size?: ProbabilityBadgeSize;
-  variant?: "top5" | "rail";
   railAccent?: ProbabilityRailAccent;
+  /** Se impostato (1–5), il bordo segue Tiffany / argento premium / bronzo / grigi come la card classifica. */
+  topRank?: Top5Rank;
 }) {
-  const palette = variant === "top5" ? TOP5_WHITE : RAIL_PALETTE[railAccent];
   const sz = SIZE[size];
+  const resolved = topRank != null ? TOP5_RANK_CHROME[topRank] : RAIL_FALLBACK_CHROME[railAccent];
 
   return (
     <span
       className={[
-        "relative isolate inline-flex shrink-0 overflow-hidden backdrop-blur-md",
-        "border border-white/[0.13]",
-        "bg-[linear-gradient(155deg,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0.04)_38%,rgba(0,0,0,0.35)_110%)]",
-        "shadow-[inset_0_1px_0_rgba(255,255,255,0.14),inset_0_-1px_0_rgba(0,0,0,0.38),0_10px_32px_-12px_rgba(0,0,0,0.78)]",
-        palette.hue,
+        "relative isolate inline-flex shrink-0 overflow-hidden",
+        "backdrop-blur-[16px]",
+        "bg-[rgba(4,6,12,0.38)]",
         sz.chrome,
       ].join(" ")}
+      style={{
+        borderWidth: 1,
+        borderStyle: "solid",
+        borderColor: resolved.border,
+        boxShadow: `inset 0 1px 0 0 rgba(255,255,255,0.06), 0 10px 36px -16px ${resolved.glow}`,
+      }}
     >
       <span
-        aria-hidden
-        className="pointer-events-none absolute inset-x-[10%] top-px h-px rounded-full bg-gradient-to-r from-transparent via-white/[0.22] to-transparent"
-      />
-
-      <span
         className={[
-          "relative font-kalshi font-bold tabular-nums tracking-[-0.055em] antialiased leading-none select-none",
+          "relative font-kalshi font-semibold tabular-nums tracking-[-0.04em] antialiased leading-none select-none text-white",
           sz.text,
-          palette.textCls,
         ].join(" ")}
         style={{
-          textShadow: `${palette.textGlow}, 0 2px 14px rgba(0,0,0,0.92), 0 1px 0 rgba(0,0,0,0.55)`,
+          textShadow: "0 1px 12px rgba(0,0,0,0.92), 0 0 1px rgba(0,0,0,0.95)",
         }}
       >
         {pct}%

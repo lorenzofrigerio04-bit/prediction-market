@@ -119,6 +119,15 @@ module.exports = {
       transitionTimingFunction: {
         'ds-ease': 'cubic-bezier(0.33, 1, 0.68, 1)',
       },
+      keyframes: {
+        'home-news-ticker-wash': {
+          '0%, 100%': { opacity: '0.32' },
+          '50%': { opacity: '0.4' },
+        },
+      },
+      animation: {
+        'home-news-ticker-wash': 'home-news-ticker-wash 28s ease-in-out infinite',
+      },
     },
   },
   plugins: [],

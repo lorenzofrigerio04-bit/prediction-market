@@ -71,6 +71,47 @@ export function getCategoryFallbackGradient(category: string): string {
   return CATEGORY_FALLBACK_BG[category] ?? "linear-gradient(135deg, #374151 0%, #1f2937 100%)";
 }
 
+/** Bordo / alone per badge % e riquadri — coerente con la tonalità di categoria (look minimal). */
+export type CategoryProbabilityAccent = {
+  border: string;
+  glow: string;
+};
+
+const DEFAULT_PROBABILITY_ACCENT: CategoryProbabilityAccent = {
+  border: "rgba(255, 255, 255, 0.28)",
+  glow: "rgba(255, 255, 255, 0.1)",
+};
+
+/** Chiave = slug da `categoryToSlug` */
+const SLUG_PROBABILITY_ACCENT: Record<string, CategoryProbabilityAccent> = {
+  elezioni: { border: "rgba(147, 197, 253, 0.55)", glow: "rgba(147, 197, 253, 0.16)" },
+  politica: { border: "rgba(96, 165, 250, 0.52)", glow: "rgba(96, 165, 250, 0.15)" },
+  cultura: { border: "rgba(244, 114, 182, 0.48)", glow: "rgba(244, 114, 182, 0.14)" },
+  sport: { border: "rgba(52, 211, 153, 0.5)", glow: "rgba(52, 211, 153, 0.14)" },
+  tecnologia: { border: "rgba(129, 140, 248, 0.52)", glow: "rgba(129, 140, 248, 0.15)" },
+  cripto: { border: "rgba(251, 191, 36, 0.5)", glow: "rgba(251, 191, 36, 0.14)" },
+  clima: { border: "rgba(45, 212, 191, 0.5)", glow: "rgba(45, 212, 191, 0.14)" },
+  economia: { border: "rgba(251, 146, 60, 0.48)", glow: "rgba(251, 146, 60, 0.13)" },
+  menzioni: { border: "rgba(167, 139, 250, 0.5)", glow: "rgba(167, 139, 250, 0.14)" },
+  aziende: { border: "rgba(148, 163, 184, 0.45)", glow: "rgba(148, 163, 184, 0.12)" },
+  finanza: { border: "rgba(74, 222, 128, 0.48)", glow: "rgba(74, 222, 128, 0.13)" },
+  scienza: { border: "rgba(192, 132, 252, 0.5)", glow: "rgba(192, 132, 252, 0.14)" },
+  "tecnologia-e-scienza": { border: "rgba(34, 211, 238, 0.5)", glow: "rgba(34, 211, 238, 0.14)" },
+  intrattenimento: { border: "rgba(251, 113, 133, 0.48)", glow: "rgba(251, 113, 133, 0.13)" },
+  calcio: { border: "rgba(52, 211, 153, 0.52)", glow: "rgba(52, 211, 153, 0.15)" },
+  tennis: { border: "rgba(163, 230, 53, 0.48)", glow: "rgba(163, 230, 53, 0.13)" },
+  pallacanestro: { border: "rgba(251, 146, 60, 0.5)", glow: "rgba(251, 146, 60, 0.13)" },
+  pallavolo: { border: "rgba(56, 189, 248, 0.5)", glow: "rgba(56, 189, 248, 0.14)" },
+  "formula-1": { border: "rgba(248, 113, 113, 0.52)", glow: "rgba(248, 113, 113, 0.14)" },
+  motogp: { border: "rgba(220, 38, 38, 0.48)", glow: "rgba(220, 38, 38, 0.12)" },
+  "eventi-in-tendenza": { border: "rgba(80, 245, 252, 0.5)", glow: "rgba(80, 245, 252, 0.14)" },
+};
+
+export function getCategoryProbabilityAccent(category: string): CategoryProbabilityAccent {
+  const slug = categoryToSlug(category);
+  return SLUG_PROBABILITY_ACCENT[slug] ?? DEFAULT_PROBABILITY_ACCENT;
+}
+
 const SLUG_TO_CATEGORY: Record<string, string> = Object.fromEntries(
   Object.entries(CATEGORY_TO_SLUG).map(([cat, slug]) => [slug, cat])
 );

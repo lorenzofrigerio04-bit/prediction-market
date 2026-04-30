@@ -15,7 +15,6 @@ export function LiveSection({ events, onNavigate }: Props) {
   return (
     <section aria-label="Partite live ora">
       <SectionHeader
-        eyebrow="In diretta ora"
         title="Live"
         accent="crimson"
         articleHeadlineTitle
