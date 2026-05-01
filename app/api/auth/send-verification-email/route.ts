@@ -1,23 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { getCanonicalBaseUrl } from "@/lib/canonical-base-url";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
-import { sendVerificationEmail } from "@/lib/email";
-import { randomBytes } from "crypto";
+import { createAndSendVerificationEmail } from "@/lib/email-verification";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
-const VERIFY_EXPIRY_HOURS = 24;
-const SEND_LIMIT = 3; // invii per IP per ora (circa)
-
-function generateToken(): string {
-  return randomBytes(32).toString("hex");
-}
+const SEND_LIMIT = 3;
 
 /**
- * POST: invia (o reinvia) l'email di verifica.
- * - Se loggato: usa l'email della sessione.
- * - Body opzionale: { email } per reinvio a un indirizzo specifico (deve essere l'email dell'utente loggato).
+ * POST: invia (o reinvia) l'email di verifica con codice numerico + link.
  */
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
@@ -47,19 +38,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Utente non trovato." }, { status: 404 });
     }
     if (user.emailVerified) {
-      return NextResponse.json(
-        { status: 200 }
-      );
+      return NextResponse.json({ status: 200 });
     }
 
-    const token = generateToken();
-    const expires = new Date(Date.now() + VERIFY_EXPIRY_HOURS * 60 * 60 * 1000);
-
-
-    const baseUrl = getCanonicalBaseUrl();
-    const verifyUrl = `${baseUrl}/auth/verify-email?token=${encodeURIComponent(token)}`;
-
-    const result = await sendVerificationEmail(email, verifyUrl);
+    const result = await createAndSendVerificationEmail(email);
     if (!result.ok) {
       return NextResponse.json(
         { error: result.error ?? "Impossibile inviare l'email." },
@@ -67,8 +49,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-    });
+    return NextResponse.json({});
   } catch (e) {
     console.error("[send-verification-email]", e);
     return NextResponse.json(

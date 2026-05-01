@@ -7,7 +7,7 @@
 export const CREDITS_SCALE = 1_000_000;
 
 /** Crediti assegnati alla registrazione (signup email; OAuth usa default schema) */
-export const INITIAL_CREDITS = 1000;
+export const INITIAL_CREDITS = 10_000;
 
 /** Bonus giornaliero: importo base (prima del moltiplicatore streak) */
 export const DAILY_BONUS_BASE = 50;

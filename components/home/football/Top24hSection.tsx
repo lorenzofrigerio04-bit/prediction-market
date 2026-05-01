@@ -204,7 +204,7 @@ function RankedEventCard({
 
         {/* TOP ROW */}
         <div className="absolute inset-x-3.5 top-2.5 flex items-center justify-end">
-          <ProbabilityBadge topRank={rank} pct={leadingPct} size="default" />
+          <ProbabilityBadge topRank={rank} pct={leadingPct} size="elevated" />
         </div>
 
         {/* BOTTOM CONTENT */}

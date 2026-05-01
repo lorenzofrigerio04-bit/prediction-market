@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
-import { track } from "@/lib/analytics";
-import { CREDITS_SCALE, INITIAL_CREDITS } from "@/lib/credits-config";
+import { createAndSendVerificationEmail } from "@/lib/email-verification";
 
 const SIGNUP_LIMIT = 5; // richieste signup per IP per minuto
 
@@ -19,8 +18,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { email, password, name } = body;
-
+    const email = typeof body.email === "string" ? body.email.trim() : "";
+    const password = typeof body.password === "string" ? body.password : "";
+    const name = typeof body.name === "string" ? body.name.trim() : undefined;
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email e password sono obbligatori" },
@@ -28,55 +28,67 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verifica se l'utente esiste già
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
+    const existingUser = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: "insensitive" } },
+      select: { id: true, emailVerified: true },
     });
 
-    if (existingUser) {
+    if (existingUser?.emailVerified) {
       return NextResponse.json(
         { error: "Un utente con questa email esiste già" },
         { status: 400 }
       );
     }
 
-    // Hash della password
+    if (existingUser && !existingUser.emailVerified) {
+      const oauthLinks = await prisma.account.count({ where: { userId: existingUser.id } });
+      if (oauthLinks > 0) {
+        return NextResponse.json(
+          {
+            error:
+              "Questa email è associata a un account non ancora verificato. Accedi con Google oppure dalla pagina di login.",
+          },
+          { status: 400 }
+        );
+      }
+      await prisma.user.delete({ where: { id: existingUser.id } }).catch(() => {});
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name: name || null,
-        password: hashedPassword,
-        credits: INITIAL_CREDITS,
-        creditsMicros: BigInt(INITIAL_CREDITS) * BigInt(CREDITS_SCALE),
-      },
+    const emailResult = await createAndSendVerificationEmail(email, {
+      pendingPasswordHash: hashedPassword,
+      pendingName: name || null,
     });
-
-    track("USER_SIGNUP", { userId: user.id }, { request });
+    if (!emailResult.ok) {
+      console.error("[signup] verification email failed:", emailResult.error ?? "unknown");
+    }
 
     return NextResponse.json(
       {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        },
+        pendingVerification: true,
+        ...(emailResult.ok
+          ? {}
+          : {
+              verificationEmailError:
+                emailResult.error ??
+                "Non siamo riusciti a inviare l’email. Usa «Reinvia» tra un attimo.",
+            }),
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Errore durante la registrazione:", error);
-    
-    if (error.code === "P2002") {
+    const err = error as { code?: string; message?: string };
+
+    if (err.code === "P2002") {
       return NextResponse.json(
         { error: "Un utente con questa email esiste già" },
         { status: 400 }
       );
     }
 
-    // Tabelle mancanti: eseguire prisma db push sul DB di produzione
-    if (error.code === "P2021" || error.message?.includes("does not exist")) {
+    if (err.code === "P2021" || err.message?.includes("does not exist")) {
       return NextResponse.json(
         {
           error:
@@ -85,12 +97,12 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    
+
     if (
-      error.message?.includes("connect") ||
-      error.message?.includes("database") ||
-      error.code === "P1001" ||
-      error.code === "P1017"
+      err.message?.includes("connect") ||
+      err.message?.includes("database") ||
+      err.code === "P1001" ||
+      err.code === "P1017"
     ) {
       return NextResponse.json(
         {
@@ -100,11 +112,11 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    
+
     return NextResponse.json(
-      { 
-        error: error.message || "Errore durante la registrazione",
-        details: process.env.NODE_ENV === "development" ? error.message : undefined
+      {
+        error: err.message || "Errore durante la registrazione",
+        details: process.env.NODE_ENV === "development" ? err.message : undefined,
       },
       { status: 500 }
     );

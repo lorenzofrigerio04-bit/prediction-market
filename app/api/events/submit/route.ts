@@ -11,6 +11,7 @@ import { scoreCandidate } from "@/lib/event-publishing/scoring";
 import { publishSelectedV2 } from "@/lib/event-gen-v2/publisher";
 import { handleMissionEvent } from "@/lib/missions/mission-progress-service";
 import { checkAndAwardBadges } from "@/lib/badges";
+import { notifyCreatorEventPublishedEmail } from "@/lib/notify-event-creator-email";
 
 export async function POST(request: Request) {
   try {
@@ -136,6 +137,9 @@ export async function POST(request: Request) {
           );
           checkAndAwardBadges(prisma, session.user.id).catch((e) =>
             console.error("Badge check after event create error:", e)
+          );
+          notifyCreatorEventPublishedEmail(session.user.id, eventId, candidateDraft.title).catch((e) =>
+            console.error("Event published email:", e)
           );
         } else {
           pendingReason =

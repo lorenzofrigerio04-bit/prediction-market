@@ -16,19 +16,20 @@ if (
 }
 
 import { getServerSession } from 'next-auth';
-import type { NextAuthOptions, Account } from 'next-auth';
-import type { AdapterUser } from 'next-auth/adapters';
+import type { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
-import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
+import { createAuthAdapter } from '@/lib/prisma-auth-adapter';
+import { readOAuthIntentFromRequest } from '@/lib/oauth-intent-cookie';
 import {
   getSessionTokenCookieName,
   AUTH_SESSION_MAX_AGE_SECONDS,
   useSecureAuthCookie,
 } from '@/lib/auth-session-cookie';
+import { sendWelcomeEmail } from '@/lib/email';
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: createAuthAdapter(prisma),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID ?? '',
@@ -43,47 +44,48 @@ export const authOptions: NextAuthOptions = {
      */
   ],
   callbacks: {
+    /**
+     * Google da «Accedi»: solo utenti già presenti (account Google o email già registrata).
+     * Nuova iscrizione con Google solo da «Registrati» (cookie impostato da /api/auth/oauth-intent).
+     */
     async signIn({ user, account, profile }) {
-      if (account?.provider === 'google' && user.email) {
-        const existingUser = await prisma.user.findUnique({
-          where: { email: user.email },
-          include: { accounts: true },
-        });
-
-        if (existingUser) {
-          const hasGoogleAccount = existingUser.accounts.some(
-            (acc) => acc.provider === 'google'
-          );
-
-          if (!hasGoogleAccount && account) {
-            await prisma.account.create({
-              data: {
-                userId: existingUser.id,
-                type: account.type,
-                provider: account.provider,
-                providerAccountId: account.providerAccountId,
-                access_token: account.access_token,
-                refresh_token: account.refresh_token,
-                expires_at: account.expires_at,
-                token_type: account.token_type,
-                scope: account.scope,
-                id_token: account.id_token,
-                session_state: account.session_state as string | undefined,
-              },
-            });
-
-            if (profile && 'picture' in profile && !existingUser.image) {
-              await prisma.user.update({
-                where: { id: existingUser.id },
-                data: { image: profile.picture as string },
-              });
-            }
-          }
-
-          (user as AdapterUser).id = existingUser.id;
-        }
+      if (account?.provider !== 'google' || !account.providerAccountId) {
+        return true;
       }
-      return true;
+
+      const existingAccount = await prisma.account.findUnique({
+        where: {
+          provider_providerAccountId: {
+            provider: 'google',
+            providerAccountId: account.providerAccountId,
+          },
+        },
+        select: { id: true },
+      });
+      if (existingAccount) return true;
+
+      const profileEmail =
+        profile &&
+        typeof profile === 'object' &&
+        'email' in profile &&
+        typeof (profile as { email?: string }).email === 'string'
+          ? (profile as { email: string }).email.trim().toLowerCase()
+          : typeof user?.email === 'string'
+            ? user.email.trim().toLowerCase()
+            : null;
+
+      if (profileEmail) {
+        const existingUser = await prisma.user.findFirst({
+          where: { email: { equals: profileEmail, mode: 'insensitive' } },
+          select: { id: true },
+        });
+        if (existingUser) return true;
+      }
+
+      const intent = await readOAuthIntentFromRequest();
+      if (intent === 'signup') return true;
+
+      return false;
     },
     // Session strategy: database — cookie con solo sessionToken (piccolo). Evita JWT grossi o
     // cookie frammentati (.0, .1, …) che superano il limite header Vercel (494) su mobile/Safari.
@@ -96,6 +98,15 @@ export const authOptions: NextAuthOptions = {
         const u = user as { role?: string | null };
         session.user.role = u.role ?? undefined;
         session.user.emailVerified = user.emailVerified ?? null;
+        try {
+          const row = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { creditsWelcomeDismissedAt: true },
+          });
+          session.user.showCreditsWelcome = !row?.creditsWelcomeDismissedAt;
+        } catch {
+          session.user.showCreditsWelcome = false;
+        }
       }
       return session;
     },
@@ -122,6 +133,85 @@ export const authOptions: NextAuthOptions = {
     },
   },
   secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+  events: {
+    /**
+     * NextAuth invoca `createUser` anche quando si collega Google a un utente già esistente
+     * (email uguale + allowDangerousEmailAccountLinking). In quel caso NON va reinviata la welcome.
+     * Si invia solo se la riga `users` è appena stata creata dall’adapter (prima registrazione OAuth).
+     */
+    async createUser({ user }) {
+      const email = typeof user.email === 'string' ? user.email.trim() : '';
+      if (!email || !user.id) return;
+      try {
+        const row = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { createdAt: true },
+        });
+        if (!row) return;
+        const ageMs = Date.now() - row.createdAt.getTime();
+        if (ageMs > 5 * 60 * 1000) return;
+      } catch (v) {
+        console.warn('[auth.events.createUser] skip welcome guard', v);
+        return;
+      }
+      sendWelcomeEmail(email, user.name ?? null, { reason: 'oauth_google' }).catch((e) =>
+        console.error('[auth.events.createUser] welcome email', e)
+      );
+    },
+    async linkAccount({ user, profile }) {
+      const image =
+        profile &&
+        typeof profile === 'object' &&
+        'image' in profile &&
+        typeof (profile as { image?: string }).image === 'string'
+          ? (profile as { image: string }).image.trim()
+          : '';
+      if (!image) return;
+      try {
+        const row = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { image: true },
+        });
+        if (row?.image) return;
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { image },
+        });
+      } catch (e) {
+        console.warn("[auth.events.linkAccount] sync profile image", e);
+      }
+    },
+    /**
+     * Dopo OAuth, assicura email su `users` (alcuni flussi lasciano email solo sul profile;
+     * senza email la riga esiste ma l’admin e le ricerche “per email” sembrano vuote).
+     */
+    async signIn({ user, account, profile }) {
+      if (account?.provider !== 'google' || !user?.id) return;
+      const profileEmail =
+        profile &&
+        typeof profile === 'object' &&
+        'email' in profile &&
+        typeof (profile as { email?: string }).email === 'string'
+          ? (profile as { email: string }).email.trim()
+          : null;
+      if (!profileEmail) return;
+
+      try {
+        const row = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { email: true },
+        });
+        if (row?.email && row.email.trim() !== '') return;
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { email: profileEmail, emailVerified: new Date() },
+        });
+      } catch (e) {
+        console.warn('[auth.events.signIn] sync google email', e);
+      }
+    },
+  },
 };
 
 /**

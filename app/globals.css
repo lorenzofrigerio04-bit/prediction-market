@@ -158,6 +158,9 @@
   --discover-tab-bar-h: 52px;
   /* Landing: altezza area sopra la fold (header + main pt + bottom nav esclusi) */
   --landing-hero-min-h: calc(100dvh - var(--header-height) - var(--safe-area-inset-top) - var(--bottom-nav-total) - 0.75rem);
+  /* Modal intercept login/registrati: area tra header fisso e bottom nav (stessi valori dello spacer compatto) */
+  --auth-modal-inset-top: calc(var(--safe-area-inset-top) + var(--header-height));
+  --auth-modal-inset-bottom: var(--bottom-nav-total);
   /* Legacy aliases for components using --color-* (eventi page, modals, etc.) */
   --color-bg: rgb(var(--bg));
   --color-bg-secondary: rgb(var(--background-secondary));
@@ -1902,12 +1905,12 @@ textarea:focus-visible {
   }
 }
 
-/* Landing page: header liquid glass premium — logo tinta unita, bordi sottili */
+/* Landing page: header liquid glass premium — logo tinta unita, fuso allo sfondo */
 .landing-page .header-neon {
   background: rgba(0, 0, 0, 0.82);
   backdrop-filter: blur(32px) saturate(1.2);
   -webkit-backdrop-filter: blur(32px) saturate(1.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: none;
   box-shadow: none;
 }
 .landing-page .header-neon a,
@@ -1956,6 +1959,384 @@ textarea:focus-visible {
   }
 }
 
+/* Header: saldo crediti — stessa famiglia del "Registrati" + liquid glass fintech */
+.header-auth-btn.header-credits-pill {
+  height: 31px;
+  min-height: 31px;
+  padding: 0 12px 0 10px;
+  gap: 0;
+  border-radius: 999px;
+  isolation: isolate;
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  /* Glass: blur dietro + stessa cromia Tiffany del primary */
+  background:
+    linear-gradient(
+      155deg,
+      rgba(255, 255, 255, 0.22) 0%,
+      rgba(255, 255, 255, 0.06) 28%,
+      rgba(255, 255, 255, 0) 52%
+    ),
+    radial-gradient(
+      ellipse 100% 100% at 50% 50%,
+      rgba(2, 32, 38, 0.45) 0%,
+      rgba(2, 32, 38, 0.62) 30%,
+      rgba(33, 185, 180, 0.18) 62%,
+      rgba(33, 185, 180, 0.38) 100%
+    );
+  border: 1px solid rgba(33, 185, 180, 0.88);
+  box-shadow:
+    0 0 20px -5px rgba(33, 185, 180, 0.45),
+    0 0 8px -2px rgba(33, 185, 180, 0.28) inset,
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(18px) saturate(1.45);
+  -webkit-backdrop-filter: blur(18px) saturate(1.45);
+}
+
+.header-auth-btn.header-credits-pill::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 999px;
+  border: 1px solid rgba(33, 185, 180, 0.22);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Riflesso liquido (speculare morbido) */
+.header-credits-pill__shine {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    105deg,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 255, 255, 0.08) 38%,
+    transparent 52%,
+    transparent 100%
+  );
+  opacity: 0.55;
+  mix-blend-mode: soft-light;
+}
+
+.header-auth-btn.header-credits-pill:hover {
+  background:
+    linear-gradient(
+      155deg,
+      rgba(255, 255, 255, 0.28) 0%,
+      rgba(255, 255, 255, 0.1) 30%,
+      rgba(255, 255, 255, 0) 55%
+    ),
+    radial-gradient(
+      ellipse 100% 100% at 50% 50%,
+      rgba(2, 32, 38, 0.38) 0%,
+      rgba(2, 32, 38, 0.52) 25%,
+      rgba(33, 185, 180, 0.26) 58%,
+      rgba(33, 185, 180, 0.52) 100%
+    );
+  border-color: rgba(33, 185, 180, 1);
+  transform: translateY(-1px) scale(1.02);
+  box-shadow:
+    0 0 30px -4px rgba(33, 185, 180, 0.65),
+    0 4px 16px -6px rgba(0, 0, 0, 0.45),
+    0 0 12px -2px rgba(33, 185, 180, 0.35) inset,
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.header-auth-btn.header-credits-pill:hover .header-credits-pill__shine {
+  opacity: 0.72;
+}
+
+.header-auth-btn.header-credits-pill:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(33, 185, 180, 0.45),
+    0 0 20px -5px rgba(33, 185, 180, 0.5),
+    0 0 8px -2px rgba(33, 185, 180, 0.28) inset,
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.header-credits-pill__mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.95;
+  filter: drop-shadow(0 0 6px rgba(33, 185, 180, 0.35));
+}
+
+/* Tratti valuta a 15px: rendering nitido su retina */
+.header-credits-pill__currency svg {
+  shape-rendering: geometricPrecision;
+}
+
+/* Signup congratulations: pill crediti allargabile + burst */
+.signup-welcome-credits-shell.header-auth-btn.header-credits-pill {
+  height: auto !important;
+  min-height: 44px !important;
+  padding: 11px 17px 11px 13px !important;
+  overflow: visible !important;
+  white-space: nowrap;
+  transform-origin: 50% 50%;
+  will-change: transform, box-shadow, filter, opacity;
+}
+
+.signup-welcome-title {
+  font-family: var(--font-kalshi-title), Oswald, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+}
+
+.signup-welcome-inline-brand {
+  font-size: 1.06em;
+  line-height: 1;
+  vertical-align: baseline;
+  margin-left: 0.06em;
+}
+
+.signup-welcome-reveal-root {
+  position: relative;
+  transform-origin: 50% 40%;
+  will-change: transform, opacity, filter;
+}
+
+.signup-welcome-reveal-root--burst {
+  animation: signup-welcome-reveal-dissolve 0.62s cubic-bezier(0.12, 0.98, 0.2, 1) forwards;
+}
+
+@keyframes signup-welcome-reveal-dissolve {
+  0% {
+    transform: scale(1) translateZ(0);
+    opacity: 1;
+    filter: blur(0) brightness(1);
+  }
+  22% {
+    transform: scale(1.04) translateZ(0);
+    filter: blur(0) brightness(1.18);
+  }
+  100% {
+    transform: scale(1.22) translateZ(0);
+    opacity: 0;
+    filter: blur(14px) brightness(1.85);
+  }
+}
+
+.signup-welcome-credits-shell--ring {
+  animation: signup-welcome-shell-burst 0.64s cubic-bezier(0.1, 0.92, 0.18, 1) forwards;
+}
+
+@keyframes signup-welcome-shell-burst {
+  0% {
+    transform: scale(1) translateZ(0);
+    opacity: 1;
+    filter: saturate(1) brightness(1);
+    box-shadow:
+      0 0 20px -5px rgba(33, 185, 180, 0.45),
+      0 0 8px -2px rgba(33, 185, 180, 0.28) inset,
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+  28% {
+    transform: scale(1.12) translateZ(0);
+    filter: saturate(1.52) brightness(1.22);
+    box-shadow:
+      0 0 56px 10px rgba(80, 245, 252, 0.52),
+      0 0 28px -2px rgba(80, 245, 252, 0.62) inset,
+      inset 0 1px 0 rgba(255, 255, 255, 0.32);
+  }
+  100% {
+    transform: scale(1.32) translateZ(0);
+    opacity: 0;
+    filter: saturate(1.65) brightness(1.75);
+    box-shadow:
+      0 0 88px 24px rgba(80, 245, 252, 0.22),
+      0 0 0 1px rgba(80, 245, 252, 0.55) inset;
+  }
+}
+
+.signup-welcome-glare-overlay {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: min(140%, 420px);
+  height: min(220%, 520px);
+  transform: translate(-50%, -50%) scale(0.72);
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse 50% 42% at 50% 50%,
+    rgba(80, 245, 252, 0.55) 0%,
+    rgba(80, 245, 252, 0.12) 38%,
+    transparent 72%
+  );
+  mix-blend-mode: plus-lighter;
+  filter: blur(2px);
+  animation: signup-welcome-glare-fade 0.64s cubic-bezier(0.14, 0.94, 0.22, 1) forwards;
+  z-index: 2;
+}
+
+@keyframes signup-welcome-glare-fade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.35);
+  }
+}
+
+/* Popup benvenuto 10k post-Google: shockwave + chiusura “bomba” modale */
+.credits-welcome-modal-root--detonate {
+  pointer-events: none;
+}
+
+.credits-welcome-modal-scrim--detonate {
+  animation: credits-welcome-bomb-scrim 0.88s cubic-bezier(0.18, 0.92, 0.12, 1) forwards !important;
+}
+
+.credits-welcome-modal-panel--detonate {
+  animation: credits-welcome-bomb-panel 0.92s cubic-bezier(0.11, 0.82, 0.02, 1.12) forwards !important;
+}
+
+.credits-welcome-modal-body--detonate {
+  animation: credits-welcome-bomb-body 0.9s cubic-bezier(0.16, 0.88, 0.2, 1) forwards;
+}
+
+.credits-welcome-shockwave {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 6;
+  will-change: transform, opacity, border-width, filter;
+}
+
+.credits-welcome-shockwave--a {
+  width: 96px;
+  height: 96px;
+  border: 2px solid rgba(120, 252, 244, 0.75);
+  box-shadow:
+    0 0 24px rgba(80, 245, 252, 0.45),
+    inset 0 0 20px rgba(255, 255, 255, 0.12);
+  animation: credits-welcome-shockwave-ring-a 0.82s cubic-bezier(0.05, 0.65, 0.15, 1) forwards;
+}
+
+.credits-welcome-shockwave--b {
+  width: 72px;
+  height: 72px;
+  border: 1px solid rgba(200, 255, 250, 0.55);
+  animation: credits-welcome-shockwave-ring-b 0.92s cubic-bezier(0.12, 0.72, 0.08, 1) 0.05s forwards;
+  opacity: 0.9;
+}
+
+@keyframes credits-welcome-bomb-scrim {
+  0% {
+    opacity: 1;
+    background: rgba(4, 8, 18, 0.12);
+  }
+  12% {
+    opacity: 1;
+    background: rgba(22, 56, 58, 0.38);
+  }
+  100% {
+    opacity: 0;
+    background: rgba(4, 8, 18, 0);
+  }
+}
+
+@keyframes credits-welcome-bomb-panel {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    filter: brightness(1) saturate(1) blur(0);
+  }
+  10% {
+    transform: translateY(-3px) scale(1.015);
+    filter: brightness(1.28) saturate(1.18) blur(0);
+  }
+  28% {
+    transform: translateY(1px) scale(1.08);
+    opacity: 1;
+    filter: brightness(1.62) saturate(1.42) blur(0.5px);
+  }
+  100% {
+    transform: translateY(22px) scale(1.48);
+    opacity: 0;
+    filter: brightness(2.1) saturate(1.55) blur(22px);
+  }
+}
+
+@keyframes credits-welcome-bomb-body {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes credits-welcome-shockwave-ring-a {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(8.5);
+    opacity: 0;
+    border-width: 0.5px;
+    filter: blur(0.5px);
+  }
+}
+
+@keyframes credits-welcome-shockwave-ring-b {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(12);
+    opacity: 0;
+    border-width: 0;
+    filter: blur(2px);
+  }
+}
+
+@keyframes credits-welcome-bomb-scrim-reduced {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes credits-welcome-bomb-panel-reduced {
+  to {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signup-welcome-reveal-root--burst,
+  .signup-welcome-credits-shell--ring {
+    animation-duration: 0.22s !important;
+  }
+  .signup-welcome-glare-overlay {
+    animation-duration: 0.22s !important;
+  }
+}
+
 /* Logo P.M. stile X: niente sfondo/contorno, si integra con l'header. Solo il logo, non altre img. */
 .pm-logo-x-style {
   isolation: isolate; /* evita che mix-blend-mode influenzi altre parti della pagina */
@@ -1986,7 +2367,7 @@ textarea:focus-visible {
 }
 .dark .landing-page .header-neon {
   background: rgba(0, 0, 0, 0.9);
-  border-bottom-color: rgba(255, 255, 255, 0.12);
+  border-bottom: none;
 }
 
 .landing-page main#main-content {
@@ -3379,55 +3760,54 @@ textarea:focus-visible {
   .header-spacer--compact {
     height: calc(4rem + env(safe-area-inset-top, 0px));
   }
+  :root {
+    --auth-modal-inset-top: calc(var(--safe-area-inset-top) + 4rem);
+  }
 }
 
-/* —— Header: unificato allo sfondo pagina (admin-bg), senza separatori —— */
+/* —— Header: fuso allo sfondo (niente bordi né hairline inset) —— */
 .header-neon {
   background:
     linear-gradient(180deg, rgb(var(--admin-bg) / 0.96) 0%, rgb(var(--admin-bg) / 0.92) 100%) !important;
   backdrop-filter: blur(18px) saturate(1.16);
   -webkit-backdrop-filter: blur(18px) saturate(1.16);
-  border-bottom: 1px solid rgb(255 255 255 / 0.07) !important;
-  box-shadow:
-    0 14px 42px -30px rgb(0 0 0 / 0.85),
-    0 1px 0 rgb(255 255 255 / 0.04) inset;
+  border-bottom: none !important;
+  box-shadow: 0 18px 42px -34px rgb(0 0 0 / 0.75);
 }
 .dark .header-neon {
   background:
     linear-gradient(180deg, rgb(var(--admin-bg) / 0.98) 0%, rgb(var(--admin-bg) / 0.94) 100%) !important;
-  border-bottom: 1px solid rgb(255 255 255 / 0.08) !important;
+  border-bottom: none !important;
 }
-/* Header in scroll: resta coerente con sfondo unificato */
+/* Header in scroll */
 .header-neon.header-neon-scrolled {
   background:
     linear-gradient(180deg, rgb(var(--admin-bg) / 0.99) 0%, rgb(var(--admin-bg) / 0.95) 100%) !important;
   backdrop-filter: blur(24px) saturate(1.2);
   -webkit-backdrop-filter: blur(24px) saturate(1.2);
-  border-bottom: 1px solid rgb(255 255 255 / 0.1) !important;
-  box-shadow:
-    0 18px 42px -30px rgb(0 0 0 / 0.92),
-    0 1px 0 rgb(255 255 255 / 0.05) inset;
+  border-bottom: none !important;
+  box-shadow: 0 22px 48px -34px rgb(0 0 0 / 0.82);
 }
 .dark .header-neon.header-neon-scrolled {
   background:
     linear-gradient(180deg, rgb(var(--admin-bg) / 0.99) 0%, rgb(var(--admin-bg) / 0.96) 100%) !important;
-  border-bottom: 1px solid rgb(255 255 255 / 0.11) !important;
+  border-bottom: none !important;
 }
 
-/* Forza coerenza anche nelle varianti che applicano override (landing/consigliati/etc.) */
+/* Override varianti pagina: nessun bordo sull’header */
 .landing-page .header-neon,
 body.discover-consigliati-active .header-neon {
   background:
     linear-gradient(180deg, rgb(var(--admin-bg) / 0.96) 0%, rgb(var(--admin-bg) / 0.92) 100%) !important;
   backdrop-filter: blur(18px) saturate(1.16) !important;
   -webkit-backdrop-filter: blur(18px) saturate(1.16) !important;
-  border-bottom: 1px solid rgb(255 255 255 / 0.08) !important;
+  border-bottom: none !important;
 }
 
-/* Strip categorie: sottile e clean */
+/* Strip categorie: continuità visiva senza separatori netti */
 .market-categories-strip {
-  border-bottom: 1px solid rgb(255 255 255 / 0.06);
-  background: rgb(5 10 22 / 0.55);
+  border-bottom: none;
+  background: rgb(5 10 22 / 0.42);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -3872,7 +4252,7 @@ body.discover-consigliati-active .header-neon {
   background: rgb(var(--admin-bg)) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  border-bottom: none;
 }
 body.discover-consigliati-active .nav-bottom-neon .nav-bottom-neon-inner::before {
   background: rgb(var(--admin-bg));
@@ -6018,5 +6398,338 @@ html body .nav-bottom-neon a span.nav-bottom-label,
   }
   .top5-card:hover {
     transform: none;
+  }
+}
+
+/* ═══ Signup modal (intercept) — Tiffany glow + CTA-outline premium ═══ */
+@keyframes signup-modal-tiffany-glow-move {
+  0%,
+  100% {
+    opacity: 0.52;
+    transform: translate(-8%, -18%) scale(1);
+  }
+  50% {
+    opacity: 0.82;
+    transform: translate(-2%, -12%) scale(1.08);
+  }
+}
+
+@keyframes signup-modal-glass-flash {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0.5px rgba(255, 255, 255, 0.07),
+      0 0 24px rgba(33, 185, 180, 0.18),
+      0 0 48px rgba(33, 185, 180, 0.06),
+      0 52px 100px -38px rgba(0, 0, 0, 0.75),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border-color: rgba(56, 220, 210, 0.26);
+  }
+  50% {
+    box-shadow:
+      0 0 0 0.5px rgba(110, 255, 246, 0.2),
+      0 0 40px rgba(33, 185, 180, 0.44),
+      0 0 70px rgba(33, 185, 180, 0.14),
+      0 52px 100px -38px rgba(0, 0, 0, 0.75),
+      inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    border-color: rgba(100, 255, 248, 0.52);
+  }
+}
+
+@keyframes signup-cta-premium-scan {
+  0% {
+    transform: translateX(-140%) skewX(-16deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.55;
+  }
+  60% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateX(240%) skewX(-16deg);
+    opacity: 0;
+  }
+}
+
+@keyframes signup-cta-premium-glow-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+    box-shadow:
+      0 0 10px -4px rgba(33, 185, 180, 0.28),
+      0 0 22px -8px rgba(33, 185, 180, 0.1),
+      0 4px 16px -8px rgba(0, 0, 0, 0.5),
+      inset 0 0 6px rgba(33, 185, 180, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    border-color: rgba(33, 185, 180, 0.72);
+  }
+  50% {
+    filter: brightness(1.03);
+    box-shadow:
+      0 0 18px -2px rgba(56, 240, 230, 0.32),
+      0 0 36px -8px rgba(33, 185, 180, 0.14),
+      0 4px 20px -8px rgba(0, 0, 0, 0.5),
+      inset 0 0 10px rgba(33, 185, 180, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border-color: rgba(90, 240, 232, 0.88);
+  }
+}
+
+.signup-modal-tiffany-glow {
+  pointer-events: none;
+  position: absolute;
+  left: -42%;
+  top: -38%;
+  width: 148%;
+  height: 88%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse closest-side,
+    rgba(56, 240, 230, 0.38) 0%,
+    rgba(33, 185, 180, 0.12) 42%,
+    transparent 74%
+  );
+  filter: blur(38px);
+  animation: signup-modal-tiffany-glow-move 3.8s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+  z-index: 0;
+}
+
+.signup-modal-glass--premium-pulse {
+  animation: signup-modal-glass-flash 2.85s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.signup-modal-close-x {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-top: 4px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition:
+    color 0.42s cubic-bezier(0.23, 1, 0.32, 1),
+    transform 0.35s cubic-bezier(0.23, 1, 0.32, 1),
+    background 0.35s ease;
+}
+
+.signup-modal-close-x:hover {
+  color: rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.signup-modal-close-x:active {
+  transform: scale(0.93);
+}
+
+/* Login/registrati intercept: layer tra header (z-40) e bottom nav — piattaforma visibile ai lati */
+.auth-intercept-modal-root {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--auth-modal-inset-top);
+  bottom: var(--auth-modal-inset-bottom);
+  z-index: 42;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  padding-bottom: max(0.25rem, env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 640px) {
+  .auth-intercept-modal-root {
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
+}
+
+.auth-intercept-modal-panel-max-h {
+  max-height: min(
+    calc(100dvh - var(--auth-modal-inset-top) - var(--auth-modal-inset-bottom) - 0.5rem),
+    640px
+  );
+}
+
+/* Sfondo sfocato dietro il popup crediti benvenuto (contatore) — più scuro dello scrim signup/login default */
+.signup-modal-scrim.credits-welcome-scrim {
+  cursor: default;
+  background: rgba(0, 3, 12, 0.62);
+  -webkit-backdrop-filter: blur(14px) saturate(140%) brightness(0.62);
+  backdrop-filter: blur(14px) saturate(140%) brightness(0.62);
+}
+@supports (-webkit-touch-callout: none) {
+  .signup-modal-scrim.credits-welcome-scrim {
+    -webkit-backdrop-filter: blur(11px) saturate(140%) brightness(0.62);
+  }
+}
+
+html[data-auth-intercept-modal] .auth-page-suppress-when-modal-open {
+  display: none !important;
+}
+
+/* Linea separatoria — no glow, sfumatura dal centro verso le estremità */
+.signup-premium-rule {
+  height: 1px;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 88%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(169, 180, 208, 0.08) 12%,
+    rgba(169, 180, 208, 0.28) 50%,
+    rgba(169, 180, 208, 0.08) 88%,
+    transparent 100%
+  );
+}
+
+/* Recupero password: linea con accento tiffany + micro-glow (stesso DNA del modal premium) */
+.signup-premium-rule--recovery {
+  height: 2px;
+  max-width: 92%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(56, 220, 210, 0.12) 14%,
+    rgba(80, 245, 252, 0.55) 48%,
+    rgba(56, 220, 210, 0.12) 86%,
+    transparent 100%
+  );
+  box-shadow:
+    0 0 20px -4px rgba(80, 245, 252, 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+/* CTA “Registrati”-style outline + flashing scan */
+.signup-cta-premium-outline {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid rgba(33, 185, 180, 0.9);
+  font-family: var(--font-kalshi-title), Oswald, system-ui, sans-serif;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 650;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 1.25rem;
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 45%,
+    rgba(6, 24, 28, 0.88) 0%,
+    rgba(5, 16, 20, 0.72) 40%,
+    rgba(33, 185, 180, 0.16) 100%
+  );
+  animation: signup-cta-premium-glow-pulse 3.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  transition:
+    transform 0.38s cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 0.35s ease;
+  will-change: transform;
+}
+
+.signup-cta-premium-outline::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  border: 1px solid rgba(33, 185, 180, 0.2);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.signup-cta-premium-outline::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -55%;
+  z-index: 0;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(
+    115deg,
+    transparent 22%,
+    rgba(230, 255, 253, 0.14) 46%,
+    rgba(80, 248, 238, 0.26) 50%,
+    rgba(230, 255, 253, 0.13) 54%,
+    transparent 76%
+  );
+  mix-blend-mode: overlay;
+  animation: signup-cta-premium-scan 4.8s cubic-bezier(0.35, 0, 0.25, 1) infinite;
+  pointer-events: none;
+}
+
+.signup-cta-premium-outline:hover {
+  animation: signup-cta-premium-glow-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  transform: translateY(-1.5px) scale(1.015);
+  border-color: rgba(80, 248, 238, 0.92);
+}
+
+.signup-cta-premium-outline:disabled {
+  opacity: 0.35;
+  transform: none;
+  animation: none;
+}
+
+@keyframes signup-check-pop {
+  0% {
+    opacity: 0;
+    scale: 0.38;
+  }
+  60% {
+    scale: 1.18;
+    opacity: 1;
+  }
+  80% {
+    scale: 0.94;
+  }
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+.signup-field-check-mini {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(52, 211, 153, 0.48);
+  box-shadow:
+    0 0 6px rgba(52, 211, 153, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  animation: signup-check-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signup-modal-tiffany-glow,
+  .signup-modal-glass--premium-pulse,
+  .signup-cta-premium-outline,
+  .signup-cta-premium-outline::before,
+  .signup-field-check-mini {
+    animation: none !important;
+  }
+  .signup-modal-tiffany-glow {
+    opacity: 0.6;
+    transform: none;
+  }
+  .signup-field-check-mini {
+    opacity: 1;
+    scale: 1;
   }
 }

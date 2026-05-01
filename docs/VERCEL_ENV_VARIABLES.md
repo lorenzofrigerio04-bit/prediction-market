@@ -50,8 +50,7 @@ Su Upstash (gratis per piccoli volumi): crei un database Redis, copi l’URL e l
 | `CRON_SECRET`       | Sì       | Per cron (risoluzione, generazione eventi). |
 | **`FOOTBALL_DATA_ORG_API_TOKEN`** | Da impostare | **Obbligatorio per Sport/Calcio.** Token da football-data.org (gratuito). Calendario partite e risoluzione automatica. |
 | **`REDIS_URL`**     | No       | **Opzionale.** Senza: cache in-memory. Con: cache Redis. |
-| `RESEND_API_KEY`    | Probabile no | Solo se usi invio email (verifica account). |
-| `EMAIL_FROM`        | Probabile no | Solo se usi email (es. `nome <onboarding@tuodominio.com>`). |
+| `RESEND_API_KEY` + `EMAIL_FROM` | Se invii email | Verifica account, benvenuto, eventi, promemoria scadenza. Guida: [guida-resend.md](./guida-resend.md). |
 | `ANALYTICS_PROVIDER` | Probabile no | Solo se usi analytics (es. `posthog`). |
 | `POSTHOG_API_KEY`   | Probabile no | Solo con PostHog. |
 | `EVENT_GENERATOR_USER_ID` | No  | Opzionale: id utente che “possiede” gli eventi generati; altrimenti si usa il primo admin. |

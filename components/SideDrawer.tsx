@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   IconBell,
@@ -69,11 +69,30 @@ interface SideDrawerProps {
 
 export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: SideDrawerProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const overlayRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
 
   const isActive = (path: string) =>
     pathname === path || (path !== "/" && pathname.startsWith(path));
+
+  const loginDrawerHref =
+    pathname &&
+    pathname.startsWith("/") &&
+    pathname !== "/auth/login" &&
+    pathname !== "/auth/signup"
+      ? `/auth/login?callbackUrl=${encodeURIComponent(pathname)}`
+      : "/auth/login";
+
+  const signupDrawerHref =
+    pathname && pathname.startsWith("/") && pathname !== "/auth/signup"
+      ? `/auth/signup?callbackUrl=${encodeURIComponent(pathname)}`
+      : "/auth/signup";
+
+  useEffect(() => {
+    router.prefetch(loginDrawerHref);
+    router.prefetch(signupDrawerHref);
+  }, [router, loginDrawerHref, signupDrawerHref]);
 
   useEffect(() => {
     if (!open) return;
@@ -222,7 +241,8 @@ export default function SideDrawer({ open, onClose, isAuthenticated, isAdmin }: 
               </div>
               <div className="mt-2 pt-4 border-t border-white/10">
                 <Link
-                  href="/auth/login"
+                  prefetch
+                  href={loginDrawerHref}
                   onClick={onClose}
                   className={`${DRAWER_LINK} text-primary font-semibold`}
                 >

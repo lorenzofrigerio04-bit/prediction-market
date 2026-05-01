@@ -12,6 +12,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
+    "db:grant-10k-credits-all": "tsx scripts/grant-10k-signup-credits-all-users.ts",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "check-events-coherence": "tsx scripts/check-events-coherence.ts",

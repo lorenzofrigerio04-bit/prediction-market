@@ -188,14 +188,20 @@ export default function EventDetailPage() {
 
   const handleLogin = () => {
     setAuthModalOpen(false);
-    // TODO: Reindirizzare a pagina login o aprire modal login
-    window.location.href = '/login';
+    const cb =
+      typeof window !== "undefined"
+        ? `${window.location.pathname}${window.location.search || ""}`
+        : "/eventi";
+    window.location.href = `/auth/login?callbackUrl=${encodeURIComponent(cb)}`;
   };
 
   const handleSignup = () => {
     setAuthModalOpen(false);
-    // TODO: Reindirizzare a pagina signup o aprire modal signup
-    window.location.href = '/signup';
+    const cb =
+      typeof window !== "undefined"
+        ? `${window.location.pathname}${window.location.search || ""}`
+        : "/eventi";
+    window.location.href = `/auth/signup?callbackUrl=${encodeURIComponent(cb)}`;
   };
 
   // Gestione del voto dopo autenticazione

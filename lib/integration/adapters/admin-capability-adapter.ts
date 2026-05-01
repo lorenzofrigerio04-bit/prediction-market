@@ -3,6 +3,7 @@ export type AdminCapabilityAction =
   | "events:resolve"
   | "events:moderate_comments"
   | "users:read"
+  | "users:delete"
   | "audit:read"
   | "pipeline:run";
 
@@ -22,6 +23,7 @@ const ADMIN_ACTIONS = new Set<AdminCapabilityAction>([
   "events:resolve",
   "events:moderate_comments",
   "users:read",
+  "users:delete",
   "audit:read",
   "pipeline:run",
 ]);

@@ -10,6 +10,7 @@ import { validateAgainstMdeContract } from "@/lib/integration/adapters/market-de
 import { validateCandidates } from "@/lib/event-gen-v2/rulebook-validator";
 import { scoreCandidate } from "@/lib/event-publishing/scoring";
 import { publishSelectedV2 } from "@/lib/event-gen-v2/publisher";
+import { notifyCreatorEventPublishedEmail } from "@/lib/notify-event-creator-email";
 
 export const dynamic = "force-dynamic";
 
@@ -143,6 +144,10 @@ export async function POST(
         reviewNotes: null,
       },
     });
+
+    notifyCreatorEventPublishedEmail(submission.submittedById, eventId, submission.title).catch((e) =>
+      console.error("Event published email (approve):", e)
+    );
 
     return NextResponse.json({
       success: true,

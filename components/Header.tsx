@@ -3,11 +3,10 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import SideDrawer from "./SideDrawer";
+import { usePathname, useRouter } from "next/navigation";
 import { PredictionMasterLogoCompact } from "./PredictionMasterMark";
+import HeaderCreditsBadge from "./HeaderCreditsBadge";
 import {
-  IconMenu,
   IconNavHome,
   IconNavNews,
   IconNavShop,
@@ -62,9 +61,9 @@ type HeaderProps = {
 };
 
 export default function Header({ showCategoryStrip = true }: HeaderProps) {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const pathname = usePathname();
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [activeCategoryId, setActiveCategoryId] = useState<MarketCategoryId>("trending");
 
@@ -93,6 +92,24 @@ export default function Header({ showCategoryStrip = true }: HeaderProps) {
       ? `/auth/login?callbackUrl=${encodeURIComponent(pathname || "/")}`
       : "/profile";
 
+  const loginHref =
+    pathname &&
+    pathname.startsWith("/") &&
+    pathname !== "/auth/login" &&
+    pathname !== "/auth/signup"
+      ? `/auth/login?callbackUrl=${encodeURIComponent(pathname)}`
+      : "/auth/login";
+
+  const signupHref =
+    pathname && pathname.startsWith("/") && pathname !== "/auth/signup"
+      ? `/auth/signup?callbackUrl=${encodeURIComponent(pathname)}`
+      : "/auth/signup";
+
+  useEffect(() => {
+    router.prefetch(loginHref);
+    router.prefetch(signupHref);
+  }, [router, loginHref, signupHref]);
+
   return (
     <>
       {/* Label sempre visibili anche con cache: selettore univoco data-nav-label */}
@@ -116,29 +133,19 @@ export default function Header({ showCategoryStrip = true }: HeaderProps) {
             <div className="flex-shrink-0 flex items-center justify-end gap-2">
               {status === "unauthenticated" ? (
                 <>
-                  <Link
-                    href="/auth/login"
-                    className="header-auth-btn header-auth-btn--ghost"
-                  >
+                  <Link prefetch href={loginHref} className="header-auth-btn header-auth-btn--ghost">
                     Accedi
                   </Link>
                   <Link
-                    href="/auth/signup"
+                    prefetch
+                    href={signupHref}
                     className="header-auth-btn header-auth-btn--primary"
                   >
                     Registrati
                   </Link>
                 </>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => setDrawerOpen(true)}
-                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-fg-muted hover:text-fg hover:bg-surface/70 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg touch-manipulation active:scale-[0.96]"
-                  aria-label="Apri menu"
-                  aria-expanded={drawerOpen}
-                >
-                  <IconMenu className="w-6 h-6" />
-                </button>
+                <HeaderCreditsBadge />
               )}
             </div>
           </div>
@@ -227,12 +234,6 @@ export default function Header({ showCategoryStrip = true }: HeaderProps) {
         </div>
       </nav>
 
-      <SideDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        isAuthenticated={status === "authenticated"}
-        isAdmin={session?.user?.role === "ADMIN"}
-      />
     </>
   );
 }

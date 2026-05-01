@@ -118,12 +118,20 @@ export default function EventiPage() {
 
   const handleLogin = () => {
     setAuthModalOpen(false);
-    window.location.href = '/auth/login';
+    const cb =
+      typeof window !== "undefined"
+        ? `${window.location.pathname}${window.location.search || ""}`
+        : "/eventi";
+    window.location.href = `/auth/login?callbackUrl=${encodeURIComponent(cb)}`;
   };
 
   const handleSignup = () => {
     setAuthModalOpen(false);
-    window.location.href = '/auth/signup';
+    const cb =
+      typeof window !== "undefined"
+        ? `${window.location.pathname}${window.location.search || ""}`
+        : "/eventi";
+    window.location.href = `/auth/signup?callbackUrl=${encodeURIComponent(cb)}`;
   };
 
   // Gestione del voto dopo autenticazione

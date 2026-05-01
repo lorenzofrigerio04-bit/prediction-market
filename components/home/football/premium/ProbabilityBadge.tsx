@@ -35,13 +35,18 @@ export function getRailChrome(accent: ProbabilityRailAccent): { border: string; 
 }
 
 const SIZE: Record<
-  "default" | "prominent" | "compact",
+  "default" | "elevated" | "prominent" | "compact",
   { chrome: string; text: string }
 > = {
   default: {
     chrome:
       "rounded-[10px] px-[0.56rem] py-[0.36rem] sm:px-[0.65rem] sm:py-[0.4rem]",
     text: "text-[1.12rem] sm:text-[1.22rem]",
+  },
+  elevated: {
+    chrome:
+      "rounded-[10px] px-[0.62rem] py-[0.38rem] sm:px-[0.74rem] sm:py-[0.42rem]",
+    text: "text-[1.2rem] sm:text-[1.3rem]",
   },
   prominent: {
     chrome:

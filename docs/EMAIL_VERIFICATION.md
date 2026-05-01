@@ -7,15 +7,20 @@ Il progetto invia email di verifica per **tutti gli account creati con email/pas
 ## Come funziona
 
 1. **Registrazione (email/password)**  
-   Dopo la registrazione viene inviata un’email con un link. L’utente clicca il link entro 24 ore → l’email viene segnata come verificata (`User.emailVerified`).
+   Subito dopo la registrazione parte un’email Resend con **codice a 6 cifre** e un **link valido 24 ore**. L’utente incolla il codice su `/auth/verify-email` oppure apre il link.
 
-2. **Login con Google**  
+2. **Dopo la verifica**  
+   Alla prima conferma dell’email viene inviato un messaggio di **benvenuto**.
+
+3. **Login con Google**  
    L’email viene segnata come verificata al primo accesso (Google garantisce che l’indirizzo sia reale).
 
-3. **Banner**  
+4. **Banner**  
    Se l’utente è loggato ma non ha ancora verificato l’email, vede un banner in alto con “Verifica il tuo indirizzo email” e il pulsante “Invia di nuovo” per ricevere un nuovo link.
 
 ---
+
+Guida passo-passo “anti panico” dedicata: **[guida-resend.md](./guida-resend.md)**.
 
 ## Configurazione invio email (Resend)
 

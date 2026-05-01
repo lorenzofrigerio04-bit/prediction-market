@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useSession, getSession } from "next-auth/react";
+import { useSession, getSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
@@ -153,6 +153,7 @@ export default function ProfilePage() {
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [editSaving, setEditSaving] = useState(false);
+  const [logoutBusy, setLogoutBusy] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -760,6 +761,46 @@ export default function ProfilePage() {
             </Link>
           ))}
         </div>
+
+        {session.user.role === "ADMIN" ? (
+          <Link
+            href="/admin"
+            className="mb-3 flex w-full items-center justify-between gap-3 rounded-xl border border-[#50F5FC]/25 bg-[#0a0a0a] px-4 py-3.5 text-left text-sm font-medium text-[#50F5FC]/90 transition-colors hover:border-[#50F5FC]/45 hover:bg-[#50F5FC]/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#50F5FC]/40"
+          >
+            <span className="flex items-center gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[#50F5FC]/25 bg-[#50F5FC]/[0.06]" aria-hidden>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#50F5FC]">
+                  <rect x="3" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="3" width="7" height="7" rx="1" />
+                  <rect x="3" y="14" width="7" height="7" rx="1" />
+                  <rect x="14" y="14" width="7" height="7" rx="1" />
+                </svg>
+              </span>
+              Dashboard admin
+            </span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-[#50F5FC]/50 shrink-0" aria-hidden>
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </Link>
+        ) : null}
+
+        <button
+          type="button"
+          disabled={logoutBusy}
+          onClick={async () => {
+            setLogoutBusy(true);
+            try {
+              syncedUserIdRef.current = null;
+              await signOut({ callbackUrl: "/" });
+            } finally {
+              setLogoutBusy(false);
+            }
+          }}
+          className="w-full rounded-xl border border-white/[0.07] bg-[#0a0a0a] px-4 py-3.5 text-left text-sm font-medium text-white/70 transition-colors hover:bg-white/[0.04] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40 disabled:opacity-50 mb-10"
+          aria-label="Esci dall'account"
+        >
+          {logoutBusy ? "Uscita…" : "Esci"}
+        </button>
       </main>
     </div>
   );

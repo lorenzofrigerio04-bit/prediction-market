@@ -5,11 +5,12 @@
 
 import type { NextResponse } from "next/server";
 
+/**
+ * Solo build/runtime “produzione” (deploy), non NEXTAUTH_URL=https da .env mentre fai `npm run dev` su http://localhost:
+ * altrimenti Secure + nome __Secure-* fa scartare il cookie e sembra che registrazione/login non vadano mai a buon fine.
+ */
 const isProdHttps =
-  process.env.NODE_ENV === "production" ||
-  process.env.VERCEL === "1" ||
-  (typeof process.env.NEXTAUTH_URL === "string" &&
-    process.env.NEXTAUTH_URL.startsWith("https://"));
+  process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
 
 /** Allineato a `authOptions.cookies.sessionToken.options.secure` (cookie `__Secure-` richiede Secure). */
 export function useSecureAuthCookie(): boolean {

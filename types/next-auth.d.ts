@@ -11,6 +11,8 @@ declare module "next-auth" {
       role?: string;
       onboardingCompleted?: boolean;
       emailVerified?: boolean | Date | null;
+      /** true: mostra modal crediti (primo accesso / mai completato reveal) */
+      showCreditsWelcome?: boolean;
     };
   }
 

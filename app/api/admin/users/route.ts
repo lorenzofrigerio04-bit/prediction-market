@@ -3,6 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { requireAdminCapability } from "@/lib/admin";
 import { toCreditsReadModel } from "@/lib/integration/adapters/credits-read-model-adapter";
 
+export const dynamic = "force-dynamic";
+
+function parsePositiveInt(raw: string | null, fallback: number): number {
+  const n = Number.parseInt(raw ?? "", 10);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
 /**
  * GET /api/admin/users
  * Lista utenti con paginazione (solo admin).
@@ -11,8 +18,8 @@ export async function GET(request: NextRequest) {
   try {
     await requireAdminCapability("users:read");
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = Math.min(parseInt(searchParams.get("limit") || "30"), 100);
+    const page = Math.max(1, parsePositiveInt(searchParams.get("page"), 1));
+    const limit = Math.min(100, Math.max(1, parsePositiveInt(searchParams.get("limit"), 30)));
     const search = (searchParams.get("search") || "").trim().toLowerCase();
 
     const where = search
@@ -20,6 +27,27 @@ export async function GET(request: NextRequest) {
           OR: [
             { email: { contains: search, mode: "insensitive" as const } },
             { name: { contains: search, mode: "insensitive" as const } },
+            { id: { contains: search, mode: "insensitive" as const } },
+            {
+              accounts: {
+                some: {
+                  OR: [
+                    {
+                      provider: {
+                        contains: search,
+                        mode: "insensitive" as const,
+                      },
+                    },
+                    {
+                      providerAccountId: {
+                        contains: search,
+                        mode: "insensitive" as const,
+                      },
+                    },
+                  ],
+                },
+              },
+            },
           ],
         }
       : {};
@@ -38,6 +66,9 @@ export async function GET(request: NextRequest) {
           credits: true,
           creditsMicros: true,
           createdAt: true,
+          accounts: {
+            select: { provider: true },
+          },
         },
       }),
       prisma.user.count({ where }),
@@ -49,6 +80,9 @@ export async function GET(request: NextRequest) {
         email: u.email,
         name: u.name,
         role: u.role || "USER",
+        authProviders: [
+          ...new Set(u.accounts.map((a) => a.provider).filter(Boolean)),
+        ],
         credits: toCreditsReadModel({
           credits: u.credits,
           creditsMicros: u.creditsMicros,
@@ -59,7 +93,7 @@ export async function GET(request: NextRequest) {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit),
+        totalPages: limit > 0 ? Math.ceil(total / limit) : 0,
       },
     });
   } catch (error: unknown) {

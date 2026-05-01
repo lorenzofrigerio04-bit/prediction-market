@@ -13,15 +13,17 @@ model User {
   email         String?         @unique
   name          String?
   emailVerified DateTime?       @map("email_verified")
+  // Null finché non è stato mostrato/completato il popup crediti (signup o primo OAuth).
+  creditsWelcomeDismissedAt DateTime? @map("credits_welcome_dismissed_at")
   image         String?
   password      String?
   role          String?         @default("USER")
   streakCount   Int             @default(0) @map("streak_count")
-  credits       Int             @default(100)
+  credits       Int             @default(10000)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   totalEarned   Int             @default(0) @map("total_earned")
-  creditsMicros BigInt          @default(0) @map("credits_micros")
+  creditsMicros BigInt          @default(10000000000) @map("credits_micros")
   accounts      Account[]
   reactions     Reaction[]
   comments      Comment[]
@@ -220,6 +222,7 @@ model Event {
   resolutionDisputedAt      DateTime?
   resolutionDisputedBy      String?
   hidden                    Boolean                    @default(false)
+  expiryReminderEmailSentAt DateTime?                  @map("expiry_reminder_email_sent_at")
   marketType                String                     @default("BINARY") @map("market_type")
   outcomes                  Json?                      @map("outcomes")
   scalarConfig              Json?                      @map("scalar_config")
@@ -444,9 +447,12 @@ model UserBadge {
 }
 
 model VerificationToken {
-  token      String   @id
-  identifier String
-  expires    DateTime
+  token               String    @id
+  identifier          String
+  expires             DateTime
+  otpCode             String?   @map("otp_code")
+  pendingPasswordHash String?   @map("pending_password_hash")
+  pendingName         String?   @map("pending_name")
 
   @@index([identifier])
   @@index([expires])

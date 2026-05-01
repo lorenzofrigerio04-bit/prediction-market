@@ -15,7 +15,7 @@ const STEPS = [
   },
   {
     title: "Wallet",
-    text: "Hai 1000 crediti iniziali. Daily bonus e previsioni corrette li aumentano.",
+    text: "Hai 10.000 crediti iniziali. Daily bonus e previsioni corrette li aumentano.",
     emoji: "💰",
   },
   {
