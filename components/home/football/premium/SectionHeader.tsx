@@ -8,7 +8,15 @@ interface Props {
   eyebrow?: string;
   title: string;
   subtitle?: string;
-  accent?: "primary" | "gold" | "tiffany" | "crimson" | "violet" | "emerald";
+  accent?:
+    | "primary"
+    | "gold"
+    | "tiffany"
+    | "crimson"
+    | "violet"
+    | "emerald"
+    | "bronze"
+    | "silver";
   /** Stesso stack e metriche dell’h1 articolo news (Barlow Condensed, tracking stretto, titolo naturale). */
   articleHeadlineTitle?: boolean;
   /** Eyebrow (es. "Ultime ore") sulla stessa riga del titolo, allineata a destra — tipico pagina News. */
@@ -54,6 +62,17 @@ const ACCENT_MAP: Record<
     line: "from-emerald-400/70 via-emerald-400/20 to-transparent",
     dot: "bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.65)]",
     text: "text-emerald-300",
+  },
+  /** Bronzo — shop mystery / tier metallici */
+  bronze: {
+    line: "from-amber-600/85 via-orange-500/35 to-transparent",
+    dot: "bg-amber-600 shadow-[0_0_12px_rgba(217,119,6,0.55)]",
+    text: "text-amber-500",
+  },
+  silver: {
+    line: "from-slate-200/90 via-slate-400/35 to-transparent",
+    dot: "bg-slate-300 shadow-[0_0_12px_rgba(203,213,225,0.55)]",
+    text: "text-slate-200",
   },
 };
 

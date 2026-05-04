@@ -39,9 +39,217 @@
   animation: home-news-ticker-marquee-rtl 112s linear infinite;
 }
 
+/**
+ * Mystery box prize rails (bronze + silver): loop identico al ticker news ma con
+ * keyframe dedicato (translate3d + Z minimo) e contain/paint sullo scrollport per
+ * compositing stabile — stesso feeling “ultra fluido” su entrambe le tier.
+ */
+@keyframes shop-mystery-rail-marquee-ltr {
+  0% {
+    transform: translate3d(0, 0, 0.01px);
+  }
+  100% {
+    transform: translate3d(var(--home-ticker-dx, 0px), 0, 0.01px);
+  }
+}
+
+@keyframes shop-mystery-rail-marquee-rtl {
+  0% {
+    transform: translate3d(var(--home-ticker-dx, 0px), 0, 0.01px);
+  }
+  100% {
+    transform: translate3d(0, 0, 0.01px);
+  }
+}
+
+.shop-mystery-marquee-rail .shop-mystery-marquee-scrollport {
+  contain: paint;
+  transform: translateZ(0);
+}
+
+.shop-mystery-marquee-rail .shop-mystery-marquee-inner {
+  transform: translate3d(0, 0, 0);
+  isolation: isolate;
+}
+
+.shop-mystery-marquee-rail .shop-mystery-marquee-track.home-news-ticker-track--ltr.is-armed {
+  animation: shop-mystery-rail-marquee-ltr 60s linear infinite !important;
+  animation-play-state: running !important;
+}
+
+.shop-mystery-marquee-rail .shop-mystery-marquee-track.home-news-ticker-track--rtl.is-armed {
+  animation: shop-mystery-rail-marquee-rtl 68s linear infinite !important;
+  animation-play-state: running !important;
+}
+
+/**
+ * Card epiche / leggendarie — fascio scansione + pulse (rail mystery shop).
+ */
+@keyframes shop-mystery-rail-premium-scan-move {
+  0% {
+    background-position: 125% 0;
+    opacity: 0.4;
+  }
+  28% {
+    opacity: 0.92;
+  }
+  100% {
+    background-position: -125% 0;
+    opacity: 0.48;
+  }
+}
+
+@keyframes shop-mystery-rail-premium-flash-pulse {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.78;
+    transform: scale(1.025);
+  }
+}
+
+.shop-mystery-rail-premium-scan {
+  background: linear-gradient(
+    106deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255, 255, 255, 0.08) 46%,
+    rgba(255, 255, 255, 0.88) 50%,
+    rgba(255, 255, 255, 0.1) 54%,
+    transparent 62%,
+    transparent 100%
+  );
+  background-size: 260% 100%;
+  mix-blend-mode: soft-light;
+  animation: shop-mystery-rail-premium-scan-move 2.75s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.shop-mystery-rail-premium-scan--epic {
+  animation-duration: 2.85s;
+}
+
+.shop-mystery-rail-premium-scan--legend {
+  animation-duration: 2.35s;
+  filter: brightness(1.06) saturate(1.08);
+}
+
+.shop-mystery-rail-premium-flash {
+  mix-blend-mode: overlay;
+  background: radial-gradient(ellipse 88% 105% at 50% 42%, rgba(255, 255, 255, 0.22), transparent 64%);
+  animation: shop-mystery-rail-premium-flash-pulse 2.05s ease-in-out infinite;
+}
+
+.shop-mystery-rail-premium-flash--epic {
+  animation-duration: 2.15s;
+}
+
+.shop-mystery-rail-premium-flash--legend {
+  animation-duration: 1.8s;
+  background: radial-gradient(
+    ellipse 92% 115% at 50% 38%,
+    rgba(253, 230, 138, 0.42),
+    rgba(255, 255, 255, 0.12) 45%,
+    transparent 62%
+  );
+}
+
+.shop-mystery-rail-premium-shell {
+  animation: shop-mystery-rail-premium-shell-halo 2.5s ease-in-out infinite;
+}
+
+@keyframes shop-mystery-rail-premium-shell-halo {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(255, 255, 255, 0),
+      0 0 22px -10px rgba(255, 255, 255, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.08),
+      0 0 34px -6px rgba(255, 255, 255, 0.32);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .shop-mystery-marquee-rail .shop-mystery-marquee-track.is-armed {
+    animation: none !important;
+  }
+
   .home-news-ticker-track.is-armed {
     animation: none !important;
+  }
+
+  .shop-mystery-rail-premium-scan,
+  .shop-mystery-rail-premium-flash,
+  .shop-mystery-rail-premium-shell {
+    animation: none !important;
+  }
+
+  .shop-mystery-rail-premium-scan,
+  .shop-mystery-rail-premium-flash {
+    opacity: 0 !important;
+  }
+
+  .shop-mystery-rail-premium-shell {
+    box-shadow: none !important;
+  }
+}
+
+@keyframes shop-mystery-prize-scroll {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, -50%, 0);
+  }
+}
+
+.shop-mystery-prize-track {
+  animation-name: shop-mystery-prize-scroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-duration: var(--shop-marquee-duration, 34s);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-mystery-prize-track {
+    animation: none !important;
+  }
+}
+
+@keyframes shop-premium-shimmer {
+  0% {
+    background-position: 200% 50%;
+  }
+  100% {
+    background-position: -200% 50%;
+  }
+}
+
+.shop-premium-frame-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgb(255 255 255 / 0.07) 50%,
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  animation: shop-premium-shimmer 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-premium-frame-shimmer::after {
+    animation: none;
   }
 }
 
@@ -6681,6 +6889,18 @@ html[data-auth-intercept-modal] .auth-page-suppress-when-modal-open {
   opacity: 0.35;
   transform: none;
   animation: none;
+}
+
+/** Variante shop: altezza flessibile, copy su due righe su mobile stretto */
+.signup-cta-premium-outline.signup-cta-premium-outline--shop {
+  height: auto;
+  min-height: 44px;
+  padding-top: 0.55rem;
+  padding-bottom: 0.55rem;
+  line-height: 1.25;
+  white-space: normal;
+  font-size: clamp(10px, 2.4vw, 13px);
+  letter-spacing: 0.07em;
 }
 
 @keyframes signup-check-pop {
