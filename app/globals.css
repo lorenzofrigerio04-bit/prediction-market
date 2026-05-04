@@ -72,13 +72,34 @@
   isolation: isolate;
 }
 
-.shop-mystery-marquee-rail .shop-mystery-marquee-track.home-news-ticker-track--ltr.is-armed {
+/* Velocità rail mystery shop: bronze veloce, silver baseline, gold lento (sempre linear = loop fluido). */
+.shop-mystery-marquee-rail.shop-bronze-mystery-rail .shop-mystery-marquee-track.home-news-ticker-track--ltr.is-armed {
+  animation: shop-mystery-rail-marquee-ltr 44s linear infinite !important;
+  animation-play-state: running !important;
+}
+
+.shop-mystery-marquee-rail.shop-bronze-mystery-rail .shop-mystery-marquee-track.home-news-ticker-track--rtl.is-armed {
+  animation: shop-mystery-rail-marquee-rtl 50s linear infinite !important;
+  animation-play-state: running !important;
+}
+
+.shop-mystery-marquee-rail.shop-silver-mystery-rail .shop-mystery-marquee-track.home-news-ticker-track--ltr.is-armed {
   animation: shop-mystery-rail-marquee-ltr 60s linear infinite !important;
   animation-play-state: running !important;
 }
 
-.shop-mystery-marquee-rail .shop-mystery-marquee-track.home-news-ticker-track--rtl.is-armed {
+.shop-mystery-marquee-rail.shop-silver-mystery-rail .shop-mystery-marquee-track.home-news-ticker-track--rtl.is-armed {
   animation: shop-mystery-rail-marquee-rtl 68s linear infinite !important;
+  animation-play-state: running !important;
+}
+
+.shop-mystery-marquee-rail.shop-gold-mystery-rail .shop-mystery-marquee-track.home-news-ticker-track--ltr.is-armed {
+  animation: shop-mystery-rail-marquee-ltr 78s linear infinite !important;
+  animation-play-state: running !important;
+}
+
+.shop-mystery-marquee-rail.shop-gold-mystery-rail .shop-mystery-marquee-track.home-news-ticker-track--rtl.is-armed {
+  animation: shop-mystery-rail-marquee-rtl 88s linear infinite !important;
   animation-play-state: running !important;
 }
 
