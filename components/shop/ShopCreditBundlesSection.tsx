@@ -106,8 +106,8 @@ export default function ShopCreditBundlesSection() {
                     style={{
                       objectPosition: align.objectPosition,
                       transform:
-                        align.translateYPx !== 0
-                          ? `translate3d(0, ${align.translateYPx}px, 0)`
+                        align.translateYpx !== 0
+                          ? `translate3d(0, ${align.translateYpx}px, 0)`
                           : undefined,
                     }}
                     priority={imageMeta.imagePriority}
