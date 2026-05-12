@@ -26,6 +26,8 @@ interface Props {
   href?: string;
   hrefLabel?: string;
   leftSlot?: ReactNode;
+  /** Elemento arbitrario a destra del titolo (es. bottone acquisto box). */
+  trailingSlot?: ReactNode;
 }
 
 const ACCENT_MAP: Record<
@@ -87,6 +89,7 @@ export function SectionHeader({
   href,
   hrefLabel = "Vedi tutti",
   leftSlot,
+  trailingSlot,
 }: Props) {
   const a = ACCENT_MAP[accent];
   const trimmedEyebrow = eyebrow?.trim() ?? "";
@@ -156,7 +159,7 @@ export function SectionHeader({
 
   return (
     <header className="mb-5">
-      <div className="flex items-end justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           {eyebrowRow}
           <h2
@@ -173,27 +176,30 @@ export function SectionHeader({
             <p className="mt-1 text-[0.8125rem] text-white/50">{subtitle}</p>
           )}
         </div>
-        {href && (
-          <Link
-            href={href}
-            className={`news-format-badge group relative shrink-0 flex items-center gap-1 text-[12px] font-semibold leading-none tracking-[0.01em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded ${a.text} hover:opacity-80`}
-          >
-            <span className={`absolute -inset-x-2 -inset-y-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-current/[0.07]`} aria-hidden />
-            {hrefLabel}
-            <svg
-              aria-hidden
-              className="w-3 h-3 inline-block translate-x-0 transition-transform duration-200 group-hover:translate-x-0.5"
-              viewBox="0 0 12 12"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+        <div className="flex shrink-0 items-center gap-3">
+          {trailingSlot}
+          {href && (
+            <Link
+              href={href}
+              className={`news-format-badge group relative shrink-0 flex items-center gap-1 text-[12px] font-semibold leading-none tracking-[0.01em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded ${a.text} hover:opacity-80`}
             >
-              <path d="M2 6h8M7 3l3 3-3 3" />
-            </svg>
-          </Link>
-        )}
+              <span className={`absolute -inset-x-2 -inset-y-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-current/[0.07]`} aria-hidden />
+              {hrefLabel}
+              <svg
+                aria-hidden
+                className="w-3 h-3 inline-block translate-x-0 transition-transform duration-200 group-hover:translate-x-0.5"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M2 6h8M7 3l3 3-3 3" />
+              </svg>
+            </Link>
+          )}
+        </div>
       </div>
       <div
         className={`mt-3 h-px w-full bg-gradient-to-r ${a.line}`}

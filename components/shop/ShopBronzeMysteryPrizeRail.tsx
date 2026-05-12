@@ -140,7 +140,7 @@ export default function ShopBronzeMysteryPrizeRail() {
 
       <div className="relative py-3.5 sm:py-4">
         <div
-          className="shop-mystery-marquee-scrollport relative isolate overflow-hidden"
+          className="shop-mystery-marquee-scrollport shop-mystery-stage shop-mystery-stage--bronze relative isolate overflow-hidden"
           style={newsRailEdgeMaskStyle}
         >
           {/* Sfumatura verticale premium (respira come ticker news / homepage). */}

@@ -68,6 +68,7 @@ const IMAGE_PACK_BTN =
 
 export default function ShopCreditBundlesSection() {
   const [paymentTarget, setPaymentTarget] = useState<{
+    bundleId: string;
     name: string;
     priceEur: number;
     credits: number;
@@ -87,6 +88,7 @@ export default function ShopCreditBundlesSection() {
               type="button"
               onClick={() =>
                 setPaymentTarget({
+                  bundleId: bundle.id,
                   name: bundle.name,
                   priceEur: bundle.priceEur,
                   credits: bundle.credits,

@@ -104,6 +104,2061 @@
 }
 
 /**
+ * "Palcoscenico" inferiore: linea luminosa con bagliore caldo che taglia il rail
+ * dal basso. Idle = soft & breathing. Reagisce all'apertura della box (overlay)
+ * con :has() solo dove supportato — fallback statico altrove.
+ */
+.shop-mystery-stage::before,
+.shop-mystery-stage::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.shop-mystery-stage::after {
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--stage-edge, rgba(255, 255, 255, 0.18)) 12%,
+    var(--stage-center, rgba(255, 255, 255, 0.85)) 50%,
+    var(--stage-edge, rgba(255, 255, 255, 0.18)) 88%,
+    transparent 100%
+  );
+  filter: drop-shadow(0 0 6px var(--stage-glow, rgba(255, 255, 255, 0.45)))
+    drop-shadow(0 0 22px var(--stage-glow-soft, rgba(255, 255, 255, 0.18)));
+  opacity: 0.92;
+  animation: shop-mystery-stage-breathe 5.4s ease-in-out infinite;
+}
+
+.shop-mystery-stage::before {
+  bottom: 0;
+  height: 56px;
+  background: linear-gradient(
+    0deg,
+    var(--stage-bloom, rgba(255, 255, 255, 0.07)) 0%,
+    transparent 100%
+  );
+  opacity: 0.75;
+  animation: shop-mystery-stage-bloom 6.4s ease-in-out infinite;
+}
+
+.shop-mystery-stage--bronze {
+  --stage-edge: rgba(120, 244, 255, 0.22);
+  --stage-center: rgba(220, 254, 255, 0.95);
+  --stage-glow: rgba(80, 245, 252, 0.55);
+  --stage-glow-soft: rgba(80, 245, 252, 0.22);
+  --stage-bloom: rgba(80, 245, 252, 0.11);
+}
+
+.shop-mystery-stage--silver {
+  --stage-edge: rgba(226, 232, 240, 0.28);
+  --stage-center: rgba(255, 255, 255, 0.96);
+  --stage-glow: rgba(226, 232, 240, 0.5);
+  --stage-glow-soft: rgba(148, 163, 184, 0.22);
+  --stage-bloom: rgba(203, 213, 225, 0.1);
+}
+
+.shop-mystery-stage--gold {
+  --stage-edge: rgba(252, 211, 77, 0.32);
+  --stage-center: rgba(255, 246, 210, 0.98);
+  --stage-glow: rgba(250, 204, 21, 0.6);
+  --stage-glow-soft: rgba(180, 106, 22, 0.22);
+  --stage-bloom: rgba(250, 204, 21, 0.13);
+}
+
+@keyframes shop-mystery-stage-breathe {
+  0%,
+  100% {
+    opacity: 0.78;
+    filter: drop-shadow(0 0 5px var(--stage-glow, rgba(255, 255, 255, 0.45)))
+      drop-shadow(0 0 18px var(--stage-glow-soft, rgba(255, 255, 255, 0.18)));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 9px var(--stage-glow, rgba(255, 255, 255, 0.55)))
+      drop-shadow(0 0 28px var(--stage-glow-soft, rgba(255, 255, 255, 0.28)));
+  }
+}
+
+@keyframes shop-mystery-stage-bloom {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 0.92;
+    transform: scaleY(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-mystery-stage::before,
+  .shop-mystery-stage::after {
+    animation: none !important;
+  }
+}
+
+/**
+ * CTA "Apri box" — pulsante premium per tier (palette + glow). Ring breathing,
+ * sheen passante in continuo, pressione fisica all'active.
+ */
+.shop-mystery-open-cta {
+  isolation: isolate;
+  letter-spacing: 0.06em;
+}
+
+.shop-mystery-open-cta__bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background:
+    radial-gradient(120% 160% at 50% -30%, var(--cta-bg-top, rgba(255, 255, 255, 0.18)), transparent 60%),
+    linear-gradient(180deg, var(--cta-bg-1, #0d2230) 0%, var(--cta-bg-2, #050b14) 100%);
+  border: 1px solid var(--cta-border, rgba(255, 255, 255, 0.16));
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 -8px 22px -10px var(--cta-shadow, rgba(0, 0, 0, 0.6)) inset,
+    0 22px 38px -22px var(--cta-glow, rgba(80, 245, 252, 0.55));
+  z-index: 0;
+}
+
+.shop-mystery-open-cta__sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.shop-mystery-open-cta__sheen::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -45%;
+  width: 50%;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 35%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0.12) 65%,
+    transparent 100%
+  );
+  filter: blur(0.4px);
+  transform: skewX(-18deg) translateX(0%);
+  animation: shop-mystery-cta-sheen 4.5s linear infinite;
+  mix-blend-mode: screen;
+}
+
+.shop-mystery-open-cta__ring {
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 0;
+  background: conic-gradient(
+    from 90deg,
+    transparent 0deg,
+    var(--cta-ring-1, rgba(80, 245, 252, 0.6)) 90deg,
+    var(--cta-ring-2, rgba(255, 255, 255, 0.4)) 180deg,
+    var(--cta-ring-1, rgba(80, 245, 252, 0.6)) 270deg,
+    transparent 360deg
+  );
+  filter: blur(7px);
+  opacity: 0.42;
+  animation: shop-mystery-cta-ring 9s linear infinite;
+}
+
+.shop-mystery-open-cta--bronze {
+  --cta-bg-top: rgba(80, 245, 252, 0.22);
+  --cta-bg-1: #06212a;
+  --cta-bg-2: #03121a;
+  --cta-border: rgba(110, 232, 252, 0.32);
+  --cta-glow: rgba(80, 245, 252, 0.55);
+  --cta-shadow: rgba(0, 30, 35, 0.55);
+  --cta-ring-1: rgba(80, 245, 252, 0.65);
+  --cta-ring-2: rgba(255, 255, 255, 0.45);
+}
+
+.shop-mystery-open-cta--silver {
+  --cta-bg-top: rgba(226, 232, 240, 0.22);
+  --cta-bg-1: #0a1422;
+  --cta-bg-2: #04080f;
+  --cta-border: rgba(203, 213, 225, 0.32);
+  --cta-glow: rgba(226, 232, 240, 0.45);
+  --cta-shadow: rgba(8, 15, 30, 0.55);
+  --cta-ring-1: rgba(226, 232, 240, 0.55);
+  --cta-ring-2: rgba(255, 255, 255, 0.55);
+}
+
+.shop-mystery-open-cta--gold {
+  --cta-bg-top: rgba(253, 224, 71, 0.28);
+  --cta-bg-1: #2a1a05;
+  --cta-bg-2: #110a02;
+  --cta-border: rgba(252, 211, 77, 0.42);
+  --cta-glow: rgba(250, 204, 21, 0.6);
+  --cta-shadow: rgba(48, 22, 4, 0.6);
+  --cta-ring-1: rgba(252, 211, 77, 0.7);
+  --cta-ring-2: rgba(255, 246, 210, 0.55);
+}
+
+@keyframes shop-mystery-cta-sheen {
+  0% {
+    transform: skewX(-18deg) translateX(-30%);
+  }
+  60% {
+    transform: skewX(-18deg) translateX(420%);
+  }
+  100% {
+    transform: skewX(-18deg) translateX(420%);
+  }
+}
+
+@keyframes shop-mystery-cta-ring {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-mystery-open-cta__sheen::before,
+  .shop-mystery-open-cta__ring {
+    animation: none !important;
+  }
+}
+
+/**
+ * ===========================================================================
+ * UNBOXING OVERLAY — esperienza cinematica full-screen
+ * ===========================================================================
+ * Fasi (state machine): priming → spinning → settling → revealed
+ * Tutto è guidato dalla classe `.shop-mystery-unboxing-overlay--phase-*`.
+ */
+.shop-mystery-unboxing-overlay {
+  --arena-card-w: 178px;
+  --arena-card-h: 212px;
+  --arena-rarity-glow: rgba(255, 255, 255, 0.5);
+  --arena-rarity-color: rgba(255, 255, 255, 0.95);
+  /* Palette del sipario: bordo metallico per tier. */
+  --curtain-edge-1: rgba(255, 255, 255, 0.85);
+  --curtain-edge-2: rgba(255, 255, 255, 0.25);
+  --curtain-edge-glow: rgba(255, 255, 255, 0.55);
+  isolation: isolate;
+  contain: paint;
+  animation: shop-mystery-overlay-fade 220ms ease-out both;
+}
+
+.shop-mystery-unboxing-overlay--bronze {
+  --curtain-edge-1: rgba(190, 252, 255, 0.95);
+  --curtain-edge-2: rgba(80, 245, 252, 0.28);
+  --curtain-edge-glow: rgba(80, 245, 252, 0.6);
+}
+.shop-mystery-unboxing-overlay--silver {
+  --curtain-edge-1: rgba(255, 255, 255, 0.95);
+  --curtain-edge-2: rgba(203, 213, 225, 0.32);
+  --curtain-edge-glow: rgba(226, 232, 240, 0.55);
+}
+.shop-mystery-unboxing-overlay--gold {
+  --curtain-edge-1: rgba(255, 246, 210, 0.98);
+  --curtain-edge-2: rgba(252, 211, 77, 0.36);
+  --curtain-edge-glow: rgba(250, 204, 21, 0.7);
+}
+
+.shop-mystery-unboxing-overlay--rarity-comune {
+  --arena-rarity-glow: rgba(226, 232, 240, 0.55);
+  --arena-rarity-color: rgba(255, 255, 255, 0.96);
+}
+.shop-mystery-unboxing-overlay--rarity-raro {
+  --arena-rarity-glow: rgba(56, 189, 248, 0.65);
+  --arena-rarity-color: rgba(186, 230, 253, 0.98);
+}
+.shop-mystery-unboxing-overlay--rarity-epico {
+  --arena-rarity-glow: rgba(192, 132, 252, 0.7);
+  --arena-rarity-color: rgba(233, 213, 255, 0.98);
+}
+.shop-mystery-unboxing-overlay--rarity-leggendario {
+  --arena-rarity-glow: rgba(250, 204, 21, 0.78);
+  --arena-rarity-color: rgba(254, 240, 138, 0.98);
+}
+
+.shop-mystery-unboxing-backdrop {
+  background:
+    radial-gradient(
+      120% 80% at 50% 50%,
+      rgba(2, 4, 10, 0.74) 0%,
+      rgba(0, 0, 0, 0.96) 70%,
+      #000 100%
+    );
+  /*
+   * Backdrop-filter NON viene animato di proposito: durante il sipario lo schermo
+   * è coperto dai pannelli (vedi sotto), quindi animare il blur darebbe solo cost
+   * GPU senza valore percepito. Stato fisso = transizione arena→reveal più stabile.
+   */
+  backdrop-filter: blur(20px) saturate(0.85);
+  -webkit-backdrop-filter: blur(20px) saturate(0.85);
+  animation: shop-mystery-overlay-backdrop 320ms ease-out both;
+}
+
+@keyframes shop-mystery-overlay-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes shop-mystery-overlay-backdrop {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ==========================================================================
+ * SIPARIO — show-style premium / casino opening
+ * ==========================================================================
+ * 3 stati CSS (`data-state`):
+ *   closing → keyframes ease-in pesante (peso del velluto)
+ *   held    → static al centro (show moment, identity badge + seam)
+ *   opening → transition luxury ease-out (si schiude rivelando l'arena)
+ *
+ * I pannelli coprono il 58% dell'altezza ognuno (overlap 16% al centro)
+ * per non lasciare mai trasparire un pixel di arena durante il sipario.
+ *
+ * Texture velvet: fold verticali + grain orizzontale via repeating-gradient.
+ * Tint tier via CSS vars già presenti su .shop-mystery-unboxing-overlay--{tier}.
+ * ========================================================================== */
+.shop-mystery-curtain {
+  position: absolute;
+  inset-inline: 0;
+  height: 58%;
+  z-index: 80;
+  pointer-events: none;
+  will-change: transform;
+  overflow: hidden;
+
+  /* Texture "velluto lusso" — fold profondi + vena diagonale + gradiente tier-tinted */
+  background:
+    repeating-linear-gradient(
+      97deg,
+      rgba(255, 255, 255, 0.028) 0px,
+      transparent 1px,
+      transparent 18px,
+      rgba(255, 255, 255, 0.012) 18px,
+      rgba(255, 255, 255, 0.012) 19px,
+      transparent 20px,
+      transparent 36px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.14) 0px,
+      transparent 1px,
+      transparent 22px,
+      rgba(255, 255, 255, 0.032) 22px,
+      rgba(255, 255, 255, 0.032) 23px,
+      transparent 24px,
+      transparent 44px
+    ),
+    repeating-linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.07) 0px,
+      transparent 2px,
+      transparent 8px
+    ),
+    linear-gradient(
+      180deg,
+      var(--curtain-bg-top, #0c0a14) 0%,
+      var(--curtain-bg-mid, #07050f) 55%,
+      var(--curtain-bg-bot, #03020a) 100%
+    );
+
+  box-shadow:
+    inset 0 0 120px rgba(0, 0, 0, 0.75),
+    inset 0 0 220px rgba(0, 0, 0, 0.55),
+    inset 60px 0 80px rgba(0, 0, 0, 0.25),
+    inset -60px 0 80px rgba(0, 0, 0, 0.25);
+}
+
+/* Tier-specific curtain tint */
+.shop-mystery-unboxing-overlay--bronze .shop-mystery-curtain {
+  --curtain-bg-top: #090e0e;
+  --curtain-bg-mid: #050a0c;
+  --curtain-bg-bot: #020608;
+}
+.shop-mystery-unboxing-overlay--silver .shop-mystery-curtain {
+  --curtain-bg-top: #0a0b14;
+  --curtain-bg-mid: #06070e;
+  --curtain-bg-bot: #03030a;
+}
+.shop-mystery-unboxing-overlay--gold .shop-mystery-curtain {
+  --curtain-bg-top: #100c06;
+  --curtain-bg-mid: #0a0703;
+  --curtain-bg-bot: #040301;
+}
+
+.shop-mystery-curtain--top {
+  top: 0;
+  border-bottom: 1px solid var(--curtain-edge-2, rgba(255, 255, 255, 0.14));
+}
+.shop-mystery-curtain--bottom {
+  bottom: 0;
+  border-top: 1px solid var(--curtain-edge-2, rgba(255, 255, 255, 0.14));
+}
+
+/* Chiusura — ease-in pesante (velluto che cade con peso) */
+.shop-mystery-curtain--top[data-state="closing"] {
+  animation: shop-mystery-curtain-close-top 820ms cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+.shop-mystery-curtain--bottom[data-state="closing"] {
+  animation: shop-mystery-curtain-close-bottom 820ms cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+
+/* Held — fermo al centro */
+.shop-mystery-curtain[data-state="held"] {
+  transform: translate3d(0, 0, 0);
+}
+
+/* Apertura — ease-out luxury + leggero overshoot (schiocco teatrale) */
+.shop-mystery-curtain[data-state="opening"] {
+  transition: transform 1500ms cubic-bezier(0.10, 1, 0.16, 1);
+}
+.shop-mystery-curtain--top[data-state="opening"] {
+  transform: translate3d(0, -100%, 0);
+}
+.shop-mystery-curtain--bottom[data-state="opening"] {
+  transform: translate3d(0, 100%, 0);
+}
+
+@keyframes shop-mystery-curtain-close-top {
+  from { transform: translate3d(0, -100%, 0); }
+  to   { transform: translate3d(0, 0, 0); }
+}
+@keyframes shop-mystery-curtain-close-bottom {
+  from { transform: translate3d(0, 100%, 0); }
+  to   { transform: translate3d(0, 0, 0); }
+}
+
+/* Spigolo metallico luminoso — la "lama" che si avvicina all'altra durante la chiusura */
+.shop-mystery-curtain-edge {
+  position: absolute;
+  inset-inline: 0;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--curtain-edge-2) 6%,
+    var(--curtain-edge-1) 25%,
+    rgba(255, 255, 255, 0.98) 50%,
+    var(--curtain-edge-1) 75%,
+    var(--curtain-edge-2) 94%,
+    transparent 100%
+  );
+  filter:
+    drop-shadow(0 0 6px var(--curtain-edge-glow))
+    drop-shadow(0 0 18px var(--curtain-edge-glow))
+    drop-shadow(0 0 50px var(--curtain-edge-glow))
+    drop-shadow(0 0 100px var(--curtain-edge-glow));
+}
+
+/* Intensificazione dell'edge mentre i pannelli si avvicinano al centro (closing) */
+.shop-mystery-curtain--top[data-state="closing"] .shop-mystery-curtain-edge,
+.shop-mystery-curtain--bottom[data-state="closing"] .shop-mystery-curtain-edge {
+  animation: shop-mystery-edge-approach 820ms cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+@keyframes shop-mystery-edge-approach {
+  0%   {
+    filter:
+      drop-shadow(0 0 4px var(--curtain-edge-glow))
+      drop-shadow(0 0 10px var(--curtain-edge-glow))
+      drop-shadow(0 0 24px var(--curtain-edge-glow));
+    opacity: 0.6;
+  }
+  100% {
+    filter:
+      drop-shadow(0 0 8px var(--curtain-edge-glow))
+      drop-shadow(0 0 26px var(--curtain-edge-glow))
+      drop-shadow(0 0 70px var(--curtain-edge-glow))
+      drop-shadow(0 0 130px var(--curtain-edge-glow));
+    opacity: 1;
+  }
+}
+.shop-mystery-curtain--top .shop-mystery-curtain-edge {
+  bottom: 0;
+}
+.shop-mystery-curtain--bottom .shop-mystery-curtain-edge {
+  top: 0;
+}
+
+/* Fusione degli edge quando i pannelli si incontrano:
+   le due linee scompaiono mentre il seam nasce dal loro punto di contatto. */
+.shop-mystery-curtain--top[data-state="held"] .shop-mystery-curtain-edge,
+.shop-mystery-curtain--bottom[data-state="held"] .shop-mystery-curtain-edge {
+  animation: shop-mystery-edge-merge-out 460ms 55ms cubic-bezier(0.42, 0, 0.58, 1) forwards;
+}
+@keyframes shop-mystery-edge-merge-out {
+  0%   { opacity: 1; }
+  30%  { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+
+/* Sweep luminoso che scorre sul pannello durante la chiusura (simula il riflesso del moto) */
+.shop-mystery-curtain-sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.09) 0%,
+    rgba(255, 255, 255, 0.03) 30%,
+    transparent 55%,
+    rgba(0, 0, 0, 0.1) 100%
+  );
+  opacity: 0;
+}
+.shop-mystery-curtain--top[data-state="closing"] .shop-mystery-curtain-sweep,
+.shop-mystery-curtain--bottom[data-state="closing"] .shop-mystery-curtain-sweep {
+  animation: shop-mystery-curtain-panel-sweep 820ms linear both;
+}
+@keyframes shop-mystery-curtain-panel-sweep {
+  from { opacity: 0; }
+  35%  { opacity: 1; }
+  to   { opacity: 0.4; }
+}
+
+/* Bloom spill durante l'apertura: la luce dell'arena filtra dai bordi dei pannelli */
+.shop-mystery-curtain--top[data-state="opening"]::after,
+.shop-mystery-curtain--bottom[data-state="opening"]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  height: 60px;
+  pointer-events: none;
+}
+.shop-mystery-curtain--top[data-state="opening"]::after {
+  bottom: -1px;
+  background: linear-gradient(180deg, transparent 0%, var(--curtain-edge-glow) 100%);
+  opacity: 0.45;
+  animation: shop-mystery-curtain-open-spill 1500ms cubic-bezier(0.10, 1, 0.16, 1) both;
+}
+.shop-mystery-curtain--bottom[data-state="opening"]::after {
+  top: -1px;
+  background: linear-gradient(0deg, transparent 0%, var(--curtain-edge-glow) 100%);
+  opacity: 0.45;
+  animation: shop-mystery-curtain-open-spill 1500ms cubic-bezier(0.10, 1, 0.16, 1) both;
+}
+@keyframes shop-mystery-curtain-open-spill {
+  0%   { opacity: 0.7; }
+  60%  { opacity: 0.3; }
+  100% { opacity: 0; }
+}
+
+/* Radial flash orizzontale al meeting dei pannelli */
+.shop-mystery-curtain-flash {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 150%;
+  aspect-ratio: 7 / 1;
+  transform: translate(-50%, -50%) scaleX(0.15);
+  z-index: 81;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    ellipse 48% 55% at 50% 50%,
+    rgba(255, 255, 255, 0.92) 0%,
+    var(--curtain-edge-glow) 35%,
+    transparent 68%
+  );
+  filter: blur(1px);
+  mix-blend-mode: screen;
+}
+.shop-mystery-curtain-flash[data-state="active"] {
+  animation: shop-mystery-curtain-snap 420ms cubic-bezier(0.18, 0.82, 0.18, 1) both;
+}
+@keyframes shop-mystery-curtain-snap {
+  0%   { opacity: 0;    transform: translate(-50%, -50%) scaleX(0.15); }
+  28%  { opacity: 1;    transform: translate(-50%, -50%) scaleX(1.05); }
+  55%  { opacity: 0.85; transform: translate(-50%, -50%) scaleX(1); }
+  100% { opacity: 0;    transform: translate(-50%, -50%) scaleX(1.22); }
+}
+
+/* Seam — nasce dal punto di fusione delle due linee, si espande verso i lati */
+.shop-mystery-curtain-seam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  z-index: 83;
+  pointer-events: none;
+  /* Gradiente con picco luminoso al centro — rispecchia il punto di fusione */
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--curtain-edge-2) 10%,
+    var(--curtain-edge-1) 28%,
+    rgba(255, 255, 255, 0.95) 44%,
+    rgba(255, 255, 255, 1.0) 50%,
+    rgba(255, 255, 255, 0.95) 56%,
+    var(--curtain-edge-1) 72%,
+    var(--curtain-edge-2) 90%,
+    transparent 100%
+  );
+  filter:
+    drop-shadow(0 0 10px var(--curtain-edge-glow))
+    drop-shadow(0 0 36px var(--curtain-edge-glow))
+    drop-shadow(0 0 70px var(--curtain-edge-glow));
+  /* Nasce da scaleX quasi zero (punto di tocco) e si propaga verso i lati */
+  transform-origin: center;
+  animation: shop-mystery-seam-merge 640ms cubic-bezier(0.08, 0.92, 0.18, 1) both;
+}
+.shop-mystery-curtain-seam::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  height: 90px;
+  top: -45px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--curtain-edge-glow) 50%,
+    transparent 100%
+  );
+  filter: blur(18px);
+  opacity: 0;
+  /* Il bloom del punto di fusione si espande con la linea */
+  animation: shop-mystery-seam-bloom 640ms cubic-bezier(0.08, 0.92, 0.18, 1) both;
+}
+/* La linea parte da un singolo punto al centro (dove le due si sono toccate)
+   poi si propaga a velocità crescente verso entrambi i lati */
+@keyframes shop-mystery-seam-merge {
+  0%   { opacity: 0;    transform: scaleX(0.015); filter: drop-shadow(0 0 4px var(--curtain-edge-glow)) drop-shadow(0 0 12px var(--curtain-edge-glow)); }
+  18%  { opacity: 1;    transform: scaleX(0.22); }
+  55%  { opacity: 1;    transform: scaleX(1.06); filter: drop-shadow(0 0 14px var(--curtain-edge-glow)) drop-shadow(0 0 48px var(--curtain-edge-glow)) drop-shadow(0 0 90px var(--curtain-edge-glow)); }
+  100% { opacity: 1;    transform: scaleX(1);    filter: drop-shadow(0 0 10px var(--curtain-edge-glow)) drop-shadow(0 0 36px var(--curtain-edge-glow)) drop-shadow(0 0 70px var(--curtain-edge-glow)); }
+}
+@keyframes shop-mystery-seam-bloom {
+  0%   { opacity: 0;    transform: scaleX(0.02); }
+  25%  { opacity: 0.7;  transform: scaleX(0.35); }
+  60%  { opacity: 0.65; transform: scaleX(1.04); }
+  100% { opacity: 0.55; transform: scaleX(1); }
+}
+
+.shop-mystery-curtain-seam.shop-mystery-curtain-seam--premium {
+  height: 3px;
+  margin-top: -1.5px;
+  opacity: 0.98;
+  filter:
+    blur(0.3px)
+    drop-shadow(0 0 12px var(--curtain-edge-glow))
+    drop-shadow(0 0 52px rgba(255, 255, 255, 0.45));
+}
+
+.shop-mystery-curtain-flash.shop-mystery-curtain-flash--cinema-v2[data-state="active"] {
+  width: 170%;
+  filter: blur(1.25px);
+  opacity: 0.95;
+  animation: shop-mystery-curtain-snap-deep 820ms cubic-bezier(0.12, 0.98, 0.18, 1) both;
+}
+
+@keyframes shop-mystery-curtain-snap-deep {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleX(0.12) rotate(-0.55deg);
+  }
+  22% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scaleX(1.12) rotate(0.18deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleX(1.28) rotate(0.45deg);
+  }
+}
+
+.shop-mystery-curtain.shop-mystery-curtain--velvet-shift[data-state="closing"]::before,
+.shop-mystery-curtain.shop-mystery-curtain--velvet-shift[data-state="opening"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 50% -10%, rgba(255, 255, 255, 0.22) 0%, transparent 60%);
+  mix-blend-mode: soft-light;
+  opacity: 0.5;
+}
+
+/* Shimmer di lusso sul velluto durante la hold — striscia di luce che scivola lentamente */
+.shop-mystery-curtain.shop-mystery-curtain--velvet-shift[data-state="held"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    108deg,
+    transparent 0%,
+    transparent 28%,
+    rgba(255, 255, 255, 0.04) 38%,
+    rgba(255, 255, 255, 0.10) 50%,
+    rgba(255, 255, 255, 0.04) 62%,
+    transparent 72%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  mix-blend-mode: soft-light;
+  animation: shop-mystery-curtain-velvet-shimmer 2.2s ease-in-out infinite alternate;
+}
+@keyframes shop-mystery-curtain-velvet-shimmer {
+  0%   { background-position: 160% 0; opacity: 0.5; }
+  100% { background-position: -160% 0; opacity: 0.95; }
+}
+
+.shop-mystery-curtain-cinematic.shop-mystery-curtain[data-state="opening"] {
+  filter: saturate(1.06) brightness(1.05);
+}
+/* Identity badge — nome del tier durante la pausa del sipario (show moment) */
+.shop-mystery-curtain-identity {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, calc(-50% + 28px));
+  z-index: 84;
+  pointer-events: none;
+  font-family: var(--font-kalshi-title, 'Orbitron', system-ui, sans-serif);
+  font-size: clamp(0.75rem, 3.5vw, 1.1rem);
+  font-weight: 700;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+  color: var(--curtain-edge-1, rgba(255, 255, 255, 0.9));
+  white-space: nowrap;
+  filter: drop-shadow(0 0 12px var(--curtain-edge-glow));
+  animation: shop-mystery-identity-reveal var(--curtain-pause, 380ms) ease-out both;
+}
+@keyframes shop-mystery-identity-reveal {
+  0%   { opacity: 0; letter-spacing: 0.2em; transform: translate(-50%, calc(-50% + 36px)); }
+  35%  { opacity: 1; }
+  80%  { opacity: 1; letter-spacing: 0.45em; transform: translate(-50%, calc(-50% + 28px)); }
+  100% { opacity: 0.75; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .shop-mystery-curtain,
+  .shop-mystery-curtain-flash,
+  .shop-mystery-curtain-seam,
+  .shop-mystery-curtain-sweep,
+  .shop-mystery-curtain-edge,
+  .shop-mystery-curtain-seam::before {
+    animation: none !important;
+    transition: none !important;
+  }
+  .shop-mystery-curtain[data-state="closing"],
+  .shop-mystery-curtain[data-state="held"] {
+    transform: translate3d(0, 0, 0);
+  }
+  .shop-mystery-curtain--top[data-state="opening"] {
+    transform: translate3d(0, -100%, 0);
+  }
+  .shop-mystery-curtain--bottom[data-state="opening"] {
+    transform: translate3d(0, 100%, 0);
+  }
+  .shop-mystery-curtain-seam {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+/* Cinema bars (top + bottom) — appaiono al priming, scompaiono al revealed. */
+.shop-mystery-unboxing-cinema-bars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.shop-mystery-unboxing-cinema-bars::before,
+.shop-mystery-unboxing-cinema-bars::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  height: 0;
+  background: #000;
+  transition: height 700ms cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+.shop-mystery-unboxing-cinema-bars::before {
+  top: 0;
+}
+.shop-mystery-unboxing-cinema-bars::after {
+  bottom: 0;
+}
+.shop-mystery-unboxing-overlay--phase-priming .shop-mystery-unboxing-cinema-bars::before,
+.shop-mystery-unboxing-overlay--phase-await-scroll .shop-mystery-unboxing-cinema-bars::before,
+.shop-mystery-unboxing-overlay--phase-reel-active .shop-mystery-unboxing-cinema-bars::before,
+.shop-mystery-unboxing-overlay--phase-snap-landing .shop-mystery-unboxing-cinema-bars::before,
+.shop-mystery-unboxing-overlay--phase-priming .shop-mystery-unboxing-cinema-bars::after,
+.shop-mystery-unboxing-overlay--phase-await-scroll .shop-mystery-unboxing-cinema-bars::after,
+.shop-mystery-unboxing-overlay--phase-reel-active .shop-mystery-unboxing-cinema-bars::after,
+.shop-mystery-unboxing-overlay--phase-snap-landing .shop-mystery-unboxing-cinema-bars::after {
+  height: 64px;
+}
+.shop-mystery-unboxing-overlay--phase-celebrated .shop-mystery-unboxing-cinema-bars::before,
+.shop-mystery-unboxing-overlay--phase-celebrated .shop-mystery-unboxing-cinema-bars::after {
+  height: 0;
+}
+
+/* Header + footer copy: nascosti durante il sipario, fade-up quando si apre. */
+.shop-mystery-unboxing-header,
+.shop-mystery-unboxing-footer {
+  transition:
+    opacity 540ms cubic-bezier(0.22, 0.86, 0.24, 1),
+    transform 540ms cubic-bezier(0.22, 0.86, 0.24, 1);
+}
+.shop-mystery-unboxing-header[data-visible="false"] {
+  opacity: 0;
+  transform: translateY(-14px);
+}
+.shop-mystery-unboxing-header[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+.shop-mystery-unboxing-header[data-visible="dim"] {
+  opacity: 0.18;
+  transform: translateY(-4px) scale(0.98);
+}
+.shop-mystery-unboxing-footer {
+  /* Footer animato dal componente con classi utility (translate-y / opacity). */
+}
+
+/* Arena nascosta durante le fasi del sipario */
+.shop-mystery-unboxing-overlay--phase-curtain-in .shop-mystery-unboxing-arena,
+.shop-mystery-unboxing-overlay--phase-curtain-hold .shop-mystery-unboxing-arena,
+.shop-mystery-unboxing-overlay--phase-curtain-out .shop-mystery-unboxing-arena {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Arena — height responsive tramite clamp. */
+.shop-mystery-unboxing-arena {
+  height: clamp(280px, 42vh, 340px);
+  background:
+    radial-gradient(
+      120% 110% at 50% 50%,
+      rgba(8, 14, 22, 0.65) 0%,
+      rgba(0, 0, 0, 0.92) 70%,
+      #000 100%
+    );
+}
+
+.shop-mystery-unboxing-arena-edge {
+  position: absolute;
+  inset-inline: 0;
+  height: 1px;
+  z-index: 6;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.15) 12%,
+    rgba(255, 255, 255, 0.85) 50%,
+    rgba(255, 255, 255, 0.15) 88%,
+    transparent 100%
+  );
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.42))
+    drop-shadow(0 0 22px var(--arena-rarity-glow));
+}
+.shop-mystery-unboxing-arena-edge--top {
+  top: 0;
+}
+.shop-mystery-unboxing-arena-edge--bottom {
+  bottom: 0;
+}
+
+.shop-mystery-unboxing-arena-bloom {
+  position: absolute;
+  inset-inline: 0;
+  height: 64px;
+  z-index: 5;
+  pointer-events: none;
+}
+.shop-mystery-unboxing-arena-bloom--top {
+  top: 0;
+  background: linear-gradient(180deg, var(--arena-rarity-glow) 0%, transparent 100%);
+  opacity: 0.18;
+}
+.shop-mystery-unboxing-arena-bloom--bottom {
+  bottom: 0;
+  background: linear-gradient(0deg, var(--arena-rarity-glow) 0%, transparent 100%);
+  opacity: 0.22;
+}
+
+/* Spotlight verticale sul centro: la "lama di luce" che tagli la scena. */
+.shop-mystery-unboxing-arena-spotlight {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: radial-gradient(
+    14% 100% at 50% 50%,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(255, 255, 255, 0.04) 35%,
+    transparent 65%
+  );
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 600ms ease-out;
+}
+.shop-mystery-unboxing-overlay--phase-await-scroll .shop-mystery-unboxing-arena-spotlight,
+.shop-mystery-unboxing-overlay--phase-reel-active .shop-mystery-unboxing-arena-spotlight,
+.shop-mystery-unboxing-overlay--phase-snap-landing .shop-mystery-unboxing-arena-spotlight {
+  opacity: 1;
+}
+
+.shop-mystery-unboxing-arena-spotlight--subtle {
+  background: radial-gradient(
+    13% 100% at 50% 53%,
+    rgba(255, 255, 255, 0.11) 0%,
+    rgba(255, 255, 255, 0.03) 40%,
+    transparent 74%
+  );
+  opacity: 0.92;
+}
+
+.shop-mystery-unboxing-arena--reel-phase {
+  background:
+    radial-gradient(
+      128% 100% at 50% 54%,
+      rgba(8, 16, 32, 0.48) 0%,
+      rgba(0, 0, 0, 0.94) 70%,
+      #000 100%
+    );
+  box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.75);
+}
+
+.shop-mystery-unboxing-overlay--phase-celebrated .shop-mystery-unboxing-arena {
+  height: clamp(320px, 52vh, 420px);
+  background:
+    radial-gradient(
+      88% 80% at 50% 40%,
+      rgba(255, 255, 255, 0.04) 0%,
+      rgba(2, 6, 16, 0.88) 45%,
+      rgba(0, 0, 0, 0.97) 100%
+    );
+  box-shadow: none;
+}
+
+/* Asse metallico luminoso (“binario”) sotto il reel premium */
+.shop-mystery-arena-rail-shaft {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 94px);
+  width: calc(100% - 72px);
+  max-width: 520px;
+  height: 2px;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+  pointer-events: none;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 6%,
+    rgba(255, 255, 255, 0.65) 50%,
+    rgba(255, 255, 255, 0.08) 94%,
+    transparent 100%
+  );
+  box-shadow:
+    0 0 16px rgba(255, 255, 255, 0.32),
+    0 6px 32px rgba(0, 0, 0, 0.7),
+    0 -1px 0 var(--arena-rarity-glow, rgba(255, 255, 255, 0.42));
+}
+
+.shop-mystery-unboxing-arena-edge-fade--narrow {
+  opacity: 0.55;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.78) 0%,
+    rgba(0, 0, 0, 0.28) 7%,
+    transparent 26%,
+    transparent 74%,
+    rgba(0, 0, 0, 0.28) 93%,
+    rgba(0, 0, 0, 0.78) 100%
+  );
+}
+
+.shop-mystery-scroll-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.shop-mystery-scroll-hint-stroke {
+  fill: none;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke: rgba(252, 252, 255, 0.96);
+  filter: drop-shadow(0 0 10px var(--arena-rarity-glow, rgba(245, 250, 255, 0.5)));
+}
+
+/* Freccia orizzontale — animazione rightward bounce */
+.shop-mystery-scroll-hint-arrow {
+  width: clamp(80px, 18vw, 130px);
+  height: auto;
+  opacity: 0.98;
+  animation: shop-mystery-scroll-hint-arrow-pulse 1600ms cubic-bezier(0.45, 0, 0.2, 1) infinite;
+}
+
+@keyframes shop-mystery-scroll-hint-arrow-pulse {
+  0%,
+  100% {
+    transform: translateX(0) translateZ(0) scaleX(1);
+    opacity: 0.38;
+    filter: saturate(1.06) brightness(1.06);
+  }
+  52% {
+    transform: translateX(14px) translateZ(0) scaleX(1.06);
+    opacity: 1;
+    filter: saturate(1.42) brightness(1.22);
+  }
+}
+
+.shop-mystery-scroll-hint-label {
+  font-size: clamp(0.62rem, 3.4vw, 0.82rem);
+  font-weight: 700;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+  text-shadow:
+    0 0 12px rgba(0, 0, 0, 0.8),
+    0 2px 16px rgba(0, 0, 0, 0.6);
+}
+
+.shop-mystery-unboxing-overlay--phase-celebrated .shop-mystery-unboxing-arena-track {
+  opacity: 0;
+  transition: opacity 940ms cubic-bezier(0.2, 0.94, 0.18, 1);
+}
+
+.shop-mystery-unboxing-overlay--phase-celebrated .shop-mystery-arena-rail-shaft,
+.shop-mystery-unboxing-overlay--phase-celebrated .shop-mystery-scroll-hint,
+.shop-mystery-unboxing-overlay--phase-celebrated .shop-mystery-unboxing-arena-indicator,
+.shop-mystery-unboxing-overlay--phase-celebrated .shop-mystery-arena-ticker {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 540ms ease-out;
+}
+
+/* Indicator centrale — lama luminosa fissa sul centro arena. */
+/* ---------- Indicator centrale -------------------------------------------- */
+.shop-mystery-unboxing-arena-indicator {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  z-index: 7;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    var(--arena-rarity-color, rgba(255, 255, 255, 0.95)) 50%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  box-shadow:
+    0 0 5px rgba(255, 255, 255, 0.5),
+    0 0 14px var(--arena-rarity-glow),
+    0 0 32px var(--arena-rarity-glow);
+  animation: shop-mystery-arena-indicator-breathe 1.8s ease-in-out infinite;
+  transition: box-shadow 80ms linear;
+}
+
+/* Flash rapido sull'indicator ad ogni tick */
+.shop-mystery-unboxing-arena-indicator.shop-mystery-indicator--flash {
+  animation: shop-mystery-indicator-tick-flash 180ms ease-out;
+}
+
+@keyframes shop-mystery-indicator-tick-flash {
+  0%   { filter: brightness(1) saturate(1); box-shadow: 0 0 5px rgba(255,255,255,0.5), 0 0 14px var(--arena-rarity-glow), 0 0 32px var(--arena-rarity-glow); }
+  30%  { filter: brightness(2.2) saturate(1.2); box-shadow: 0 0 8px rgba(255,255,255,0.9), 0 0 28px var(--arena-rarity-glow), 0 0 55px var(--arena-rarity-glow); }
+  100% { filter: brightness(1) saturate(1); box-shadow: 0 0 5px rgba(255,255,255,0.5), 0 0 14px var(--arena-rarity-glow), 0 0 32px var(--arena-rarity-glow); }
+}
+
+@keyframes shop-mystery-arena-indicator-breathe {
+  0%,
+  100% { filter: brightness(1); }
+  50%  { filter: brightness(1.3); }
+}
+
+/* Bacchettino / stylus — converge sul centro sopra il reel */
+.shop-mystery-wand-indicator {
+  top: clamp(4px, 1.8vw, 14px);
+  bottom: clamp(132px, 30vh, 168px);
+  width: 3px;
+  margin-left: -1.5px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 1) 0%,
+    var(--arena-rarity-color, rgba(255, 255, 255, 1)) 32%,
+    rgba(255, 255, 255, 0.16) 100%
+  );
+  animation: shop-mystery-wand-premium-flow 2100ms ease-in-out infinite alternate;
+  box-shadow:
+    0 -3px 16px rgba(255, 255, 255, 0.55),
+    0 26px 40px rgba(0, 0, 0, 0.6),
+    0 0 22px var(--arena-rarity-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+@keyframes shop-mystery-wand-premium-flow {
+  0% {
+    transform: translate3d(-0.75px, 0, 0) rotate(-0.42deg);
+    filter: saturate(1) brightness(1);
+  }
+  100% {
+    transform: translate3d(0.75px, -2px, 0) rotate(0.5deg);
+    filter: saturate(1.74) brightness(1.18);
+    box-shadow:
+      0 -4px 24px rgba(255, 255, 255, 0.86),
+      0 42px 64px rgba(0, 0, 0, 0.8),
+      0 0 46px var(--arena-rarity-glow),
+      inset 0 1px 0 rgba(255, 255, 255, 0.94);
+  }
+}
+
+.shop-mystery-wand-indicator::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -10px;
+  width: 16px;
+  height: 16px;
+  transform: translateX(-50%) rotate(45deg);
+  border-radius: 5px;
+  background: radial-gradient(
+    circle at 32% 32%,
+    rgba(255, 255, 255, 0.94) 0%,
+    var(--arena-rarity-glow) 55%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+  box-shadow:
+    0 0 18px var(--arena-rarity-glow),
+    inset 0 0 4px rgba(255, 255, 255, 0.7);
+}
+
+
+
+/* ---------- Ticker arms (ruota della fortuna) ------------------------------- */
+/**
+ * Due frecce triangolari (top/bottom) ancorate all'asse centrale.
+ * Deflettono verso l'esterno ad ogni card crossing durante lo spin,
+ * poi scattano indietro con un overshoot morbido.
+ * --tick-deg e --tick-dur sono iniettati dal RAF loop in JS.
+ */
+.shop-mystery-arena-ticker {
+  position: absolute;
+  left: 50%;
+  z-index: 8;
+  width: 26px;
+  height: 20px;
+  margin-left: -13px;
+  background: linear-gradient(
+    180deg,
+    var(--arena-rarity-color, rgba(255, 255, 255, 0.96)) 0%,
+    var(--arena-rarity-glow, rgba(255, 255, 255, 0.5)) 100%
+  );
+  filter: drop-shadow(0 0 7px var(--arena-rarity-glow, rgba(255, 255, 255, 0.5)));
+  pointer-events: none;
+  transition: filter 80ms linear;
+}
+
+.shop-mystery-arena-ticker--top {
+  top: -2px;
+  clip-path: polygon(50% 100%, 4% 0%, 96% 0%);
+  transform-origin: 50% 0%;
+}
+
+.shop-mystery-arena-ticker--wand {
+  top: clamp(86px, 19vh, 114px);
+  width: 0;
+  height: 0;
+  margin-left: 0;
+  background: transparent;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 18px solid var(--arena-rarity-color, rgba(255, 255, 255, 1));
+  border-bottom: none;
+  transform-origin: 50% 0%;
+}
+
+.shop-mystery-unboxing-overlay--bronze .shop-mystery-arena-ticker--wand {
+  border-top-color: rgba(186, 250, 255, 1);
+}
+
+.shop-mystery-unboxing-overlay--gold .shop-mystery-arena-ticker--wand {
+  border-top-color: rgba(253, 230, 138, 1);
+}
+
+.shop-mystery-unboxing-overlay--silver .shop-mystery-arena-ticker--wand {
+  border-top-color: rgba(226, 232, 240, 1);
+}
+
+.shop-mystery-unboxing-overlay--rarity-leggendario .shop-mystery-arena-ticker--wand {
+  border-top-color: rgba(253, 224, 71, 1);
+}
+
+/**
+ * Deflessione dinamica:
+ *   - 0%  → posizione neutra
+ *   - 30% → massima deflessione (verso dx, direzione di scorrimento)
+ *   - 65% → overshoot leggero verso l'altro lato (rimbalzo)
+ *   - 100% → ritorno a zero
+ * La direzione (+) è sempre verso destra (il track scorre da dx a sx).
+ */
+.shop-mystery-arena-ticker.shop-mystery-ticker--active {
+  animation: shop-mystery-ticker-deflect-wand var(--tick-dur, 220ms) cubic-bezier(0.22, 0.82, 0.18, 1) both;
+  filter:
+    drop-shadow(0 0 16px var(--arena-rarity-glow)) brightness(1.65)
+    drop-shadow(0 8px 12px rgba(0, 0, 0, 0.8));
+}
+
+@keyframes shop-mystery-ticker-deflect-wand {
+  0% {
+    transform: rotate(0deg) translateY(0) scaleY(1);
+  }
+  32% {
+    transform: rotate(var(--tick-deg, 22deg)) translateY(8px) scaleY(1.06);
+  }
+  72% {
+    transform: rotate(calc(-0.25 * var(--tick-deg, 22deg))) translateY(-2px) scaleY(0.95);
+  }
+  100% {
+    transform: rotate(0deg) translateY(0) scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-mystery-arena-ticker.shop-mystery-ticker--active,
+  .shop-mystery-unboxing-arena-indicator.shop-mystery-indicator--flash {
+    animation: none !important;
+  }
+  .shop-mystery-scroll-hint-arrow,
+  .shop-mystery-wand-indicator {
+    animation: none !important;
+  }
+}
+
+/* Edge fade: nasconde le card alle estremità dell'arena per claustrofobia cinema. */
+.shop-mystery-unboxing-arena-edge-fade {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.9) 0%,
+    rgba(0, 0, 0, 0.55) 6%,
+    transparent 18%,
+    transparent 82%,
+    rgba(0, 0, 0, 0.55) 94%,
+    rgba(0, 0, 0, 0.9) 100%
+  );
+}
+
+/* Track + card. */
+.shop-mystery-unboxing-arena-track {
+  position: relative;
+  height: 100%;
+  z-index: 2;
+}
+
+.shop-mystery-arena-card {
+  position: relative;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.55));
+}
+
+/* ---------- Winner Spotlight (center stage, 3D) ----------------------------- */
+
+.shop-mystery-winner-spotlight {
+  /* Mounting class only — positioning done inline. */
+}
+
+.shop-mystery-winner-spotlight--celebration {
+  justify-content: center;
+  padding-block: clamp(12px, 3vh, 28px);
+  gap: clamp(14px, 3.8vh, 28px);
+}
+
+.shop-mystery-winner-celebrate-line {
+  font-size: clamp(1rem, 3.8vw, 1.42rem);
+  line-height: 1.38;
+}
+
+
+.shop-mystery-winner-card-sheen--loop {
+  animation: shop-mystery-winner-sheen-loop 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite !important;
+  animation-delay: 400ms !important;
+}
+
+@keyframes shop-mystery-winner-sheen-loop {
+  0% {
+    background-position: 220% 0;
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.9;
+  }
+  100% {
+    background-position: -160% 0;
+    opacity: 0;
+  }
+}
+
+.shop-mystery-winner-celebration-twinkle {
+  border-radius: inherit;
+  opacity: 0.78;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.94) 0%, transparent 30%),
+    radial-gradient(circle at 74% 30%, rgba(255, 255, 255, 0.6) 0%, transparent 32%),
+    radial-gradient(circle at 62% 86%, rgba(255, 255, 255, 0.6) 0%, transparent 30%),
+    repeating-conic-gradient(
+      transparent 0deg,
+      rgba(255, 255, 255, 0.08) 1.4deg,
+      transparent 10deg,
+      transparent 22deg,
+      rgba(255, 255, 255, 0.09) 24deg,
+      transparent 41deg
+    );
+  animation: shop-mystery-twinkle-shift 6200ms linear infinite;
+}
+
+@keyframes shop-mystery-twinkle-shift {
+  from {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.94;
+    transform: rotate(8deg) scale(1.04);
+  }
+  to {
+    transform: rotate(15deg) scale(1);
+    opacity: 0.55;
+  }
+}
+
+/**
+ * Alone radiale dietro la card: respira lentamente dopo il flip,
+ * colore in palette rarità tramite --winner-glow.
+ */
+.shop-mystery-winner-halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(70vw, 480px);
+  height: min(70vw, 480px);
+  border-radius: 9999px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    var(--winner-glow, rgba(255, 255, 255, 0.4)) 0%,
+    transparent 70%
+  );
+  filter: blur(32px);
+  opacity: 0;
+  pointer-events: none;
+  animation: shop-mystery-winner-halo-in 700ms ease-out 680ms both,
+    shop-mystery-winner-halo-pulse 2.2s ease-in-out 1400ms infinite;
+}
+
+@keyframes shop-mystery-winner-halo-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+  to {
+    opacity: 0.75;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes shop-mystery-winner-halo-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
+
+/**
+ * Wrapper con prospettiva 3D: mantiene il contesto di proiezione
+ * separato dal resto del DOM per evitare stacking context problems.
+ */
+.shop-mystery-winner-3d-scene {
+  position: relative;
+  perspective: 900px;
+  perspective-origin: 50% 50%;
+  z-index: 2;
+  width: clamp(176px, 48vw, 240px);
+  height: clamp(212px, 58vw, 288px);
+}
+
+[data-rarity="leggendario"] .shop-mystery-winner-3d-scene {
+  width: clamp(196px, 54vw, 272px);
+  height: clamp(236px, 65vw, 326px);
+}
+
+/**
+ * La card 3D vera: entra con un flip Y da -80° a 0° con rimbalzo finale.
+ * La curva custom è tarata per dare:
+ *   0 → 65%: accelerazione intensa (la carta si butta avanti)
+ *   65% → 85%: overshoot (rimbalza leggermente oltre)
+ *   85% → 100%: settle al valore finale
+ */
+.shop-mystery-winner-3d-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  animation: shop-mystery-winner-flip 950ms cubic-bezier(0.22, 0.78, 0.28, 1) both;
+  will-change: transform;
+}
+
+@keyframes shop-mystery-winner-flip {
+  0% {
+    transform: rotateY(-82deg) scale(0.78);
+    opacity: 0;
+    filter: brightness(0.45) blur(1px);
+  }
+  18% {
+    opacity: 1;
+    filter: brightness(1.4) blur(0px);
+  }
+  65% {
+    transform: rotateY(9deg) scale(1.07);
+    filter: brightness(1.25);
+  }
+  82% {
+    transform: rotateY(-4deg) scale(1.04);
+    filter: brightness(1.08);
+  }
+  92% {
+    transform: rotateY(1.5deg) scale(1.05);
+  }
+  100% {
+    transform: rotateY(0deg) scale(1.04);
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+
+.shop-mystery-winner-3d-card.shop-mystery-winner-3d-card--celebration-float {
+  animation: shop-mystery-winner-celebrate-loop 3900ms cubic-bezier(0.45, 0, 0.35, 1) infinite alternate;
+}
+
+@keyframes shop-mystery-winner-celebrate-loop {
+  0% {
+    transform: translateY(52px) scale(0.88) rotateX(12deg);
+    opacity: 0;
+    filter: brightness(0.55) blur(6px);
+  }
+  18% {
+    transform: translateY(0) scale(1.05) rotateX(0deg);
+    opacity: 1;
+    filter: brightness(1.05) blur(0);
+  }
+  38% {
+    transform: translateY(-9px) scale(1.07) rotate(-0.7deg);
+  }
+  68% {
+    transform: translateY(9px) scale(1.05) rotate(0.7deg);
+  }
+  100% {
+    transform: translateY(-5px) scale(1.06) rotate(-0.45deg);
+    opacity: 1;
+    filter: brightness(1.12) blur(0);
+  }
+}
+
+/**
+ * Sheen post-flip: striscia bianca che scorre una volta sulla carta
+ * subito dopo l'atterraggio (ritardo calibrato sul termine dell'animazione flip).
+ */
+.shop-mystery-winner-card-sheen {
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 35%,
+    rgba(255, 255, 255, 0.72) 50%,
+    rgba(255, 255, 255, 0.08) 65%,
+    transparent 100%
+  );
+  background-size: 260% 100%;
+  background-position: 200% 0;
+  mix-blend-mode: soft-light;
+  animation: shop-mystery-winner-sheen 560ms ease-out 920ms both;
+}
+
+@keyframes shop-mystery-winner-sheen {
+  from {
+    background-position: 200% 0;
+    opacity: 0.85;
+  }
+  to {
+    background-position: -60% 0;
+    opacity: 0;
+  }
+}
+
+/**
+ * Alone dietro la card (pseudo glow): appare con ritardo per separarlo visivamente
+ * dall'alone grande globale.
+ */
+.shop-mystery-winner-card-halo {
+  position: absolute;
+  inset: -18px;
+  border-radius: 1.4rem;
+  z-index: -1;
+  background: radial-gradient(
+    55% 55% at 50% 50%,
+    var(--winner-glow, rgba(255, 255, 255, 0.5)) 0%,
+    transparent 70%
+  );
+  filter: blur(10px);
+  opacity: 0;
+  animation: shop-mystery-winner-card-halo-in 500ms ease-out 700ms both,
+    shop-mystery-winner-card-halo-pulse 1.8s ease-in-out 1200ms infinite;
+}
+
+@keyframes shop-mystery-winner-card-halo-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.85;
+  }
+}
+
+@keyframes shop-mystery-winner-card-halo-pulse {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-mystery-winner-3d-card {
+    animation: none !important;
+    transform: rotateY(0deg) scale(1.04) !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+  .shop-mystery-winner-3d-card.shop-mystery-winner-3d-card--celebration-float {
+    animation: none !important;
+    transform: translateY(0) scale(1.05) rotateX(0deg) !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+  .shop-mystery-winner-halo,
+  .shop-mystery-winner-card-halo {
+    animation: none !important;
+    opacity: 0.65 !important;
+  }
+  .shop-mystery-winner-card-sheen {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}
+
+/* Particelle reveal (raggera con direzione tramite custom prop). */
+.shop-mystery-arena-particle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--p-size, 6px);
+  height: var(--p-size, 6px);
+  border-radius: 9999px;
+  background: var(--p-color, rgba(255, 255, 255, 0.95));
+  box-shadow: 0 0 10px var(--p-color, rgba(255, 255, 255, 0.95));
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  animation-name: shop-mystery-arena-particle-burst;
+  animation-timing-function: cubic-bezier(0.18, 0.66, 0.2, 1);
+  animation-fill-mode: both;
+}
+
+@keyframes shop-mystery-arena-particle-burst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--p-x)), calc(-50% + var(--p-y))) scale(0.55);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   LEGGENDARIO — Ultra-premium gold reveal experience
+   ───────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Halo ampliato e più intenso per la rarità leggendaria.
+ */
+[data-rarity="leggendario"] .shop-mystery-winner-halo {
+  width: min(82vw, 600px);
+  height: min(82vw, 600px);
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    rgba(251, 191, 36, 0.32) 0%,
+    rgba(253, 224, 71, 0.22) 22%,
+    rgba(245, 158, 11, 0.12) 50%,
+    transparent 70%
+  );
+  animation:
+    shop-mystery-winner-halo-in 700ms ease-out 680ms both,
+    shop-mystery-winner-halo-pulse-gold 1.7s ease-in-out 1400ms infinite;
+}
+
+@keyframes shop-mystery-winner-halo-pulse-gold {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.14);
+  }
+}
+
+/**
+ * Starburst di raggi dorati ruotanti — appare subito dopo la halo.
+ * Usa repeating-conic-gradient per creare 12 raggi sottili a 360°,
+ * mascherato radialmente per sfumare al centro e al bordo.
+ */
+.shop-mystery-winner-gold-crown {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: clamp(420px, 90vw, 620px);
+  height: clamp(420px, 90vw, 620px);
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  pointer-events: none;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    rgba(253, 224, 71, 0.0) 0deg,
+    rgba(253, 224, 71, 0.26) 3.5deg,
+    rgba(254, 240, 138, 0.14) 5deg,
+    rgba(253, 224, 71, 0.0) 7deg,
+    rgba(253, 224, 71, 0.0) 15deg
+  );
+  mask: radial-gradient(
+    ellipse 50% 50% at 50% 50%,
+    transparent 14%,
+    rgba(0, 0, 0, 0.9) 40%,
+    transparent 88%
+  );
+  -webkit-mask: radial-gradient(
+    ellipse 50% 50% at 50% 50%,
+    transparent 14%,
+    rgba(0, 0, 0, 0.9) 40%,
+    transparent 88%
+  );
+  animation:
+    shop-mystery-gold-crown-in 600ms ease-out 650ms both,
+    shop-mystery-gold-crown-spin 22s linear 1250ms infinite,
+    shop-mystery-gold-crown-glow 2.6s ease-in-out 1250ms infinite alternate;
+}
+
+@keyframes shop-mystery-gold-crown-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.6) rotate(-20deg);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+  }
+}
+@keyframes shop-mystery-gold-crown-spin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+@keyframes shop-mystery-gold-crown-glow {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 0.82;
+  }
+}
+
+/**
+ * Gold-foil: shimmer iridescente dorato che scorre sul fronte della card
+ * in loop continuo — effetto olografico premium.
+ */
+.shop-mystery-winner-gold-foil {
+  background: linear-gradient(
+    118deg,
+    transparent 0%,
+    rgba(253, 224, 71, 0.08) 18%,
+    rgba(255, 255, 255, 0.32) 32%,
+    rgba(253, 224, 71, 0.28) 42%,
+    rgba(254, 240, 138, 0.20) 50%,
+    rgba(255, 255, 255, 0.22) 60%,
+    rgba(253, 224, 71, 0.10) 74%,
+    transparent 100%
+  );
+  background-size: 380% 100%;
+  border-radius: inherit;
+  mix-blend-mode: screen;
+  animation: shop-mystery-gold-foil-sweep 2.4s ease-in-out 900ms infinite;
+}
+
+@keyframes shop-mystery-gold-foil-sweep {
+  0% {
+    background-position: 220% 0;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    background-position: -220% 0;
+    opacity: 0;
+  }
+}
+
+/**
+ * Anello sottile dorato che orbita intorno alla card con luce intermittente.
+ */
+.shop-mystery-winner-gold-ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: 1.55rem;
+  border: 1.5px solid rgba(253, 224, 71, 0.55);
+  box-shadow:
+    0 0 18px rgba(251, 191, 36, 0.45),
+    0 0 36px rgba(245, 158, 11, 0.2),
+    inset 0 0 14px rgba(253, 224, 71, 0.12);
+  pointer-events: none;
+  animation:
+    shop-mystery-gold-ring-in 400ms ease-out 720ms both,
+    shop-mystery-gold-ring-pulse 1.9s ease-in-out 1200ms infinite;
+}
+
+@keyframes shop-mystery-gold-ring-in {
+  from {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes shop-mystery-gold-ring-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+    box-shadow:
+      0 0 18px rgba(251, 191, 36, 0.4),
+      0 0 36px rgba(245, 158, 11, 0.18),
+      inset 0 0 12px rgba(253, 224, 71, 0.1);
+  }
+  50% {
+    opacity: 1;
+    box-shadow:
+      0 0 32px rgba(251, 191, 36, 0.75),
+      0 0 64px rgba(245, 158, 11, 0.38),
+      inset 0 0 22px rgba(253, 224, 71, 0.22);
+  }
+}
+
+/**
+ * Card-halo potenziato per il leggendario: tre strati di glow ambrato.
+ */
+[data-rarity="leggendario"] .shop-mystery-winner-card-halo {
+  inset: -26px;
+  box-shadow:
+    0 0 40px 14px rgba(251, 191, 36, 0.55),
+    0 0 80px 30px rgba(245, 158, 11, 0.28),
+    0 0 130px 55px rgba(253, 224, 71, 0.12);
+  animation:
+    shop-mystery-winner-card-halo-in 500ms ease-out 700ms both,
+    shop-mystery-winner-card-halo-pulse-gold 1.6s ease-in-out 1200ms infinite;
+}
+
+@keyframes shop-mystery-winner-card-halo-pulse-gold {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/**
+ * Particelle leggendarie: leggermente più brillanti con un secondo alone.
+ */
+.shop-mystery-arena-particle--legendary {
+  border-radius: 3px;
+  box-shadow:
+    0 0 10px var(--p-color, rgba(255, 255, 255, 0.95)),
+    0 0 22px var(--p-color, rgba(255, 255, 255, 0.95));
+}
+
+/**
+ * Badge rarità "LEGGENDARIO" con shimmer pulsante.
+ */
+.shop-mystery-legendary-badge {
+  background: linear-gradient(
+    135deg,
+    rgba(251, 191, 36, 0.22) 0%,
+    rgba(253, 224, 71, 0.16) 100%
+  );
+  border-color: rgba(251, 191, 36, 0.72);
+  color: #fef08a;
+  animation: shop-mystery-legendary-badge-pulse 2.8s ease-in-out infinite;
+  box-shadow:
+    0 0 14px rgba(251, 191, 36, 0.45),
+    inset 0 0 6px rgba(253, 224, 71, 0.55);
+}
+
+@keyframes shop-mystery-legendary-badge-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 10px rgba(251, 191, 36, 0.35),
+      inset 0 0 4px rgba(253, 224, 71, 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 26px rgba(251, 191, 36, 0.72),
+      inset 0 0 10px rgba(253, 224, 71, 0.82);
+  }
+}
+
+/**
+ * Titolo con gradiente aureo animato che scorre — effetto oro lucido.
+ */
+.shop-mystery-legendary-title {
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  background: linear-gradient(
+    128deg,
+    #fef9c3 0%,
+    #fbbf24 20%,
+    #fef08a 40%,
+    #f59e0b 60%,
+    #fde68a 80%,
+    #fef9c3 100%
+  );
+  background-size: 220% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 14px rgba(253, 224, 71, 0.52));
+  animation: shop-mystery-legendary-title-shine 3s ease-in-out infinite;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+@keyframes shop-mystery-legendary-title-shine {
+  0%,
+  100% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
+}
+
+/* ─── prefers-reduced-motion: disabilita tutte le nuove animazioni ─────── */
+@media (prefers-reduced-motion: reduce) {
+  .shop-mystery-winner-gold-crown,
+  .shop-mystery-winner-gold-foil,
+  .shop-mystery-winner-gold-ring,
+  .shop-mystery-legendary-badge,
+  .shop-mystery-legendary-title,
+  .shop-mystery-arena-particle--legendary {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+  .shop-mystery-legendary-title {
+    background-position: 0% center;
+    filter: none;
+    -webkit-text-fill-color: #fbbf24;
+  }
+}
+
+/* CTA finali. */
+/* Claim finale — pulsante jackpot */
+.shop-mystery-unboxing-btn--claim {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  min-width: min(284px, 88vw);
+  padding: 0.95rem 2.85rem;
+  border-radius: 9999px;
+  font-weight: 800;
+  letter-spacing: 0.52em;
+  text-indent: 0.52em;
+  text-transform: uppercase;
+  font-size: clamp(0.68rem, 3.8vw, 0.92rem);
+  color: rgba(12, 6, 0, 1);
+  background:
+    radial-gradient(circle at 30% -10%, rgba(255, 255, 255, 0.9) 0%, transparent 45%),
+    linear-gradient(
+      180deg,
+      #fffce8 0%,
+      #fde68a 28%,
+      #fbbf24 58%,
+      #b45309 100%
+    );
+  border: 1px solid rgba(251, 191, 36, 0.85);
+  box-shadow:
+    0 12px 50px rgba(251, 191, 36, 0.38),
+    0 0 0 1px rgba(255, 255, 255, 0.22) inset,
+    0 2px 0 rgba(254, 252, 232, 0.9) inset;
+  transition:
+    transform 180ms cubic-bezier(0.18, 0.88, 0.24, 1),
+    box-shadow 260ms cubic-bezier(0.18, 0.88, 0.24, 1);
+}
+
+.shop-mystery-unboxing-btn--claim:hover {
+  box-shadow:
+    0 16px 64px rgba(251, 191, 36, 0.5),
+    0 0 0 1px rgba(254, 240, 138, 0.35) inset,
+    0 2px 0 rgba(255, 252, 240, 0.95) inset;
+  transform: translateY(-2px);
+}
+
+.shop-mystery-unboxing-btn--claim:active {
+  transform: translateY(0px) scale(0.985);
+}
+
+.shop-mystery-unboxing-btn--claim::before {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  background: linear-gradient(
+    105deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 56%
+  );
+  transform: translateX(-140%) skewX(-12deg);
+  animation: shop-mystery-btn-claim-sheen 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes shop-mystery-btn-claim-sheen {
+  15% {
+    transform: translateX(-120%) skewX(-12deg);
+    opacity: 0;
+  }
+  38% {
+    opacity: 0.92;
+    transform: translateX(120%) skewX(-12deg);
+  }
+  41% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.shop-mystery-unboxing-btn {
+  position: relative;
+  overflow: hidden;
+  border-radius: 9999px;
+  padding: 0.85rem 1.6rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  transition: transform 180ms ease-out, box-shadow 220ms ease-out;
+}
+.shop-mystery-unboxing-btn:active {
+  transform: scale(0.98);
+}
+.shop-mystery-unboxing-btn--primary {
+  color: #07101a;
+  background: linear-gradient(180deg, #ffffff 0%, #d8e6ee 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 18px 38px -18px rgba(255, 255, 255, 0.45);
+}
+.shop-mystery-unboxing-btn--primary:hover {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 22px 50px -18px rgba(255, 255, 255, 0.65);
+}
+.shop-mystery-unboxing-btn--ghost {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.shop-mystery-unboxing-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-mystery-unboxing-overlay,
+  .shop-mystery-unboxing-backdrop,
+  .shop-mystery-unboxing-cinema-bars::before,
+  .shop-mystery-unboxing-cinema-bars::after,
+  .shop-mystery-unboxing-arena-spotlight,
+  .shop-mystery-unboxing-arena-indicator,
+  .shop-mystery-arena-card,
+  .shop-mystery-arena-particle,
+  .shop-mystery-unboxing-header,
+  .shop-mystery-unboxing-footer {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/**
  * Card epiche / leggendarie — fascio scansione + pulse (rail mystery shop).
  */
 @keyframes shop-mystery-rail-premium-scan-move {
@@ -239,6 +2294,83 @@
 
 @media (prefers-reduced-motion: reduce) {
   .shop-mystery-prize-track {
+    animation: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   Mystery Unboxing Overlay
+   ═══════════════════════════════════════════════ */
+
+.unboxing-overlay-opening { animation: unboxing-bg-in 0.35s ease-out both; }
+.unboxing-overlay-closing { animation: unboxing-bg-out 0.35s ease-in forwards; }
+
+@keyframes unboxing-bg-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes unboxing-bg-out { from { opacity: 1; } to { opacity: 0; } }
+
+.unboxing-curtain-l { animation: unboxing-curtain-left  1.15s cubic-bezier(0.76,0,0.24,1) 0.25s both; }
+.unboxing-curtain-r { animation: unboxing-curtain-right 1.15s cubic-bezier(0.76,0,0.24,1) 0.25s both; }
+
+@keyframes unboxing-curtain-left  {
+  0%   { transform: translateX(0); }
+  85%  { transform: translateX(-108%); }
+  100% { transform: translateX(-100%); }
+}
+@keyframes unboxing-curtain-right {
+  0%   { transform: translateX(0); }
+  85%  { transform: translateX(108%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes unboxing-content-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Preview auto-scroll (during "ready" phase, before spin) */
+@keyframes unboxing-preview-scroll {
+  from { transform: translateX(var(--ubx-from, 0px)); }
+  to   { transform: translateX(var(--ubx-to, -4000px)); }
+}
+
+.unboxing-pointer { animation: unboxing-pointer-pulse 1.8s ease-in-out infinite; }
+@keyframes unboxing-pointer-pulse {
+  0%, 100% { opacity: 0.55; }
+  50%       { opacity: 1; }
+}
+
+.unboxing-swipe-hint { animation: unboxing-hint-fade 2s ease-in-out infinite; }
+@keyframes unboxing-hint-fade {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 0.7; }
+}
+
+@keyframes unboxing-winner-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.24) rotate(-1.5deg); }
+  68%  { transform: scale(1.16) rotate(0.8deg); }
+  100% { transform: scale(1.15); }
+}
+
+@keyframes unboxing-winner-glow {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50%       { filter: brightness(1.2) saturate(1.12); }
+}
+
+@keyframes unboxing-winner-burst {
+  0%, 100% { transform: scale(0.82); opacity: 0.5; }
+  50%       { transform: scale(1.18); opacity: 1; }
+}
+
+@keyframes unboxing-result-in {
+  from { opacity: 0; transform: scale(0.82) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .unboxing-overlay-opening, .unboxing-overlay-closing,
+  .unboxing-curtain-l, .unboxing-curtain-r,
+  .unboxing-pointer, .unboxing-swipe-hint {
     animation: none !important;
   }
 }
@@ -6922,6 +9054,215 @@ html[data-auth-intercept-modal] .auth-page-suppress-when-modal-open {
   white-space: normal;
   font-size: clamp(10px, 2.4vw, 13px);
   letter-spacing: 0.07em;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SHOP TIER BUY BUTTON — compatto, stile "Crea account", colori tier.
+   Usato nell'header di sezione sulla stessa riga del nome della box.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.shop-tier-buy-btn {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 999px;
+  font-family: var(--font-kalshi-title), Oswald, system-ui, sans-serif;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 650;
+  font-size: clamp(11px, 2.6vw, 13px);
+  letter-spacing: 0.07em;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 1.05rem;
+  white-space: nowrap;
+  transition:
+    transform 0.32s cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 0.28s ease;
+  will-change: transform;
+}
+
+/* Inner ring */
+.shop-tier-buy-btn::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Scan sheen sweep */
+.shop-tier-buy-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  z-index: 0;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.13) 46%,
+    rgba(255, 255, 255, 0.22) 50%,
+    rgba(255, 255, 255, 0.12) 54%,
+    transparent 78%
+  );
+  mix-blend-mode: overlay;
+  animation: shop-tier-buy-btn-scan 5.2s cubic-bezier(0.35, 0, 0.25, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes shop-tier-buy-btn-scan {
+  0% {
+    transform: translateX(-140%) skewX(-16deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.7;
+  }
+  65% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateX(320%) skewX(-16deg);
+    opacity: 0;
+  }
+}
+
+.shop-tier-buy-btn:hover {
+  transform: translateY(-1.5px) scale(1.02);
+}
+.shop-tier-buy-btn:active {
+  transform: scale(0.975);
+}
+
+/* ── BRONZE ─────────────────────────────────────────────────────────────── */
+.shop-tier-buy-btn--bronze {
+  border: 1px solid rgba(217, 119, 6, 0.88);
+  background: radial-gradient(
+    ellipse 110% 110% at 50% 48%,
+    rgba(28, 12, 2, 0.94) 0%,
+    rgba(20, 9, 1, 0.80) 42%,
+    rgba(180, 83, 9, 0.20) 100%
+  );
+  animation: shop-tier-buy-btn-bronze-pulse 3.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.shop-tier-buy-btn--bronze::after {
+  border-color: rgba(251, 146, 60, 0.18);
+}
+.shop-tier-buy-btn--bronze:hover {
+  border-color: rgba(251, 146, 60, 0.95);
+}
+@keyframes shop-tier-buy-btn-bronze-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 10px -4px rgba(217, 119, 6, 0.32),
+      0 0 22px -8px rgba(180, 83, 9, 0.14),
+      0 3px 14px -7px rgba(0, 0, 0, 0.5),
+      inset 0 0 6px rgba(217, 119, 6, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    border-color: rgba(217, 119, 6, 0.78);
+  }
+  50% {
+    box-shadow:
+      0 0 18px -3px rgba(251, 146, 60, 0.52),
+      0 0 40px -6px rgba(217, 119, 6, 0.26),
+      0 3px 14px -7px rgba(0, 0, 0, 0.5),
+      inset 0 0 10px rgba(217, 119, 6, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border-color: rgba(251, 146, 60, 0.9);
+  }
+}
+
+/* ── SILVER ─────────────────────────────────────────────────────────────── */
+.shop-tier-buy-btn--silver {
+  border: 1px solid rgba(148, 163, 184, 0.88);
+  background: radial-gradient(
+    ellipse 110% 110% at 50% 48%,
+    rgba(10, 12, 16, 0.94) 0%,
+    rgba(6, 8, 12, 0.80) 42%,
+    rgba(100, 116, 139, 0.20) 100%
+  );
+  animation: shop-tier-buy-btn-silver-pulse 3.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.shop-tier-buy-btn--silver::after {
+  border-color: rgba(203, 213, 225, 0.18);
+}
+.shop-tier-buy-btn--silver:hover {
+  border-color: rgba(226, 232, 240, 0.95);
+}
+@keyframes shop-tier-buy-btn-silver-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 10px -4px rgba(148, 163, 184, 0.3),
+      0 0 22px -8px rgba(100, 116, 139, 0.12),
+      0 3px 14px -7px rgba(0, 0, 0, 0.55),
+      inset 0 0 6px rgba(148, 163, 184, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    border-color: rgba(148, 163, 184, 0.72);
+  }
+  50% {
+    box-shadow:
+      0 0 18px -3px rgba(203, 213, 225, 0.55),
+      0 0 40px -6px rgba(148, 163, 184, 0.26),
+      0 3px 14px -7px rgba(0, 0, 0, 0.55),
+      inset 0 0 10px rgba(148, 163, 184, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    border-color: rgba(226, 232, 240, 0.9);
+  }
+}
+
+/* ── GOLD ────────────────────────────────────────────────────────────────── */
+.shop-tier-buy-btn--gold {
+  border: 1px solid rgba(251, 191, 36, 0.92);
+  background: radial-gradient(
+    ellipse 110% 110% at 50% 48%,
+    rgba(22, 10, 1, 0.94) 0%,
+    rgba(16, 7, 1, 0.80) 42%,
+    rgba(217, 119, 6, 0.26) 100%
+  );
+  animation: shop-tier-buy-btn-gold-pulse 3.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.shop-tier-buy-btn--gold::after {
+  border-color: rgba(253, 224, 71, 0.22);
+}
+.shop-tier-buy-btn--gold:hover {
+  border-color: rgba(253, 224, 71, 0.98);
+}
+@keyframes shop-tier-buy-btn-gold-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 12px -4px rgba(251, 191, 36, 0.4),
+      0 0 28px -8px rgba(217, 119, 6, 0.18),
+      0 3px 14px -7px rgba(0, 0, 0, 0.55),
+      inset 0 0 7px rgba(251, 191, 36, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    border-color: rgba(251, 191, 36, 0.75);
+  }
+  50% {
+    box-shadow:
+      0 0 22px -3px rgba(253, 224, 71, 0.68),
+      0 0 50px -6px rgba(245, 158, 11, 0.34),
+      0 3px 14px -7px rgba(0, 0, 0, 0.55),
+      inset 0 0 14px rgba(251, 191, 36, 0.24),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    border-color: rgba(253, 224, 71, 0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-tier-buy-btn,
+  .shop-tier-buy-btn::before {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @keyframes signup-check-pop {

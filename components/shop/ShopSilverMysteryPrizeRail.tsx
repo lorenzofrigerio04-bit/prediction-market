@@ -141,7 +141,7 @@ export default function ShopSilverMysteryPrizeRail() {
 
       <div className="relative py-3.5 sm:py-4">
         <div
-          className="shop-mystery-marquee-scrollport relative isolate overflow-hidden"
+          className="shop-mystery-marquee-scrollport shop-mystery-stage shop-mystery-stage--silver relative isolate overflow-hidden"
           style={newsRailEdgeMaskStyle}
         >
           <div

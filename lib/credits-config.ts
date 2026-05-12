@@ -65,6 +65,8 @@ export const CREDIT_TRANSACTION_TYPES = {
   SIMULATED_TOPUP: "SIMULATED_TOPUP",
   /** Acquisto da shop (spesa crediti) */
   SHOP_PURCHASE: "SHOP_PURCHASE",
+  /** Acquisto crediti con denaro reale (Stripe) */
+  CREDIT_PURCHASE: "CREDIT_PURCHASE",
 } as const;
 
 export type CreditTransactionType =
