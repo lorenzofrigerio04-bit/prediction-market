@@ -22,11 +22,11 @@ const RAIL_FALLBACK_CHROME: Record<ProbabilityRailAccent, { border: string; glow
 
 /** Allineato ai colori posizione `RANK_CONFIGS` in Top24h (tutte le posizioni ultra premium). */
 const TOP5_RANK_CHROME: Record<Top5Rank, { border: string; glow: string }> = {
-  1: { border: "rgba(110, 231, 213, 0.62)", glow: "rgba(10, 186, 181, 0.32)" },
-  2: { border: "rgba(236, 242, 255, 0.58)", glow: "rgba(210, 225, 255, 0.30)" },
-  3: { border: "rgba(235, 165, 105, 0.58)", glow: "rgba(205, 127, 50, 0.30)" },
-  4: { border: "rgba(228, 234, 245, 0.48)", glow: "rgba(200, 215, 235, 0.22)" },
-  5: { border: "rgba(210, 220, 235, 0.40)", glow: "rgba(185, 200, 220, 0.18)" },
+  1: { border: "rgba(110, 231, 213, 0.53)", glow: "rgba(10, 186, 181, 0.19)" },
+  2: { border: "rgba(236, 242, 255, 0.49)", glow: "rgba(210, 225, 255, 0.18)" },
+  3: { border: "rgba(235, 165, 105, 0.49)", glow: "rgba(205, 127, 50, 0.18)" },
+  4: { border: "rgba(228, 234, 245, 0.42)", glow: "rgba(200, 215, 235, 0.14)" },
+  5: { border: "rgba(210, 220, 235, 0.35)", glow: "rgba(185, 200, 220, 0.11)" },
 };
 
 /** Bordo / glow per riquadri % nelle tile (stessa logica della sezione). */
@@ -100,7 +100,7 @@ export function ProbabilityBadge({
           sz.text,
         ].join(" ")}
         style={{
-          textShadow: "0 1px 12px rgba(0,0,0,0.92), 0 0 1px rgba(0,0,0,0.95)",
+          textShadow: "0 1px 7px rgba(0,0,0,0.8), 0 0 1px rgba(0,0,0,0.95)",
         }}
       >
         {pct}%

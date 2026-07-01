@@ -13,7 +13,7 @@ export default function EventDetailHeader() {
   return (
     <>
       <header
-        className="fixed top-0 left-0 right-0 z-40 bg-[rgb(var(--admin-bg))]"
+        className="fixed top-0 left-0 right-0 z-40 event-detail-header-glass"
         style={{ paddingTop: "var(--safe-area-inset-top)" }}
       >
         <div className="mx-auto px-4 max-w-4xl">

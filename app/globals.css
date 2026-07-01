@@ -40,6 +40,34 @@
 }
 
 /**
+ * Rail mercati homepage — scorrimento automatico lento e ultra-fluido.
+ * Traccia duplicata: --rail-marquee-dx = -metà larghezza (una sequenza),
+ * --rail-marquee-dur calcolata in JS per una velocità costante e lenta.
+ */
+@keyframes home-rail-marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(var(--rail-marquee-dx, 0px), 0, 0);
+  }
+}
+
+.home-rail-marquee-track.is-armed {
+  animation: home-rail-marquee var(--rail-marquee-dur, 80s) linear infinite;
+}
+
+/* Top 5 — numero classifica leggermente più grande da desktop (lg+). */
+.top5-rank-num {
+  font-size: var(--rank-fs);
+}
+@media (min-width: 1024px) {
+  .top5-rank-num {
+    font-size: var(--rank-fs-lg, var(--rank-fs));
+  }
+}
+
+/**
  * Mystery box prize rails (bronze + silver): loop identico al ticker news ma con
  * keyframe dedicato (translate3d + Z minimo) e contain/paint sullo scrollport per
  * compositing stabile — stesso feeling “ultra fluido” su entrambe le tier.
@@ -2259,6 +2287,10 @@
     animation: none !important;
   }
 
+  .home-rail-marquee-track.is-armed {
+    animation: none !important;
+  }
+
   .shop-mystery-rail-premium-scan,
   .shop-mystery-rail-premium-flash,
   .shop-mystery-rail-premium-shell {
@@ -2933,12 +2965,168 @@ textarea:focus-visible {
   }
 }
 
-/* Sfondo globale unificato: admin-bg su tutta la piattaforma, nessuna foto */
+/* ════════════════════════════════════════════════════════════════════════
+   SFONDO PIATTAFORMA — "Deep Oracle"
+   Una distesa calma di blu-notte profondo su cui galleggia tutta la
+   piattaforma. Pensata per essere "vissuta" a lungo: lenta, che respira,
+   basso contrasto, mai tremolante. Strati (dietro→avanti): base obsidiana-
+   navy · colonna di luce dall'alto · due aurore di brand controderivanti
+   (ciano "preveggenza" + dualità SI/NO sussurrata negli angoli bassi) ·
+   raggio di luce che respira · bagliore d'orizzonte · due strati di stelle
+   in parallasse · grana fine anti-banding · vignetta di messa a fuoco.
+   Sta a z-index:-3, dietro a tutto il contenuto.
+   ════════════════════════════════════════════════════════════════════════ */
 .app-background-unified {
   position: fixed;
   inset: 0;
   z-index: -3;
-  background: rgb(var(--admin-bg));
+  overflow: hidden;
+  pointer-events: none;
+  background: rgb(var(--admin-bg)); /* fallback finché gli strati non dipingono */
+}
+.pm-bg {
+  position: absolute;
+  inset: -12%;
+  pointer-events: none;
+}
+
+/* Tela obsidiana-navy: una morbida colonna di luce scende da appena sopra la
+   fold così l'area di lavoro appare tridimensionale e premium, sfumando nel
+   quasi-nero ai bordi. Perfettamente uniforme — niente cuciture, niente banding. */
+.pm-bg-base {
+  background:
+    radial-gradient(130% 100% at 50% -10%,
+      #122145 0%, #0c1733 26%, #080f23 50%, #060a17 74%, #04060e 100%);
+}
+
+/* Aurora della preveggenza — un alone ciano freddo dietro al contenuto (la
+   "luce che scende") più una pozza zaffiro. Sfocata pesantemente e lentissima:
+   dà vita al buio e senso del luogo senza mai rubare l'attenzione. */
+.pm-bg-aurora {
+  background:
+    radial-gradient(48% 40% at 50% -2%,  rgba(80, 245, 252, 0.060) 0%, transparent 64%),
+    radial-gradient(50% 50% at 84% 96%,  rgba(56, 228, 238, 0.040) 0%, transparent 62%),
+    radial-gradient(46% 48% at 14% 100%, rgba(70, 130, 240, 0.038) 0%, transparent 62%);
+  filter: blur(92px);
+  opacity: 0.9;
+  will-change: transform;
+  animation: pmAurora 64s ease-in-out infinite alternate;
+}
+
+/* Seconda aurora più profonda che controderiva — sussurra la dualità SI/NO del
+   mercato: una pozza teal su un fianco, una corallo sull'altro, più un velo
+   navy di brand al centro. Così tenue da sentirsi come calore/freddo, mai
+   come colore. */
+.pm-bg-aurora2 {
+  background:
+    radial-gradient(40% 42% at 78% 18%, rgba(45, 212, 191, 0.030) 0%, transparent 60%),
+    radial-gradient(42% 44% at 20% 24%, rgba(248, 113, 133, 0.024) 0%, transparent 60%),
+    radial-gradient(62% 52% at 50% 58%, rgba(0, 27, 81, 0.34) 0%, transparent 72%);
+  filter: blur(100px);
+  opacity: 0.8;
+  will-change: transform;
+  animation: pmAurora2 86s ease-in-out infinite alternate;
+}
+
+/* Raggio di luce — una sottile colonna verticale dall'alto-centro che respira
+   in modo quasi impercettibile. Il segnale premium della "luce che discende". */
+.pm-bg-beam {
+  background: radial-gradient(26% 70% at 50% -6%, rgba(128, 250, 255, 0.05) 0%, transparent 60%);
+  filter: blur(30px);
+  mix-blend-mode: screen;
+  opacity: 0.7;
+  will-change: opacity, transform;
+  animation: pmBeam 18s ease-in-out infinite alternate;
+}
+
+/* Campo stellare lontano — rado, nitido, intenzionale (il "cielo del mercato").
+   Una tile molto grande fa sì che il pattern non si ripeta mai visibilmente;
+   la bassa opacità lo tiene come sussurro di profondità, non texture. */
+.pm-bg-stars {
+  background-image:
+    radial-gradient(1.3px 1.3px at 14% 21%, rgba(206, 242, 255, 0.85), transparent),
+    radial-gradient(1px 1px     at 63% 13%, rgba(206, 242, 255, 0.50), transparent),
+    radial-gradient(1.4px 1.4px at 83% 57%, rgba(255, 255, 255, 0.78), transparent),
+    radial-gradient(1px 1px     at 33% 69%, rgba(206, 242, 255, 0.46), transparent),
+    radial-gradient(1.1px 1.1px at 51% 37%, rgba(255, 255, 255, 0.42), transparent),
+    radial-gradient(1px 1px     at 90% 30%, rgba(206, 242, 255, 0.50), transparent),
+    radial-gradient(1.2px 1.2px at 71% 46%, rgba(255, 255, 255, 0.40), transparent);
+  background-repeat: repeat;
+  background-size: 1320px 1320px;
+  opacity: 0.34;
+  will-change: background-position;
+  animation: pmStar 240s linear infinite, pmTwinkle 9s ease-in-out infinite alternate;
+}
+
+/* Strato stellare vicino — pochi punti più luminosi che derivano un filo più
+   veloci → delicata profondità in parallasse. Egualmente rado, tile più grande. */
+.pm-bg-stars2 {
+  background-image:
+    radial-gradient(1.7px 1.7px at 21% 15%, rgba(255, 255, 255, 0.90), transparent),
+    radial-gradient(1.5px 1.5px at 69% 35%, rgba(128, 250, 255, 0.66), transparent),
+    radial-gradient(1.8px 1.8px at 47% 78%, rgba(255, 255, 255, 0.80), transparent),
+    radial-gradient(1.4px 1.4px at 87% 84%, rgba(128, 250, 255, 0.56), transparent),
+    radial-gradient(1.5px 1.5px at 9% 60%,  rgba(255, 255, 255, 0.60), transparent);
+  background-repeat: repeat;
+  background-size: 1000px 1000px;
+  opacity: 0.42;
+  will-change: background-position;
+  animation: pmStar2 165s linear infinite, pmTwinkle2 13s ease-in-out infinite alternate;
+}
+
+/* Bagliore d'orizzonte — una morbida fascia di luce che sale dal bordo basso:
+   "il limite del noto", l'alba sul futuro. Ancora la composizione. */
+.pm-bg-horizon {
+  background: radial-gradient(120% 46% at 50% 116%,
+    rgba(56, 228, 238, 0.07) 0%, rgba(0, 27, 81, 0.10) 38%, transparent 70%);
+  opacity: 0.85;
+}
+
+/* Grana fine — uccide il banding, aggiunge texture tattile. */
+.pm-bg-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  mix-blend-mode: overlay;
+}
+
+/* Vignetta di messa a fuoco — scurisce dolcemente i bordi lontani così
+   l'occhio si posa sul contenuto al centro. Morbida, senza bordi netti. */
+.pm-bg-vignette {
+  background: radial-gradient(ellipse 112% 100% at 50% 32%, transparent 46%, rgba(2, 4, 10, 0.62) 100%);
+}
+
+@keyframes pmAurora {
+  0%   { transform: translate3d(0, 0, 0)         scale(1);    }
+  50%  { transform: translate3d(2%, -1.6%, 0)    scale(1.07); }
+  100% { transform: translate3d(-1.8%, 2%, 0)    scale(1.03); }
+}
+@keyframes pmAurora2 {
+  0%   { transform: translate3d(0, 0, 0)         scale(1.04); }
+  50%  { transform: translate3d(-2.4%, 1.8%, 0)  scale(1.10); }
+  100% { transform: translate3d(1.8%, -2%, 0)    scale(1.02); }
+}
+@keyframes pmBeam {
+  0%   { opacity: 0.5;  transform: translateY(0)     scaleX(1);    }
+  100% { opacity: 0.85; transform: translateY(1.5%)  scaleX(1.08); }
+}
+@keyframes pmTwinkle  { 0% { opacity: 0.24; } 100% { opacity: 0.36; } }
+@keyframes pmTwinkle2 { 0% { opacity: 0.30; } 100% { opacity: 0.46; } }
+/* deriva esattamente di una tile → il loop combacia perfetto, nessun salto */
+@keyframes pmStar  { from { background-position: 0 0; } to { background-position: -1320px -1320px; } }
+@keyframes pmStar2 { from { background-position: 0 0; } to { background-position: -1000px -1000px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-bg-aurora, .pm-bg-aurora2, .pm-bg-beam, .pm-bg-stars, .pm-bg-stars2 {
+    animation: none !important;
+  }
+}
+
+/* Mobile: alleggerisce le sfocature più pesanti così le sessioni lunghe
+   restano gentili con la batteria. */
+@media (max-width: 768px) {
+  .pm-bg-aurora  { filter: blur(64px); }
+  .pm-bg-aurora2 { filter: blur(70px); }
+  .pm-bg-beam    { display: none; }
 }
 
 /* Contenuto pagine trasparente per far vedere lo sfondo unificato */
@@ -6129,30 +6317,67 @@ textarea:focus-visible {
 /* —— Header: fuso allo sfondo (niente bordi né hairline inset) —— */
 .header-neon {
   background:
-    linear-gradient(180deg, rgb(var(--admin-bg) / 0.96) 0%, rgb(var(--admin-bg) / 0.92) 100%) !important;
-  backdrop-filter: blur(18px) saturate(1.16);
-  -webkit-backdrop-filter: blur(18px) saturate(1.16);
+    linear-gradient(180deg, rgb(186 226 255 / 0.055) 0%, rgb(186 226 255 / 0) 32%),
+    radial-gradient(118% 150% at 50% -42%, rgb(80 245 252 / 0.06) 0%, rgb(80 245 252 / 0.026) 26%, rgb(80 245 252 / 0) 58%),
+    linear-gradient(180deg, rgb(11 23 48 / 0.84) 0%, rgb(10 20 44 / 0.72) 50%, rgb(9 17 38 / 0.56) 100%) !important;
+  backdrop-filter: blur(20px) saturate(1.18);
+  -webkit-backdrop-filter: blur(20px) saturate(1.18);
   border-bottom: none !important;
-  box-shadow: 0 18px 42px -34px rgb(0 0 0 / 0.75);
+  box-shadow:
+    0 1px 0 0 rgb(190 232 255 / 0.07) inset,
+    0 18px 42px -34px rgb(2 6 18 / 0.80);
 }
 .dark .header-neon {
   background:
-    linear-gradient(180deg, rgb(var(--admin-bg) / 0.98) 0%, rgb(var(--admin-bg) / 0.94) 100%) !important;
+    linear-gradient(180deg, rgb(186 226 255 / 0.06) 0%, rgb(186 226 255 / 0) 32%),
+    radial-gradient(118% 150% at 50% -42%, rgb(80 245 252 / 0.07) 0%, rgb(80 245 252 / 0.03) 26%, rgb(80 245 252 / 0) 58%),
+    linear-gradient(180deg, rgb(11 23 48 / 0.88) 0%, rgb(10 20 44 / 0.76) 50%, rgb(9 17 38 / 0.60) 100%) !important;
   border-bottom: none !important;
 }
 /* Header in scroll */
 .header-neon.header-neon-scrolled {
   background:
-    linear-gradient(180deg, rgb(var(--admin-bg) / 0.99) 0%, rgb(var(--admin-bg) / 0.95) 100%) !important;
-  backdrop-filter: blur(24px) saturate(1.2);
-  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+    linear-gradient(180deg, rgb(186 226 255 / 0.06) 0%, rgb(186 226 255 / 0) 30%),
+    radial-gradient(110% 140% at 50% -38%, rgb(80 245 252 / 0.07) 0%, rgb(80 245 252 / 0.03) 24%, rgb(80 245 252 / 0) 56%),
+    linear-gradient(180deg, rgb(11 23 48 / 0.92) 0%, rgb(10 20 44 / 0.84) 50%, rgb(9 17 38 / 0.72) 100%) !important;
+  backdrop-filter: blur(26px) saturate(1.22);
+  -webkit-backdrop-filter: blur(26px) saturate(1.22);
   border-bottom: none !important;
-  box-shadow: 0 22px 48px -34px rgb(0 0 0 / 0.82);
+  box-shadow:
+    0 1px 0 0 rgb(190 232 255 / 0.09) inset,
+    0 22px 48px -34px rgb(2 6 18 / 0.86);
 }
 .dark .header-neon.header-neon-scrolled {
   background:
-    linear-gradient(180deg, rgb(var(--admin-bg) / 0.99) 0%, rgb(var(--admin-bg) / 0.96) 100%) !important;
+    linear-gradient(180deg, rgb(186 226 255 / 0.07) 0%, rgb(186 226 255 / 0) 30%),
+    radial-gradient(110% 140% at 50% -38%, rgb(80 245 252 / 0.075) 0%, rgb(80 245 252 / 0.032) 24%, rgb(80 245 252 / 0) 56%),
+    linear-gradient(180deg, rgb(11 23 48 / 0.95) 0%, rgb(10 20 44 / 0.88) 50%, rgb(9 17 38 / 0.76) 100%) !important;
   border-bottom: none !important;
+}
+
+/* Single fused baseline hairline under the whole header: a whisper of cyan that
+   fades to transparent at BOTH ends — never a hard divider. .header-neon is
+   position:fixed, a valid containing block for this absolutely-positioned ::after. */
+.header-neon::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    rgb(80 245 252 / 0) 0%,
+    rgb(80 245 252 / 0.08) 28%,
+    rgb(128 250 255 / 0.12) 50%,
+    rgb(80 245 252 / 0.08) 72%,
+    rgb(80 245 252 / 0) 100%);
+}
+/* Keep the cosmos cyan whisper OFF the out-of-scope page-variant headers
+   (near-black landing header over photos; flat opaque consigliati header). */
+.landing-page .header-neon::after,
+body.discover-consigliati-active .header-neon::after {
+  display: none;
 }
 
 /* Override varianti pagina: nessun bordo sull’header */
@@ -6167,10 +6392,13 @@ body.discover-consigliati-active .header-neon {
 
 /* Strip categorie: continuità visiva senza separatori netti */
 .market-categories-strip {
+  position: relative;
   border-bottom: none;
-  background: rgb(5 10 22 / 0.42);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background:
+    linear-gradient(180deg, rgb(8 16 36 / 0.62) 0%, rgb(7 13 30 / 0.72) 100%);
+  backdrop-filter: blur(14px) saturate(1.16);
+  -webkit-backdrop-filter: blur(14px) saturate(1.16);
+  box-shadow: 0 1px 0 0 rgb(180 226 255 / 0.045) inset;
 }
 
 /* Bottom nav: pill floating stile Safari */
@@ -6616,10 +6844,10 @@ body.discover-consigliati-active .header-neon {
   border-bottom: none;
 }
 body.discover-consigliati-active .nav-bottom-neon .nav-bottom-neon-inner::before {
-  background: rgb(var(--admin-bg));
-  border: none;
-  border-top: 1px solid rgb(255 255 255 / 0.06);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 4px 20px rgba(0, 0, 0, 0.5);
+  background: rgb(var(--admin-bg)) !important;
+  border: none !important;
+  border-top: 1px solid rgb(255 255 255 / 0.06) !important;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 4px 20px rgba(0, 0, 0, 0.5) !important;
 }
 body.discover-consigliati-active .nav-bottom-neon a {
   background: transparent !important;
@@ -7384,12 +7612,45 @@ body.discover-consigliati-active {
   border-radius: var(--radius-lg);
 }
 
-/* Event detail: variante "Kalshi dark" adattata a palette tiffany */
+/* Dettaglio mercato — INFUSO nello sfondo "Deep Oracle".
+   Niente lastra opaca: il contenuto galleggia sull'ambiente blu-notte. Una
+   soffice colonna di luce ancorata dietro la colonna di lettura tiene il testo
+   nitido e mette a fuoco l'occhio, senza mai disegnare una "scatola". */
 .event-detail-kalshi-theme {
-  background: rgb(var(--admin-bg));
+  background: transparent;
 }
 .event-detail-kalshi-theme .event-detail-page-main {
-  background: rgb(var(--admin-bg));
+  background: transparent;
+  position: relative;
+  z-index: 1;
+}
+/* Spotlight di lettura: alone navy morbido che si fonde nei bordi → leggibilità
+   premium su sfondo vivo, senza contorni netti. */
+.event-detail-kalshi-theme .event-detail-page-main::before {
+  content: "";
+  position: absolute;
+  inset: -6% -20% 12% -20%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    115% 56% at 50% 0%,
+    rgba(11, 26, 58, 0.55) 0%,
+    rgba(7, 14, 32, 0.30) 44%,
+    transparent 78%
+  );
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 56%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 56%, transparent 100%);
+}
+/* Ingresso scenico: i blocchi salgono e svaniscono in dolce cascata. */
+@media (prefers-reduced-motion: no-preference) {
+  .event-detail-kalshi-theme .event-detail-page-main > * {
+    animation: in-fade-up 0.55s var(--ease-out) both;
+  }
+  .event-detail-kalshi-theme .event-detail-page-main > *:nth-child(2) { animation-delay: 0.05s; }
+  .event-detail-kalshi-theme .event-detail-page-main > *:nth-child(3) { animation-delay: 0.10s; }
+  .event-detail-kalshi-theme .event-detail-page-main > *:nth-child(4) { animation-delay: 0.15s; }
+  .event-detail-kalshi-theme .event-detail-page-main > *:nth-child(5) { animation-delay: 0.20s; }
+  .event-detail-kalshi-theme .event-detail-page-main > *:nth-child(n+6) { animation-delay: 0.24s; }
 }
 .event-detail-kalshi-theme .event-detail-section {
   background: rgb(17 20 27 / 0.95);
@@ -7427,6 +7688,147 @@ body.discover-consigliati-active {
   border: none;
   border-radius: 0;
   box-shadow: none;
+}
+/* Divisori "filo di luce": hairline a gradiente che svanisce alle estremità —
+   sostituisce il bordo pieno per un taglio più pulito e premium. */
+.event-detail-kalshi-theme .event-detail-embed-section.border-t {
+  border-top: none !important;
+  position: relative;
+}
+.event-detail-kalshi-theme .event-detail-embed-section.border-t::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -0.25rem;
+  right: -0.25rem;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.10) 16%,
+    rgba(255, 255, 255, 0.10) 84%,
+    transparent 100%
+  );
+}
+
+/* Header del dettaglio mercato: vetro fluttuante sullo sfondo vivo invece di
+   una barra opaca. Blur + saturazione + hairline inferiore = profondità da
+   piattaforma premium, sempre leggibile sopra il contenuto in scorrimento. */
+.event-detail-header-glass {
+  background: linear-gradient(
+    180deg,
+    rgba(7, 13, 30, 0.78) 0%,
+    rgba(7, 13, 30, 0.52) 100%
+  );
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+  backdrop-filter: blur(18px) saturate(1.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.event-detail-header-glass::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(80, 245, 252, 0.18) 50%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* ── Punto "live" pulsante — segnale sociale / tempo reale ──────────────── */
+.pm-live-dot {
+  position: relative;
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: rgb(45, 212, 191);
+  box-shadow: 0 0 8px rgba(45, 212, 191, 0.75);
+  flex: none;
+}
+.pm-live-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  animation: pm-ping 1.9s var(--ease-out) infinite;
+}
+@keyframes pm-ping {
+  0%        { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.55); }
+  70%, 100% { box-shadow: 0 0 0 7px rgba(45, 212, 191, 0); }
+}
+
+/* ── CTA accento "vetro firmato": accesso/scommetti — vibrante ma leggibile,
+      inchiostro scuro su ciano del brand → contrasto perfetto, look premium ── */
+.pm-btn-accent {
+  position: relative;
+  isolation: isolate;
+  color: rgb(6, 20, 38);
+  background: linear-gradient(135deg, rgb(124, 250, 255) 0%, rgb(56, 228, 238) 52%, rgb(45, 212, 191) 100%);
+  border: 1px solid rgba(168, 252, 255, 0.5);
+  box-shadow:
+    0 14px 38px -14px rgba(80, 245, 252, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transition: transform 0.2s var(--ease-out), box-shadow 0.28s var(--ease-out), filter 0.28s var(--ease-out);
+}
+.pm-btn-accent::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, transparent 44%);
+  pointer-events: none;
+  z-index: -1;
+}
+.pm-btn-accent:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 20px 50px -14px rgba(80, 245, 252, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  filter: saturate(1.06) brightness(1.03);
+}
+.pm-btn-accent:active { transform: translateY(0); }
+
+/* ── CTA "ghost" accento: elegante, basso peso, contrasto netto sul navy ─── */
+.pm-btn-ghost-accent {
+  color: rgb(var(--primary-glow));
+  background: linear-gradient(135deg, rgba(80, 245, 252, 0.12) 0%, rgba(45, 212, 191, 0.06) 100%);
+  border: 1px solid rgba(80, 245, 252, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: transform 0.2s var(--ease-out), background 0.25s var(--ease-out),
+    border-color 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out), color 0.2s var(--ease-out);
+}
+.pm-btn-ghost-accent:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, rgba(80, 245, 252, 0.2) 0%, rgba(45, 212, 191, 0.1) 100%);
+  border-color: rgba(80, 245, 252, 0.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 10px 28px -14px rgba(80, 245, 252, 0.45);
+  color: #ffffff;
+}
+
+/* ── Bottoni previsione SÌ/NO: rialzo tattile + lucentezza premium ──────── */
+.pm-bet-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+.pm-bet-btn > * { position: relative; z-index: 1; }
+.pm-bet-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-live-dot::after { animation: none; }
+  .pm-btn-accent:hover,
+  .pm-btn-ghost-accent:hover,
+  .pm-bet-btn:hover:not(:disabled) { transform: none; }
 }
 
 .event-detail-page-main .event-detail-box {
@@ -7563,18 +7965,41 @@ html body .nav-bottom-neon a span.nav-bottom-label,
   overflow: hidden !important;
 }
 
-.nav-bottom-neon .nav-bottom-neon-inner::before,
-.dark .nav-bottom-neon .nav-bottom-neon-inner::before {
+.nav-bottom-neon .nav-bottom-neon-inner::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
   border-radius: 999px !important;
-  border: none !important;
-  border-top: none !important;
+  clip-path: none !important;
+  -webkit-clip-path: none !important;
+  border: 1px solid rgb(150 235 255 / 0.12) !important;
+  border-top: 1px solid rgb(150 235 255 / 0.12) !important;
   background:
-    linear-gradient(180deg, rgb(20 28 41 / 0.74) 0%, rgb(10 16 27 / 0.88) 100%) !important;
-  backdrop-filter: blur(22px) saturate(1.22) !important;
-  -webkit-backdrop-filter: blur(22px) saturate(1.22) !important;
+    linear-gradient(180deg, rgb(200 240 255 / 0.11) 0%, rgb(200 240 255 / 0) 30%),
+    radial-gradient(120% 130% at 50% 122%, rgb(56 228 238 / 0.13) 0%, rgb(56 228 238 / 0.045) 46%, rgb(56 228 238 / 0) 72%),
+    linear-gradient(180deg, rgb(12 25 52 / 0.82) 0%, rgb(9 18 42 / 0.88) 100%) !important;
+  backdrop-filter: blur(28px) saturate(1.24) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(1.24) !important;
   box-shadow:
-    0 24px 44px -26px rgb(0 0 0 / 0.92),
-    0 0 0 1px rgb(255 255 255 / 0.1) inset !important;
+    0 1px 0 rgb(210 244 255 / 0.10) inset,
+    0 -1px 0 rgb(56 228 238 / 0.06) inset,
+    0 8px 30px -8px rgb(2 6 18 / 0.58),
+    0 0 20px -12px rgb(56 228 238 / 0.09) !important;
+  z-index: 0 !important;
+}
+.dark .nav-bottom-neon .nav-bottom-neon-inner::before {
+  border: 1px solid rgb(150 235 255 / 0.14) !important;
+  border-top: 1px solid rgb(150 235 255 / 0.14) !important;
+  background:
+    linear-gradient(180deg, rgb(200 240 255 / 0.12) 0%, rgb(200 240 255 / 0) 30%),
+    radial-gradient(120% 130% at 50% 122%, rgb(56 228 238 / 0.15) 0%, rgb(56 228 238 / 0.05) 46%, rgb(56 228 238 / 0) 72%),
+    linear-gradient(180deg, rgb(12 25 52 / 0.86) 0%, rgb(9 18 42 / 0.92) 100%) !important;
+  box-shadow:
+    0 1px 0 rgb(210 244 255 / 0.12) inset,
+    0 -1px 0 rgb(56 228 238 / 0.07) inset,
+    0 8px 34px -8px rgb(2 6 18 / 0.66),
+    0 0 24px -12px rgb(56 228 238 / 0.10) !important;
+  z-index: 0 !important;
 }
 
 .nav-bottom-neon .nav-bottom-neon-inner a,
@@ -8721,8 +9146,8 @@ html body .nav-bottom-neon a span.nav-bottom-label,
 @keyframes top5-card-enter {
   from {
     opacity: 0;
-    transform: translateY(22px) scale(0.985);
-    filter: blur(3px);
+    transform: translateY(14px) scale(0.99);
+    filter: blur(2px);
   }
   to {
     opacity: 1;
@@ -8743,7 +9168,7 @@ html body .nav-bottom-neon a span.nav-bottom-label,
 }
 
 .top5-card:hover {
-  transform: translateY(-3px) scale(1.006);
+  transform: translateY(-2px);
   box-shadow: var(--shadow-hover) !important;
 }
 

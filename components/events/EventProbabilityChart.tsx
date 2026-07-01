@@ -9,6 +9,7 @@ import {
   Line,
   ComposedChart,
   ReferenceArea,
+  ReferenceDot,
   Area,
   Tooltip,
 } from "recharts";
@@ -213,7 +214,7 @@ export default function EventProbabilityChart({
           key: opt.key,
           label: opt.label,
           color,
-          glow: isLight ? "none" : `drop-shadow(0 0 6px ${color}50)`,
+          glow: isLight ? "none" : `drop-shadow(0 0 9px ${color}55)`,
         };
       });
     }
@@ -223,14 +224,14 @@ export default function EventProbabilityChart({
         key: "YES",
         label: "SÌ",
         color: isLight ? "#35C38A" : "#2DD4BF",
-        glow: isLight ? "none" : "drop-shadow(0 0 8px rgba(45,212,191,0.35))",
+        glow: isLight ? "none" : "drop-shadow(0 0 11px rgba(45,212,191,0.45))",
       },
       {
         field: "noPct",
         key: "NO",
         label: "NO",
         color: isLight ? "#FF6B7A" : "#F87171",
-        glow: isLight ? "none" : "drop-shadow(0 0 8px rgba(248,113,113,0.35))",
+        glow: isLight ? "none" : "drop-shadow(0 0 11px rgba(248,113,113,0.42))",
       },
     ];
   }, [isMultiOutcome, outcomeDefs, colorPalette, isLight]);
@@ -518,13 +519,22 @@ export default function EventProbabilityChart({
       )}
 
       <div
-        className={`event-probability-chart-area w-full relative ${chartAreaH} rounded-2xl overflow-hidden`}
+        className={`event-probability-chart-area w-full relative ${chartAreaH} ${embeddedInPage && !isLight ? "" : "rounded-2xl overflow-hidden"}`}
         style={{
           background: isLight
             ? "rgb(249 250 251)"
-            : "linear-gradient(135deg, rgba(80,245,252,0.03) 0%, rgba(45,212,191,0.01) 50%, rgba(248,113,113,0.01) 100%)",
-          border: isLight ? "1px solid rgba(148,163,184,0.2)" : "1px solid rgba(80,245,252,0.08)",
-          boxShadow: isLight ? "none" : "inset 0 1px 0 rgba(255,255,255,0.03), 0 0 40px -20px rgba(80,245,252,0.06)",
+            : embeddedInPage
+              ? "transparent"
+              : "linear-gradient(135deg, rgba(80,245,252,0.03) 0%, rgba(45,212,191,0.01) 50%, rgba(248,113,113,0.01) 100%)",
+          border: isLight
+            ? "1px solid rgba(148,163,184,0.2)"
+            : embeddedInPage
+              ? "none"
+              : "1px solid rgba(80,245,252,0.08)",
+          boxShadow:
+            isLight || (embeddedInPage && !isLight)
+              ? "none"
+              : "inset 0 1px 0 rgba(255,255,255,0.03), 0 0 40px -20px rgba(80,245,252,0.06)",
         }}
       >
         <ResponsiveContainer width="100%" height="100%">
@@ -541,8 +551,9 @@ export default function EventProbabilityChart({
             <defs>
               {seriesDefs.map((series) => (
                 <linearGradient key={`grad-${series.field}`} id={`areaGrad-${series.field}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={series.color} stopOpacity={0.15} />
-                  <stop offset="100%" stopColor={series.color} stopOpacity={0.01} />
+                  <stop offset="0%" stopColor={series.color} stopOpacity={0.24} />
+                  <stop offset="52%" stopColor={series.color} stopOpacity={0.07} />
+                  <stop offset="100%" stopColor={series.color} stopOpacity={0} />
                 </linearGradient>
               ))}
             </defs>
@@ -631,6 +642,23 @@ export default function EventProbabilityChart({
                     }}
                   />
                 ))}
+                {latestPoint &&
+                  seriesDefs.map((series) => {
+                    const v = latestPoint[series.field];
+                    if (typeof v !== "number" || !Number.isFinite(v)) return null;
+                    return (
+                      <ReferenceDot
+                        key={`end-${series.field}`}
+                        x={Number(latestPoint.time)}
+                        y={v}
+                        r={3.5}
+                        fill={series.color}
+                        stroke={isLight ? "#ffffff" : "rgb(8,14,30)"}
+                        strokeWidth={2}
+                        isFront
+                      />
+                    );
+                  })}
               </>
             )}
           </ComposedChart>

@@ -171,8 +171,8 @@ export default function Header({ showCategoryStrip = true }: HeaderProps) {
                         href={category.href}
                         className={`relative inline-flex items-center rounded-full border px-2 py-0.5 text-[13px] font-medium tracking-[0.01em] transition-all duration-200 ${
                           isActive
-                            ? "border-white/25 bg-white/10 text-white shadow-[0_6px_16px_-10px_rgba(128,250,255,0.5)]"
-                            : "border-transparent bg-transparent text-white/60 hover:border-white/15 hover:bg-white/5 hover:text-white/85"
+                            ? "border-white/25 bg-[rgb(128_250_255_/_0.16)] text-white shadow-[0_6px_16px_-10px_rgba(128,250,255,0.55),inset_0_1px_0_rgba(210,244,255,0.12)]"
+                            : "border-transparent bg-transparent text-white/70 hover:border-white/15 hover:bg-white/8 hover:text-white/90"
                         }`}
                         aria-current={isActive ? "true" : undefined}
                       >

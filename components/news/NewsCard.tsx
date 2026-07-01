@@ -60,8 +60,8 @@ export function NewsCard({ article, layout = "rail" }: NewsCardProps) {
   const widthClasses = isStack
     ? "w-full min-w-0 max-w-none flex-col"
     : isMini
-      ? "w-[168px] min-w-[168px] shrink-0 flex-col sm:w-[176px] sm:min-w-[176px]"
-      : "w-[260px] min-w-[260px] shrink-0 flex-col sm:w-[268px] sm:min-w-[268px]";
+      ? "w-[150px] min-w-[150px] shrink-0 flex-col sm:w-[158px] sm:min-w-[158px]"
+      : "w-[280px] min-w-[280px] shrink-0 flex-col sm:w-[292px] sm:min-w-[292px]";
 
   const titleClass = isStack
     ? "text-[1.06rem] sm:text-[1.15rem]"

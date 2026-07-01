@@ -17,7 +17,9 @@ export function useHomepageNewsTickers(limit = 28): {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`/api/news?limit=${limit}`, { cache: "no-store" });
+        const res = await fetch(`/api/news?limit=${limit}&mixAuthors=true`, {
+          cache: "no-store",
+        });
         if (!res.ok) throw new Error(String(res.status));
         const data = (await res.json()) as {
           ok?: boolean;

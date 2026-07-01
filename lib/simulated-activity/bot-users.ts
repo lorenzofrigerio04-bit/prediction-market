@@ -11,43 +11,10 @@ import {
 } from "./config";
 import { applyCreditTransaction } from "../apply-credit-transaction";
 import { CREDIT_TRANSACTION_TYPES } from "../credits-config";
+import { socialIdentityForIndex } from "./social-identities";
 
 /** Soglia sotto cui un bot viene ricaricato (ensureBotsHaveCredits) */
 const BOT_CREDITS_THRESHOLD = 1000;
-
-/** Nomi italiani plausibili per nome/username bot (pool ciclica) */
-const ITALIAN_NAMES = [
-  "Marco",
-  "Luca",
-  "Alessandro",
-  "Matteo",
-  "Lorenzo",
-  "Francesco",
-  "Andrea",
-  "Giuseppe",
-  "Giovanni",
-  "Antonio",
-  "Paolo",
-  "Simone",
-  "Davide",
-  "Federico",
-  "Stefano",
-  "Riccardo",
-  "Filippo",
-  "Nicola",
-  "Elena",
-  "Chiara",
-  "Sara",
-  "Martina",
-  "Laura",
-  "Francesca",
-  "Valentina",
-  "Giulia",
-  "Anna",
-  "Alessandra",
-  "Federica",
-  "Silvia",
-];
 
 export interface BotUser {
   id: string;
@@ -64,23 +31,8 @@ function botEmail(i: number): string {
 }
 
 /**
- * Nome dalla pool (indice 0-based).
- */
-function nameFromPool(index: number): string {
-  return ITALIAN_NAMES[index % ITALIAN_NAMES.length];
-}
-
-/**
- * Username univoco: nome in minuscolo + suffisso numerico (es. marco_1).
- */
-function usernameForBot(name: string, index: number): string {
-  const base = name.toLowerCase().replace(/\s+/g, "_");
-  return `${base}_${index}`;
-}
-
-/**
  * Recupera o crea N utenti bot con email bot-1@simulation.internal, bot-2@..., ecc.
- * Crea utenti mancanti con nome dalla pool italiana, username univoco, password null,
+ * Crea utenti mancanti con identità social inglese (handle + avatar), password null,
  * credits = BOT_INITIAL_CREDITS, role = "BOT".
  * Restituisce la lista di bot (id, email, name, username).
  */
@@ -98,11 +50,12 @@ export async function getOrCreateBotUsers(
     });
 
     if (!user) {
-      const name = nameFromPool(i - 1);
+      const identity = socialIdentityForIndex(i - 1);
       user = await prisma.user.create({
         data: {
           email,
-          name,
+          name: identity.name,
+          image: identity.image,
           credits: BOT_INITIAL_CREDITS,
           role: "BOT",
         },

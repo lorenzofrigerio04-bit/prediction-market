@@ -51,7 +51,7 @@ export async function GET(request: Request) {
     const now = new Date();
 
     // ── Fetch all active sport 2.0 events ──────────────────────────────────
-    const eventsRaw = await prisma.event.findMany({
+    let eventsRaw = await prisma.event.findMany({
       where: {
         ...ACTIVE_SPORT_20_WHERE,
         closesAt: { gt: now },
@@ -67,6 +67,30 @@ export async function GET(request: Request) {
         },
       },
     });
+
+    // Fallback: quando la pipeline Sport 2.0 non ha eventi attivi, popola la
+    // homepage con tutti i mercati attivi (qualsiasi sourceType) così la
+    // Top 5 + i rail mostrano contenuti reali invece di uno stato vuoto/mock.
+    if (eventsRaw.length === 0) {
+      eventsRaw = await prisma.event.findMany({
+        where: {
+          hidden: false,
+          status: "OPEN",
+          resolved: false,
+          closesAt: { gt: now },
+        },
+        orderBy: [{ totalCredits: "desc" }, { createdAt: "desc" }],
+        take: 200,
+        include: {
+          _count: {
+            select: { Prediction: true, Trade: true, feedbacks: true },
+          },
+          ammState: {
+            select: { qYesMicros: true, qNoMicros: true, bMicros: true },
+          },
+        },
+      });
+    }
 
     if (eventsRaw.length === 0) {
       const empty: FootballHomepagePayload = {
@@ -200,6 +224,17 @@ export async function GET(request: Request) {
     const cap = (arr: ProcessedEvent[], n: number) =>
       sectionFilter ? arr : arr.slice(0, n);
 
+    // Top 5 markets by score: shown in the "Top 5" section and excluded from
+    // the rails below so they don't appear twice on the homepage.
+    const top5Ids = new Set(
+      [...processed]
+        .sort((a, b) => b.sortScore - a.sortScore)
+        .slice(0, 5)
+        .map((e) => e.id)
+    );
+    const withoutTop5 = (arr: ProcessedEvent[]) =>
+      arr.filter((e) => !top5Ids.has(e.id));
+
     // ── Section 1: Live events ──────────────────────────────────────────────
     const liveEvents = cap(
       processed.filter((e) => LIVE_MATCH_STATUSES.has(e.matchStatus ?? "")),
@@ -228,14 +263,12 @@ export async function GET(request: Request) {
     if (isPersonalized) {
       const preferred = nonLive.filter((e) => userCategories.includes(e.category));
       const rest = nonLive.filter((e) => !userCategories.includes(e.category));
-      forYouMarkets = cap(
-        [...preferred, ...rest.sort((a, b) => b.sortScore - a.sortScore)],
-        75
+      forYouMarkets = withoutTop5(
+        cap([...preferred, ...rest.sort((a, b) => b.sortScore - a.sortScore)], 75)
       );
     } else {
-      forYouMarkets = cap(
-        [...nonLive].sort((a, b) => b.sortScore - a.sortScore),
-        75
+      forYouMarkets = withoutTop5(
+        cap([...nonLive].sort((a, b) => b.sortScore - a.sortScore), 75)
       );
     }
 
@@ -282,26 +315,30 @@ export async function GET(request: Request) {
 
     // ── New section: Viral events (highest engagement velocity) ─────────────
     const viralEvents = cap(
-      [...processed]
-        .map((e) => {
-          const createdMs = new Date(e.createdAt).getTime();
-          const ageHours = Math.max(1, (now.getTime() - createdMs) / (1000 * 60 * 60));
-          const velocity = e.predictionsCount / ageHours;
-          return { ...e, velocity };
-        })
-        .sort((a, b) => b.velocity - a.velocity),
+      withoutTop5(
+        [...processed]
+          .map((e) => {
+            const createdMs = new Date(e.createdAt).getTime();
+            const ageHours = Math.max(1, (now.getTime() - createdMs) / (1000 * 60 * 60));
+            const velocity = e.predictionsCount / ageHours;
+            return { ...e, velocity };
+          })
+          .sort((a, b) => b.velocity - a.velocity)
+      ),
       75
     );
 
     // ── New section: Expiring events (closing in next 48h) ───────────────────
     const h48ahead = new Date(now.getTime() + 48 * 60 * 60 * 1000);
     const expiringEvents = cap(
-      [...processed]
-        .filter((e) => {
-          const t = new Date(e.closesAt).getTime();
-          return t > now.getTime() && t <= h48ahead.getTime();
-        })
-        .sort((a, b) => new Date(a.closesAt).getTime() - new Date(b.closesAt).getTime()),
+      withoutTop5(
+        [...processed]
+          .filter((e) => {
+            const t = new Date(e.closesAt).getTime();
+            return t > now.getTime() && t <= h48ahead.getTime();
+          })
+          .sort((a, b) => new Date(a.closesAt).getTime() - new Date(b.closesAt).getTime())
+      ),
       75
     );
 

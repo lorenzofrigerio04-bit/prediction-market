@@ -49,3 +49,6 @@ neon-*.bak
 
 # backup (markets:purge)
 backups/
+
+# Claude Code local config
+.claude/

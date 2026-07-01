@@ -5,10 +5,10 @@ import Header from "@/components/Header";
 import { SectionHeader } from "@/components/home/football/premium/SectionHeader";
 import { NewsCard } from "@/components/news/NewsCard";
 import { NewsEventsTickerSeparator } from "@/components/news/NewsEventsTickerSeparator";
+import { HomeEventRail } from "@/components/home/HomeEventRail";
 import { useNewsPageEventsMarquee } from "@/lib/hooks/useNewsPageEventsMarquee";
 import type { NewsFormat } from "@/lib/news-engine/types";
 import { NEWS_SECTIONS, slugFromNewsFormat } from "@/lib/news-format-sections";
-import { newsRailEdgeMaskStyle } from "@/lib/news-rail-mask";
 
 interface NewsArticle {
   id: string;
@@ -80,25 +80,24 @@ function NewsSection({
 
   return (
     <section>
-      <SectionHeader
-        eyebrow=""
-        title={title}
-        accent={accent}
-        articleHeadlineTitle
-        eyebrowTrailing
-        ctaOnly
-        href={formatPath}
-        hrefLabel="vedi tutti"
-      />
-      <div className="-mx-4">
-        <div className="scrollbar-hide overflow-x-auto px-4 pb-1" style={newsRailEdgeMaskStyle}>
-          <div className="flex gap-2.5 pb-2" style={{ width: "max-content" }}>
-            {articles.map((a) => (
-              <NewsCard key={a.id} article={a} layout="rail" />
-            ))}
-          </div>
-        </div>
+      {/* Header allineato al padding del rail full-bleed (px-4 sm:px-6) */}
+      <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 px-4 sm:px-6">
+        <SectionHeader
+          eyebrow=""
+          title={title}
+          accent={accent}
+          articleHeadlineTitle
+          eyebrowTrailing
+          ctaOnly
+          href={formatPath}
+          hrefLabel="vedi tutti"
+        />
       </div>
+      <HomeEventRail fullBleed>
+        {articles.map((a) => (
+          <NewsCard key={a.id} article={a} layout="rail" />
+        ))}
+      </HomeEventRail>
     </section>
   );
 }

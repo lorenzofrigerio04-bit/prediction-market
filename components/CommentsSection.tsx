@@ -329,14 +329,16 @@ export default function CommentsSection({ eventId, variant = "default" }: Commen
 
   return (
     <div className={wrapperClass}>
-      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          <IconChat className="w-5 h-5 text-primary shrink-0" aria-hidden />
-          <span className="text-ds-body font-semibold text-fg uppercase tracking-label text-xs">
-            {comments.length} {comments.length === 1 ? "commento" : "commenti"}
-          </span>
+      {!isEmbedded && (
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <IconChat className="w-5 h-5 text-primary shrink-0" aria-hidden />
+            <span className="text-ds-body font-semibold text-fg uppercase tracking-label text-xs">
+              {comments.length} {comments.length === 1 ? "commento" : "commenti"}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {(session && (!isEmbedded || expandedComments)) ? (
         <form onSubmit={handleSubmitComment} className="mb-6">
@@ -384,7 +386,7 @@ export default function CommentsSection({ eventId, variant = "default" }: Commen
           <button
             type="button"
             onClick={() => setExpandedComments(true)}
-            className="mt-3 min-h-[44px] px-5 py-2 bg-primary text-white rounded-2xl font-semibold text-ds-body-sm hover:bg-primary-hover transition-colors"
+            className="pm-btn-ghost-accent mt-3 min-h-[44px] px-5 py-2 rounded-2xl font-semibold text-ds-body-sm"
           >
             Dimostra di sapere il perchè!
           </button>
@@ -400,7 +402,7 @@ export default function CommentsSection({ eventId, variant = "default" }: Commen
             <button
               type="button"
               onClick={() => setExpandedComments(true)}
-              className="mt-4 w-full min-h-[48px] py-3 rounded-xl font-semibold text-ds-body-sm text-white bg-primary hover:bg-primary-hover transition-colors border border-white/20"
+              className="pm-btn-ghost-accent mt-4 w-full min-h-[48px] py-3 rounded-xl font-semibold text-ds-body-sm"
             >
               Dimostra di sapere il perchè!
             </button>

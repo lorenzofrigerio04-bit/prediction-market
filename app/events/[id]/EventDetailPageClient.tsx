@@ -13,7 +13,7 @@ import CommentsSection from "@/components/CommentsSection";
 import EventFeedbackPanel from "@/components/admin/EventFeedbackPanel";
 import SellConfirmModal, { type SellConfirmLeg, type SellConfirmPayload } from "@/components/events/SellConfirmModal";
 import { trackView } from "@/lib/analytics-client";
-import { IconCurrency } from "@/components/ui/Icons";
+import { IconCurrency, IconLock } from "@/components/ui/Icons";
 import BackLink from "@/components/ui/BackLink";
 import {
   MULTI_OPTION_MARKET_TYPES,
@@ -599,6 +599,30 @@ export default function EventDetailPageClient({
           />
         </section>
 
+        {/* Crediti nel mercato */}
+        <div className="-mt-3 md:-mt-4 flex items-center justify-center text-[13px] md:text-sm text-fg-muted">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="font-chubby font-bold tabular-nums text-fg">
+              {Math.round(event.totalCredits).toLocaleString("it-IT")}
+            </span>
+            <IconCurrency className="w-4 h-4 text-primary" aria-hidden />
+            <span>nel mercato</span>
+          </span>
+        </div>
+
+        {/* Accesso per scommettere — CTA centrale, pulita, subito visibile */}
+        {!event.resolved && new Date(event.closesAt) > new Date() && !session && (
+          <div className="flex justify-center">
+            <Link
+              href={`/auth/login?callbackUrl=${encodeURIComponent(`/events/${event.id}`)}`}
+              className="pm-btn-accent inline-flex items-center justify-center gap-2.5 min-h-[52px] px-8 rounded-2xl font-kalshi text-base sm:text-lg font-bold tracking-tight uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg"
+            >
+              <IconLock className="w-[18px] h-[18px]" aria-hidden />
+              Accedi per scommettere
+            </Link>
+          </div>
+        )}
+
         {/* Sezione acquisto share (incorporata, senza card) */}
         <article className="event-detail-embed-section py-5 md:py-6">
           {/* Mercato multi-opzione: pulsanti opzioni */}
@@ -646,7 +670,7 @@ export default function EventDetailPageClient({
                           }
                         }}
                         disabled={!canMakePrediction || event.resolved}
-                        className="group/opt w-full min-h-[78px] py-4 px-4 rounded-2xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg active:scale-[0.97] flex flex-col items-center justify-center gap-2"
+                        className="pm-bet-btn group/opt relative overflow-hidden w-full min-h-[78px] py-4 px-4 rounded-2xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg active:scale-[0.97] flex flex-col items-center justify-center gap-2"
                         style={{
                           background: isLeading
                             ? `linear-gradient(135deg, rgba(${accent},0.15) 0%, rgba(${accent},0.04) 100%)`
@@ -676,9 +700,6 @@ export default function EventDetailPageClient({
                   });
                 })()}
               </div>
-              {!event.resolved && new Date(event.closesAt) > new Date() && !session && (
-                <p className="text-ds-caption text-fg-muted mt-3 text-center">Accedi per scommettere su un&apos;opzione.</p>
-              )}
             </div>
           ) : (
             (() => {
@@ -719,7 +740,7 @@ export default function EventDetailPageClient({
                         }
                       }}
                       disabled={!canMakePrediction}
-                      className="group/bet relative min-h-[78px] py-4 px-3 rounded-2xl font-semibold text-sm transition-all duration-200 flex flex-col items-center justify-center gap-2 overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg active:scale-[0.97]"
+                      className="pm-bet-btn group/bet relative min-h-[78px] py-4 px-3 rounded-2xl font-semibold text-sm transition-all duration-200 flex flex-col items-center justify-center gap-2 overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg active:scale-[0.97]"
                       style={{
                         background: yesIsLeading
                           ? "linear-gradient(135deg, rgba(45,212,191,0.15) 0%, rgba(20,184,166,0.05) 100%)"
@@ -751,7 +772,7 @@ export default function EventDetailPageClient({
                         }
                       }}
                       disabled={!canMakePrediction}
-                      className="group/bet relative min-h-[78px] py-4 px-3 rounded-2xl font-semibold text-sm transition-all duration-200 flex flex-col items-center justify-center gap-2 overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg active:scale-[0.97]"
+                      className="pm-bet-btn group/bet relative min-h-[78px] py-4 px-3 rounded-2xl font-semibold text-sm transition-all duration-200 flex flex-col items-center justify-center gap-2 overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-admin-bg active:scale-[0.97]"
                       style={{
                         background: !yesIsLeading
                           ? "linear-gradient(135deg, rgba(248,113,113,0.15) 0%, rgba(244,63,94,0.05) 100%)"
@@ -1036,13 +1057,6 @@ export default function EventDetailPageClient({
             );
           })()}
 
-          {!session && !event.resolved && new Date(event.closesAt) > new Date() && (
-            <p className="text-ds-body-sm text-fg-muted mb-3">
-              <Link href="/auth/login" className="font-semibold text-primary hover:text-primary-hover underline">Accedi</Link>{" "}
-              per scommettere
-            </p>
-          )}
-
         </article>
 
         {/* Market Rules (inline) */}
@@ -1050,42 +1064,26 @@ export default function EventDetailPageClient({
           <h2 id="market-rules-heading" className="text-sm md:text-base font-semibold text-fg tracking-tight mb-3 uppercase tracking-label">
             Regole di mercato
           </h2>
-          <div className="space-y-4 text-ds-body-sm text-fg-muted">
-            {(event.resolutionCriteriaYes || event.resolutionCriteriaNo || event.resolutionCriteria || event.resolutionNotes) ? (
-              event.resolutionCriteria ? (
-                <p className="whitespace-pre-wrap">{event.resolutionCriteria}</p>
-              ) : (
-                <div className="space-y-2">
-                  {event.resolutionCriteriaYes && (
-                    <p><span className="font-medium text-success">SÌ paga se:</span> {event.resolutionCriteriaYes}</p>
-                  )}
-                  {event.resolutionCriteriaNo && (
-                    <p><span className="font-medium text-danger">NO paga se:</span> {event.resolutionCriteriaNo}</p>
-                  )}
-                  {event.resolutionNotes && <p className="whitespace-pre-wrap">{event.resolutionNotes}</p>}
-                </div>
-              )
-            ) : (
-              <p className="italic">Criterio non specificato. La risoluzione avviene secondo la fonte ufficiale indicata.</p>
-            )}
-            {event.resolutionSourceUrl && (
-              <p>
-                Fonte:{" "}
-                <a href={event.resolutionSourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary-hover underline">
-                  {event.resolutionAuthorityHost || event.resolutionSourceUrl.replace(/^https?:\/\//, "").split("/")[0]}
-                </a>
-              </p>
-            )}
-            <p className="pt-2 border-t border-border/60 text-fg/80">
-              Chiusura: <span suppressHydrationWarning>{new Date(event.closesAt).toLocaleDateString("it-IT", dateOptions)}</span>
-            </p>
-          </div>
+          <p className="text-ds-body-sm text-fg-muted line-clamp-2">
+            {event.resolutionCriteria?.trim() ||
+              [
+                event.resolutionCriteriaYes ? `SÌ: ${event.resolutionCriteriaYes}` : null,
+                event.resolutionCriteriaNo ? `NO: ${event.resolutionCriteriaNo}` : null,
+              ]
+                .filter(Boolean)
+                .join("  ·  ") ||
+              event.resolutionNotes?.trim() ||
+              "Criterio non specificato. La risoluzione avviene secondo la fonte ufficiale indicata."}
+          </p>
           <button
             type="button"
             onClick={() => setShowResolutionPopup(true)}
-            className="mt-3 text-sm font-medium text-primary hover:text-primary-hover underline"
+            className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary-hover transition-colors"
           >
-            Dettagli completi
+            Leggi tutto
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </button>
         </section>
 
@@ -1099,7 +1097,8 @@ export default function EventDetailPageClient({
         {/* Commenti */}
         <section className="event-detail-embed-section py-5 md:py-6 border-t border-white/[0.06]" aria-labelledby="comments-heading">
           <h2 id="comments-heading" className="text-sm md:text-base font-semibold text-fg tracking-tight mb-3 uppercase tracking-label">
-            Commenti
+            Commenti{" "}
+            <span className="text-fg-muted font-medium tabular-nums normal-case">({event._count.comments})</span>
           </h2>
           <CommentsSection eventId={event.id} variant="embedded" />
         </section>
@@ -1116,7 +1115,7 @@ export default function EventDetailPageClient({
         >
           <div
             className="event-detail-section max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 rounded-xl border border-white/10"
-            style={{ background: 'rgb(var(--admin-bg))', boxShadow: '0 8px 32px rgb(0 0 0 / 0.4)' }}
+            style={{ background: 'linear-gradient(165deg, rgba(15,20,34,0.94) 0%, rgba(10,16,32,0.90) 100%)', backdropFilter: 'blur(22px) saturate(1.2)', WebkitBackdropFilter: 'blur(22px) saturate(1.2)', boxShadow: '0 24px 64px -16px rgb(0 0 0 / 0.65), inset 0 1px 0 rgba(255,255,255,0.05)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative flex items-center justify-center mb-4 pr-12">
@@ -1162,7 +1161,7 @@ export default function EventDetailPageClient({
         >
           <div
             className="event-detail-section max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 rounded-xl border border-white/10"
-            style={{ background: 'rgb(var(--admin-bg))', boxShadow: '0 8px 32px rgb(0 0 0 / 0.4)' }}
+            style={{ background: 'linear-gradient(165deg, rgba(15,20,34,0.94) 0%, rgba(10,16,32,0.90) 100%)', backdropFilter: 'blur(22px) saturate(1.2)', WebkitBackdropFilter: 'blur(22px) saturate(1.2)', boxShadow: '0 24px 64px -16px rgb(0 0 0 / 0.65), inset 0 1px 0 rgba(255,255,255,0.05)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-3 mb-4">

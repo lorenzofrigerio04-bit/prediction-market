@@ -41,7 +41,7 @@ export function ForYouSection({
         {events.map((event) => (
           <div
             key={event.id}
-            className="w-[260px] min-w-[260px] shrink-0 sm:w-[268px] sm:min-w-[268px]"
+            className="w-[280px] min-w-[280px] shrink-0 sm:w-[292px] sm:min-w-[292px]"
           >
             <HomeEventCard event={event} onNavigate={onNavigate} accent="violet" />
           </div>
