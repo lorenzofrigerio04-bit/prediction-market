@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { CREDIT_BUNDLES_EUR, type CreditBundleEurDisplay } from "@/lib/shop-display-config";
 
 const BUNDLE_MAP = new Map<string, CreditBundleEurDisplay>(
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   const priceInCents = Math.round(bundle.priceEur * 100);
 
   try {
-    const checkoutSession = await stripe.checkout.sessions.create({
+    const checkoutSession = await getStripe().checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
       line_items: [

@@ -11,7 +11,16 @@ import { PERSONAS } from "./types";
 import { getPublicSourceLabelFromInput } from "./public-source";
 import { passesFootballNewsFilter } from "./football-filter";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Istanza lazy: creata alla prima chiamata, non all'import. Evita che
+// `next build` (che importa questo modulo via barrel lib/news-engine)
+// fallisca la raccolta dati quando OPENAI_API_KEY non è nell'ambiente di build.
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) {
+    _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return _openai;
+}
 
 const MODEL = "gpt-4o-mini";
 
@@ -156,7 +165,7 @@ ${format === "ANALYTICS" && input.url.includes("predictionmaster")
 Scrivi un articolo in formato ${format} seguendo il tuo personaggio.`;
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: MODEL,
       messages: [
         { role: "system", content: systemPrompt },
