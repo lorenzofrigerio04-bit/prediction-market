@@ -171,10 +171,6 @@ export function FootballHomepage({ isLoggedIn, onEventNavigate }: Props) {
         <ExpiringSection events={data.expiringEvents} onNavigate={onEventNavigate} />
       </div>
 
-      {showNewsTickers ? (
-        <HomeNewsTickerSeparator items={newsTickerItems} direction="right" phaseShift={15} />
-      ) : null}
-
       {/* Live (solo se presenti) */}
       {data.liveEvents.length > 0 && (
         <div className="mb-12 sm:mb-14">
