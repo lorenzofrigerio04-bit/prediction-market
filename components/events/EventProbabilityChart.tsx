@@ -655,7 +655,6 @@ export default function EventProbabilityChart({
                         fill={series.color}
                         stroke={isLight ? "#ffffff" : "rgb(8,14,30)"}
                         strokeWidth={2}
-                        isFront
                       />
                     );
                   })}
